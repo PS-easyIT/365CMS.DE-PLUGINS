@@ -306,8 +306,8 @@ if (class_exists('CMS\\ThemeManager')) {
         <header class="m365calc-result-heading">
             <section>
                 <p class="phinit-overline">SKU-Treffer</p>
-                <h2 id="m365price-impact-title">Direkt gemappte Preiszeilen</h2>
-                <p>Diese Tabelle zeigt nur Bestandszeilen, die mit einer gepflegten offiziellen Preiszeile übereinstimmen.</p>
+                <h2 id="m365price-impact-title">Kanonische Preiszeitreihe</h2>
+                <p>Diese Tabelle nutzt den zentralen Paketpreiskatalog mit Mai-2026-Baseline, historischen Ankern und bestätigten Future-Rows.</p>
             </section>
         </header>
         <section class="phinit-table-wrap" aria-label="Preisänderungen je SKU">
@@ -320,6 +320,7 @@ if (class_exists('CMS\\ThemeManager')) {
                         <th scope="col">Alt</th>
                         <th scope="col">Neu</th>
                         <th scope="col">Jahresdelta</th>
+                        <th scope="col">Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -327,16 +328,17 @@ if (class_exists('CMS\\ThemeManager')) {
                     <?php if (!is_array($row)) { continue; } ?>
                     <tr>
                         <th scope="row"><?php echo htmlspecialchars((string) ($row['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></th>
-                        <td><?php echo htmlspecialchars((string) ($row['event_id'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php echo htmlspecialchars((string) ($row['effective_at'] ?? $row['event_id'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo (int) ($row['seats'] ?? 0); ?></td>
                         <td><?php echo htmlspecialchars($money($row['current_price'] ?? 0), ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars($money($row['new_price'] ?? 0), ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars($money($row['delta_annual'] ?? 0), ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php echo htmlspecialchars((string) ($row['verification_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                     </tr>
                     <?php endforeach; ?>
                     <?php if (empty($impact['rows'])): ?>
                     <tr>
-                        <td colspan="6">Für die gewählten Filter wurde keine direkte SKU-Preiszeile gefunden.</td>
+                        <td colspan="7">Für die gewählten Filter wurde keine direkte SKU-Preiszeile gefunden.</td>
                     </tr>
                     <?php endif; ?>
                 </tbody>

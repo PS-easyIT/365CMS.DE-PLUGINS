@@ -62,6 +62,59 @@
         });
     }
 
+    function normalizePublicPath(value) {
+        var path = String(value || '').trim();
+        if (!path) {
+            return '';
+        }
+
+        path = path.replace(/^[a-z]+:\/\/[^/]+/i, '');
+        path = path.split('#')[0].split('?')[0].replace(/\/+/g, '/').replace(/^\/+|\/+$/g, '').toLowerCase();
+
+        return path.indexOf('en/') === 0 ? path.slice(3) : path;
+    }
+
+    function isDisabledModulePath(path, disabledRoutes) {
+        var normalized = normalizePublicPath(path);
+        if (!normalized) {
+            return false;
+        }
+
+        return disabledRoutes.some(function (route) {
+            var disabled = normalizePublicPath(route);
+
+            return disabled && (normalized === disabled || normalized.endsWith('/' + disabled));
+        });
+    }
+
+    function initHiddenModuleActionLinks() {
+        var config = window.M365ToolsPublicVisibility || {};
+        var disabledRoutes = Array.isArray(config.disabledRoutes) ? config.disabledRoutes : [];
+        if (disabledRoutes.length === 0) {
+            return;
+        }
+
+        document.querySelectorAll('.m365calc-page .m365calc-actions a[href], .m365calc-provider-cta .m365calc-actions a[href]').forEach(function (link) {
+            var url;
+            try {
+                url = new URL(link.getAttribute('href'), window.location.origin);
+            } catch (error) {
+                return;
+            }
+
+            if (!isDisabledModulePath(url.pathname, disabledRoutes)) {
+                return;
+            }
+
+            var actions = link.closest('.m365calc-actions');
+            link.remove();
+
+            if (actions && !actions.querySelector('a, button, input, select, textarea')) {
+                actions.remove();
+            }
+        });
+    }
+
     function initContentHost() {
         var root = document.querySelector('.m365calc-page, #m365calculator-landing');
         if (!root) {
@@ -213,12 +266,114 @@
         });
     }
 
+    function parsePercent(text) {
+        var match = String(text || '').replace(',', '.').match(/(\d{1,3}(?:\.\d+)?)\s*%/);
+        if (!match) {
+            return null;
+        }
+
+        return Math.max(0, Math.min(100, Math.round(parseFloat(match[1]))));
+    }
+
+    function initDetailScoreRings(root) {
+        root.querySelectorAll('.m365calc-score').forEach(function (score) {
+            var strong = score.querySelector('strong');
+            var percent = strong ? parsePercent(strong.textContent) : null;
+            var bar = score.querySelector('.m365calc-score__bar span');
+
+            if (percent === null && bar) {
+                percent = parsePercent(bar.style.getPropertyValue('--m365calc-score-width'));
+            }
+
+            if (percent === null) {
+                return;
+            }
+
+            score.classList.add('m365calc-score--ring');
+            score.style.setProperty('--m365calc-score-value', percent + '%');
+        });
+    }
+
+    function initDetailTableBars(root) {
+        var resultTitle = root.querySelector('[data-m365calc-result] h2');
+        var recommendedText = resultTitle ? resultTitle.textContent.trim().toLowerCase() : '';
+
+        root.querySelectorAll('.phinit-table').forEach(function (table) {
+            table.classList.add('m365calc-table--enhanced');
+
+            table.querySelectorAll('tbody tr').forEach(function (row) {
+                var rowHead = row.querySelector('th, td');
+                var rowText = rowHead ? rowHead.textContent.trim().toLowerCase() : '';
+                var fullRowText = row.textContent.trim().toLowerCase();
+
+                if ((recommendedText && rowText && (recommendedText.indexOf(rowText) !== -1 || rowText.indexOf(recommendedText) !== -1)) || fullRowText.indexOf('empfohlen') !== -1) {
+                    row.classList.add('m365calc-table-row--recommended');
+                }
+
+                row.querySelectorAll('td').forEach(function (cell) {
+                    if (cell.querySelector('.m365calc-data-bar') || cell.querySelector('input, select, textarea, button')) {
+                        return;
+                    }
+
+                    var percent = parsePercent(cell.textContent.trim());
+                    if (percent === null) {
+                        return;
+                    }
+
+                    var wrapper = document.createElement('span');
+                    var value = document.createElement('span');
+                    wrapper.className = 'm365calc-data-bar';
+                    value.className = 'm365calc-data-bar__value';
+                    wrapper.style.setProperty('--m365calc-bar-value', percent + '%');
+
+                    while (cell.firstChild) {
+                        value.appendChild(cell.firstChild);
+                    }
+
+                    wrapper.appendChild(value);
+                    cell.appendChild(wrapper);
+                });
+            });
+        });
+    }
+
+    function initDetailTimelines(root) {
+        root.querySelectorAll('.m365calc-result-grid, .m365calc-result-card, .phinit-card').forEach(function (block) {
+            var label = (block.getAttribute('aria-label') || '').toLowerCase();
+            var heading = block.querySelector('h2');
+            var overline = block.querySelector('.phinit-overline, .m365calc-eyebrow');
+            var text = [label, heading ? heading.textContent : '', overline ? overline.textContent : ''].join(' ').toLowerCase();
+
+            if (text.indexOf('zeitplan') === -1 && text.indexOf('timeline') === -1 && text.indexOf('rollout') === -1) {
+                return;
+            }
+
+            var list = block.querySelector('ol.m365calc-note-list');
+            if (list) {
+                list.classList.add('m365calc-timeline');
+            }
+        });
+    }
+
+    function initDetailVisualEnhancements() {
+        var root = document.querySelector('.m365calc-page');
+        if (!root) {
+            return;
+        }
+
+        initDetailScoreRings(root);
+        initDetailTableBars(root);
+        initDetailTimelines(root);
+    }
+
     ready(function () {
         initContentHost();
+        initHiddenModuleActionLinks();
         initReadonlyMatrixScrollPosition();
         initResultFocus();
         initPrintButtons();
         initResetButtons();
         initLicenseAuditChecklist();
+        initDetailVisualEnhancements();
     });
 }());

@@ -19,7 +19,7 @@ Ab Version `1.16.0` nutzt das Plugin die Tabelle `cms_m365tools_module_settings`
 
 ## `cms_m365tools_module_options`
 
-Ab Version `1.25.0` speichert diese Tabelle modulbezogene Admin-Optionen für die Tabs `Preise & Annahmen`, `Workflow` und `Daten & Regeln`. Die Werte sind bewusst generisch abgelegt, damit jedes Registry-Modul eigene Felder erhalten kann, ohne pro Modul eine neue Tabelle anzulegen. Ab Version `1.27.0` nutzt das Plugin dieselbe Tabelle zusätzlich für zentrale Defaults (`module_key = global`), darunter Plugin-Einstellungen, Paketpreise sowie Abopreise & Laufzeiten. Ab Version `1.28.0` werden in den Gruppen `base-packages` und `addons` Public-, Member- und Spezialpreis-Overrides aus dem M365LIC-Paketkatalog gespeichert; die Gruppe `terms` hält die Laufzeitfaktoren für Jahr/jährlich, Jahr/monatlich und Monat/flexibel. Ab Version `1.29.0` speichert die Gruppe `provider` zentrale Dienstleister-/Kontaktformular-Werte; ab Version `1.29.1` speichern `landing-content`, `landing-layout`, `landing-colors` und `landing-visibility` die Werte des eigenen Landingpage-Designer-Unterpunkts. Ab Version `1.29.3` speichern `matrix-suite`, `matrix-addon` und `matrix-design` die gemeinsamen Read-only-Matrix-Einstellungen.
+Ab Version `1.25.0` speichert diese Tabelle modulbezogene Admin-Optionen für die Tabs `Preise & Annahmen`, `Workflow` und `Daten & Regeln`. Die Werte sind bewusst generisch abgelegt, damit jedes Registry-Modul eigene Felder erhalten kann, ohne pro Modul eine neue Tabelle anzulegen. Ab Version `1.27.0` nutzt das Plugin dieselbe Tabelle zusätzlich für zentrale Defaults (`module_key = global`), darunter Plugin-Einstellungen, Paketpreise sowie Abopreise & Laufzeiten. Ab Version `1.28.0` werden in den Gruppen `base-packages` und `addons` Public-, Member- und Spezialpreis-Overrides aus dem M365LIC-Paketkatalog gespeichert; die Gruppe `terms` hält die Laufzeitfaktoren für Jahr/jährlich, Jahr/monatlich und Monat/flexibel. Ab Version `3.0.22` werden vorhandene globale Preisoptionen zusätzlich als DB-only-Fallback in den zentralen Katalog aufgenommen, falls zu einem gespeicherten Preis kein lokaler oder externer Seed mehr existiert. Ab Version `1.29.0` speichert die Gruppe `provider` zentrale Dienstleister-/Kontaktformular-Werte; ab Version `1.29.1` speichern `landing-content`, `landing-layout`, `landing-colors` und `landing-visibility` die Werte des eigenen Landingpage-Designer-Unterpunkts. Ab Version `1.29.3` speichern `matrix-suite`, `matrix-addon` und `matrix-design` die gemeinsamen Read-only-Matrix-Einstellungen.
 
 | Feld | Typ | Zweck |
 |---|---|---|
@@ -55,12 +55,13 @@ Typische globale Preisoptionen ab `1.28.0`:
 
 Die Katalogdaten liegen als versionierte JSON-Dateien im Plugin-Verzeichnis:
 
-Ab `1.28.0` erzeugt `CMS_M365CALCULATOR_Catalog::m365_package_price_catalog()` zusätzlich einen Laufzeitkatalog aus `CMS_M365LIC_Catalog::package_seeds()`, sofern `cms-m365lic` aktiv ist. Dieser dynamische Katalog ist keine eigene Tabelle und keine separate JSON-Datei; globale Overrides werden in `cms_m365tools_module_options` gespeichert.
+Ab `1.28.0` erzeugt `CMS_M365CALCULATOR_Catalog::m365_package_price_catalog()` zusätzlich einen Laufzeitkatalog aus `CMS_M365LIC_Catalog::package_seeds()`, sofern `cms-m365lic` aktiv ist. Ab `3.0.22` wird dieser externe Katalog mit `data/package_price_catalog.json`, Legacy-Werten aus `data/pricing.json` und vorhandenen globalen DB-Overrides zusammengeführt. Globale Overrides werden weiterhin in `cms_m365tools_module_options` gespeichert.
 
 - `data/shared_mailbox_rules.json`
 - `data/mailbox_license_matrix.json`
 - `data/shared_mailbox_scenarios.json`
 - `data/pricing.json`
+- `data/package_price_catalog.json`
 - `data/copilot_eligibility_matrix.json`
 - `data/copilot_technical_prerequisites.json`
 - `data/license_upgrade_paths.json`

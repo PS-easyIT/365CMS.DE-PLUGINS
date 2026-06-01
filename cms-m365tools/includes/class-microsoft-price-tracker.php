@@ -32,15 +32,15 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
             'chart_start_year' => 2024,
             'chart_start_amount' => 6000.0,
             'current_amount' => 0.0,
-            'sku_1' => 'business_basic',
+            'sku_1' => 'm365-business-basic',
             'seats_1' => 100,
-            'monthly_price_1' => 6.0,
-            'sku_2' => 'business_standard',
+            'monthly_price_1' => 5.20,
+            'sku_2' => 'm365-business-standard',
             'seats_2' => 0,
-            'monthly_price_2' => 12.5,
-            'sku_3' => 'teams_enterprise',
+            'monthly_price_2' => 10.80,
+            'sku_3' => 'teams-enterprise',
             'seats_3' => 0,
-            'monthly_price_3' => 5.25,
+            'monthly_price_3' => 8.28,
         ];
     }
 
@@ -137,6 +137,21 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
      */
     public static function sku_options(): array
     {
+        $skus = CMS_M365CALCULATOR_Catalog::microsoft_price_skus();
+        if ($skus !== []) {
+            $labels = [];
+            foreach ($skus as $sku) {
+                $slug = (string) ($sku['slug'] ?? '');
+                if ($slug !== '' && (int) ($sku['is_active'] ?? 1) === 1) {
+                    $labels[$slug] = (string) ($sku['name'] ?? $slug);
+                }
+            }
+
+            if ($labels !== []) {
+                return $labels;
+            }
+        }
+
         $mapping = CMS_M365CALCULATOR_Catalog::microsoft_inventory_mapping();
         $items = is_array($mapping['sku_options'] ?? null) ? $mapping['sku_options'] : [];
         $labels = [];
@@ -179,9 +194,10 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
         $changesCatalog = CMS_M365CALCULATOR_Catalog::microsoft_price_changes();
         $mapping = CMS_M365CALCULATOR_Catalog::microsoft_inventory_mapping();
         $forecastRules = CMS_M365CALCULATOR_Catalog::microsoft_price_forecast_rules();
+        $skuCatalog = CMS_M365CALCULATOR_Catalog::microsoft_price_skus();
         $events = self::filter_microsoft_price_history($input, $eventsCatalog);
-        $inventory = self::map_inventory_to_price_events($input, $mapping, $changesCatalog);
-        $impact = self::calculate_price_change_impact($input, $inventory, $events, $changesCatalog);
+        $inventory = self::map_inventory_to_price_events($input, $mapping, $changesCatalog, $skuCatalog);
+        $impact = self::calculate_price_change_impact($input, $inventory, $events, $changesCatalog, $skuCatalog);
         $renewal = self::calculate_renewal_price_impact($input, $impact);
         $forecast = self::build_price_change_forecast($input, $inventory, $impact, $forecastRules);
         $chartRows = self::build_visual_chart_rows($input, $inventory, $impact, $forecast);
@@ -263,11 +279,12 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
      * @param array<string,mixed> $input
      * @param array<string,mixed> $mapping
      * @param array<string,mixed> $changesCatalog
+     * @param array<int,array<string,mixed>> $skuCatalog
      * @return array<string,mixed>
      */
-    public static function map_inventory_to_price_events(array $input, array $mapping, array $changesCatalog): array
+    public static function map_inventory_to_price_events(array $input, array $mapping, array $changesCatalog, array $skuCatalog = []): array
     {
-        $skuMap = is_array($mapping['sku_options'] ?? null) ? $mapping['sku_options'] : [];
+        $skuMap = self::canonical_sku_map($skuCatalog, $mapping);
         $rows = [];
         $annualCurrent = 0.0;
 
@@ -281,6 +298,9 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
             $meta = is_array($skuMap[$sku] ?? null) ? $skuMap[$sku] : [];
             $monthlyPrice = (float) ($input['monthly_price_' . $i] ?? 0);
             if ($monthlyPrice <= 0) {
+                $monthlyPrice = self::sku_baseline_price($sku, $skuCatalog);
+            }
+            if ($monthlyPrice <= 0) {
                 $monthlyPrice = self::latest_known_price($sku, $changesCatalog);
             }
 
@@ -288,19 +308,21 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
             $annualCurrent += $annual;
             $rows[] = [
                 'sku' => $sku,
-                'label' => (string) ($meta['label'] ?? $sku),
+                'label' => (string) ($meta['label'] ?? $meta['name'] ?? $sku),
                 'product_family' => (string) ($meta['product_family'] ?? 'microsoft_365'),
-                'with_teams_variant' => !empty($meta['with_teams_variant']),
-                'no_teams_variant' => !empty($meta['no_teams_variant']),
+                'with_teams_variant' => ($meta['teams_included'] ?? null) === true || !empty($meta['with_teams_variant']),
+                'no_teams_variant' => ($meta['teams_included'] ?? null) === false || !empty($meta['no_teams_variant']),
                 'seats' => $seats,
                 'monthly_price' => $monthlyPrice,
                 'annual_current' => $annual,
+                'price_history' => is_array($meta['price_history'] ?? null) ? $meta['price_history'] : [],
+                'verification_status' => (string) ($meta['verification_status'] ?? ''),
             ];
         }
 
         if ($rows === []) {
             $rows[] = [
-                'sku' => 'business_basic',
+                'sku' => 'm365-business-basic',
                 'label' => 'Microsoft 365 Business Basic',
                 'product_family' => 'microsoft_365',
                 'with_teams_variant' => true,
@@ -324,12 +346,11 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
      * @param array<string,mixed> $inventory
      * @param array<int,array<string,mixed>> $events
      * @param array<string,mixed> $changesCatalog
+     * @param array<int,array<string,mixed>> $skuCatalog
      * @return array<string,mixed>
      */
-    public static function calculate_price_change_impact(array $input, array $inventory, array $events, array $changesCatalog): array
+    public static function calculate_price_change_impact(array $input, array $inventory, array $events, array $changesCatalog, array $skuCatalog = []): array
     {
-        $eventIds = array_map(static fn(array $event): string => (string) ($event['event_id'] ?? ''), $events);
-        $rawChanges = is_array($changesCatalog['changes'] ?? null) ? $changesCatalog['changes'] : [];
         $rows = [];
         $monthlyDelta = 0.0;
         $annualDelta = 0.0;
@@ -340,31 +361,47 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
             if (!is_array($item)) {
                 continue;
             }
-            foreach ($rawChanges as $change) {
-                if (!is_array($change)) {
+            $history = self::price_history_for_sku((string) ($item['sku'] ?? ''), $skuCatalog);
+            if ($history === [] && is_array($item['price_history'] ?? null)) {
+                $history = (array) $item['price_history'];
+            }
+
+            $previousPrice = null;
+            foreach ($history as $entry) {
+                if (!is_array($entry)) {
                     continue;
                 }
-                if (!in_array((string) ($change['event_id'] ?? ''), $eventIds, true)) {
-                    continue;
-                }
-                if ((string) ($change['sku'] ?? '') !== (string) ($item['sku'] ?? '')) {
-                    continue;
-                }
-                if (!self::matches_scope((string) $input['product_family'], [(string) ($change['product_family'] ?? '')], 'all')) {
-                    continue;
-                }
-                if (!self::change_matches_region_segment($input, $change)) {
+                $effectiveFrom = (string) ($entry['effective_from'] ?? '');
+                $year = self::year_from_date($effectiveFrom);
+                $prices = is_array($entry['prices_eur_net'] ?? null) ? $entry['prices_eur_net'] : [];
+                $newPrice = self::numeric_price($prices, 'annual_annual_permonth');
+                if ($newPrice === null) {
                     continue;
                 }
 
-                $basePrice = (float) ($item['monthly_price'] ?? 0);
-                if ($basePrice <= 0) {
-                    $basePrice = (float) ($change['current_price'] ?? 0);
+                if ($previousPrice === null) {
+                    $previousPrice = $newPrice;
+                    continue;
                 }
 
-                $newPrice = (float) ($change['new_price'] ?? $basePrice);
+                if ($year < (int) $input['analysis_start'] || $year > (int) $input['analysis_end']) {
+                    $previousPrice = $newPrice;
+                    continue;
+                }
+                if (!self::matches_scope((string) $input['product_family'], [(string) ($item['product_family'] ?? '')], 'all')) {
+                    $previousPrice = $newPrice;
+                    continue;
+                }
+
+                $basePrice = $previousPrice;
+                $deltaPerUser = $newPrice - $basePrice;
+                if (abs($deltaPerUser) < 0.0001 && (string) ($entry['verification_status'] ?? '') !== 'confirmed_no_change') {
+                    $previousPrice = $newPrice;
+                    continue;
+                }
+
                 $seats = (int) ($item['seats'] ?? 0);
-                $deltaMonthly = ($newPrice - $basePrice) * $seats;
+                $deltaMonthly = $deltaPerUser * $seats;
                 $deltaAnnual = $deltaMonthly * 12;
                 $monthlyDelta += $deltaMonthly;
                 $annualDelta += $deltaAnnual;
@@ -375,16 +412,21 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
                 }
 
                 $rows[] = [
-                    'event_id' => (string) ($change['event_id'] ?? ''),
+                    'event_id' => 'canonical_price_history_' . $effectiveFrom,
                     'sku' => (string) ($item['sku'] ?? ''),
-                    'label' => (string) ($change['label'] ?? $item['label'] ?? ''),
+                    'label' => (string) ($item['label'] ?? ''),
                     'seats' => $seats,
                     'current_price' => $basePrice,
                     'new_price' => $newPrice,
                     'delta_monthly' => $deltaMonthly,
                     'delta_annual' => $deltaAnnual,
-                    'percent_change' => (float) ($change['percent_change'] ?? 0),
+                    'percent_change' => $basePrice > 0 ? (($newPrice - $basePrice) / $basePrice) * 100 : 0.0,
+                    'effective_at' => $effectiveFrom,
+                    'verification_status' => (string) ($entry['verification_status'] ?? ''),
+                    'source_url' => (string) ($entry['source_url'] ?? ''),
                 ];
+
+                $previousPrice = $newPrice;
             }
         }
 
@@ -463,6 +505,11 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
      */
     public static function build_visual_chart_rows(array $input, array $inventory, array $impact, array $forecast): array
     {
+        $timelineRows = self::build_price_history_chart_rows($input, $inventory, $forecast);
+        if ($timelineRows !== []) {
+            return $timelineRows;
+        }
+
         $startAmount = max(0.0, (float) ($input['chart_start_amount'] ?? 0));
         $currentAmount = max(0.0, (float) ($inventory['current_amount'] ?? 0));
         $renewalAmount = max(0.0, $currentAmount + (float) ($impact['positive_annual_delta'] ?? 0));
@@ -481,6 +528,72 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
 
         if (!empty($forecast['active'])) {
             $rows[] = self::chart_row('Forecast-Zielwert', $forecastAmount, $max, 'cost');
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param array<string,mixed> $input
+     * @param array<string,mixed> $inventory
+     * @param array<string,mixed> $forecast
+     * @return array<int,array<string,mixed>>
+     */
+    private static function build_price_history_chart_rows(array $input, array $inventory, array $forecast): array
+    {
+        $dates = [];
+        $items = [];
+
+        foreach ((array) ($inventory['rows'] ?? []) as $item) {
+            if (!is_array($item) || (int) ($item['seats'] ?? 0) <= 0) {
+                continue;
+            }
+
+            $history = is_array($item['price_history'] ?? null) ? $item['price_history'] : [];
+            if ($history === []) {
+                continue;
+            }
+
+            $items[] = $item;
+            foreach ($history as $entry) {
+                if (!is_array($entry)) {
+                    continue;
+                }
+                $date = (string) ($entry['effective_from'] ?? '');
+                $year = self::year_from_date($date);
+                if ($date !== '' && $year >= (int) $input['analysis_start'] && $year <= (int) $input['analysis_end']) {
+                    $dates[$date] = true;
+                }
+            }
+        }
+
+        $dates = array_keys($dates);
+        sort($dates);
+        if (count($dates) < 2 || $items === []) {
+            return [];
+        }
+
+        $amounts = [];
+        foreach ($dates as $date) {
+            $amount = 0.0;
+            foreach ($items as $item) {
+                $price = self::price_at_date((array) ($item['price_history'] ?? []), $date);
+                if ($price === null) {
+                    $price = (float) ($item['monthly_price'] ?? 0);
+                }
+                $amount += $price * (int) ($item['seats'] ?? 0) * 12;
+            }
+            $amounts[$date] = $amount;
+        }
+
+        $max = max(1.0, max($amounts));
+        $rows = [];
+        foreach ($amounts as $date => $amount) {
+            $rows[] = self::chart_row($date . ' Zeitreihe', $amount, $max, $date >= '2026-07-01' ? 'cost' : 'neutral');
+        }
+
+        if (!empty($forecast['active'])) {
+            $rows[] = self::chart_row('Forecast-Zielwert', max(0.0, (float) ($forecast['forecast_amount'] ?? 0)), max($max, (float) ($forecast['forecast_amount'] ?? 0)), 'cost');
         }
 
         return $rows;
@@ -601,6 +714,132 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
         }
 
         return in_array($selected, $scope, true) || in_array($globalValue, $scope, true);
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $skuCatalog
+     * @param array<string,mixed> $mapping
+     * @return array<string,array<string,mixed>>
+     */
+    private static function canonical_sku_map(array $skuCatalog, array $mapping): array
+    {
+        $map = [];
+
+        foreach ($skuCatalog as $sku) {
+            if (!is_array($sku)) {
+                continue;
+            }
+
+            $slug = (string) ($sku['slug'] ?? '');
+            if ($slug === '') {
+                continue;
+            }
+
+            $sku['label'] = (string) ($sku['name'] ?? $slug);
+            $map[$slug] = $sku;
+            foreach ((array) ($sku['legacy_skus'] ?? []) as $legacy) {
+                $legacy = (string) $legacy;
+                if ($legacy !== '' && !isset($map[$legacy])) {
+                    $map[$legacy] = $sku;
+                }
+            }
+        }
+
+        foreach ((array) ($mapping['sku_options'] ?? []) as $key => $item) {
+            if (is_string($key) && is_array($item) && !isset($map[$key])) {
+                $map[$key] = $item;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $skuCatalog
+     * @return array<int,array<string,mixed>>
+     */
+    private static function price_history_for_sku(string $skuSlug, array $skuCatalog): array
+    {
+        foreach ($skuCatalog as $sku) {
+            if (!is_array($sku)) {
+                continue;
+            }
+
+            $slug = (string) ($sku['slug'] ?? '');
+            $aliases = array_map('strval', (array) ($sku['legacy_skus'] ?? []));
+            if ($slug !== $skuSlug && !in_array($skuSlug, $aliases, true)) {
+                continue;
+            }
+
+            $history = is_array($sku['price_history'] ?? null) ? $sku['price_history'] : [];
+            usort($history, static fn(array $left, array $right): int => strcmp((string) ($left['effective_from'] ?? ''), (string) ($right['effective_from'] ?? '')));
+
+            return $history;
+        }
+
+        return [];
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $skuCatalog
+     */
+    private static function sku_baseline_price(string $skuSlug, array $skuCatalog): float
+    {
+        $history = self::price_history_for_sku($skuSlug, $skuCatalog);
+        $price = null;
+
+        foreach ($history as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+            $effectiveFrom = (string) ($entry['effective_from'] ?? '');
+            if ($effectiveFrom !== '' && strcmp($effectiveFrom, '2026-06-30') > 0) {
+                break;
+            }
+
+            $prices = is_array($entry['prices_eur_net'] ?? null) ? $entry['prices_eur_net'] : [];
+            $candidate = self::numeric_price($prices, 'annual_annual_permonth');
+            if ($candidate !== null) {
+                $price = $candidate;
+            }
+        }
+
+        return $price ?? 0.0;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $history
+     */
+    private static function price_at_date(array $history, string $date): ?float
+    {
+        $price = null;
+        usort($history, static fn(array $left, array $right): int => strcmp((string) ($left['effective_from'] ?? ''), (string) ($right['effective_from'] ?? '')));
+
+        foreach ($history as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+            $effectiveFrom = (string) ($entry['effective_from'] ?? '');
+            if ($effectiveFrom !== '' && strcmp($effectiveFrom, $date) > 0) {
+                break;
+            }
+
+            $prices = is_array($entry['prices_eur_net'] ?? null) ? $entry['prices_eur_net'] : [];
+            $candidate = self::numeric_price($prices, 'annual_annual_permonth');
+            if ($candidate !== null) {
+                $price = $candidate;
+            }
+        }
+
+        return $price;
+    }
+
+    /**
+     * @param array<string,mixed> $prices
+     */
+    private static function numeric_price(array $prices, string $field): ?float
+    {
+        return is_numeric($prices[$field] ?? null) ? round((float) $prices[$field], 2) : null;
     }
 
     private static function latest_known_price(string $sku, array $changesCatalog): float

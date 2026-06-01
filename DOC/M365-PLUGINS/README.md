@@ -71,6 +71,7 @@
 | Datei | Zweck |
 |---|---|
 | `copilot_eligibility_matrix.json` | Berechtigte Basispläne nach Segment und Chat-Eligibility |
+| `package_price_catalog.json` | Lokaler M365-Standard-Preiskatalog mit Basisplänen, Add-ons und Abrechnungsmodellen |
 | `copilot_technical_prerequisites.json` | Technische Mindest- und Readiness-Voraussetzungen |
 | `license_upgrade_paths.json` | Pflegewerte für Zielpläne, Preisannahmen und Upgrade-Pfade |
 | `license_advisor_plans.json` | Migrierte Basislizenz-Kataloge aus `cms-m365lic` |
@@ -160,7 +161,7 @@ Ab `1.25.0` bekommt jedes Registry-Modul genau einen eigenen Unterpunkt unter `M
 
 Ab `1.27.0` ist der Adminbereich zusätzlich logisch gegliedert: `Zentrale Einstellungen` bündelt pluginweite Defaults, Review-Quellen, Workflow und Systemnotizen; `Paketpreise` pflegt globale M365-Paket- und Add-on-Preise; `Abopreise & Laufzeiten` pflegt Monats-/Jahres-/Dreijahresannahmen, Renewal-Fenster, Gruppenlizenzierungsgrenzen und Abrechnungslogik. Die Modulunterpunkte folgen danach nach Fachkategorie und Priorität.
 
-Ab `1.28.0` bezieht `Paketpreise` seine SKU-Liste bevorzugt aus `CMS_M365LIC_Catalog::package_seeds()`. Für jedes Paket werden Public-, Member- und Spezialpreise gepflegt; `pricing()` und `commitment_pricing()` leiten daraus Standardwerte für Rechner und Laufzeitmodelle ab. Die Modulunterpunkte nutzen kurze Labels wie `Audit`, `Matrix`, `Teams Phone`, `Power Platform` oder `Workspace TCO`, damit die Admin-Sidebar kompakt bleibt.
+Ab `1.28.0` bezieht `Paketpreise` seine SKU-Liste bevorzugt aus `CMS_M365LIC_Catalog::package_seeds()`. Für jedes Paket werden Public-, Member- und Spezialpreise gepflegt; `pricing()` und `commitment_pricing()` leiten daraus Standardwerte für Rechner und Laufzeitmodelle ab. Ab `3.0.22` ergänzt `data/package_price_catalog.json` einen lokalen Standardkatalog mit 23 Basisplänen und 51 Add-ons/Spezial-SKUs. Der zentrale Paketkatalog merged vorhandene DB-Preisoptionen, Legacy-`pricing.json`, den lokalen Katalog und optional `cms-m365lic`, damit gespeicherte Preise ohne passenden externen Seed nicht mehr aus der Admin-Ansicht verschwinden. Die Modulunterpunkte nutzen kurze Labels wie `Audit`, `Matrix`, `Teams Phone`, `Power Platform` oder `Workspace TCO`, damit die Admin-Sidebar kompakt bleibt.
 
 Ab `1.29.0` nutzt der Adminbereich pluginweit die volle Admincontent-Breite mit 25px Außenabstand. `Zentrale Einstellungen` enthält zusätzlich den Tab `Dienstleister & Kontakt`; die Dienstleisterwerte werden auf Toolseiten vor dem Footer ausgegeben.
 
@@ -172,6 +173,10 @@ Ab `1.29.3` ersetzt der Admin-Unterpunkt `Matrixen` die zwei separaten Modul-Unt
 
 Ab `1.29.5` ist die Hub-Landingpage UX-seitig erweitert: native Live-Suche, Kategorie-Chips als ARIA-Radiogroup, Sticky Side-Nav mit aktiver Kategorie und 3px-Navy-Kante, mobile horizontale Filter-Chips, Hero-Direkteinstieg mit Suchfokus, Kategorie-Heros, Kompass-Icons, Beliebt-/Neu-Badges, Kategorie-Hash, Slash-Suchshortcut, Back-to-top und automatischer Dark Mode. Das Script `assets/js/m365tools-landing.js` wird nur auf der Toolbox-Seite geladen.
 
+Ab `3.0.20` zeigt die Admin-Modulübersicht für jedes sichtbar geschaltete Tool ein Public-Site-Icon. Unsichtbare Module behalten ihre Admin-Pflegewege, verlieren aber öffentliche Öffnen-Buttons und detailseitige Querverlinkungsbuttons auf anderen Toolseiten. Ab `3.0.21` ist die URL-Spalte in der Admin-Modulübersicht unabhängig von der öffentlichen Sichtbarkeit immer anklickbar, damit Admins ausgeblendete Publicseiten direkt prüfen können.
+
 ## Designvorgaben
 
 Das Plugin nutzt PHINIT-konforme Public-Komponenten und vermeidet statische Inline-Styles, große Gradients, Glassmorphism oder KI-Optik. Die Hub-Landingpage rendert Module ausschließlich aus der Tool-Registry. Ab `1.29.9` setzen öffentliche Pluginseiten keinen äußeren Abstand zu Theme-Header oder Theme-Wrappern; Abstände entstehen innerhalb des Plugin-Contents. Ab `1.24.0` sind Icons, Badges, Fortschrittsbalken, Chart-Balken, Tabellenlabels und Statuszustände bewusst zurückhaltender gestaltet: keine bunten Icon-Kacheln, keine übergroße Pill-Optik, keine vollflächig eingefärbten Statuskarten und reduzierte Schriftgewichte für eine erfahrene, gewachsene Website-Anmutung. Ab `1.29.5` gelten für die Hub-Landingpage zusätzlich bessere Kontraste, mindestens 14px Card- und Kompass-Beschreibungstext, großzügigerer Zeilenabstand, 3/2/1-Spalten-Breakpoints, Touch-Ziele ab 44px und ein automatischer Dark Mode über CSS Custom Properties.
+
+Ab `3.0.20` steuert die zentrale Option `public_detail_button_layout` das Button-Layout der Tool-Publicsites außerhalb der Hub-Übersicht. Die möglichen Ausprägungen sind inline, gestapelt, rechtsbündig und vollbreit; die Hub-Übersicht bleibt davon getrennt und verwendet weiterhin den Landingpage Designer.

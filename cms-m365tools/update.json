@@ -1,6 +1,6 @@
 {
   "slug": "cms-m365tools",
-  "version": "3.0.6",
+  "version": "3.0.24",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
   "requires": "3.0.0",
   "tested": "3.0.0",
@@ -9,6 +9,6 @@
   "last_updated": "2026-06-01",
   "sections": {
     "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, eigenem Landingpage-Designer, UX-optimierter Live-Suche, Tag-Filtern, Sticky-Kategorie-Navigation, globalen Paketpreis- und Abopreisbereichen, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und Public-Modulen. Reine Matrixseiten liegen im Plugin cms-m365matrices.",
-    "changelog": "3.0.6: Admin-Untermenüpunkte verwenden direkte Seiten-Callbacks statt Sammel-Dispatcher und bleiben zusätzlich über exakte Plugin-Admin-Routen erreichbar. 3.0.5: M365-Audit-Fix mit defensiverem lokalem JSON-Kataloglader inklusive basename-Härtung, Lesbarkeit-, Größen- und JSON-Fehlerprüfung. 3.0.4: Read-only Lizenzmatrix und Add-on-Matrix vollständig in cms-m365matrices ausgelagert; M365 Tools enthält keine Matrix-Routen, Templates, JSON-Kataloge, Adminfelder oder Matrix-Normalisierung mehr."
+    "changelog": "3.0.24: Preiszeitreihenkatalog bereinigt und um Promo-Blöcke außerhalb der History, Copilot Chat, getrennte Copilot-Business-/Enterprise-SKUs, Business+Copilot-Bundles, Consumer Premium, Office-365-Education-A-SKUs und zusätzliche Historienanker erweitert. 3.0.23: Kanonischen Microsoft-365-Preiszeitreihenkatalog mit Mai-2026-Baseline, historischen Ankern, Teams/no-Teams-Trennung, NCE-Billing-Feldern und bestätigten Juli-2026-Future-Rows ergänzt; Admin-Paketpreise und Preiserhöhung-Tracker lesen dieselbe Quelle. 3.0.22: Lokaler M365-Standard-Preiskatalog mit 23 Basisplänen und 51 Add-ons ergänzt; Paketpreise werden aus lokalen Seeds, optionalem cms-m365lic und vorhandenen DB-Overrides gemerged, damit gespeicherte Preise nicht mehr aus der Admin-Ansicht verschwinden."
   }
 }

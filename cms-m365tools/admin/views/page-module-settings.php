@@ -17,6 +17,8 @@ $fieldValue = static function (array $field) use ($tabOptions): string {
 
     return (string) ($tabOptions[$key] ?? ($field['default'] ?? ''));
 };
+$moduleEnabled = (int) ($moduleSettings['is_enabled'] ?? 1) === 1;
+$publicUrl = trim((string) ($tool['url'] ?? ''));
 $renderField = static function (array $field) use ($esc, $fieldValue): void {
     $key = (string) ($field['key'] ?? '');
     $label = (string) ($field['label'] ?? $key);
@@ -66,7 +68,9 @@ $renderField = static function (array $field) use ($esc, $fieldValue): void {
         <p>Modulbezogene Einstellungen, Annahmen und Workflows verwalten.</p>
     </div>
     <div class="header-actions">
+        <?php if ($moduleEnabled && $publicUrl !== ''): ?>
         <a href="<?php echo $esc((string) ($tool['url'] ?? '/m365-tools')); ?>" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">👁️ Public öffnen</a>
+        <?php endif; ?>
         <a href="/admin/plugins/m365tools-dashboard/m365tools-dashboard" class="btn btn-primary">📊 Dashboard</a>
     </div>
 </div>

@@ -60,10 +60,11 @@
     line-height: var(--phinit-leading-body);
     margin-left: auto;
     margin-right: auto;
-    max-width: var(--phinit-content-wide);
+    max-width: var(--m365tools-content-max, var(--phinit-content-wide));
     overflow-wrap: break-word;
-    padding-left: var(--phinit-space-5);
-    padding-right: var(--phinit-space-5);
+    padding-bottom: 0;
+    padding-left: var(--m365tools-content-gutter, var(--phinit-space-5));
+    padding-right: var(--m365tools-content-gutter, var(--phinit-space-5));
     -webkit-font-smoothing: antialiased;
 }
 
@@ -475,17 +476,33 @@ body.m365calculator-theme-embed #masthead.site-header + :not(#content):not(.mobi
 #m365tools-landing,
 #m365calculator-landing,
 .m365calc-page {
+    margin-block-end: 0 !important;
     margin-block-start: 0 !important;
+    margin-bottom: 0 !important;
     margin-top: 0 !important;
+    padding-block-end: min(var(--m365tools-content-bottom-gap, 25px), 25px) !important;
     padding-block-start: var(--m365tools-content-top-gap, 25px) !important;
+    padding-bottom: min(var(--m365tools-content-bottom-gap, 25px), 25px) !important;
     padding-top: var(--m365tools-content-top-gap, 25px) !important;
+}
+
+body:has(#m365tools-landing) footer.site-footer,
+body:has(#m365calculator-landing) footer.site-footer,
+body:has(.m365calc-page) footer.site-footer,
+body:has(#m365tools-landing) .site-footer,
+body:has(#m365calculator-landing) .site-footer,
+body:has(.m365calc-page) .site-footer,
+body:has(#m365tools-landing) #colophon,
+body:has(#m365calculator-landing) #colophon,
+body:has(.m365calc-page) #colophon {
+    margin-top: 0 !important;
 }
 
 @media (max-width: 768px) {
     .phinit-plugin {
         font-size: var(--phinit-text-base);
-        padding-left: var(--phinit-space-4);
-        padding-right: var(--phinit-space-4);
+        padding-left: var(--m365tools-content-gutter, var(--phinit-space-4));
+        padding-right: var(--m365tools-content-gutter, var(--phinit-space-4));
     }
 
     .phinit-grid {

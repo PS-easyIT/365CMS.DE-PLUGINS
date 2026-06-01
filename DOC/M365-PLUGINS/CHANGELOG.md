@@ -1,5 +1,21 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 3.0.22 – 2026-06-01
+
+- Lokalen Standard-Preiskatalog `data/package_price_catalog.json` mit M365-Basisplänen, Add-ons und den Abrechnungsmodellen Jahr/jährlich, Jahr/monatlich und Monat/monatlich dokumentiert.
+- Dokumentiert, dass der zentrale Paketkatalog DB-Overrides, Legacy-Preise, lokale Seeds und optional `cms-m365lic` zusammenführt, damit gespeicherte Preise sichtbar bleiben.
+
+## 3.0.21 – 2026-06-01
+
+- Dokumentiert, dass die URL-Spalte in der Admin-Modulübersicht unabhängig von der öffentlichen Sichtbarkeit immer anklickbar bleibt.
+- Trennung zwischen sichtbarkeitsgebundenem Public-Site-Icon und Admin-Prüflink für unsichtbare Module beschrieben.
+
+## 3.0.20 – 2026-06-01
+
+- Admin- und Public-Dokumentation um Public-Site-Icons je sichtbarem Tool in der Modulübersicht ergänzt.
+- Dokumentiert, dass unsichtbar geschaltete Module ihre detailseitigen Querverlinkungsbuttons verlieren, während Admin-Pflegewege erhalten bleiben.
+- Zentrale Detailseiten-Buttonlayout-Option `public_detail_button_layout` dokumentiert; die Hub-Übersicht bleibt davon getrennt.
+
 ## 3.0.1 – 2026-05-18
 
 - PHP-8.4-Manifestanforderungen und 365CMS-v3.x.x-Releasevalidierung für `cms-m365tools` dokumentiert.

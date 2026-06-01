@@ -1,0 +1,3206 @@
+{
+  "meta": {
+    "source": "365CMS canonical Microsoft 365 price history catalog",
+    "source_checked": "2026-06-01",
+    "current_baseline_effective_at": "2026-05-31",
+    "currency": "EUR",
+    "price_basis": "Canonical EUR net reference price history. CURRENT baseline is May 2026; historical anchors are kept as time-series entries and never overwrite newer baselines. Future July 2026 EUR prices derived from confirmed Microsoft USD/percentage changes are marked approximate.",
+    "schema_version": "2026-06-price-history-v2",
+    "teams_caveat": "EEA/EWR and global Teams packaging changes require separate with-Teams and no-Teams SKUs. Do not mix both variants in one price_history series.",
+    "source_urls": [
+      "https://www.microsoft.com/de-de/microsoft-365/business/compare-all-microsoft-365-business-products",
+      "https://www.microsoft.com/en-us/microsoft-365/enterprise/compare-microsoft-365-and-office-365",
+      "https://www.microsoft.com/en-us/licensing/news/Microsoft365-Teams-2025",
+      "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+      "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates-FAQ",
+      "https://aka.ms/TeamsCommitments/PublicFAQ",
+      "https://www.software-express.de/hersteller/microsoft/microsoft-365/",
+      "https://www.microsoft.com/en-us/microsoft-365/enterprise/frontline-plans-and-pricing",
+      "https://www.microsoft.com/en-us/microsoft-365/exchange/compare-microsoft-exchange-online-plans",
+      "https://www.microsoft.com/en-us/microsoft-teams/compare-microsoft-teams-options",
+      "https://www.microsoft.com/en-us/microsoft-365-copilot/enterprise",
+      "https://www.microsoft.com/en-us/power-platform/products/power-apps/pricing",
+      "https://www.microsoft.com/en-us/power-platform/products/power-automate/pricing",
+      "https://www.microsoft.com/en-us/power-platform/products/power-bi/pricing",
+      "https://www.microsoft.com/en-us/microsoft-365/project/compare-microsoft-project-management-software",
+      "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing",
+      "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing/enterprise",
+      "https://learn.microsoft.com/de-de/copilot/microsoft-365/microsoft-365-copilot-overview#differences-between-microsoft-365-copilot-and-copilot-chat",
+      "https://www.software-express.de/hersteller/microsoft/copilot/business/",
+      "https://www.software-express.de/hersteller/microsoft/copilot/microsoft-365/",
+      "https://www.software-express.de/hersteller/microsoft/copilot/studio/",
+      "https://www.software-express.de/hersteller/microsoft/office-365/education-a3/",
+      "https://www.software-express.de/hersteller/microsoft/office-365/education-a5/"
+    ],
+    "promo_policy": "Promo prices are limited-time offers and must not enter price_history or tracker time series."
+  },
+  "billing_options": {
+    "monthly_monthly": {
+      "key": "monthly_monthly",
+      "label": "1 Monat Laufzeit · monatliche Zahlung (+20%)",
+      "short_label": "Monat / monatlich",
+      "multiplier": 1.2,
+      "nce_term": "P1M",
+      "billing_cycle": "monthly"
+    },
+    "annual_annual_permonth": {
+      "key": "annual_annual_permonth",
+      "label": "1 Jahr Laufzeit · jährliche Zahlung · Monatsreferenz",
+      "short_label": "Jahr / jährlich / Monat",
+      "multiplier": 1.0,
+      "nce_term": "P1Y",
+      "billing_cycle": "annual"
+    },
+    "annual_annual_total": {
+      "key": "annual_annual_total",
+      "label": "1 Jahr Laufzeit · jährliche Zahlung · Jahressumme",
+      "short_label": "Jahr / jährlich / Summe",
+      "multiplier": 12.0,
+      "nce_term": "P1Y",
+      "billing_cycle": "annual"
+    },
+    "triennial_permonth": {
+      "key": "triennial_permonth",
+      "label": "3 Jahre Laufzeit · Monatsreferenz (ca. -5%)",
+      "short_label": "3 Jahre / Monat",
+      "multiplier": 0.95,
+      "nce_term": "P3Y",
+      "billing_cycle": "annual"
+    },
+    "annual_upfront": {
+      "key": "annual_upfront",
+      "label": "1 Jahr · jährliche Zahlung",
+      "short_label": "Jahr / jährlich",
+      "multiplier": 1.0
+    },
+    "annual_monthly": {
+      "key": "annual_monthly",
+      "label": "1 Jahr · monatliche Zahlung (+5%)",
+      "short_label": "Jahr / monatlich",
+      "multiplier": 1.05
+    },
+    "monthly_flex": {
+      "key": "monthly_flex",
+      "label": "1 Monat · monatlich (+20%)",
+      "short_label": "Monat / monatlich",
+      "multiplier": 1.2
+    }
+  },
+  "canonical_schema": {
+    "version": "2026-06-time-series-v2",
+    "canonical_collection": "skus",
+    "current_baseline_date": "2026-05-31",
+    "promo_policy": "Promo prices are stored only in sku.promo and never in price_history.",
+    "notes": [
+      "prices_eur_net are net reference prices; annual_annual_permonth is the canonical monthly unit price for annual commitment paid yearly.",
+      "Teams and no-Teams variants are separate SKUs and must not be merged in one price series.",
+      "Future EUR rows derived from Microsoft-confirmed USD percentage increases are marked is_approx=true unless an exact EUR list price was available.",
+      "Reseller prices are tagged via verification_status/source_url and do not override newer Microsoft/current baseline rows."
+    ]
+  },
+  "nce_billing_fields": {
+    "monthly_monthly": "Monthly term, monthly payment; NCE flexible reference approximately +20%.",
+    "annual_monthly": "Annual term, monthly payment; same unit price unless direct surcharge is verified.",
+    "annual_annual_permonth": "Canonical monthly unit price for annual term paid yearly.",
+    "annual_annual_total": "annual_annual_permonth × 12.",
+    "triennial_permonth": "Three-year planning anchor; approximately -5% if not directly verified."
+  },
+  "skus": [
+    {
+      "slug": "m365-apps-business",
+      "name": "Microsoft 365 Apps for Business",
+      "kind": "base",
+      "category": "Business",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": null,
+      "audience": "Commercial",
+      "sort_order": 70,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2025-03-01",
+          "prices_eur_net": {
+            "monthly_monthly": 11.76,
+            "annual_monthly": 9.8,
+            "annual_annual_permonth": 9.8,
+            "annual_annual_total": 117.6,
+            "triennial_permonth": 9.31
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/"
+        },
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 10.56,
+            "annual_monthly": 8.8,
+            "annual_annual_permonth": 8.8,
+            "annual_annual_total": 105.6,
+            "triennial_permonth": 8.36
+          },
+          "is_approx": true,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/apps-for-business/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 12.78,
+            "annual_monthly": 10.65,
+            "annual_annual_permonth": 10.65,
+            "annual_annual_total": 127.78,
+            "triennial_permonth": 10.12
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +21% und USD 8.25→10.00."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-apps-enterprise",
+      "name": "Microsoft 365 Apps for Enterprise",
+      "kind": "base",
+      "category": "Enterprise",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": null,
+      "audience": "Commercial",
+      "sort_order": 80,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2025-03-01",
+          "prices_eur_net": {
+            "monthly_monthly": 17.16,
+            "annual_monthly": 14.3,
+            "annual_annual_permonth": 14.3,
+            "annual_annual_total": 171.6,
+            "triennial_permonth": 13.59
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
+          "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 14.7,
+            "annual_monthly": 12.25,
+            "annual_annual_permonth": 12.25,
+            "annual_annual_total": 147.0,
+            "triennial_permonth": 11.64
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/apps-for-enterprise/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 17.2,
+            "annual_monthly": 14.33,
+            "annual_annual_permonth": 14.33,
+            "annual_annual_total": 171.99,
+            "triennial_permonth": 13.62
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +17% und USD 12→14."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-business-basic",
+      "name": "Microsoft 365 Business Basic mit Teams",
+      "kind": "base",
+      "category": "Business",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "sort_order": 90,
+      "last_verified": "2026-06-01",
+      "source_note": "Mai-2026-Baseline aus lokalem Seed; Juli-2026-Anhebung aus Microsoft Licensing News prozentual abgeleitet.",
+      "price_history": [
+        {
+          "effective_from": "2025-03-01",
+          "prices_eur_net": {
+            "monthly_monthly": 6.72,
+            "annual_monthly": 5.6,
+            "annual_annual_permonth": 5.6,
+            "annual_annual_total": 67.2,
+            "triennial_permonth": 5.32
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
+          "source_note": "Historischer DACH-Preisanker; nicht als aktuelle Baseline verwenden."
+        },
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 6.24,
+            "annual_monthly": 5.2,
+            "annual_annual_permonth": 5.2,
+            "annual_annual_total": 62.4,
+            "triennial_permonth": 4.94
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/business-basic/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 7.25,
+            "annual_monthly": 6.03,
+            "annual_annual_permonth": 6.03,
+            "annual_annual_total": 72.38,
+            "triennial_permonth": 5.73
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +16% und USD 6→7; EUR aus aktueller Baseline abgeleitet."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-business-basic-no-teams",
+      "name": "Microsoft 365 Business Basic ohne Teams",
+      "kind": "base",
+      "category": "Business",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": false,
+      "audience": "Commercial",
+      "sort_order": 91,
+      "last_verified": "2026-06-01",
+      "source_note": "No-Teams-Serie separat geführt; EEA/EWR nicht mit Teams-Serie mischen.",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 5.08,
+            "annual_monthly": 4.23,
+            "annual_annual_permonth": 4.23,
+            "annual_annual_total": 50.76,
+            "triennial_permonth": 4.02
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/business-basic/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 6.25,
+            "annual_monthly": 5.2,
+            "annual_annual_permonth": 5.2,
+            "annual_annual_total": 62.43,
+            "triennial_permonth": 4.94
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +23% und USD 4.40→5.40; EUR aus DACH-Baseline abgeleitet."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-business-standard",
+      "name": "Microsoft 365 Business Standard mit Teams",
+      "kind": "base",
+      "category": "Business",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "sort_order": 100,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2025-03-01",
+          "prices_eur_net": {
+            "monthly_monthly": 14.04,
+            "annual_monthly": 11.7,
+            "annual_annual_permonth": 11.7,
+            "annual_annual_total": 140.4,
+            "triennial_permonth": 11.12
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/"
+        },
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 12.96,
+            "annual_monthly": 10.8,
+            "annual_annual_permonth": 10.8,
+            "annual_annual_total": 129.6,
+            "triennial_permonth": 10.26
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/business-standard/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 14.52,
+            "annual_monthly": 12.1,
+            "annual_annual_permonth": 12.1,
+            "annual_annual_total": 145.15,
+            "triennial_permonth": 11.49
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +12% und USD 12.50→14.00; EUR aus aktueller Baseline abgeleitet."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-business-standard-no-teams",
+      "name": "Microsoft 365 Business Standard ohne Teams",
+      "kind": "base",
+      "category": "Business",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": false,
+      "audience": "Commercial",
+      "sort_order": 101,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 10.69,
+            "annual_monthly": 8.91,
+            "annual_annual_permonth": 8.91,
+            "annual_annual_total": 106.92,
+            "triennial_permonth": 8.46
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/business-standard/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 12.4,
+            "annual_monthly": 10.34,
+            "annual_annual_permonth": 10.34,
+            "annual_annual_total": 124.03,
+            "triennial_permonth": 9.82
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +16% und USD 9.29→10.79; EUR aus DACH-Baseline abgeleitet."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-business-premium",
+      "name": "Microsoft 365 Business Premium mit Teams",
+      "kind": "base",
+      "category": "Business",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "sort_order": 110,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2022-11-01",
+          "prices_eur_net": {
+            "monthly_monthly": 22.32,
+            "annual_monthly": 18.6,
+            "annual_annual_permonth": 18.6,
+            "annual_annual_total": 223.2,
+            "triennial_permonth": 17.67
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/"
+        },
+        {
+          "effective_from": "2025-03-01",
+          "prices_eur_net": {
+            "monthly_monthly": 24.72,
+            "annual_monthly": 20.6,
+            "annual_annual_permonth": 20.6,
+            "annual_annual_total": 247.2,
+            "triennial_permonth": 19.57
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/"
+        },
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 27.36,
+            "annual_monthly": 22.8,
+            "annual_annual_permonth": 22.8,
+            "annual_annual_total": 273.6,
+            "triennial_permonth": 21.66
+          },
+          "is_approx": true,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/business-premium/",
+          "source_note": "Seed-Baseline; Software-Express führt kanalabhängige niedrigere CSP-Nettoangebote."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-business-premium-no-teams",
+      "name": "Microsoft 365 Business Premium ohne Teams",
+      "kind": "base",
+      "category": "Business",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": false,
+      "audience": "Commercial",
+      "sort_order": 111,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 21.68,
+            "annual_monthly": 18.07,
+            "annual_annual_permonth": 18.07,
+            "annual_annual_total": 216.84,
+            "triennial_permonth": 17.17
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/business-premium/"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "teams-enterprise-eea",
+      "name": "Microsoft Teams Enterprise / EEA",
+      "kind": "base",
+      "category": "Add-on",
+      "product_family": "teams",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "sort_order": 130,
+      "last_verified": "2026-06-01",
+      "source_note": "Teams Standalone ist laut Microsoft nicht Teil des 2026-M365-Preisupdates; wegen EU-Commitments separat führen. User-provided 5.00 EUR was not applied as current baseline because Microsoft Teams 2025 confirms USD 8.55 and Software-Express confirms EUR 8.28 monthly/82.81 yearly.",
+      "price_history": [
+        {
+          "effective_from": "2025-11-01",
+          "prices_eur_net": {
+            "monthly_monthly": 8.28,
+            "annual_monthly": 6.9,
+            "annual_annual_permonth": 6.9,
+            "annual_annual_total": 82.8,
+            "triennial_permonth": 6.56
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/teams/eea/",
+          "source_note": "Software-Express DACH-NCE; Microsoft FAQ nennt Mindestpreis/Delta €8, Wechselkurse können variieren."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-f1",
+      "name": "Microsoft 365 F1 mit Teams",
+      "kind": "base",
+      "category": "Frontline",
+      "product_family": "frontline",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "sort_order": 150,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2025-03-01",
+          "prices_eur_net": {
+            "monthly_monthly": 2.52,
+            "annual_monthly": 2.1,
+            "annual_annual_permonth": 2.1,
+            "annual_annual_total": 25.2,
+            "triennial_permonth": 1.99
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
+          "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 2.52,
+            "annual_monthly": 2.1,
+            "annual_annual_permonth": 2.1,
+            "annual_annual_total": 25.2,
+            "triennial_permonth": 2.0
+          },
+          "is_approx": true,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/f1/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 3.36,
+            "annual_monthly": 2.8,
+            "annual_annual_permonth": 2.8,
+            "annual_annual_total": 33.59,
+            "triennial_permonth": 2.66
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +33% und USD 2.25→3.00."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-f3",
+      "name": "Microsoft 365 F3 mit Teams",
+      "kind": "base",
+      "category": "Frontline",
+      "product_family": "frontline",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "sort_order": 160,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2025-03-01",
+          "prices_eur_net": {
+            "monthly_monthly": 9.0,
+            "annual_monthly": 7.5,
+            "annual_annual_permonth": 7.5,
+            "annual_annual_total": 90.0,
+            "triennial_permonth": 7.12
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
+          "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 8.52,
+            "annual_monthly": 7.1,
+            "annual_annual_permonth": 7.1,
+            "annual_annual_total": 85.2,
+            "triennial_permonth": 6.75
+          },
+          "is_approx": true,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/f3/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 10.65,
+            "annual_monthly": 8.88,
+            "annual_annual_permonth": 8.88,
+            "annual_annual_total": 106.5,
+            "triennial_permonth": 8.43
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +25% und USD 8→10."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "office-365-f3",
+      "legacy_skus": [
+        "office_365_f3"
+      ],
+      "name": "Office 365 F3",
+      "kind": "base",
+      "category": "Frontline",
+      "product_family": "office_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "requires_base": null,
+      "pricing_basis": "per_user",
+      "sort_order": 165,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Historical Office 365 F3 anchor retained for tracker completeness.",
+      "price_history": [
+        {
+          "effective_from": "2025-03-01",
+          "prices_eur_net": {
+            "monthly_monthly": 4.2,
+            "annual_monthly": 3.5,
+            "annual_annual_permonth": 3.5,
+            "annual_annual_total": 42.0,
+            "triennial_permonth": 3.32
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/"
+        }
+      ],
+      "promo": null
+    },
+    {
+      "slug": "office-365-e1",
+      "name": "Office 365 E1 mit Teams",
+      "kind": "base",
+      "category": "Enterprise",
+      "product_family": "office_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "sort_order": 170,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 12.48,
+            "annual_monthly": 10.4,
+            "annual_annual_permonth": 10.4,
+            "annual_annual_total": 124.8,
+            "triennial_permonth": 9.88
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/office-365/enterprise-e1/"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "office-365-e1-no-teams",
+      "name": "Office 365 E1 ohne Teams",
+      "kind": "base",
+      "category": "Enterprise",
+      "product_family": "office_365",
+      "scope": "per_user",
+      "teams_included": false,
+      "audience": "Commercial",
+      "sort_order": 171,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2025-03-01",
+          "prices_eur_net": {
+            "monthly_monthly": 8.88,
+            "annual_monthly": 7.4,
+            "annual_annual_permonth": 7.4,
+            "annual_annual_total": 88.8,
+            "triennial_permonth": 7.03
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
+          "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 7.84,
+            "annual_monthly": 6.53,
+            "annual_annual_permonth": 6.53,
+            "annual_annual_total": 78.36,
+            "triennial_permonth": 6.2
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/office-365/enterprise-e1/"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "office-365-e3",
+      "name": "Office 365 E3 mit Teams",
+      "kind": "base",
+      "category": "Enterprise",
+      "product_family": "office_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "sort_order": 180,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 27.86,
+            "annual_monthly": 23.22,
+            "annual_annual_permonth": 23.22,
+            "annual_annual_total": 278.64,
+            "triennial_permonth": 22.06
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/office-365/enterprise-e3/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 31.48,
+            "annual_monthly": 26.24,
+            "annual_annual_permonth": 26.24,
+            "annual_annual_total": 314.86,
+            "triennial_permonth": 24.93
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +13% und USD 23→26."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "office-365-e3-no-teams",
+      "name": "Office 365 E3 ohne Teams",
+      "kind": "base",
+      "category": "Enterprise",
+      "product_family": "office_365",
+      "scope": "per_user",
+      "teams_included": false,
+      "audience": "Commercial",
+      "sort_order": 181,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2025-03-01",
+          "prices_eur_net": {
+            "monthly_monthly": 27.72,
+            "annual_monthly": 23.1,
+            "annual_annual_permonth": 23.1,
+            "annual_annual_total": 277.2,
+            "triennial_permonth": 21.95
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
+          "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 21.08,
+            "annual_monthly": 17.57,
+            "annual_annual_permonth": 17.57,
+            "annual_annual_total": 210.84,
+            "triennial_permonth": 16.69
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/office-365/enterprise-e3/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 24.03,
+            "annual_monthly": 20.03,
+            "annual_annual_permonth": 20.03,
+            "annual_annual_total": 240.36,
+            "triennial_permonth": 19.03
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +14% und USD 14.45→17.45."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "office-365-e5",
+      "name": "Office 365 E5 mit Teams",
+      "kind": "base",
+      "category": "Enterprise",
+      "product_family": "office_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "sort_order": 190,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 42.76,
+            "annual_monthly": 35.64,
+            "annual_annual_permonth": 35.64,
+            "annual_annual_total": 427.68,
+            "triennial_permonth": 33.86
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/office-365/enterprise-e5/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 46.18,
+            "annual_monthly": 38.49,
+            "annual_annual_permonth": 38.49,
+            "annual_annual_total": 461.89,
+            "triennial_permonth": 36.57
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +8% und USD 38→41."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "office-365-e5-no-teams",
+      "name": "Office 365 E5 ohne Teams",
+      "kind": "base",
+      "category": "Enterprise",
+      "product_family": "office_365",
+      "scope": "per_user",
+      "teams_included": false,
+      "audience": "Commercial",
+      "sort_order": 191,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2025-03-01",
+          "prices_eur_net": {
+            "monthly_monthly": 47.4,
+            "annual_monthly": 39.5,
+            "annual_annual_permonth": 39.5,
+            "annual_annual_total": 474.0,
+            "triennial_permonth": 37.52
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
+          "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 41.45,
+            "annual_monthly": 34.54,
+            "annual_annual_permonth": 34.54,
+            "annual_annual_total": 414.48,
+            "triennial_permonth": 32.81
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/office-365/enterprise-e5/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 45.59,
+            "annual_monthly": 37.99,
+            "annual_annual_permonth": 37.99,
+            "annual_annual_total": 455.93,
+            "triennial_permonth": 36.09
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +10% und USD 29.45→32.45."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-e3",
+      "name": "Microsoft 365 E3 mit Teams",
+      "kind": "base",
+      "category": "Enterprise",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "sort_order": 200,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 41.88,
+            "annual_monthly": 34.9,
+            "annual_annual_permonth": 34.9,
+            "annual_annual_total": 418.8,
+            "triennial_permonth": 33.16
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/enterprise-e3/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 45.23,
+            "annual_monthly": 37.69,
+            "annual_annual_permonth": 37.69,
+            "annual_annual_total": 452.3,
+            "triennial_permonth": 35.81
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +8% und USD 36→39."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-e3-no-teams",
+      "name": "Microsoft 365 E3 ohne Teams",
+      "kind": "base",
+      "category": "Enterprise",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": false,
+      "audience": "Commercial",
+      "sort_order": 201,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2025-03-01",
+          "prices_eur_net": {
+            "monthly_monthly": 42.84,
+            "annual_monthly": 35.7,
+            "annual_annual_permonth": 35.7,
+            "annual_annual_total": 428.4,
+            "triennial_permonth": 33.91
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
+          "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 36.74,
+            "annual_monthly": 30.62,
+            "annual_annual_permonth": 30.62,
+            "annual_annual_total": 367.44,
+            "triennial_permonth": 29.09
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/enterprise-e3/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 40.78,
+            "annual_monthly": 33.99,
+            "annual_annual_permonth": 33.99,
+            "annual_annual_total": 407.86,
+            "triennial_permonth": 32.29
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +11% und USD 27.45→30.45."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-e5",
+      "name": "Microsoft 365 E5 mit Teams",
+      "kind": "base",
+      "category": "Enterprise",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "sort_order": 210,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 66.24,
+            "annual_monthly": 55.2,
+            "annual_annual_permonth": 55.2,
+            "annual_annual_total": 662.4,
+            "triennial_permonth": 52.44
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/enterprise-e5/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 69.55,
+            "annual_monthly": 57.96,
+            "annual_annual_permonth": 57.96,
+            "annual_annual_total": 695.52,
+            "triennial_permonth": 55.06
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +5% und USD 57→60."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-e5-no-teams",
+      "name": "Microsoft 365 E5 ohne Teams",
+      "kind": "base",
+      "category": "Enterprise",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": false,
+      "audience": "Commercial",
+      "sort_order": 211,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2025-03-01",
+          "prices_eur_net": {
+            "monthly_monthly": 69.24,
+            "annual_monthly": 57.7,
+            "annual_annual_permonth": 57.7,
+            "annual_annual_total": 692.4,
+            "triennial_permonth": 54.81
+          },
+          "is_approx": true,
+          "verification_status": "historical_anchor",
+          "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
+          "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 64.01,
+            "annual_monthly": 53.34,
+            "annual_annual_permonth": 53.34,
+            "annual_annual_total": 640.08,
+            "triennial_permonth": 50.67
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/enterprise-e5/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 67.85,
+            "annual_monthly": 56.54,
+            "annual_annual_permonth": 56.54,
+            "annual_annual_total": 678.48,
+            "triennial_permonth": 53.72
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt +6% und USD 48.45→51.45."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-e7",
+      "name": "Microsoft 365 E7 mit Teams",
+      "kind": "base",
+      "category": "Enterprise",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "sort_order": 212,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 110.28,
+            "annual_monthly": 91.9,
+            "annual_annual_permonth": 91.9,
+            "annual_annual_total": 1102.8,
+            "triennial_permonth": 87.31
+          },
+          "is_approx": true,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/enterprise-e7/"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-copilot-chat",
+      "legacy_skus": [
+        "copilot_chat"
+      ],
+      "name": "Microsoft 365 Copilot Chat",
+      "kind": "addon",
+      "category": "Copilot",
+      "product_family": "copilot",
+      "scope": "per_user",
+      "teams_included": null,
+      "audience": "Commercial",
+      "requires_base": "eligible Microsoft 365 subscription",
+      "pricing_basis": "free_tier_paygo_agents",
+      "sort_order": 995,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Free Copilot Chat tier; agents are pay-as-you-go and require Azure subscription.",
+      "price_history": [
+        {
+          "effective_from": "2026-04-16",
+          "prices_eur_net": {
+            "monthly_monthly": 0.0,
+            "annual_monthly": 0.0,
+            "annual_annual_permonth": 0.0,
+            "annual_annual_total": 0.0,
+            "triennial_permonth": 0.0
+          },
+          "is_approx": false,
+          "verification_status": "microsoft_learn_verified",
+          "source_url": "https://learn.microsoft.com/de-de/copilot/microsoft-365/microsoft-365-copilot-overview#differences-between-microsoft-365-copilot-and-copilot-chat"
+        }
+      ],
+      "promo": null
+    },
+    {
+      "slug": "m365-copilot",
+      "name": "Microsoft 365 Copilot",
+      "kind": "addon",
+      "category": "Copilot",
+      "product_family": "copilot",
+      "scope": "per_user",
+      "teams_included": null,
+      "audience": "Commercial",
+      "sort_order": 1000,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 31.2,
+            "annual_monthly": 26.0,
+            "annual_annual_permonth": 26.0,
+            "annual_annual_total": 312.0,
+            "triennial_permonth": 24.7
+          },
+          "is_approx": true,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing/enterprise",
+          "source_note": "Microsoft DE page blocked by login in fetch; Software-Express reseller anchor is retained in source list."
+        }
+      ],
+      "requires_base": "Microsoft 365 E3/E5/A3/A5 or eligible enterprise suites",
+      "promo": null,
+      "legacy_skus": [
+        "m365_copilot"
+      ],
+      "pricing_basis": "per_user",
+      "is_active": 1,
+      "source_note": "Enterprise Copilot add-on; includes Copilot Studio access for licensed users. Separate from Copilot Business."
+    },
+    {
+      "slug": "m365-copilot-business",
+      "name": "Microsoft 365 Copilot Business",
+      "kind": "addon",
+      "category": "Copilot",
+      "product_family": "copilot",
+      "scope": "per_user",
+      "teams_included": null,
+      "audience": "Commercial",
+      "sort_order": 1010,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 21.84,
+            "annual_monthly": 18.2,
+            "annual_annual_permonth": 18.2,
+            "annual_annual_total": 218.4,
+            "triennial_permonth": 17.29
+          },
+          "is_approx": false,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing",
+          "source_note": "Microsoft DE pricing page required login during fetch; Software-Express confirms separate Copilot Business SKU and NCE monthly uplift."
+        }
+      ],
+      "requires_base": "Microsoft 365 Business Basic/Standard/Premium",
+      "promo": {
+        "is_promo": true,
+        "promo_price_eur_net": 15.6,
+        "promo_note": "Zeitlich begrenztes Rabattangebot; not a price-history row.",
+        "valid_until": null,
+        "source_url": "https://www.software-express.de/hersteller/microsoft/copilot/business/"
+      },
+      "legacy_skus": [
+        "m365_copilot_business"
+      ],
+      "pricing_basis": "per_user",
+      "is_active": 1,
+      "source_note": "SMB Copilot add-on for Business plans; separate from Microsoft 365 Copilot enterprise add-on. Promo is stored outside price_history."
+    },
+    {
+      "slug": "copilot-studio-tenant",
+      "name": "Microsoft Copilot Studio Tenant / Prepaid Commit",
+      "kind": "addon",
+      "category": "Copilot",
+      "product_family": "copilot",
+      "scope": "credits",
+      "teams_included": null,
+      "audience": "Commercial",
+      "sort_order": 1030,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 207.96,
+            "annual_monthly": 173.3,
+            "annual_annual_permonth": 173.3,
+            "annual_annual_total": 2079.6,
+            "triennial_permonth": 164.63
+          },
+          "is_approx": true,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing/enterprise",
+          "source_note": "Prepaid commit unit; exact tenant contract may vary."
+        }
+      ],
+      "requires_base": null,
+      "promo": {
+        "is_promo": true,
+        "promo_price_eur_net": 173.3,
+        "promo_note": "Azure free credit / prepaid credit reference; not a time-series price change.",
+        "valid_until": null,
+        "source_url": "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing/enterprise"
+      },
+      "legacy_skus": [
+        "copilot_studio"
+      ],
+      "pricing_basis": "prepaid_commit_credits",
+      "is_active": 1,
+      "source_note": "Prepaid commit unit plus pay-as-you-go option; 25,000 messages/month reseller anchor retained. Azure free credit noted as separate promo/credit, not time series."
+    },
+    {
+      "slug": "bundle-business-basic-copilot-business",
+      "legacy_skus": [],
+      "name": "Microsoft 365 Business Basic + Copilot Business",
+      "kind": "bundle",
+      "category": "Bundle",
+      "product_family": "copilot",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "requires_base": "m365-business-basic + m365-copilot-business",
+      "pricing_basis": "per_user",
+      "sort_order": 1410,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Bundle price stored as regular baseline; limited-time promo stored in promo only.",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 28.08,
+            "annual_monthly": 23.4,
+            "annual_annual_permonth": 23.4,
+            "annual_annual_total": 280.8,
+            "triennial_permonth": 22.23
+          },
+          "is_approx": false,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing"
+        }
+      ],
+      "promo": null
+    },
+    {
+      "slug": "bundle-business-basic-no-teams-copilot-business",
+      "legacy_skus": [],
+      "name": "Microsoft 365 Business Basic EEA ohne Teams + Copilot Business",
+      "kind": "bundle",
+      "category": "Bundle",
+      "product_family": "copilot",
+      "scope": "per_user",
+      "teams_included": false,
+      "audience": "Commercial",
+      "requires_base": "m365-business-basic-no-teams + m365-copilot-business",
+      "pricing_basis": "per_user",
+      "sort_order": 1411,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Bundle price stored as regular baseline; limited-time promo stored in promo only.",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 26.41,
+            "annual_monthly": 22.01,
+            "annual_annual_permonth": 22.01,
+            "annual_annual_total": 264.12,
+            "triennial_permonth": 20.91
+          },
+          "is_approx": false,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing"
+        }
+      ],
+      "promo": null
+    },
+    {
+      "slug": "bundle-business-standard-copilot-business",
+      "legacy_skus": [],
+      "name": "Microsoft 365 Business Standard + Copilot Business",
+      "kind": "bundle",
+      "category": "Bundle",
+      "product_family": "copilot",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "requires_base": "m365-business-standard + m365-copilot-business",
+      "pricing_basis": "per_user",
+      "sort_order": 1420,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Bundle price stored as regular baseline; limited-time promo stored in promo only.",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 34.84,
+            "annual_monthly": 29.03,
+            "annual_annual_permonth": 29.03,
+            "annual_annual_total": 348.36,
+            "triennial_permonth": 27.58
+          },
+          "is_approx": false,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing"
+        }
+      ],
+      "promo": {
+        "is_promo": true,
+        "promo_price_eur_net": 19.06,
+        "promo_note": "Zeitlich begrenztes Rabattangebot; minimum quantity may apply; not used for tracker graph.",
+        "valid_until": null,
+        "source_url": "https://www.software-express.de/hersteller/microsoft/copilot/business/"
+      }
+    },
+    {
+      "slug": "bundle-business-standard-no-teams-copilot-business",
+      "legacy_skus": [],
+      "name": "Microsoft 365 Business Standard EEA ohne Teams + Copilot Business",
+      "kind": "bundle",
+      "category": "Bundle",
+      "product_family": "copilot",
+      "scope": "per_user",
+      "teams_included": false,
+      "audience": "Commercial",
+      "requires_base": "m365-business-standard-no-teams + m365-copilot-business",
+      "pricing_basis": "per_user",
+      "sort_order": 1421,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Bundle price stored as regular baseline; limited-time promo stored in promo only.",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 31.5,
+            "annual_monthly": 26.25,
+            "annual_annual_permonth": 26.25,
+            "annual_annual_total": 315.0,
+            "triennial_permonth": 24.94
+          },
+          "is_approx": false,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing"
+        }
+      ],
+      "promo": {
+        "is_promo": true,
+        "promo_price_eur_net": 17.24,
+        "promo_note": "Zeitlich begrenztes Rabattangebot; minimum quantity may apply; not used for tracker graph.",
+        "valid_until": null,
+        "source_url": "https://www.software-express.de/hersteller/microsoft/copilot/business/"
+      }
+    },
+    {
+      "slug": "bundle-business-premium-copilot-business",
+      "legacy_skus": [],
+      "name": "Microsoft 365 Business Premium + Copilot Business",
+      "kind": "bundle",
+      "category": "Bundle",
+      "product_family": "copilot",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Commercial",
+      "requires_base": "m365-business-premium + m365-copilot-business",
+      "pricing_basis": "per_user",
+      "sort_order": 1430,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Bundle price stored as regular baseline; limited-time promo stored in promo only.",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 44.71,
+            "annual_monthly": 37.26,
+            "annual_annual_permonth": 37.26,
+            "annual_annual_total": 447.12,
+            "triennial_permonth": 35.4
+          },
+          "is_approx": false,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing"
+        }
+      ],
+      "promo": {
+        "is_promo": true,
+        "promo_price_eur_net": 27.73,
+        "promo_note": "Zeitlich begrenztes Rabattangebot; minimum quantity may apply; not used for tracker graph.",
+        "valid_until": null,
+        "source_url": "https://www.software-express.de/hersteller/microsoft/copilot/business/"
+      }
+    },
+    {
+      "slug": "bundle-business-premium-no-teams-copilot-business",
+      "legacy_skus": [],
+      "name": "Microsoft 365 Business Premium EEA ohne Teams + Copilot Business",
+      "kind": "bundle",
+      "category": "Bundle",
+      "product_family": "copilot",
+      "scope": "per_user",
+      "teams_included": false,
+      "audience": "Commercial",
+      "requires_base": "m365-business-premium-no-teams + m365-copilot-business",
+      "pricing_basis": "per_user",
+      "sort_order": 1431,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Bundle price stored as regular baseline; limited-time promo stored in promo only.",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 41.38,
+            "annual_monthly": 34.48,
+            "annual_annual_permonth": 34.48,
+            "annual_annual_total": 413.76,
+            "triennial_permonth": 32.76
+          },
+          "is_approx": false,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing"
+        }
+      ],
+      "promo": {
+        "is_promo": true,
+        "promo_price_eur_net": 25.66,
+        "promo_note": "Zeitlich begrenztes Rabattangebot; minimum quantity may apply; not used for tracker graph.",
+        "valid_until": null,
+        "source_url": "https://www.software-express.de/hersteller/microsoft/copilot/business/"
+      }
+    },
+    {
+      "slug": "exchange-online-archiving",
+      "name": "Exchange Online Archiving",
+      "kind": "addon",
+      "category": "Add-on",
+      "product_family": "exchange",
+      "scope": "per_user",
+      "teams_included": null,
+      "audience": "Commercial",
+      "sort_order": 1800,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 3.6,
+            "annual_monthly": 3.0,
+            "annual_annual_permonth": 3.0,
+            "annual_annual_total": 36.0,
+            "triennial_permonth": 2.85
+          },
+          "is_approx": true,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.microsoft.com/en-us/microsoft-365/exchange/compare-microsoft-exchange-online-plans"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-single-consumer",
+      "name": "Microsoft 365 Single",
+      "kind": "base",
+      "category": "Consumer",
+      "product_family": "consumer",
+      "scope": "per_seat_consumer",
+      "teams_included": null,
+      "audience": "Consumer",
+      "sort_order": 3000,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": null,
+            "annual_monthly": null,
+            "annual_annual_permonth": 8.25,
+            "annual_annual_total": 99.0,
+            "triennial_permonth": null
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.microsoft.com/de-de/microsoft-365/buy/compare-all-microsoft-365-products"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-family-consumer",
+      "name": "Microsoft 365 Family",
+      "kind": "base",
+      "category": "Consumer",
+      "product_family": "consumer",
+      "scope": "per_seat_consumer",
+      "teams_included": null,
+      "audience": "Consumer",
+      "sort_order": 3010,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": null,
+            "annual_monthly": null,
+            "annual_annual_permonth": 10.75,
+            "annual_annual_total": 129.0,
+            "triennial_permonth": null
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.microsoft.com/de-de/microsoft-365/buy/compare-all-microsoft-365-products"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-consumer-premium",
+      "legacy_skus": [
+        "m365_premium_consumer"
+      ],
+      "name": "Microsoft 365 Premium",
+      "kind": "base",
+      "category": "Consumer",
+      "product_family": "consumer",
+      "scope": "per_seat_consumer",
+      "teams_included": null,
+      "audience": "Consumer",
+      "requires_base": null,
+      "pricing_basis": "annual_total",
+      "sort_order": 3020,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Consumer tier with AI agents and highest Copilot limits; annual retail anchor.",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": null,
+            "annual_monthly": 18.25,
+            "annual_annual_permonth": 18.25,
+            "annual_annual_total": 219.0,
+            "triennial_permonth": null
+          },
+          "is_approx": false,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.microsoft.com/de-de/microsoft-365/buy/compare-all-microsoft-365-products"
+        }
+      ],
+      "promo": null
+    },
+    {
+      "slug": "office-home-2024",
+      "name": "Office Home 2024",
+      "kind": "base",
+      "category": "Perpetual",
+      "product_family": "perpetual",
+      "scope": "perpetual",
+      "teams_included": null,
+      "audience": "Consumer",
+      "sort_order": 3100,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": null,
+            "annual_monthly": null,
+            "annual_annual_permonth": null,
+            "annual_annual_total": 149.0,
+            "triennial_permonth": null
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.microsoft.com/de-de/microsoft-365/p/office-home-2024/"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "office-home-business-2024",
+      "name": "Office Home & Business 2024",
+      "kind": "base",
+      "category": "Perpetual",
+      "product_family": "perpetual",
+      "scope": "perpetual",
+      "teams_included": null,
+      "audience": "Commercial",
+      "sort_order": 3110,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": null,
+            "annual_monthly": null,
+            "annual_annual_permonth": null,
+            "annual_annual_total": 299.0,
+            "triennial_permonth": null
+          },
+          "is_approx": true,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/office/home-business-2024/"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-education-a3-faculty",
+      "name": "Microsoft 365 Education A3 Faculty",
+      "kind": "base",
+      "category": "Education",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Education",
+      "sort_order": 3200,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 7.75,
+            "annual_monthly": 6.46,
+            "annual_annual_permonth": 6.46,
+            "annual_annual_total": 77.52,
+            "triennial_permonth": 6.14
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/education-a3/"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": [],
+      "source_note": "Suite tag: Microsoft 365 Education (kept separate from newly added Office 365 Education SKUs)."
+    },
+    {
+      "slug": "m365-education-a3-student",
+      "name": "Microsoft 365 Education A3 Student",
+      "kind": "base",
+      "category": "Education",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Education",
+      "sort_order": 3210,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 5.68,
+            "annual_monthly": 4.73,
+            "annual_annual_permonth": 4.73,
+            "annual_annual_total": 56.76,
+            "triennial_permonth": 4.49
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/education-a3/"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": [],
+      "source_note": "Suite tag: Microsoft 365 Education (kept separate from newly added Office 365 Education SKUs)."
+    },
+    {
+      "slug": "m365-education-a5-faculty",
+      "name": "Microsoft 365 Education A5 Faculty",
+      "kind": "base",
+      "category": "Education",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Education",
+      "sort_order": 3220,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 14.38,
+            "annual_monthly": 11.98,
+            "annual_annual_permonth": 11.98,
+            "annual_annual_total": 143.76,
+            "triennial_permonth": 11.38
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/education-a5/"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": [],
+      "source_note": "Suite tag: Microsoft 365 Education (kept separate from newly added Office 365 Education SKUs)."
+    },
+    {
+      "slug": "m365-education-a5-student",
+      "name": "Microsoft 365 Education A5 Student",
+      "kind": "base",
+      "category": "Education",
+      "product_family": "microsoft_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Education",
+      "sort_order": 3230,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 10.64,
+            "annual_monthly": 8.87,
+            "annual_annual_permonth": 8.87,
+            "annual_annual_total": 106.44,
+            "triennial_permonth": 8.43
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/education-a5/"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": [],
+      "source_note": "Suite tag: Microsoft 365 Education (kept separate from newly added Office 365 Education SKUs)."
+    },
+    {
+      "slug": "m365-business-basic-nonprofit",
+      "name": "Microsoft 365 Business Basic NonProfit",
+      "kind": "base",
+      "category": "NonProfit",
+      "product_family": "nonprofit",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "NonProfit",
+      "sort_order": 3300,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 0.0,
+            "annual_monthly": 0.0,
+            "annual_annual_permonth": 0.0,
+            "annual_annual_total": 0.0,
+            "triennial_permonth": 0.0
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft Nonprofit-Tabelle führt Business Basic als Free."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-business-standard-nonprofit",
+      "name": "Microsoft 365 Business Standard NonProfit",
+      "kind": "base",
+      "category": "NonProfit",
+      "product_family": "nonprofit",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "NonProfit",
+      "sort_order": 3310,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 3.51,
+            "annual_monthly": 2.93,
+            "annual_annual_permonth": 2.93,
+            "annual_annual_total": 35.1,
+            "triennial_permonth": 2.78
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/business-standard/"
+        },
+        {
+          "effective_from": "2026-07-01",
+          "prices_eur_net": {
+            "monthly_monthly": 4.1,
+            "annual_monthly": 3.42,
+            "annual_annual_permonth": 3.42,
+            "annual_annual_total": 41.07,
+            "triennial_permonth": 3.25
+          },
+          "is_approx": true,
+          "verification_status": "future_confirmed_percent",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Microsoft bestätigt Nonprofit USD 3.00→3.50 (+17%)."
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "m365-business-premium-nonprofit",
+      "name": "Microsoft 365 Business Premium NonProfit",
+      "kind": "base",
+      "category": "NonProfit",
+      "product_family": "nonprofit",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "NonProfit",
+      "sort_order": 3320,
+      "last_verified": "2026-06-01",
+      "price_history": [
+        {
+          "effective_from": "2026-05-01",
+          "prices_eur_net": {
+            "monthly_monthly": 6.48,
+            "annual_monthly": 5.4,
+            "annual_annual_permonth": 5.4,
+            "annual_annual_total": 64.8,
+            "triennial_permonth": 5.13
+          },
+          "is_approx": false,
+          "verification_status": "current_baseline",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/business-premium/"
+        }
+      ],
+      "requires_base": null,
+      "promo": null,
+      "legacy_skus": []
+    },
+    {
+      "slug": "office-365-education-a1",
+      "legacy_skus": [],
+      "name": "Office 365 Education A1",
+      "kind": "base",
+      "category": "Education",
+      "product_family": "office_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Education",
+      "requires_base": null,
+      "pricing_basis": "per_user",
+      "sort_order": 3355,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Education A1 free tier. Suite tag: Office 365 Education (separate from Microsoft 365 Education SKUs).",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 0.0,
+            "annual_monthly": 0.0,
+            "annual_annual_permonth": 0.0,
+            "annual_annual_total": 0.0,
+            "triennial_permonth": 0.0
+          },
+          "is_approx": false,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/office-365/education-a3/"
+        }
+      ],
+      "promo": null
+    },
+    {
+      "slug": "office-365-education-a3-faculty",
+      "legacy_skus": [],
+      "name": "Office 365 Education A3 Faculty",
+      "kind": "base",
+      "category": "Education",
+      "product_family": "office_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Education",
+      "requires_base": null,
+      "pricing_basis": "per_user",
+      "sort_order": 3360,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Office 365 A3 Faculty; DACH reseller confirms nearby 3.30 EUR/month. Suite tag: Office 365 Education (separate from Microsoft 365 Education SKUs).",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 3.84,
+            "annual_monthly": 3.2,
+            "annual_annual_permonth": 3.2,
+            "annual_annual_total": 38.4,
+            "triennial_permonth": 3.04
+          },
+          "is_approx": true,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/office-365/education-a3/"
+        }
+      ],
+      "promo": null
+    },
+    {
+      "slug": "office-365-education-a3-student",
+      "legacy_skus": [],
+      "name": "Office 365 Education A3 Student",
+      "kind": "base",
+      "category": "Education",
+      "product_family": "office_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Education",
+      "requires_base": null,
+      "pricing_basis": "per_user",
+      "sort_order": 3361,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Office 365 A3 Student; DACH reseller confirms nearby 2.50 EUR/month. Suite tag: Office 365 Education (separate from Microsoft 365 Education SKUs).",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 2.94,
+            "annual_monthly": 2.45,
+            "annual_annual_permonth": 2.45,
+            "annual_annual_total": 29.4,
+            "triennial_permonth": 2.33
+          },
+          "is_approx": true,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/office-365/education-a3/"
+        }
+      ],
+      "promo": null
+    },
+    {
+      "slug": "office-365-education-a5-faculty",
+      "legacy_skus": [],
+      "name": "Office 365 Education A5 Faculty",
+      "kind": "base",
+      "category": "Education",
+      "product_family": "office_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Education",
+      "requires_base": null,
+      "pricing_basis": "per_user",
+      "sort_order": 3370,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Office 365 A5 Faculty; DACH reseller confirms nearby 8.10 EUR/month. Suite tag: Office 365 Education (separate from Microsoft 365 Education SKUs).",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 9.42,
+            "annual_monthly": 7.85,
+            "annual_annual_permonth": 7.85,
+            "annual_annual_total": 94.2,
+            "triennial_permonth": 7.46
+          },
+          "is_approx": true,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/office-365/education-a5/"
+        }
+      ],
+      "promo": null
+    },
+    {
+      "slug": "office-365-education-a5-student",
+      "legacy_skus": [],
+      "name": "Office 365 Education A5 Student",
+      "kind": "base",
+      "category": "Education",
+      "product_family": "office_365",
+      "scope": "per_user",
+      "teams_included": true,
+      "audience": "Education",
+      "requires_base": null,
+      "pricing_basis": "per_user",
+      "sort_order": 3371,
+      "is_active": 1,
+      "last_verified": "2026-06-01",
+      "source_note": "Office 365 A5 Student; DACH reseller confirms nearby 6.10 EUR/month. Suite tag: Office 365 Education (separate from Microsoft 365 Education SKUs).",
+      "price_history": [
+        {
+          "effective_from": "2026-05-31",
+          "prices_eur_net": {
+            "monthly_monthly": 7.08,
+            "annual_monthly": 5.9,
+            "annual_annual_permonth": 5.9,
+            "annual_annual_total": 70.8,
+            "triennial_permonth": 5.61
+          },
+          "is_approx": true,
+          "verification_status": "verified_seed",
+          "source_url": "https://www.software-express.de/hersteller/microsoft/office-365/education-a5/"
+        }
+      ],
+      "promo": null
+    }
+  ],
+  "packages": [
+    {
+      "slug": "exchange-online-plan-1",
+      "name": "Exchange Online Plan 1",
+      "kind": "base",
+      "category": "exchange",
+      "pricing_basis": "per_user",
+      "public_price": 3.5,
+      "member_price": 3.5,
+      "group_price": 3.5,
+      "currency": "EUR",
+      "source_note": "Lokaler Microsoft-365-Referenzpreis; Exchange Online Plan 1 pro Nutzer/Monat.",
+      "sort_order": 10,
+      "is_active": 1
+    },
+    {
+      "slug": "exchange-online-plan-2",
+      "name": "Exchange Online Plan 2",
+      "kind": "base",
+      "category": "exchange",
+      "pricing_basis": "per_user",
+      "public_price": 6.9,
+      "member_price": 6.9,
+      "group_price": 6.9,
+      "currency": "EUR",
+      "source_note": "Lokaler Microsoft-365-Referenzpreis; Exchange Online Plan 2 mit Archiv-/Compliance-Pfad.",
+      "sort_order": 20,
+      "is_active": 1
+    },
+    {
+      "slug": "sharepoint-online-plan-1",
+      "name": "SharePoint Online Plan 1",
+      "kind": "base",
+      "category": "sharepoint",
+      "pricing_basis": "per_user",
+      "public_price": 4.7,
+      "member_price": 4.7,
+      "group_price": 4.7,
+      "currency": "EUR",
+      "source_note": "Lokaler Referenzpreis für SharePoint/OneDrive-Basispläne.",
+      "sort_order": 30,
+      "is_active": 1
+    },
+    {
+      "slug": "sharepoint-online-plan-2",
+      "name": "SharePoint Online Plan 2",
+      "kind": "base",
+      "category": "sharepoint",
+      "pricing_basis": "per_user",
+      "public_price": 9.4,
+      "member_price": 9.4,
+      "group_price": 9.4,
+      "currency": "EUR",
+      "source_note": "Lokaler Referenzpreis für erweiterte SharePoint-/OneDrive-Funktionen.",
+      "sort_order": 40,
+      "is_active": 1
+    },
+    {
+      "slug": "onedrive-business-plan-1",
+      "name": "OneDrive for Business Plan 1",
+      "kind": "base",
+      "category": "onedrive",
+      "pricing_basis": "per_user",
+      "public_price": 4.7,
+      "member_price": 4.7,
+      "group_price": 4.7,
+      "currency": "EUR",
+      "source_note": "Lokaler Referenzpreis für OneDrive for Business Plan 1.",
+      "sort_order": 50,
+      "is_active": 1
+    },
+    {
+      "slug": "onedrive-business-plan-2",
+      "name": "OneDrive for Business Plan 2",
+      "kind": "base",
+      "category": "onedrive",
+      "pricing_basis": "per_user",
+      "public_price": 9.4,
+      "member_price": 9.4,
+      "group_price": 9.4,
+      "currency": "EUR",
+      "source_note": "Lokaler Referenzpreis für OneDrive for Business Plan 2.",
+      "sort_order": 60,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-apps-business",
+      "name": "Microsoft 365 Apps for Business",
+      "kind": "base",
+      "category": "business",
+      "pricing_basis": "per_user",
+      "public_price": 8.25,
+      "member_price": 8.25,
+      "group_price": 8.25,
+      "currency": "EUR",
+      "source_note": "Business-App-Plan bis 300 Nutzer; lokaler M365-Referenzpreis.",
+      "sort_order": 70,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-apps-enterprise",
+      "name": "Microsoft 365 Apps for Enterprise",
+      "kind": "base",
+      "category": "enterprise",
+      "pricing_basis": "per_user",
+      "public_price": 13.2,
+      "member_price": 13.2,
+      "group_price": 13.2,
+      "currency": "EUR",
+      "source_note": "Enterprise-App-Plan mit Shared-Computer-Activation-Pfad; lokaler Referenzpreis.",
+      "sort_order": 80,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-business-basic",
+      "name": "Microsoft 365 Business Basic",
+      "kind": "base",
+      "category": "business",
+      "pricing_basis": "per_user",
+      "public_price": 5.2,
+      "member_price": 5.2,
+      "group_price": 5.2,
+      "currency": "EUR",
+      "source_note": "Business-SKU bis 300 Nutzer; lokaler Referenzpreis.",
+      "sort_order": 90,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-business-standard",
+      "name": "Microsoft 365 Business Standard",
+      "kind": "base",
+      "category": "business",
+      "pricing_basis": "per_user",
+      "public_price": 10.8,
+      "member_price": 10.8,
+      "group_price": 10.8,
+      "currency": "EUR",
+      "source_note": "Business-SKU bis 300 Nutzer; lokaler Referenzpreis.",
+      "sort_order": 100,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-business-premium",
+      "name": "Microsoft 365 Business Premium",
+      "kind": "base",
+      "category": "business",
+      "pricing_basis": "per_user",
+      "public_price": 19.1,
+      "member_price": 19.1,
+      "group_price": 19.1,
+      "currency": "EUR",
+      "source_note": "Business-SKU mit Intune/Defender/Entra ID P1; lokaler Referenzpreis.",
+      "sort_order": 110,
+      "is_active": 1
+    },
+    {
+      "slug": "teams-essentials",
+      "name": "Microsoft Teams Essentials",
+      "kind": "base",
+      "category": "teams",
+      "pricing_basis": "per_user",
+      "public_price": 3.7,
+      "member_price": 3.7,
+      "group_price": 3.7,
+      "currency": "EUR",
+      "source_note": "Teams-Standalone-Referenzpreis für Meeting-/Chat-Szenarien.",
+      "sort_order": 120,
+      "is_active": 1
+    },
+    {
+      "slug": "teams-enterprise",
+      "name": "Microsoft Teams Enterprise",
+      "kind": "base",
+      "category": "teams",
+      "pricing_basis": "per_user",
+      "public_price": 4.7,
+      "member_price": 4.7,
+      "group_price": 4.7,
+      "currency": "EUR",
+      "source_note": "Teams-Standalone-Referenzpreis für Enterprise-/EEA-Bundling-Prüfungen.",
+      "sort_order": 130,
+      "is_active": 1
+    },
+    {
+      "slug": "office-365-f3",
+      "name": "Office 365 F3",
+      "kind": "base",
+      "category": "frontline",
+      "pricing_basis": "per_user",
+      "public_price": 6.9,
+      "member_price": 6.9,
+      "group_price": 6.9,
+      "currency": "EUR",
+      "source_note": "Frontline-Referenzpreis für Office 365 F3.",
+      "sort_order": 140,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-f1",
+      "name": "Microsoft 365 F1",
+      "kind": "base",
+      "category": "frontline",
+      "pricing_basis": "per_user",
+      "public_price": 1.9,
+      "member_price": 1.9,
+      "group_price": 1.9,
+      "currency": "EUR",
+      "source_note": "Frontline-Light-Referenzpreis.",
+      "sort_order": 150,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-f3",
+      "name": "Microsoft 365 F3",
+      "kind": "base",
+      "category": "frontline",
+      "pricing_basis": "per_user",
+      "public_price": 6.9,
+      "member_price": 6.9,
+      "group_price": 6.9,
+      "currency": "EUR",
+      "source_note": "Frontline-Referenzpreis für M365 F3.",
+      "sort_order": 160,
+      "is_active": 1
+    },
+    {
+      "slug": "office-365-e1",
+      "name": "Office 365 E1",
+      "kind": "base",
+      "category": "office365-enterprise",
+      "pricing_basis": "per_user",
+      "public_price": 8.7,
+      "member_price": 8.7,
+      "group_price": 8.7,
+      "currency": "EUR",
+      "source_note": "Enterprise-Webworker-Referenzpreis.",
+      "sort_order": 170,
+      "is_active": 1
+    },
+    {
+      "slug": "office-365-e3",
+      "name": "Office 365 E3",
+      "kind": "base",
+      "category": "office365-enterprise",
+      "pricing_basis": "per_user",
+      "public_price": 23.2,
+      "member_price": 23.2,
+      "group_price": 23.2,
+      "currency": "EUR",
+      "source_note": "Enterprise-Desktop-/Mailbox-Referenzpreis.",
+      "sort_order": 180,
+      "is_active": 1
+    },
+    {
+      "slug": "office-365-e5",
+      "name": "Office 365 E5",
+      "kind": "base",
+      "category": "office365-enterprise",
+      "pricing_basis": "per_user",
+      "public_price": 38.4,
+      "member_price": 38.4,
+      "group_price": 38.4,
+      "currency": "EUR",
+      "source_note": "Enterprise-E5-Office-Referenzpreis inklusive Premium-Pfade wie Phone System/Analytics.",
+      "sort_order": 190,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-e3",
+      "name": "Microsoft 365 E3",
+      "kind": "base",
+      "category": "m365-enterprise",
+      "pricing_basis": "per_user",
+      "public_price": 34.9,
+      "member_price": 34.9,
+      "group_price": 34.9,
+      "currency": "EUR",
+      "source_note": "Microsoft 365 Enterprise E3 Referenzpreis.",
+      "sort_order": 200,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-e5",
+      "name": "Microsoft 365 E5",
+      "kind": "base",
+      "category": "m365-enterprise",
+      "pricing_basis": "per_user",
+      "public_price": 57.0,
+      "member_price": 57.0,
+      "group_price": 57.0,
+      "currency": "EUR",
+      "source_note": "Microsoft 365 Enterprise E5 Referenzpreis.",
+      "sort_order": 210,
+      "is_active": 1
+    },
+    {
+      "slug": "teams-rooms-basic",
+      "name": "Microsoft Teams Rooms Basic",
+      "kind": "base",
+      "category": "teams-rooms",
+      "pricing_basis": "flat_monthly",
+      "public_price": 0.0,
+      "member_price": 0.0,
+      "group_price": 0.0,
+      "currency": "EUR",
+      "source_note": "Teams Rooms Basic ist ein no-cost Raumkonto-Pfad; Lizenz-/Gerätegrenzen separat prüfen.",
+      "sort_order": 220,
+      "is_active": 1
+    },
+    {
+      "slug": "teams-rooms-pro",
+      "name": "Microsoft Teams Rooms Pro",
+      "kind": "base",
+      "category": "teams-rooms",
+      "pricing_basis": "flat_monthly",
+      "public_price": 37.4,
+      "member_price": 37.4,
+      "group_price": 37.4,
+      "currency": "EUR",
+      "source_note": "Teams Rooms Pro Referenzpreis pro Raum/Monat.",
+      "sort_order": 230,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-copilot",
+      "name": "Microsoft 365 Copilot",
+      "kind": "addon",
+      "category": "copilot-ai",
+      "pricing_basis": "per_user",
+      "public_price": 26.0,
+      "member_price": 26.0,
+      "group_price": 26.0,
+      "currency": "EUR",
+      "source_note": "Microsoft-Seite nennt 30 USD user/month paid yearly bzw. 31,50 USD paid monthly; lokaler EUR-Referenzwert.",
+      "sort_order": 1000,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-copilot-business",
+      "name": "Microsoft 365 Copilot Business",
+      "kind": "addon",
+      "category": "copilot-ai",
+      "pricing_basis": "per_user",
+      "public_price": 18.2,
+      "member_price": 18.2,
+      "group_price": 18.2,
+      "currency": "EUR",
+      "source_note": "Microsoft-Seite nennt Copilot Business ab 18 USD user/month paid yearly bzw. 18,90 USD paid monthly während Promo; lokaler EUR-Referenzwert.",
+      "sort_order": 1010,
+      "is_active": 1
+    },
+    {
+      "slug": "copilot-chat-included",
+      "name": "Microsoft 365 Copilot Chat",
+      "kind": "addon",
+      "category": "copilot-ai",
+      "pricing_basis": "per_user",
+      "public_price": 0.0,
+      "member_price": 0.0,
+      "group_price": 0.0,
+      "currency": "EUR",
+      "source_note": "Copilot Chat ist für berechtigte Microsoft-365-Pläne enthalten; Agent-/Metering-Kosten separat betrachten.",
+      "sort_order": 1020,
+      "is_active": 1
+    },
+    {
+      "slug": "copilot-studio-tenant",
+      "name": "Microsoft Copilot Studio Tenant",
+      "kind": "addon",
+      "category": "copilot-ai",
+      "pricing_basis": "per_tenant",
+      "public_price": 182.0,
+      "member_price": 182.0,
+      "group_price": 182.0,
+      "currency": "EUR",
+      "source_note": "Tenant-/Kapazitätsreferenzpreis; Nachrichtenkontingente und Verbrauch separat prüfen.",
+      "sort_order": 1030,
+      "is_active": 1
+    },
+    {
+      "slug": "teams-phone-standard",
+      "name": "Microsoft Teams Phone Standard",
+      "kind": "addon",
+      "category": "teams-voice",
+      "pricing_basis": "per_user",
+      "public_price": 8.7,
+      "member_price": 8.7,
+      "group_price": 8.7,
+      "currency": "EUR",
+      "source_note": "Teams Phone Add-on; E5-Pfade können Phone System bereits enthalten.",
+      "sort_order": 1100,
+      "is_active": 1
+    },
+    {
+      "slug": "teams-phone",
+      "name": "Microsoft Teams Phone Standard",
+      "kind": "addon",
+      "category": "teams-voice",
+      "pricing_basis": "per_user",
+      "public_price": 8.7,
+      "member_price": 8.7,
+      "group_price": 8.7,
+      "currency": "EUR",
+      "source_note": "Legacy-Slug für Teams Phone Standard.",
+      "sort_order": 1101,
+      "is_active": 1
+    },
+    {
+      "slug": "teams-calling-plan-domestic",
+      "name": "Teams Domestic Calling Plan",
+      "kind": "addon",
+      "category": "teams-voice",
+      "pricing_basis": "per_user",
+      "public_price": 10.5,
+      "member_price": 10.5,
+      "group_price": 10.5,
+      "currency": "EUR",
+      "source_note": "PSTN-Calling-Plan-Referenzpreis; Länderabdeckung und Minutenmodell prüfen.",
+      "sort_order": 1110,
+      "is_active": 1
+    },
+    {
+      "slug": "teams-calling-plan-international",
+      "name": "Teams International Calling Plan",
+      "kind": "addon",
+      "category": "teams-voice",
+      "pricing_basis": "per_user",
+      "public_price": 20.2,
+      "member_price": 20.2,
+      "group_price": 20.2,
+      "currency": "EUR",
+      "source_note": "Internationaler Calling-Plan-Referenzpreis; Verfügbarkeit und Minutenmodell prüfen.",
+      "sort_order": 1120,
+      "is_active": 1
+    },
+    {
+      "slug": "teams-calling-plan-payg",
+      "name": "Teams Pay-as-you-go Calling Plan",
+      "kind": "addon",
+      "category": "teams-voice",
+      "pricing_basis": "consumption",
+      "public_price": 0.0,
+      "member_price": 0.0,
+      "group_price": 0.0,
+      "currency": "EUR",
+      "source_note": "Keine fixe Monatsgebühr im Referenzkatalog; Nutzung wird verbrauchsbasiert abgerechnet.",
+      "sort_order": 1130,
+      "is_active": 1
+    },
+    {
+      "slug": "teams-phone-resource-account",
+      "name": "Microsoft Teams Phone Resource Account",
+      "kind": "addon",
+      "category": "teams-voice",
+      "pricing_basis": "flat_monthly",
+      "public_price": 0.0,
+      "member_price": 0.0,
+      "group_price": 0.0,
+      "currency": "EUR",
+      "source_note": "No-cost-SKU für Auto Attendants und Call Queues.",
+      "sort_order": 1140,
+      "is_active": 1
+    },
+    {
+      "slug": "teams-premium",
+      "name": "Microsoft Teams Premium",
+      "kind": "addon",
+      "category": "teams",
+      "pricing_basis": "per_user",
+      "public_price": 8.7,
+      "member_price": 8.7,
+      "group_price": 8.7,
+      "currency": "EUR",
+      "source_note": "Teams Premium Referenzpreis.",
+      "sort_order": 1150,
+      "is_active": 1
+    },
+    {
+      "slug": "audio-conferencing",
+      "name": "Audio Conferencing Standard",
+      "kind": "addon",
+      "category": "teams-voice",
+      "pricing_basis": "per_user",
+      "public_price": 3.5,
+      "member_price": 3.5,
+      "group_price": 3.5,
+      "currency": "EUR",
+      "source_note": "Audio Conferencing Add-on; E5-Abdeckung prüfen.",
+      "sort_order": 1160,
+      "is_active": 1
+    },
+    {
+      "slug": "intune-plan-1",
+      "name": "Microsoft Intune Plan 1",
+      "kind": "addon",
+      "category": "security-identity",
+      "pricing_basis": "per_user",
+      "public_price": 6.9,
+      "member_price": 6.9,
+      "group_price": 6.9,
+      "currency": "EUR",
+      "source_note": "Intune Plan 1 Referenzpreis; in Business Premium/M365 E3/E5 meist enthalten.",
+      "sort_order": 1200,
+      "is_active": 1
+    },
+    {
+      "slug": "intune-plan-2",
+      "name": "Microsoft Intune Plan 2",
+      "kind": "addon",
+      "category": "security-identity",
+      "pricing_basis": "per_user",
+      "public_price": 3.5,
+      "member_price": 3.5,
+      "group_price": 3.5,
+      "currency": "EUR",
+      "source_note": "Intune Plan 2 Add-on-Referenzpreis für erweiterte Endpoint-Funktionen.",
+      "sort_order": 1210,
+      "is_active": 1
+    },
+    {
+      "slug": "intune-suite",
+      "name": "Microsoft Intune Suite",
+      "kind": "addon",
+      "category": "security-identity",
+      "pricing_basis": "per_user",
+      "public_price": 8.7,
+      "member_price": 8.7,
+      "group_price": 8.7,
+      "currency": "EUR",
+      "source_note": "Intune Suite Referenzpreis; Plan-1-Basisvoraussetzung und enthaltene Module prüfen.",
+      "sort_order": 1220,
+      "is_active": 1
+    },
+    {
+      "slug": "intune-endpoint-privilege-management",
+      "name": "Microsoft Intune Endpoint Privilege Management",
+      "kind": "addon",
+      "category": "security-identity",
+      "pricing_basis": "per_user",
+      "public_price": 2.6,
+      "member_price": 2.6,
+      "group_price": 2.6,
+      "currency": "EUR",
+      "source_note": "Intune Suite Einzelmodul-Referenzpreis.",
+      "sort_order": 1230,
+      "is_active": 1
+    },
+    {
+      "slug": "intune-remote-help",
+      "name": "Microsoft Intune Remote Help",
+      "kind": "addon",
+      "category": "security-identity",
+      "pricing_basis": "per_user",
+      "public_price": 3.3,
+      "member_price": 3.3,
+      "group_price": 3.3,
+      "currency": "EUR",
+      "source_note": "Remote-Help-Referenzpreis; Intune-Abdeckung prüfen.",
+      "sort_order": 1240,
+      "is_active": 1
+    },
+    {
+      "slug": "entra-id-p1",
+      "name": "Microsoft Entra ID P1",
+      "kind": "addon",
+      "category": "security-identity",
+      "pricing_basis": "per_user",
+      "public_price": 5.2,
+      "member_price": 5.2,
+      "group_price": 5.2,
+      "currency": "EUR",
+      "source_note": "Entra ID P1 Referenzpreis.",
+      "sort_order": 1250,
+      "is_active": 1
+    },
+    {
+      "slug": "entra-id-p2",
+      "name": "Microsoft Entra ID P2",
+      "kind": "addon",
+      "category": "security-identity",
+      "pricing_basis": "per_user",
+      "public_price": 7.8,
+      "member_price": 7.8,
+      "group_price": 7.8,
+      "currency": "EUR",
+      "source_note": "Entra ID P2 Referenzpreis; E5-Abdeckung prüfen.",
+      "sort_order": 1260,
+      "is_active": 1
+    },
+    {
+      "slug": "entra-internet-access",
+      "name": "Microsoft Entra Internet Access",
+      "kind": "addon",
+      "category": "security-identity",
+      "pricing_basis": "per_user",
+      "public_price": 4.7,
+      "member_price": 4.7,
+      "group_price": 4.7,
+      "currency": "EUR",
+      "source_note": "Global-Secure-Access-Referenzpreis; Kanalpreis prüfen.",
+      "sort_order": 1270,
+      "is_active": 1
+    },
+    {
+      "slug": "entra-private-access",
+      "name": "Microsoft Entra Private Access",
+      "kind": "addon",
+      "category": "security-identity",
+      "pricing_basis": "per_user",
+      "public_price": 4.7,
+      "member_price": 4.7,
+      "group_price": 4.7,
+      "currency": "EUR",
+      "source_note": "Global-Secure-Access-Referenzpreis; Kanalpreis prüfen.",
+      "sort_order": 1280,
+      "is_active": 1
+    },
+    {
+      "slug": "defender-for-business",
+      "name": "Microsoft Defender for Business",
+      "kind": "addon",
+      "category": "security",
+      "pricing_basis": "per_user",
+      "public_price": 2.6,
+      "member_price": 2.6,
+      "group_price": 2.6,
+      "currency": "EUR",
+      "source_note": "Defender for Business Referenzpreis; Business Premium enthält den Pfad.",
+      "sort_order": 1300,
+      "is_active": 1
+    },
+    {
+      "slug": "defender-for-office-365-plan-1",
+      "name": "Defender for Office 365 Plan 1",
+      "kind": "addon",
+      "category": "security",
+      "pricing_basis": "per_user",
+      "public_price": 1.73,
+      "member_price": 1.73,
+      "group_price": 1.73,
+      "currency": "EUR",
+      "source_note": "E-Mail-Schutz-Referenzpreis Plan 1.",
+      "sort_order": 1310,
+      "is_active": 1
+    },
+    {
+      "slug": "defender-for-office-365-plan-2",
+      "name": "Defender for Office 365 Plan 2",
+      "kind": "addon",
+      "category": "security",
+      "pricing_basis": "per_user",
+      "public_price": 4.3,
+      "member_price": 4.3,
+      "group_price": 4.3,
+      "currency": "EUR",
+      "source_note": "E-Mail-Schutz-Referenzpreis Plan 2.",
+      "sort_order": 1320,
+      "is_active": 1
+    },
+    {
+      "slug": "defender-for-endpoint-plan-1",
+      "name": "Defender for Endpoint Plan 1",
+      "kind": "addon",
+      "category": "security",
+      "pricing_basis": "per_user",
+      "public_price": 2.6,
+      "member_price": 2.6,
+      "group_price": 2.6,
+      "currency": "EUR",
+      "source_note": "Endpoint-Security-Referenzpreis Plan 1; Suite-Abdeckung prüfen.",
+      "sort_order": 1330,
+      "is_active": 1
+    },
+    {
+      "slug": "defender-for-endpoint-plan-2",
+      "name": "Defender for Endpoint Plan 2",
+      "kind": "addon",
+      "category": "security",
+      "pricing_basis": "per_user",
+      "public_price": 5.2,
+      "member_price": 5.2,
+      "group_price": 5.2,
+      "currency": "EUR",
+      "source_note": "Endpoint-Security-Referenzpreis Plan 2; E5-Abdeckung prüfen.",
+      "sort_order": 1340,
+      "is_active": 1
+    },
+    {
+      "slug": "defender-for-identity",
+      "name": "Microsoft Defender for Identity",
+      "kind": "addon",
+      "category": "security",
+      "pricing_basis": "per_user",
+      "public_price": 5.2,
+      "member_price": 5.2,
+      "group_price": 5.2,
+      "currency": "EUR",
+      "source_note": "Identity-Security-Referenzpreis; E5-Abdeckung prüfen.",
+      "sort_order": 1350,
+      "is_active": 1
+    },
+    {
+      "slug": "defender-for-cloud-apps",
+      "name": "Microsoft Defender for Cloud Apps",
+      "kind": "addon",
+      "category": "security",
+      "pricing_basis": "per_user",
+      "public_price": 4.3,
+      "member_price": 4.3,
+      "group_price": 4.3,
+      "currency": "EUR",
+      "source_note": "CASB-/SaaS-Security-Referenzpreis; E5-Abdeckung prüfen.",
+      "sort_order": 1360,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-e5-security",
+      "name": "Microsoft 365 E5 Security",
+      "kind": "addon",
+      "category": "security",
+      "pricing_basis": "per_user",
+      "public_price": 10.5,
+      "member_price": 10.5,
+      "group_price": 10.5,
+      "currency": "EUR",
+      "source_note": "E5-Security-Add-on-Referenzpreis; Basis- und Bundle-Voraussetzungen prüfen.",
+      "sort_order": 1370,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-e5-compliance",
+      "name": "Microsoft 365 E5 Compliance",
+      "kind": "addon",
+      "category": "compliance",
+      "pricing_basis": "per_user",
+      "public_price": 10.5,
+      "member_price": 10.5,
+      "group_price": 10.5,
+      "currency": "EUR",
+      "source_note": "E5-Compliance-Add-on-Referenzpreis; Basis- und Bundle-Voraussetzungen prüfen.",
+      "sort_order": 1380,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-f5-security",
+      "name": "Microsoft 365 F5 Security",
+      "kind": "addon",
+      "category": "security",
+      "pricing_basis": "per_user",
+      "public_price": 7.5,
+      "member_price": 7.5,
+      "group_price": 7.5,
+      "currency": "EUR",
+      "source_note": "Frontline-Security-Add-on-Referenzpreis.",
+      "sort_order": 1390,
+      "is_active": 1
+    },
+    {
+      "slug": "m365-f5-compliance",
+      "name": "Microsoft 365 F5 Compliance",
+      "kind": "addon",
+      "category": "compliance",
+      "pricing_basis": "per_user",
+      "public_price": 7.5,
+      "member_price": 7.5,
+      "group_price": 7.5,
+      "currency": "EUR",
+      "source_note": "Frontline-Compliance-Add-on-Referenzpreis.",
+      "sort_order": 1400,
+      "is_active": 1
+    },
+    {
+      "slug": "power-apps-premium",
+      "name": "Power Apps Premium",
+      "kind": "addon",
+      "category": "power-platform",
+      "pricing_basis": "per_user",
+      "public_price": 17.3,
+      "member_price": 17.3,
+      "group_price": 17.3,
+      "currency": "EUR",
+      "source_note": "Power Apps Premium Referenzpreis; Premium-Connectoren/Dataverse prüfen.",
+      "sort_order": 1500,
+      "is_active": 1
+    },
+    {
+      "slug": "power-apps-per-app",
+      "name": "Power Apps per App",
+      "kind": "addon",
+      "category": "power-platform",
+      "pricing_basis": "per_user",
+      "public_price": 4.3,
+      "member_price": 4.3,
+      "group_price": 4.3,
+      "currency": "EUR",
+      "source_note": "Legacy-/Kanal-Referenzpreis für einzelne App-Szenarien; Verfügbarkeit prüfen.",
+      "sort_order": 1510,
+      "is_active": 1
+    },
+    {
+      "slug": "power-automate-premium",
+      "name": "Power Automate Premium",
+      "kind": "addon",
+      "category": "power-platform",
+      "pricing_basis": "per_user",
+      "public_price": 13.0,
+      "member_price": 13.0,
+      "group_price": 13.0,
+      "currency": "EUR",
+      "source_note": "Power Automate Premium Referenzpreis.",
+      "sort_order": 1520,
+      "is_active": 1
+    },
+    {
+      "slug": "power-automate-process",
+      "name": "Power Automate Process",
+      "kind": "addon",
+      "category": "power-platform",
+      "pricing_basis": "flat_monthly",
+      "public_price": 130.0,
+      "member_price": 130.0,
+      "group_price": 130.0,
+      "currency": "EUR",
+      "source_note": "Pro-Bot-/Process-Referenzpreis; Kapazitätsmodell prüfen.",
+      "sort_order": 1530,
+      "is_active": 1
+    },
+    {
+      "slug": "power-automate-hosted-process",
+      "name": "Power Automate Hosted Process",
+      "kind": "addon",
+      "category": "power-platform",
+      "pricing_basis": "flat_monthly",
+      "public_price": 186.0,
+      "member_price": 186.0,
+      "group_price": 186.0,
+      "currency": "EUR",
+      "source_note": "Hosted-Process-Referenzpreis; Kapazitätsmodell prüfen.",
+      "sort_order": 1540,
+      "is_active": 1
+    },
+    {
+      "slug": "power-bi-pro",
+      "name": "Power BI Pro",
+      "kind": "addon",
+      "category": "power-platform",
+      "pricing_basis": "per_user",
+      "public_price": 12.1,
+      "member_price": 12.1,
+      "group_price": 12.1,
+      "currency": "EUR",
+      "source_note": "Power BI Pro Referenzpreis; E5-Abdeckung prüfen.",
+      "sort_order": 1550,
+      "is_active": 1
+    },
+    {
+      "slug": "power-bi-premium-per-user",
+      "name": "Power BI Premium Per User",
+      "kind": "addon",
+      "category": "power-platform",
+      "pricing_basis": "per_user",
+      "public_price": 20.0,
+      "member_price": 20.0,
+      "group_price": 20.0,
+      "currency": "EUR",
+      "source_note": "Power BI Premium-per-User-Referenzpreis; Fabric-/Capacity-Modelle separat prüfen.",
+      "sort_order": 1560,
+      "is_active": 1
+    },
+    {
+      "slug": "power-pages-authenticated-users",
+      "name": "Power Pages Authenticated Users",
+      "kind": "addon",
+      "category": "power-platform",
+      "pricing_basis": "consumption",
+      "public_price": 0.0,
+      "member_price": 0.0,
+      "group_price": 0.0,
+      "currency": "EUR",
+      "source_note": "Power Pages nutzt Kapazitäts-/Pack-/Verbrauchsmodelle; hier als 0-Euro-Referenzanker für Admin-Override geführt.",
+      "sort_order": 1570,
+      "is_active": 1
+    },
+    {
+      "slug": "project-plan-1",
+      "name": "Planner Plan 1 / Project Plan 1",
+      "kind": "addon",
+      "category": "productivity",
+      "pricing_basis": "per_user",
+      "public_price": 8.7,
+      "member_price": 8.7,
+      "group_price": 8.7,
+      "currency": "EUR",
+      "source_note": "Projekt-/Planner-Basisplan Referenzpreis.",
+      "sort_order": 1600,
+      "is_active": 1
+    },
+    {
+      "slug": "project-plan-3",
+      "name": "Project Plan 3",
+      "kind": "addon",
+      "category": "productivity",
+      "pricing_basis": "per_user",
+      "public_price": 26.0,
+      "member_price": 26.0,
+      "group_price": 26.0,
+      "currency": "EUR",
+      "source_note": "Project Plan 3 Referenzpreis.",
+      "sort_order": 1610,
+      "is_active": 1
+    },
+    {
+      "slug": "project-plan-5",
+      "name": "Project Plan 5",
+      "kind": "addon",
+      "category": "productivity",
+      "pricing_basis": "per_user",
+      "public_price": 47.2,
+      "member_price": 47.2,
+      "group_price": 47.2,
+      "currency": "EUR",
+      "source_note": "Project Plan 5 Referenzpreis.",
+      "sort_order": 1620,
+      "is_active": 1
+    },
+    {
+      "slug": "visio-plan-1",
+      "name": "Visio Plan 1",
+      "kind": "addon",
+      "category": "productivity",
+      "pricing_basis": "per_user",
+      "public_price": 4.3,
+      "member_price": 4.3,
+      "group_price": 4.3,
+      "currency": "EUR",
+      "source_note": "Visio Plan 1 Referenzpreis.",
+      "sort_order": 1630,
+      "is_active": 1
+    },
+    {
+      "slug": "visio-plan-2",
+      "name": "Visio Plan 2",
+      "kind": "addon",
+      "category": "productivity",
+      "pricing_basis": "per_user",
+      "public_price": 13.0,
+      "member_price": 13.0,
+      "group_price": 13.0,
+      "currency": "EUR",
+      "source_note": "Visio Plan 2 Referenzpreis.",
+      "sort_order": 1640,
+      "is_active": 1
+    },
+    {
+      "slug": "viva-suite",
+      "name": "Microsoft Viva Suite",
+      "kind": "addon",
+      "category": "viva",
+      "pricing_basis": "per_user",
+      "public_price": 10.4,
+      "member_price": 10.4,
+      "group_price": 10.4,
+      "currency": "EUR",
+      "source_note": "Viva Suite Referenzpreis; Modulabdeckung und Bundles prüfen.",
+      "sort_order": 1700,
+      "is_active": 1
+    },
+    {
+      "slug": "viva-goals",
+      "name": "Microsoft Viva Goals",
+      "kind": "addon",
+      "category": "viva",
+      "pricing_basis": "per_user",
+      "public_price": 5.2,
+      "member_price": 5.2,
+      "group_price": 5.2,
+      "currency": "EUR",
+      "source_note": "Viva Goals Referenzpreis; Verfügbarkeit und Bundles prüfen.",
+      "sort_order": 1710,
+      "is_active": 1
+    },
+    {
+      "slug": "viva-insights",
+      "name": "Microsoft Viva Insights",
+      "kind": "addon",
+      "category": "viva",
+      "pricing_basis": "per_user",
+      "public_price": 4.3,
+      "member_price": 4.3,
+      "group_price": 4.3,
+      "currency": "EUR",
+      "source_note": "Viva Insights Referenzpreis; Verfügbarkeit und Bundles prüfen.",
+      "sort_order": 1720,
+      "is_active": 1
+    },
+    {
+      "slug": "exchange-online-archiving",
+      "name": "Exchange Online Archiving",
+      "kind": "addon",
+      "category": "storage-archive",
+      "pricing_basis": "per_user",
+      "public_price": 3.0,
+      "member_price": 3.0,
+      "group_price": 3.0,
+      "currency": "EUR",
+      "source_note": "Archivierungs-Add-on; Exchange Plan 2/E3/E5-Abdeckung prüfen.",
+      "sort_order": 1800,
+      "is_active": 1
+    },
+    {
+      "slug": "sharepoint-extra-storage",
+      "name": "Office 365 Extra File Storage",
+      "kind": "addon",
+      "category": "storage-archive",
+      "pricing_basis": "per_gb",
+      "public_price": 0.2,
+      "member_price": 0.2,
+      "group_price": 0.2,
+      "currency": "EUR",
+      "source_note": "Referenzpreis pro GB/Monat; Tenant-Inklusivspeicher und CSP-Preis prüfen.",
+      "sort_order": 1810,
+      "is_active": 1
+    },
+    {
+      "slug": "sharepoint-advanced-management",
+      "name": "SharePoint Advanced Management",
+      "kind": "addon",
+      "category": "storage-archive",
+      "pricing_basis": "per_user",
+      "public_price": 2.6,
+      "member_price": 2.6,
+      "group_price": 2.6,
+      "currency": "EUR",
+      "source_note": "SharePoint Advanced Management Referenzpreis; in Copilot-Kontexten Bundle-Abdeckung prüfen.",
+      "sort_order": 1820,
+      "is_active": 1
+    }
+  ]
+}

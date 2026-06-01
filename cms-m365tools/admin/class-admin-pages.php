@@ -133,6 +133,25 @@ final class CMS_M365CALCULATOR_Admin_Pages
         return '/';
     }
 
+    private static function safe_public_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '' || str_contains($url, "\0") || preg_match('/[\r\n]/', $url) === 1) {
+            return '';
+        }
+
+        if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
+            return $url;
+        }
+
+        $scheme = strtolower((string) (parse_url($url, PHP_URL_SCHEME) ?: ''));
+        if (in_array($scheme, ['http', 'https'], true) && filter_var($url, FILTER_VALIDATE_URL) !== false) {
+            return $url;
+        }
+
+        return '';
+    }
+
     private static function enqueue_admin_assets(): void
     {
         $css = CMS_M365CALCULATOR_PLUGIN_DIR . 'assets/css/m365calculator-admin.css';
@@ -263,6 +282,7 @@ final class CMS_M365CALCULATOR_Admin_Pages
                             <th>Status</th>
                             <th>Sortierung</th>
                             <th>URL</th>
+                            <th>Public</th>
                             <th>Beschreibung</th>
                         </tr>
                     </thead>
@@ -272,6 +292,8 @@ final class CMS_M365CALCULATOR_Admin_Pages
                         $moduleKey = (string) ($tool['key'] ?? '');
                         $settings = $moduleSettings[$moduleKey] ?? [];
                         $statusValue = (string) ($settings['status_override'] ?? ($tool['status'] ?? 'live'));
+                        $isModuleEnabled = (int) ($settings['is_enabled'] ?? 1) === 1;
+                        $publicUrl = self::safe_public_url((string) ($tool['url'] ?? ''));
                         ?>
                         <tr>
                             <td>
@@ -296,7 +318,20 @@ final class CMS_M365CALCULATOR_Admin_Pages
                                 </select>
                             </td>
                             <td><input class="m365calculator-admin-control m365calculator-admin-priority" type="number" min="0" max="1000" name="modules[<?php echo htmlspecialchars($moduleKey, ENT_QUOTES, 'UTF-8'); ?>][priority_override]" value="<?php echo (int) ($settings['priority_override'] ?? ($tool['priority'] ?? 100)); ?>"></td>
-                            <td><code><?php echo htmlspecialchars((string) ($tool['url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code></td>
+                            <td>
+                                <?php if ($publicUrl !== ''): ?>
+                                <a class="m365calculator-admin-url-link" href="<?php echo htmlspecialchars($publicUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" title="Public URL als Admin öffnen">
+                                    <code><?php echo htmlspecialchars((string) ($tool['url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code>
+                                </a>
+                                <?php else: ?>
+                                <code><?php echo htmlspecialchars((string) ($tool['url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code>
+                                <?php endif; ?>
+                            </td>
+                            <td class="m365calculator-admin-public-cell">
+                                <?php if ($isModuleEnabled && $publicUrl !== ''): ?>
+                                <a class="m365calculator-admin-public-link" href="<?php echo htmlspecialchars($publicUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" title="Public Site öffnen" aria-label="Public Site von <?php echo htmlspecialchars((string) ($tool['title'] ?? $moduleKey), ENT_QUOTES, 'UTF-8'); ?> öffnen">↗</a>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <textarea class="m365calculator-admin-control" rows="3" maxlength="140" name="modules[<?php echo htmlspecialchars($moduleKey, ENT_QUOTES, 'UTF-8'); ?>][description_override]" placeholder="<?php echo htmlspecialchars((string) ($tool['description'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($settings['description_override'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
                             </td>
@@ -461,6 +496,7 @@ final class CMS_M365CALCULATOR_Admin_Pages
             ],
             'landing-designer' => [
                 'landing-content' => '✍️ Contentheader',
+                'landing-texts' => '📝 Bereiche & Tools',
                 'landing-layout' => '🧱 Layouts & Boxen',
                 'landing-colors' => '🎨 Farben',
                 'landing-visibility' => '👁️ Sichtbarkeit',
@@ -546,6 +582,7 @@ final class CMS_M365CALCULATOR_Admin_Pages
     private static function landing_designer_fields(string $tab): array
     {
         return match ($tab) {
+            'landing-texts' => self::landing_text_fields(),
             'landing-layout' => [
                 self::select('landing_page_layout', 'Seitenbreite', 'wide', [
                     'normal' => 'Normaler Contentbereich',
@@ -554,6 +591,9 @@ final class CMS_M365CALCULATOR_Admin_Pages
                     'editorial' => 'Redaktionell mit großzügiger Leseführung',
                     'directory' => 'Verzeichnis-Look für viele Module',
                 ], 'Legt die Grundbreite und Anmutung des Hubs fest.'),
+                self::number('landing_content_max_width', 'Maximale Plugin-Content-Breite in px', '0', 0, 1600, 20, '0 nutzt den Layout-Standard. Werte ab 760px begrenzen die Publicsite-Contentbreite für Übersicht und Modul-Publicseiten.'),
+                self::number('landing_content_gutter', 'Horizontaler Content-Abstand links/rechts in px', '24', 0, 96, 2, 'Steuert den Innenabstand zwischen Plugin-Content und linkem/rechtem Rand. 0 rendert bündig im Theme-Contentbereich.'),
+                self::number('landing_cards_per_row', 'Toolcards nebeneinander je Bereich', '3', 0, 6, 1, '0 nutzt Auto-Layout. Werte 1–6 steuern die maximale Spaltenanzahl pro Bereich; Bereiche mit weniger Karten füllen die volle Breite.'),
                 self::select('landing_header_layout', 'Contentheader-Layout', 'split', [
                     'split' => 'Text links, Kennzahlen rechts',
                     'stacked' => 'Untereinander',
@@ -578,6 +618,11 @@ final class CMS_M365CALCULATOR_Admin_Pages
                     'stacked' => 'Untereinander',
                     'right' => 'Rechts ausgerichtet',
                 ], 'Layout der optionalen Header-Buttons.'),
+                self::select('landing_search_layout', 'Suchbereich Layout', 'stacked', [
+                    'stacked' => 'Unterteilt: Suche oben, Kategorien darunter',
+                    'split-search-left' => 'Card geteilt: Suche links, Kategorien rechts',
+                    'split-search-right' => 'Card geteilt: Kategorien links, Suche rechts',
+                ], 'Steuert die Darstellung der Suche und Kategorieauswahl.'),
                 self::select('landing_category_layout', 'Kategorie-Navigation', 'line', [
                     'line' => 'Schlichte Link-Zeile',
                     'pills' => 'Pill-Navigation',
@@ -596,6 +641,7 @@ final class CMS_M365CALCULATOR_Admin_Pages
                     'quiet' => 'Ruhig / redaktionell',
                     'flat' => 'Flach ohne Schatten',
                     'accent' => 'Mit Akzentkante',
+                    'corner-icon' => 'Dreieck oben rechts mit Icon',
                 ], 'Optische Gewichtung der Karten.'),
                 self::select('landing_tool_button_style', 'Tool-Button Stil', 'link', [
                     'link' => 'Textlink mit Pfeil',
@@ -657,6 +703,13 @@ final class CMS_M365CALCULATOR_Admin_Pages
                 self::text('landing_overline', 'Header-Overline', 'Rechner & Tools', 'Kleine Zeile oberhalb der Landingpage-Hauptüberschrift.'),
                 self::text('landing_title', 'Landingpage-Titel', 'M365 Tools', 'Hauptüberschrift der Toolbox-Landingpage.'),
                 self::textarea('landing_intro', 'Intro-Text', 'Eine kuratierte Sammlung für Microsoft-365-Lizenzierung, Kosten, Speicher, Backup, Copilot, Telefonie, Migration und Betrieb.', 'Einleitungstext im Contentheader.'),
+                self::text('landing_header_image_url', 'Contentheader-Bild URL', '', 'Optionales Bild im Landingpage-Contentheader. Leer lassen, wenn kein Bild angezeigt werden soll.'),
+                self::text('landing_header_image_alt', 'Contentheader-Bild Alt-Text', '', 'Alternativtext für das optionale Contentheader-Bild.'),
+                self::select('landing_header_image_layout', 'Contentheader-Bild Layout', 'right', [
+                    'right' => 'Bild rechts neben dem Text',
+                    'left' => 'Bild links neben dem Text',
+                    'banner' => 'Bild als ruhiger Banner unter dem Text',
+                ], 'Drei Layoutvarianten für das optionale Contentheader-Bild.'),
                 self::text('landing_primary_button_label', 'Primärbutton Text', 'Alle 21 Tools durchsuchen ↓', 'Beschriftung des primären Header-Buttons.'),
                 self::text('landing_primary_button_url', 'Primärbutton Ziel', '#direkteinstieg', 'Interne Route, Sprungmarke oder vollständige URL für den primären Header-Button.'),
                 self::text('landing_secondary_button_label', 'Sekundärbutton Text', 'Kontakt aufnehmen', 'Beschriftung des sekundären Header-Buttons.'),
@@ -673,6 +726,91 @@ final class CMS_M365CALCULATOR_Admin_Pages
                 ], 'Legt fest, wohin die Buttons in den Modulboxen führen.'),
                 self::text('landing_tool_button_custom_url', 'Eigenes Tool-Button Ziel', '', 'Optionales globales Ziel für alle Modulbox-Buttons.'),
             ],
+        };
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function landing_text_fields(): array
+    {
+        $fields = [
+            self::text('landing_search_title', 'Suchbereich Überschrift', 'Tools suchen und filtern', 'Überschrift oberhalb des Suchfelds.'),
+            self::text('landing_search_placeholder', 'Suchfeld Platzhalter', 'Nach Tool, Thema oder Kategorie suchen …', 'Placeholder im Suchfeld.'),
+            self::text('landing_search_help', 'Suchbereich Hilfetext', 'Suche und Kategorie wirken gemeinsam.', 'Kleiner Hinweis im Suchbereich.'),
+            self::text('landing_search_category_label', 'Suchbereich Kategorie-Label', 'Kategorien', 'Überschrift für die Kategoriechips im Suchpanel.'),
+            self::text('landing_all_categories_label', 'Alle-Kategorien Chip', 'Alle', 'Text des Chips für alle Kategorien.'),
+            self::text('landing_category_overline_text', 'Bereich-Overline', 'Tool-Kategorie', 'Kleine Overline oberhalb jedes Bereichs.'),
+            self::text('landing_no_results_title', 'Keine-Ergebnisse Titel', 'Keine Tools für deine Auswahl gefunden.', 'Titel der Meldung, wenn die Suche keine Treffer liefert.'),
+            self::text('landing_no_results_text', 'Keine-Ergebnisse Text', 'Bitte Suchbegriff anpassen oder einen anderen Kategorie-Chip wählen.', 'Beschreibung der Keine-Ergebnisse-Meldung.'),
+            self::text('landing_status_beta_label', 'Statuslabel Beta', 'Beta', 'Text für Beta-Statuslabels.'),
+            self::text('landing_status_soon_label', 'Statuslabel Bald', 'Bald', 'Text für Bald-verfügbar-Statuslabels.'),
+            self::textarea('landing_disabled_note_text', 'Hinweis bei inaktiven Tools', 'Dieses Modul ist vorbereitet und wird bald verfügbar.', 'Hinweistext in Toolcards ohne aktive Zielseite.'),
+        ];
+
+        if (class_exists('CMS_M365CALCULATOR_Catalog')) {
+            $catalog = CMS_M365CALCULATOR_Catalog::m365_best_practice_catalog();
+            $domains = is_array($catalog['domains'] ?? null) ? $catalog['domains'] : [];
+
+            foreach ($domains as $domainKey => $domain) {
+                if (!is_array($domain)) {
+                    continue;
+                }
+
+                $key = self::clean_key((string) $domainKey);
+                if ($key === '') {
+                    continue;
+                }
+
+                $label = trim((string) ($domain['label'] ?? $domainKey));
+                $fields[] = self::text('landing_review_domain_label_' . $key, 'Kompass-Card Titel: ' . $label, $label, 'Titel dieser Best-Practice-Kompass-Card und der zugehörigen Review-Chips.');
+                $fields[] = self::textarea('landing_review_domain_summary_' . $key, 'Kompass-Card Text: ' . $label, (string) ($domain['summary'] ?? ''), 'Beschreibung dieser Best-Practice-Kompass-Card.');
+            }
+        }
+
+        $groups = class_exists('CMS_M365CALCULATOR_Tool_Registry')
+            ? CMS_M365CALCULATOR_Tool_Registry::grouped_by_category()
+            : [];
+
+        foreach ($groups as $categoryLabel => $tools) {
+            if (!is_array($tools)) {
+                continue;
+            }
+
+            $category = trim((string) $categoryLabel) !== '' ? trim((string) $categoryLabel) : 'Weitere Tools';
+            $categorySlug = self::clean_key($category);
+            $fields[] = self::text('landing_category_label_' . $categorySlug, 'Bereichstitel: ' . $category, $category, 'Titel dieses Bereichs auf der Landingpage und in der Kategorie-Navigation.');
+            $fields[] = self::textarea('landing_category_summary_' . $categorySlug, 'Bereichsbeschreibung: ' . $category, self::landing_category_summary_default($categorySlug), 'Beschreibungstext direkt unter dem Bereichstitel.');
+
+            foreach ($tools as $tool) {
+                if (!is_array($tool)) {
+                    continue;
+                }
+
+                $toolKey = self::clean_key((string) ($tool['key'] ?? ''));
+                if ($toolKey === '') {
+                    continue;
+                }
+
+                $toolTitle = trim((string) ($tool['title'] ?? $toolKey));
+                $fields[] = self::text('landing_tool_title_' . $toolKey, 'Tool-Titel: ' . $toolTitle, $toolTitle, 'Titel dieser Toolcard auf der Landingpage.');
+                $fields[] = self::textarea('landing_tool_description_' . $toolKey, 'Tool-Beschreibung: ' . $toolTitle, (string) ($tool['description'] ?? ''), 'Beschreibung dieser Toolcard auf der Landingpage.');
+                $fields[] = self::text('landing_tool_button_label_' . $toolKey, 'Tool-Button: ' . $toolTitle, '', 'Optionaler Button-Text nur für dieses Tool. Leer = globaler Tool-Button Text.');
+            }
+        }
+
+        return $fields;
+    }
+
+    private static function landing_category_summary_default(string $categorySlug): string
+    {
+        return match ($categorySlug) {
+            'lizenzen' => 'Lizenzmodelle, Add-ons, Laufzeiten und Kostenpfade sauber vergleichen.',
+            'exchange' => 'Exchange, Archivierung, Shared Mailboxes und ROI-Fragen belastbar prüfen.',
+            'copilot' => 'Copilot-Szenarien, Pilotphasen und Lizenzoptionen pragmatisch bewerten.',
+            'teams' => 'Telefonie, PSTN-Modelle und Teams-Phone-Optionen vergleichen.',
+            'speicher' => 'SharePoint, OneDrive, Exchange und Backup-Speicherbedarf greifbar machen.',
+            default => 'Weitere Microsoft-365-Tools und Hilfen.',
         };
     }
 
@@ -750,6 +888,12 @@ final class CMS_M365CALCULATOR_Admin_Pages
                 self::text('market', 'Markt / Region', 'DE', 'Marktkennzeichen für Preis- und Quellenannahmen.'),
                 self::checkbox('show_global_source_hints', 'Quellenhinweise standardmäßig anzeigen', '1', 'Default für gepflegte Quellenhinweise in Modulen.'),
                 self::checkbox('enable_public_landing_checks', 'Best-Practice-Kompass auf Landingpage anzeigen', '1', 'Steuert den sichtbaren Review-Kontext auf der Toolbox-Landingpage.'),
+                self::select('public_detail_button_layout', 'Button-Layout auf Tool-Publicsites', 'inline', [
+                    'inline' => 'Nebeneinander / Standard',
+                    'stacked' => 'Untereinander',
+                    'right' => 'Rechts ausgerichtet',
+                    'full' => 'Volle Breite untereinander',
+                ], 'Gilt nur für einzelne Tool-Publicsites und die detailseitige CTA – nicht für die Tool-Übersicht.'),
                 self::number('default_admin_buffer_percent', 'Standard-Betriebspuffer in %', '10', 0, 200, 0.1, 'Globaler Puffer für Betriebs-, Review- oder Beschaffungskosten.'),
                 self::textarea('general_note', 'Allgemeine Notiz', '', 'Interne Notiz zur Gesamt-Toolbox.'),
             ],
@@ -814,6 +958,7 @@ final class CMS_M365CALCULATOR_Admin_Pages
                 ? 'Fixpreis pro Monat'
                 : 'pro Nutzer/Monat';
             $category = (string) ($package['category'] ?? 'm365');
+            $sourceNote = (string) ($package['source_note'] ?? 'Lokaler M365-Tools-Standardkatalog oder M365LIC Seed-Katalog.');
 
             foreach ($tiers as $tier => $tierLabel) {
                 $field = $tier === 'member' ? 'member_price' : ($tier === 'group' ? 'group_price' : 'public_price');
@@ -825,7 +970,7 @@ final class CMS_M365CALCULATOR_Admin_Pages
                     0,
                     100000,
                     0.01,
-                    'Kategorie ' . $category . ', ' . $basis . '. Herkunft: CMS M365 License Seed-Katalog.'
+                    'Kategorie ' . $category . ', ' . $basis . '. Herkunft: ' . $sourceNote
                 );
             }
         }
@@ -969,8 +1114,7 @@ final class CMS_M365CALCULATOR_Admin_Pages
                 $number = is_numeric($raw) ? (float) $raw : (float) ($field['default'] ?? 0);
                 $min = (float) ($field['min'] ?? -1000000);
                 $max = (float) ($field['max'] ?? 1000000);
-                $formatted = rtrim(rtrim((string) max($min, min($max, $number)), '0'), '.');
-                $options[$key] = $formatted !== '' ? $formatted : '0';
+                $options[$key] = self::format_number_option(max($min, min($max, $number)), $raw, $min, $max);
                 continue;
             }
 
@@ -990,6 +1134,48 @@ final class CMS_M365CALCULATOR_Admin_Pages
         }
 
         return $options;
+    }
+
+    private static function format_number_option(float $value, string $raw, float $min, float $max): string
+    {
+        $raw = trim(str_replace(',', '.', $raw));
+        if ($raw !== '' && is_numeric($raw)) {
+            $rawNumber = (float) $raw;
+            if ($rawNumber >= $min && $rawNumber <= $max) {
+                return self::normalize_number_string($raw);
+            }
+        }
+
+        return self::number_to_string($value);
+    }
+
+    private static function normalize_number_string(string $value): string
+    {
+        $value = trim($value);
+        if (stripos($value, 'e') !== false) {
+            return self::number_to_string((float) $value);
+        }
+
+        $negative = str_starts_with($value, '-');
+        $value = ltrim($value, '+-');
+        [$integer, $decimal] = array_pad(explode('.', $value, 2), 2, '');
+        $integer = ltrim($integer, '0');
+        $integer = $integer !== '' ? $integer : '0';
+
+        if ($integer === '0' && (float) $value == 0.0) {
+            $negative = false;
+        }
+
+        return ($negative ? '-' : '') . $integer . ($decimal !== '' ? '.' . $decimal : '');
+    }
+
+    private static function number_to_string(float $value): string
+    {
+        if (abs($value - round($value)) < 0.000000001) {
+            return (string) (int) round($value);
+        }
+
+        return rtrim(rtrim(sprintf('%.12F', $value), '0'), '.');
     }
 
     private static function clean_key(string $value): string

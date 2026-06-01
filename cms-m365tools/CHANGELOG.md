@@ -1,6 +1,119 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.24 – 2026-06-01
+
+- `data/package_price_catalog.json` strukturell bereinigt: der kanonische SKU-Katalog liegt wieder eindeutig auf Top-Level, während `billing_options` nur echte Abrechnungsoptionen enthält.
+- Neue Promo-Policy umgesetzt: zeitlich begrenzte Angebote werden ausschließlich in `sku.promo` gespeichert und laufen nicht in `price_history`, Admin-Baselines oder den Preiserhöhungs-Tracker-Graphen.
+- Copilot-Layer ergänzt und getrennt modelliert: `m365-copilot-business`, `m365-copilot`, `m365-copilot-chat` und `copilot-studio-tenant` enthalten jetzt `requires_base`, Quellenhinweise und passende Baselines bzw. Promo-/Credit-Blöcke.
+- Business+Copilot-Bundles für Basic, Standard und Premium jeweils mit Teams und ohne Teams ergänzt; Bundle-Promos bleiben separate Metadaten statt Preiszeitreihe.
+- Consumer Premium und Office-365-Education-A1/A3/A5-SKUs ergänzt; Office-365-Education und Microsoft-365-Education werden per Suite-Tag getrennt geführt.
+- Zusätzliche historische Anker für No-Teams-/EWR-, Frontline- und Office-365-Zeitreihen aufgenommen, ohne neuere Mai-/Juli-2026-Baselines zu überschreiben.
+
+## 3.0.23 – 2026-06-01
+
+- `data/package_price_catalog.json` zur kanonischen Microsoft-365-Preisquelle erweitert: Mai-2026-Baseline, historische Zeitreihen-Anker und bestätigte Juli-2026-Future-Rows werden pro SKU getrennt geführt.
+- NCE-Billing-Felder ergänzt: `monthly_monthly`, `annual_monthly`, `annual_annual_permonth`, `annual_annual_total` und `triennial_permonth`; ältere Admin-Felder bleiben kompatibel.
+- Teams- und No-Teams-Varianten werden getrennt modelliert (`teams_included: true|false|null`), damit EEA/EWR- und globale Packaging-Änderungen nicht vermischt werden.
+- Admin-Paketpreise werden aus der kanonischen Mai-2026-Baseline abgeleitet und weiterhin mit vorhandenen DB-Overrides sowie optionalem `cms-m365lic` gemerged.
+- Der Microsoft-Preiserhöhung-Tracker nutzt jetzt dieselben SKU-Zeitreihen für SKU-Auswahl, Preiswirkung und Zeitreihen-Chart; unbestätigte EUR-Werte bleiben `null` bzw. strukturiert markiert statt geraten.
+
+## 3.0.22 – 2026-06-01
+
+- Lokalen M365-Standard-Preiskatalog `data/package_price_catalog.json` ergänzt: 23 Basispläne und 51 Add-ons/Spezial-SKUs inklusive Teams, Copilot, Security, Intune, Entra, Power Platform, Project, Visio, Viva und Storage-Add-ons.
+- `m365_package_price_catalog()` merged jetzt vorhandene DB-Preisoptionen, Legacy-`pricing.json`, den lokalen Standardkatalog und optional `cms-m365lic`; DB-only-Preise bleiben dadurch in der Admin-Ansicht sichtbar, statt ohne Seed zu verschwinden.
+- Abrechnungsmodelle im Standardkatalog hinterlegt: Jahr/jährlich (`annual_upfront`), Jahr/monatlich (`annual_monthly`, +5%) und Monat/monatlich (`monthly_flex`, +20%).
+- Admin-Hilfetexte der Paketpreisfelder zeigen künftig die konkrete Herkunft des jeweiligen Seed-Eintrags statt pauschal nur `CMS M365 License Seed-Katalog`.
+
+## 3.0.21 – 2026-06-01
+
+- URL-Spalte in der Admin-Modulübersicht anklickbar gemacht: Admins können jede registrierte Tool-Publicsite direkt öffnen, auch wenn das Modul public unsichtbar geschaltet ist.
+- Das separate Public-Site-Icon bleibt weiterhin bewusst an die öffentliche Sichtbarkeit gekoppelt, damit Admin-Zugriff und Public-Anzeige sauber getrennt sind.
+
+## 3.0.20 – 2026-06-01
+
+- Admin-Modulübersicht um ein Public-Site-Icon je sichtbarem Tool ergänzt; unsichtbar geschaltete Module zeigen dort bewusst keinen Public-Button mehr.
+- Detailseiten erhalten eine serverseitig ausgegebene Sichtbarkeitskonfiguration, sodass Querverlinkungs-Buttons zu unsichtbaren Modulen automatisch aus den Tool-Publicsites entfernt werden.
+- Zentrale Einstellung `Button-Layout auf Tool-Publicsites` ergänzt: Detailseiten-Buttons außerhalb der Tool-Übersicht können nun inline, gestapelt, rechtsbündig oder vollbreit dargestellt werden.
+
+## 3.0.19 – 2026-06-01
+
+- Detailseiten-Breite hart auf maximal `1160px` gesetzt: `.m365calc-page`, Matrix-Detailseiten und die detailseitige Provider-CTA halten sich jetzt an dieselbe Content-Max-Breite.
+- Detail-only Umsetzung in `assets/css/m365calculator-public.css`; die M365-Tools-Hub-Übersicht bleibt weiterhin unangetastet.
+
+## 3.0.18 – 2026-06-01
+
+- Einzeltool-Detailseiten visuell aufgefrischt, ohne Berechnungslogik, Formularfelder, Ergebnisse oder bestehende Tool-JS-Abläufe zu ändern.
+- Detail-only Akzentsystem ergänzt: ruhiges Brand-Blau plus ein warmer Highlight-Ton für Overlines, Marker und dezente Statusflächen.
+- Wiederverwendbare Detail-Komponenten ergänzt: weichere Karten, alternierende Abschnittsflächen, kleine Heading-Icons, Checklist-Cards mit Statusmarker, Score-Ringe, Timeline-Listen, FAQ-/Quellenblöcke mit Akzentkante sowie generische Prozentbalken in Tabellen.
+- Scope-Lock eingehalten: Die M365-Tools-Hub-Übersicht (`templates/m365-tools-content.php`, Hub-Suche, Kategoriefilter und Toolcard-Grid) wurde für diesen Detail-Refresh nicht geändert.
+
+## 3.0.17 – 2026-06-01
+
+- Kategorie-Navigation im geteilten Suchlayout repariert: `line`, `pills`, `cards` und `minimal` erhalten wieder eigene sichtbare Styles statt durch eine Sammelregel gleich auszusehen.
+- Alte überschreibende Split-Line-Regel entfernt, damit die Designer-Auswahl zuverlässig greift.
+- Header-Titel-Ausblendung erzeugt keinen ungültigen `aria-labelledby`-Verweis mehr, sondern nutzt einen sauberen ARIA-Fallback.
+
+## 3.0.16 – 2026-06-01
+
+- Landingpage-Designer-Texte respektieren jetzt bewusst gespeicherte leere Werte: Wird ein Textfeld geleert und gespeichert, erscheint auf der Publicsite kein Defaulttext mehr.
+- Leere Hilfs-/Hinweisrahmen werden nicht mehr gerendert: Such-Hilfetext, Bereichsbeschreibung, Kompass-Card-Text, No-Results-Meldung, Statusbadge und Inaktiv-Hinweis verschwinden vollständig, wenn ihr Text leer ist.
+- Überschriften und Buttons werden nur noch ausgegeben, wenn tatsächlich sichtbarer Text vorhanden ist; ARIA-Fallbacks bleiben ohne sichtbaren Platzhalter erhalten.
+
+## 3.0.15 – 2026-06-01
+
+- Publicsite-Abstände zum Theme-Header und Theme-Footer erneut hart abgesichert: Content-Top/Bottom-Gap bleibt maximal 25px, Theme-Container und Footer-Margins werden für M365Tools-Publicseiten neutralisiert.
+- Geteilte Such-Card entzerrt: kompaktere Suchfeldhöhe, kleinere Eingabe, sichere Mindest-Innenabstände zum Card-Rand und mehr Abstand zum darunterliegenden Bereich.
+- Kategorie-Chips im geteilten Suchlayout werden unabhängig vom Kategorie-Stil kompakt gerendert, damit das Panel nicht zu groß oder gedrungen wirkt.
+
+## 3.0.14 – 2026-06-01
+
+- Landingpage Designer um den Tab `Bereiche & Tools` erweitert: Suchbereich, Kategoriechips, Bereichs-Overline, Kompass-Cards, No-Results-Meldung, Statuslabels und Inaktiv-Hinweis sind nun zentral textlich anpassbar.
+- Für jeden Landingpage-Bereich können Titel und Beschreibung direkt im Designer überschrieben werden; Kategorie-Navigation und Bereichsheader verwenden dieselben gepflegten Texte.
+- Für jede Toolcard können Landingpage-Titel, Beschreibung und optional ein individueller Button-Text gepflegt werden, ohne die Modulkonfiguration oder die Tool-Registry anfassen zu müssen.
+
+## 3.0.13 – 2026-06-01
+
+- Box-Stil `Dreieck oben rechts mit Icon` ergänzt: Toolcards können das Modul-Icon nun wie beim Kompass ruhig im rechten oberen Corner-Dreieck anzeigen.
+- Split-Suchlayouts optisch veredelt: Suchfeld, Hilfetext und Kategorien sitzen jetzt in einem klar gestalteten Panel mit Flächen, Trennern, Kategorie-Label und verbesserten Chips.
+- Linien-Kategorien werden innerhalb der Suchbox automatisch in kompakte Pills umgewandelt, damit das Box-Layout nicht flach oder unfertig wirkt.
+
+## 3.0.12 – 2026-06-01
+
+- Landingpage-Designer um die maximale Toolcard-Spaltenanzahl je Bereich ergänzt; Bereiche mit nur 1, 2 oder 3 Karten füllen nun die verfügbare Bereichsbreite statt schmal stehen zu bleiben.
+- Contentheader unterstützt ein optionales Bild mit drei Varianten: links, rechts oder als breiter Banner; ohne Bild werden keine zusätzlichen Einrückungen oder Platzhalter reserviert.
+- Suchbereich erhält drei sichtbare Layouts inklusive geteilter Card mit Suche links oder rechts und Kategorien auf der gegenüberliegenden Seite.
+- Publicsite-Abstände zu Theme-Header und Theme-Footer werden auf maximal 25px begrenzt, ohne eigene Plugin-Hintergründe einzuführen.
+
+## 3.0.11 – 2026-06-01
+
+- Landingpage-Designer-Layouts sichtbar differenziert: Seitenlayout, Headerlayout, Kategorie-Navigation, Toolbox-Layout, Box-Stil und Dichte haben nun klar erkennbare CSS-Ausprägungen.
+- Die bisher ungenutzte Kategorie-Layout-Option wird als Root-Klasse ausgegeben und steuert Linien-, Pill-, Karten- und Minimal-Navigation.
+- Bereichskarten im Best-Practice-Kompass erhalten oben rechts ein dezentes Dreieck mit dem jeweiligen Bereichs-Icon.
+
+## 3.0.10 – 2026-06-01
+
+- Landingpage Designer um den horizontalen Plugin-Content-Abstand links/rechts ergänzt; der Wert steuert den Innenabstand zwischen Publicsite-Content und Theme-Contentrand.
+- Public-Übersicht, Modul-Publicseiten und PHINIT-Basiscontainer verwenden jetzt den gemeinsamen Token `--m365tools-content-gutter` bzw. `--m365-tools-content-gutter`.
+- Modul-Public-Design kann den globalen horizontalen Abstand optional pro Modul überschreiben; `0` im Modul bedeutet weiterhin globalen Wert erben.
+
+## 3.0.9 – 2026-06-01
+
+- Number-Settings im Admin speichern Endnullen korrekt: Werte wie `1200`, `1600`, `6000` oder `100000` werden nicht mehr durch die Sanitizer-Formatierung gekürzt.
+- Der gemeinsame Number-Sanitizer formatiert nur noch berechnete Clamp-Werte kompakt und erhält gültige direkt eingegebene Zahlen inklusive signifikanter Nullen.
+
+## 3.0.8 – 2026-06-01
+
+- Landingpage Designer um eine optionale maximale Plugin-Content-Breite ergänzt: `0` nutzt weiterhin den Layout-Standard, konkrete Pixelwerte begrenzen die Publicsite-Container.
+- Public-Übersicht, bestehende Modul-Publicseiten und PHINIT-Basiscontainer verwenden jetzt denselben Breiten-Token `--m365tools-content-max`.
+- Modul-Public-Design kann die globale Contentbreite optional pro Modul überschreiben, ohne Theme-Header, Navigation oder Footer anzufassen.
+
+## 3.0.7 – 2026-06-01
+
+- Public-Landingpage wieder an die gespeicherten Landingpage-Designer-Optionen angebunden: Titel, Intro, Buttons, Farben, Layoutklassen, Dichte und Sichtbarkeiten werden serverseitig aus den Adminwerten gerendert.
+- Modulübersicht rendert nicht mehr aus hartcodierten Karten, sondern aus der gefilterten Tool-Registry; deaktivierte Module, Titel-/Beschreibung-Overrides und Sortierung greifen damit auch auf der Publicsite.
+- Best-Practice-Kompass, Review-Chips, Modul-Prüfpunkte, Icons, Statuslabels, Kategorie-Navigation und Tool-Buttons beachten die jeweiligen Sichtbarkeits-Schalter.
+
 ## 3.0.6 – 2026-06-01
 
 - Admin-Untermenüpunkte direkt auf ihre jeweiligen Seiten-Callbacks gelegt, damit Sidebar-Klicks nicht mehr vom Sammel-Dispatcher oder Request-Page-Sync abhängen.

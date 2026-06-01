@@ -5,7 +5,7 @@
 - `rules()` – lädt Regeln aus `shared_mailbox_rules.json`
 - `license_matrix()` – lädt Lizenzprofile aus `mailbox_license_matrix.json`
 - `scenarios()` – lädt auswählbare Szenarien
-- `pricing()` – lädt Preisannahmen und reichert sie ab `1.28.0` bevorzugt mit Public-Preisen aus dem M365LIC-Paketkatalog an
+- `pricing()` – lädt Preisannahmen und reichert sie ab `1.28.0` mit Public-Preisen aus dem zentralen Paketkatalog an
 - `copilot_eligibility_matrix()` – lädt Copilot-Basislizenz- und Chat-Eligibility
 - `copilot_prerequisites()` – lädt technische Copilot-Voraussetzungen
 - `copilot_upgrade_paths()` – lädt Upgrade- und Preisannahmen
@@ -55,7 +55,7 @@
 - `license_audit_checklist()` – lädt Audit-Kategorien und Prüfpunkte
 - `license_audit_deeplinks()` – lädt Trigger und Spezialtool-Verweise
 - `audit_pdf_template()` – lädt Struktur und Labels der Druckzusammenfassung
-- `m365_package_price_catalog()` – liefert den zentralen Paketpreiskatalog mit Basislizenzen, Add-ons, Public-, Member- und Spezialpreisen; nutzt bevorzugt `CMS_M365LIC_Catalog::package_seeds()` und fällt auf lokale Preiswerte zurück
+- `m365_package_price_catalog()` – liefert den zentralen Paketpreiskatalog mit Basislizenzen, Add-ons, Public-, Member- und Spezialpreisen; merged ab `3.0.22` DB-only-Overrides, Legacy-`pricing.json`, `data/package_price_catalog.json` und optional `CMS_M365LIC_Catalog::package_seeds()`
 - `package_price_option_key(string $slug, string $tier)` – erzeugt den globalen Optionsschlüssel für einen SKU-/Preisstufen-Override
 
 ## Admin-Konfiguration
@@ -65,8 +65,8 @@
 - `CMS_M365CALCULATOR_Admin_Pages::landing_designer_fields()` – liefert die Designer-Felddefinitionen für Headertexte, Header-/Tool-Buttons, Zielmodi, Header-Layout, Farbpalette und Sichtbarkeitsschalter
 - `CMS_M365CALCULATOR_Admin_Pages::render_readonly_matrices()` – rendert ab `1.29.3` den gemeinsamen Matrix-Unterpunkt mit Tabs für Lizenzmatrix, Add-on-Matrix und Design
 - `CMS_M365CALCULATOR_Admin_Pages::readonly_matrix_fields()` – liefert Felddefinitionen für Matrix-Headertexte, Buttonziele, CTA, Sichtbarkeit, Contentheader-Design, Farben und globale Außenbereich-Schalter
-- `CMS_M365CALCULATOR_Admin_Pages::render_plugin_settings()` – rendert die zentrale Plugin-Einstellungsseite mit Tabs für Allgemein, Review & Quellen, Workflow und System
-- `CMS_M365CALCULATOR_Admin_Pages::render_package_prices()` – rendert globale Paket- und Add-on-Preisannahmen für alle Module, ab `1.28.0` dynamisch mit Public-, Member- und Spezialfeldern aus dem M365LIC-Seed
+- `CMS_M365CALCULATOR_Admin_Pages::render_plugin_settings()` – rendert die zentrale Plugin-Einstellungsseite mit Tabs für Allgemein, Review & Quellen, Workflow und System; ab `3.0.20` enthält Allgemein `public_detail_button_layout` für das Button-Layout einzelner Tool-Publicsites außerhalb der Hub-Übersicht
+- `CMS_M365CALCULATOR_Admin_Pages::render_package_prices()` – rendert globale Paket- und Add-on-Preisannahmen für alle Module, ab `1.28.0` dynamisch mit Public-, Member- und Spezialfeldern aus dem zentralen Paketkatalog; ab `3.0.22` bleiben vorhandene DB-only-Preise als Fallback-Felder sichtbar
 - `CMS_M365CALCULATOR_Admin_Pages::render_subscription_prices()` – rendert globale Abopreis-, Laufzeit-, Commitment- und Abrechnungsannahmen
 - `CMS_M365CALCULATOR_Frontend::render_provider_cta()` – rendert ab `1.29.0` den zentral gepflegten Dienstleister-/Kontaktformular-Hinweis vor dem Footer von Toolseiten
 - `assets/js/m365tools-landing.js` – steuert ab `1.29.5` die Hub-Landingpage mit Live-Suche, Kategorie-Chips, ARIA-Radiogroup, Pfeiltastensteuerung, Kategorie-Hash, Slash-Suchshortcut, Hero-Suchfokus, aktiver Sticky-Navigation, klickbaren Cards und Back-to-top ohne externe Bibliotheken
@@ -288,3 +288,5 @@
 - Registriert `/m365-tools`, `/m365-rechner`, `/m365-lizenz-audit-checkliste`, `/power-platform-kosten-kalkulator`, `/google-workspace-zu-m365-tco`, `/m365-storage-bedarfsrechner`, `/m365-backup-kostenrechner`, `/microsoft-preiserhoehung-tracker`, `/teams-phone-lizenzberater`, `/exchange-online-roi`, `/frontline-worker-lizenz-check`, `/copilot-pilot-rechner`, `/ai-pack-vs-copilot-pro`, `/m365-lizenzmatrix`, `/m365-addon-matrix`, `/m365-archive-mailbox-rechner`, `/m365-jahresvertrag-vs-monatsvertrag`, `/m365-add-on-konfigurator`, `/m365-lizenzvergleich`, `/m365-lizenzberater`, `/copilot-roi-rechner`, `/shared-mailbox-vs-lizenz` und `/copilot-lizenz-check`
 - Bindet Assets nur auf Plugin-Routen ein
 - Rendert Toolbox, All-Module-Best-Practice-Kompass und Rechner-Templates
+- Gibt ab `3.0.20` auf Detailseiten die Routen unsichtbarer Module an `window.M365ToolsPublicVisibility` aus, damit Querverlinkungsbuttons zu ausgeblendeten Modulen entfernt werden können
+- Ergänzt ab `3.0.20` Body-Klassen `m365tools-detail-buttons-*` für das zentrale Detailseiten-Buttonlayout

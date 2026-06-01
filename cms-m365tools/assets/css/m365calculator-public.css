@@ -204,6 +204,27 @@ body.m365calculator-theme-embed:not(.is-member) .breadcrumb-nav {
     justify-content: space-between;
 }
 
+body.m365tools-detail-buttons-stacked .m365calc-page .m365calc-actions,
+body.m365tools-detail-buttons-stacked .m365calc-provider-cta .m365calc-actions,
+body.m365tools-detail-buttons-full .m365calc-page .m365calc-actions,
+body.m365tools-detail-buttons-full .m365calc-provider-cta .m365calc-actions {
+    align-items: stretch;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+body.m365tools-detail-buttons-right .m365calc-page .m365calc-actions,
+body.m365tools-detail-buttons-right .m365calc-provider-cta .m365calc-actions {
+    justify-content: flex-end;
+}
+
+body.m365tools-detail-buttons-full .m365calc-page .m365calc-actions :is(.phinit-btn, button, input[type="submit"], input[type="button"]),
+body.m365tools-detail-buttons-full .m365calc-provider-cta .m365calc-actions :is(.phinit-btn, button, input[type="submit"], input[type="button"]) {
+    box-sizing: border-box;
+    justify-content: center;
+    width: 100%;
+}
+
 .m365calc-hero__content > div,
 .m365calc-hero__content > section,
 .m365calc-section__head > div,
@@ -1134,6 +1155,341 @@ body.m365calculator-theme-embed:not(.is-member) .breadcrumb-nav {
 .m365calc-page input[type="submit"],
 .m365calc-page input[type="button"] {
     border-radius: var(--m365tools-ui-radius, 2px);
+}
+
+:root {
+    --m365calc-detail-brand: #2563eb;
+    --m365calc-detail-brand-dark: #1d4ed8;
+    --m365calc-detail-highlight: #d97706;
+    --m365calc-detail-highlight-soft: #fff7ed;
+    --m365calc-detail-surface: #ffffff;
+    --m365calc-detail-surface-warm: #fffbf5;
+    --m365calc-detail-border: #eadfd1;
+    --m365calc-detail-content-max: 1160px;
+    --m365calc-detail-radius: 18px;
+    --m365calc-detail-shadow: 0 1px 2px rgba(31, 41, 55, .05), 0 14px 34px rgba(31, 41, 55, .08);
+    --m365calc-detail-shadow-soft: 0 1px 2px rgba(31, 41, 55, .04), 0 8px 22px rgba(31, 41, 55, .06);
+}
+
+.m365calc-page {
+    --m365tools-primary: var(--m365calc-detail-brand);
+    --m365tools-focus: var(--m365calc-detail-brand);
+    --m365tools-ui-radius: var(--m365calc-detail-radius);
+    --m365tools-surface-raised: var(--m365calc-detail-surface);
+    --m365tools-surface-alt: var(--m365calc-detail-surface-warm);
+    --m365tools-border: var(--m365calc-detail-border);
+    --m365tools-shadow-hover: var(--m365calc-detail-shadow);
+    --m365calc-detail-section-icon: linear-gradient(135deg, var(--m365calc-detail-brand), var(--m365calc-detail-highlight));
+    box-sizing: border-box;
+    max-width: min(100%, var(--m365calc-detail-content-max)) !important;
+}
+
+.m365calc-matrix-page,
+.m365calc-provider-cta,
+.m365calc-provider-cta--wide {
+    box-sizing: border-box;
+    max-width: min(100%, var(--m365calc-detail-content-max)) !important;
+}
+
+.m365calc-provider-cta--boxed {
+    max-width: min(100%, 900px) !important;
+}
+
+.m365calc-page .phinit-card,
+.m365calc-page .phinit-result,
+.m365calc-page .phinit-note,
+.m365calc-page .m365calc-hero,
+.m365calc-page .m365calc-fieldset,
+.m365calc-page .m365calc-choice,
+.m365calc-page .m365calc-plan-select,
+.m365calc-page .m365calc-readonly-wrap,
+.m365calc-page .m365calc-compare-wrap,
+.m365calc-page .m365calc-addon-table-wrap,
+.m365calc-page .m365calc-faq-list details {
+    border-color: var(--m365calc-detail-border);
+    border-radius: var(--m365calc-detail-radius);
+    box-shadow: var(--m365calc-detail-shadow-soft);
+}
+
+.m365calc-page > :is(.phinit-card, .phinit-result, .phinit-note):nth-of-type(even),
+.m365calc-page > .m365calc-result-grid:nth-of-type(even) > :is(.phinit-card, .phinit-result, .phinit-note):nth-child(odd),
+.m365calc-page .m365calc-layout > :is(.phinit-card, .m365calc-aside):nth-child(even) > :is(.phinit-card, .phinit-result, .phinit-note),
+.m365calc-page .m365calc-fieldset:nth-of-type(even) {
+    background: var(--m365calc-detail-surface-warm);
+}
+
+.m365calc-page .m365calc-hero {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--m365calc-detail-brand) 7%, #fff 93%), var(--m365calc-detail-surface-warm));
+    box-shadow: var(--m365calc-detail-shadow-soft);
+}
+
+.m365calc-page .phinit-btn--primary {
+    background: var(--m365calc-detail-brand);
+    border-color: var(--m365calc-detail-brand);
+    color: #ffffff;
+}
+
+.m365calc-page .phinit-btn--primary:hover,
+.m365calc-page .phinit-btn--primary:focus-visible {
+    background: var(--m365calc-detail-brand-dark);
+    border-color: var(--m365calc-detail-brand-dark);
+}
+
+.m365calc-page .phinit-btn--secondary {
+    background: #ffffff;
+    border-color: color-mix(in srgb, var(--m365calc-detail-brand) 18%, var(--m365calc-detail-border));
+    color: var(--m365calc-detail-brand-dark);
+}
+
+.m365calc-page .phinit-overline,
+.m365calc-page .m365calc-eyebrow {
+    color: var(--m365calc-detail-highlight);
+}
+
+.m365calc-page :is(.m365calc-section__head h2, .m365calc-result-heading h2, .m365calc-result-card > header h2, .phinit-card > h2, .phinit-note > h2, .m365calc-source-card > h2) {
+    align-items: center;
+    display: flex;
+    gap: .55rem;
+}
+
+.m365calc-page :is(.m365calc-section__head h2, .m365calc-result-heading h2, .m365calc-result-card > header h2, .phinit-card > h2, .phinit-note > h2, .m365calc-source-card > h2)::before {
+    background: var(--m365calc-detail-section-icon);
+    border-radius: 999px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--m365calc-detail-highlight) 12%, transparent);
+    content: "";
+    flex: 0 0 auto;
+    height: .72rem;
+    width: .72rem;
+}
+
+.m365calc-page .m365calc-choice-grid,
+.m365calc-page .m365calc-tool-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
+.m365calc-page .m365calc-choice,
+.m365calc-page .m365calc-tool-grid > .phinit-note {
+    align-items: flex-start;
+    display: grid;
+    gap: var(--phinit-space-2);
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: var(--phinit-space-4);
+    position: relative;
+}
+
+.m365calc-page .m365calc-choice::before,
+.m365calc-page .m365calc-tool-grid > .phinit-note::before {
+    align-items: center;
+    background: color-mix(in srgb, var(--m365calc-detail-brand) 10%, #ffffff);
+    border: 1px solid color-mix(in srgb, var(--m365calc-detail-brand) 18%, #ffffff);
+    border-radius: 999px;
+    color: var(--m365calc-detail-brand);
+    content: "✓";
+    display: inline-flex;
+    font-size: .78rem;
+    font-weight: 700;
+    height: 1.75rem;
+    justify-content: center;
+    line-height: 1;
+    width: 1.75rem;
+}
+
+.m365calc-page .m365calc-choice > input {
+    grid-column: 1;
+    grid-row: 1;
+    opacity: .01;
+    position: absolute;
+}
+
+.m365calc-page .m365calc-choice > span,
+.m365calc-page .m365calc-tool-grid > .phinit-note > :not(:first-child) {
+    grid-column: 2;
+}
+
+.m365calc-page .m365calc-choice:has(input:checked) {
+    border-color: color-mix(in srgb, var(--m365calc-detail-brand) 34%, var(--m365calc-detail-border));
+}
+
+.m365calc-page .m365calc-choice:has(input:checked)::before {
+    background: var(--m365calc-detail-brand);
+    border-color: var(--m365calc-detail-brand);
+    color: #ffffff;
+}
+
+.m365calc-page .m365calc-choice::after {
+    background: var(--m365calc-detail-highlight-soft);
+    border: 1px solid color-mix(in srgb, var(--m365calc-detail-highlight) 24%, #ffffff);
+    border-radius: 999px;
+    color: #8a4b08;
+    content: "offen";
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    line-height: 1;
+    padding: .35rem .48rem;
+    position: absolute;
+    right: .85rem;
+    text-transform: uppercase;
+    top: .85rem;
+}
+
+.m365calc-page .m365calc-choice:has(input:checked)::after {
+    background: color-mix(in srgb, var(--m365calc-detail-brand) 10%, #ffffff);
+    border-color: color-mix(in srgb, var(--m365calc-detail-brand) 24%, #ffffff);
+    color: var(--m365calc-detail-brand-dark);
+    content: "bereit";
+}
+
+.m365calc-page .m365calc-score--ring {
+    align-items: center;
+    background: linear-gradient(135deg, #ffffff, var(--m365calc-detail-surface-warm));
+    display: grid;
+    gap: var(--phinit-space-3);
+    grid-template-columns: auto minmax(0, 1fr);
+    min-width: 0;
+}
+
+.m365calc-page .m365calc-score--ring strong {
+    align-items: center;
+    aspect-ratio: 1;
+    background: radial-gradient(circle at center, #ffffff 57%, transparent 58%), conic-gradient(var(--m365calc-detail-brand) var(--m365calc-score-value, 0%), color-mix(in srgb, var(--m365calc-detail-brand) 10%, #ffffff) 0);
+    border-radius: 50%;
+    color: var(--m365calc-detail-brand-dark);
+    display: inline-flex;
+    font-size: clamp(1.25rem, 4vw, 1.8rem);
+    justify-content: center;
+    margin: 0;
+    width: 5.6rem;
+}
+
+.m365calc-page .m365calc-score--ring > span {
+    align-self: end;
+}
+
+.m365calc-page .m365calc-score--ring .m365calc-score__bar {
+    display: none;
+}
+
+.m365calc-page .phinit-table-wrap {
+    border: 1px solid var(--m365calc-detail-border);
+    border-radius: var(--m365calc-detail-radius);
+    box-shadow: var(--m365calc-detail-shadow-soft);
+}
+
+.m365calc-page .phinit-table th {
+    background: color-mix(in srgb, var(--m365calc-detail-surface-warm) 78%, #ffffff);
+}
+
+.m365calc-page .m365calc-table--enhanced tbody tr:nth-child(even) {
+    background: color-mix(in srgb, var(--m365calc-detail-surface-warm) 58%, #ffffff);
+}
+
+.m365calc-page .m365calc-table-row--recommended {
+    background: color-mix(in srgb, var(--m365calc-detail-brand) 8%, #ffffff) !important;
+    box-shadow: inset 4px 0 0 var(--m365calc-detail-brand);
+}
+
+.m365calc-page .m365calc-data-bar {
+    align-items: center;
+    display: grid;
+    gap: .5rem;
+    grid-template-columns: minmax(3.5rem, auto) minmax(5rem, 1fr);
+    min-width: 9rem;
+}
+
+.m365calc-page .m365calc-data-bar::after {
+    background: linear-gradient(90deg, var(--m365calc-detail-brand) var(--m365calc-bar-value, 0%), color-mix(in srgb, var(--m365calc-detail-brand) 10%, #ffffff) 0);
+    border: 1px solid color-mix(in srgb, var(--m365calc-detail-brand) 14%, #ffffff);
+    border-radius: 999px;
+    content: "";
+    display: block;
+    height: .52rem;
+}
+
+.m365calc-page .m365calc-data-bar__value {
+    color: var(--m365calc-detail-brand-dark);
+    font-weight: 700;
+}
+
+.m365calc-page .m365calc-timeline {
+    counter-reset: m365calc-timeline;
+    display: grid;
+    gap: 0;
+    list-style: none;
+    margin: var(--phinit-space-4) 0 0;
+    padding: 0;
+}
+
+.m365calc-page .m365calc-timeline > li {
+    border-left: 2px solid color-mix(in srgb, var(--m365calc-detail-brand) 18%, var(--m365calc-detail-border));
+    counter-increment: m365calc-timeline;
+    margin-left: .95rem;
+    padding: 0 0 var(--phinit-space-5) var(--phinit-space-5);
+    position: relative;
+}
+
+.m365calc-page .m365calc-timeline > li::before {
+    align-items: center;
+    background: var(--m365calc-detail-brand);
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--m365calc-detail-brand) 24%, #ffffff);
+    color: #ffffff;
+    content: counter(m365calc-timeline);
+    display: flex;
+    font-size: .72rem;
+    font-weight: 700;
+    height: 1.9rem;
+    justify-content: center;
+    left: -1.02rem;
+    line-height: 1;
+    position: absolute;
+    top: 0;
+    width: 1.9rem;
+}
+
+.m365calc-page .m365calc-timeline > li:last-child {
+    border-left-color: transparent;
+    padding-bottom: 0;
+}
+
+.m365calc-page .m365calc-timeline > li > strong {
+    color: var(--m365calc-detail-brand-dark);
+    display: block;
+    margin-bottom: var(--phinit-space-2);
+}
+
+.m365calc-page .m365calc-faq-list details,
+.m365calc-page .m365calc-source-card,
+.m365calc-page .phinit-note {
+    border-left: 4px solid color-mix(in srgb, var(--m365calc-detail-brand) 42%, var(--m365calc-detail-highlight));
+}
+
+.m365calc-page .m365calc-faq-list summary {
+    align-items: center;
+    display: flex;
+    gap: .5rem;
+}
+
+.m365calc-page .m365calc-faq-list summary::before,
+.m365calc-page .m365calc-source-card > h2::before {
+    background: var(--m365calc-detail-highlight-soft);
+    border: 1px solid color-mix(in srgb, var(--m365calc-detail-highlight) 24%, #ffffff);
+    border-radius: 999px;
+    color: #8a4b08;
+    content: "?";
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: .78rem;
+    font-weight: 800;
+    height: 1.45rem;
+    justify-content: center;
+    line-height: 1.45rem;
+    width: 1.45rem;
+}
+
+.m365calc-page .m365calc-source-card > h2::before {
+    content: "i";
 }
 
 @media print {

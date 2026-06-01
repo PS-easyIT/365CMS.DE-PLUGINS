@@ -238,8 +238,28 @@ final class CMS_M365CALCULATOR_Frontend
         $number = static function (array $values, string $key, int $default, int $min, int $max): int {
             return max($min, min($max, (int) ($values[$key] ?? $default)));
         };
+        $pageLayout = in_array((string) ($options['landing_page_layout'] ?? 'wide'), ['normal', 'wide', 'boxed', 'editorial', 'directory'], true)
+            ? (string) ($options['landing_page_layout'] ?? 'wide')
+            : 'wide';
+        $layoutWidthDefaults = [
+            'normal' => 1040,
+            'wide' => 1180,
+            'boxed' => 1180,
+            'editorial' => 980,
+            'directory' => 1280,
+        ];
+        $contentMaxWidth = $number($options, 'landing_content_max_width', 0, 0, 1600);
+        if ($contentMaxWidth <= 0) {
+            $contentMaxWidth = $layoutWidthDefaults[$pageLayout] ?? 1180;
+        } else {
+            $contentMaxWidth = max(760, $contentMaxWidth);
+        }
+        $contentGutter = $number($options, 'landing_content_gutter', 24, 0, 96);
 
         $vars = [
+            '--m365tools-content-max' => $contentMaxWidth . 'px',
+            '--m365tools-content-gutter' => $contentGutter . 'px',
+            '--m365tools-content-bottom-gap' => '25px',
             '--m365tools-card-radius' => $number($options, 'landing_card_radius', 2, 0, 2) . 'px',
             '--m365tools-ui-radius' => $number($options, 'landing_card_radius', 2, 0, 2) . 'px',
             '--m365tools-card-min' => $number($options, 'landing_cards_min_width', 320, 220, 520) . 'px',
@@ -285,9 +305,34 @@ final class CMS_M365CALCULATOR_Frontend
             return;
         }
 
+        if (!$this->is_toolbox_request()) {
+            $this->output_public_visibility_config();
+        }
+
         echo '<script src="'
             . htmlspecialchars(CMS_M365CALCULATOR_PLUGIN_URL . 'assets/js/' . $jsFile, ENT_QUOTES, 'UTF-8')
             . '?v=' . filemtime($js) . '" defer></script>' . "\n";
+    }
+
+    private function output_public_visibility_config(): void
+    {
+        $disabledRoutes = $this->disabled_module_routes();
+        if ($disabledRoutes === []) {
+            return;
+        }
+
+        $json = json_encode(
+            ['disabledRoutes' => $disabledRoutes],
+            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        );
+
+        if (!is_string($json) || $json === '') {
+            return;
+        }
+
+        echo '<script id="cms-m365tools-public-visibility">window.M365ToolsPublicVisibility = '
+            . $json
+            . ';</script>' . "\n";
     }
 
     public function render_provider_cta(): void
@@ -371,6 +416,9 @@ final class CMS_M365CALCULATOR_Frontend
         }
         $classList[] = 'm365tools-theme-embed';
         $classList[] = 'm365calculator-theme-embed';
+        if (!$this->is_toolbox_request()) {
+            $classList[] = 'm365tools-detail-buttons-' . $this->public_detail_button_layout();
+        }
         $moduleKey = $this->current_module_key_from_request();
         if ($moduleKey !== null) {
             $classList[] = 'm365tools-module-' . preg_replace('/[^a-z0-9_-]+/i', '-', $moduleKey);
@@ -386,6 +434,7 @@ final class CMS_M365CALCULATOR_Frontend
             $landingOptions = array_merge(
                 CMS_M365CALCULATOR_Settings::global_options('landing'),
                 CMS_M365CALCULATOR_Settings::global_options('landing-content'),
+                CMS_M365CALCULATOR_Settings::global_options('landing-texts'),
                 CMS_M365CALCULATOR_Settings::global_options('landing-layout'),
                 CMS_M365CALCULATOR_Settings::global_options('landing-colors'),
                 CMS_M365CALCULATOR_Settings::global_options('landing-visibility')
@@ -785,7 +834,76 @@ final class CMS_M365CALCULATOR_Frontend
             }
         }
 
+        $moduleContentMaxWidth = (int) ($design['design_content_max_width'] ?? 0);
+        if ($moduleContentMaxWidth > 0) {
+            $options['landing_content_max_width'] = (string) $moduleContentMaxWidth;
+        }
+
+        $moduleContentGutter = (int) ($design['design_content_gutter'] ?? 0);
+        if ($moduleContentGutter > 0) {
+            $options['landing_content_gutter'] = (string) $moduleContentGutter;
+        }
+
         return $options;
+    }
+
+    private function public_detail_button_layout(): string
+    {
+        $layout = 'inline';
+        if (class_exists('CMS_M365CALCULATOR_Settings')) {
+            $settings = CMS_M365CALCULATOR_Settings::global_options('general');
+            $layout = (string) ($settings['public_detail_button_layout'] ?? 'inline');
+        }
+
+        return in_array($layout, ['inline', 'stacked', 'right', 'full'], true) ? $layout : 'inline';
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function disabled_module_routes(): array
+    {
+        if (!class_exists('CMS_M365CALCULATOR_Tool_Registry')) {
+            return [];
+        }
+
+        $allTools = CMS_M365CALCULATOR_Tool_Registry::tools(false);
+        $enabledTools = CMS_M365CALCULATOR_Tool_Registry::tools(true);
+        $enabledKeys = array_fill_keys(array_map('strval', array_keys($enabledTools)), true);
+        $routes = [];
+
+        foreach ($allTools as $key => $tool) {
+            if (!is_array($tool)) {
+                continue;
+            }
+
+            $moduleKey = (string) ($tool['key'] ?? $key);
+            if ($moduleKey !== '' && isset($enabledKeys[$moduleKey])) {
+                continue;
+            }
+
+            $route = $this->route_path_from_url((string) ($tool['url'] ?? ''));
+            if ($route !== '') {
+                $routes[] = $route;
+            }
+        }
+
+        return array_values(array_unique($routes));
+    }
+
+    private function route_path_from_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+
+        $path = parse_url($url, PHP_URL_PATH);
+        if (!is_string($path) || $path === '') {
+            return '';
+        }
+
+        return $this->normalize_path($path);
     }
 
     private function current_module_key_from_request(): ?string

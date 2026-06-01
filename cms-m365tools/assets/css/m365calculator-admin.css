@@ -35,6 +35,42 @@
     max-width: 7rem;
 }
 
+.m365calculator-admin-url-link {
+    color: var(--admin-primary, #2563eb);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.m365calculator-admin-url-link:hover code,
+.m365calculator-admin-url-link:focus-visible code {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+.m365calculator-admin-public-cell {
+    text-align: center;
+}
+
+.m365calculator-admin-public-link {
+    align-items: center;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 2px;
+    color: #1d4ed8;
+    display: inline-flex;
+    font-weight: 700;
+    height: 2rem;
+    justify-content: center;
+    text-decoration: none;
+    width: 2rem;
+}
+
+.m365calculator-admin-public-link:hover {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
 .m365calculator-admin-control {
     border: 1px solid #d7dee8;
     border-radius: 2px;

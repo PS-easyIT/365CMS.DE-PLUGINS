@@ -68,6 +68,8 @@ final class CMS_M365CALCULATOR_Admin_Module_Config
             self::color('design_color_text', 'Textfarbe', '#1e293b', 'Primäre Textfarbe der Modul-Publicseite.'),
             self::color('design_color_muted', 'Sekundärtext', '#64748b', 'Beschreibungen, Hinweise und kleine Labels.'),
             self::color('design_color_border', 'Rahmenfarbe', '#e2e8f0', 'Borders, Trennlinien und Tabellenkanten.'),
+            self::number('design_content_max_width', 'Maximale Plugin-Content-Breite in px', '0', 0, 1600, 20, '0 übernimmt die globale Publicsite-Breite. Werte ab 760px begrenzen nur diese Modul-Publicseite.'),
+            self::number('design_content_gutter', 'Horizontaler Content-Abstand links/rechts in px', '0', 0, 96, 2, '0 übernimmt den globalen Abstand. Werte ab 1px überschreiben nur diese Modul-Publicseite.'),
             self::number('design_card_radius', 'Rundung der Boxen und Buttons in px', '2', 0, 2, 1, 'Maximal 2px: steuert Karten, Headerboxen und Buttons dieses Moduls.'),
             self::number('design_section_gap', 'Abschnittsabstand in px', '32', 16, 96, 2, 'Vertikaler Abstand zwischen den öffentlichen Modulabschnitten.'),
         ];
