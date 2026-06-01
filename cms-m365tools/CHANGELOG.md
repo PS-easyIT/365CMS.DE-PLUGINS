@@ -1,6 +1,12 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.35 – 2026-06-01
+
+- `Microsoft-Preiserhöhung-Tracker`: Währungsanpassungen werden als eigener Ereignistyp `currency_adjustment` geführt und in der Public-Auswahl als `Währungsanpassung` angezeigt.
+- Ein Q1-2026-Kontext-Event für Februar/März-Preislisten- bzw. Währungsanpassungen wurde ergänzt, damit diese Prüfung getrennt von der Juli-2026-Suite-Erhöhung sichtbar ist.
+- Der Währungskontext wird bewusst nicht in `price_history` geschrieben, solange keine SKU-genauen, verifizierten FX-/Preislistenwerte hinterlegt sind; Chart-Zeitreihen und Promo-Policy bleiben unverändert.
+
 ## 3.0.34 – 2026-06-01
 
 - `Microsoft-Preiserhöhung-Tracker`: Die Balken im visuellen Jahresvergleich werden nicht mehr pauschal ab Q3/Juli 2026 als Mehrkosten eingefärbt.

@@ -1,6 +1,6 @@
 {
   "slug": "cms-m365tools",
-  "version": "3.0.34",
+  "version": "3.0.35",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
   "requires": "3.0.0",
   "tested": "3.0.0",
@@ -9,6 +9,6 @@
   "last_updated": "2026-06-01",
   "sections": {
     "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, eigenem Landingpage-Designer, UX-optimierter Live-Suche, Tag-Filtern, Sticky-Kategorie-Navigation, globalen Paketpreis- und Abopreisbereichen, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und Public-Modulen. Reine Matrixseiten liegen im Plugin cms-m365matrices.",
-    "changelog": "3.0.34: Microsoft-Preiserhöhung-Tracker klassifiziert die Balken im visuellen Jahresvergleich jetzt anhand des echten Vorperioden-Deltas; Q3-/Juli-Zeitreihen mit sinkendem Jahresbetrag werden als Senkung statt pauschal als Mehrkosten markiert. 3.0.33: Alte Lizenz-Pill-Legend und sichtbare Chart.js-Fallback-Meldung unter dem Chart entfernt. 3.0.32: Chart-Lizenzen als Mehrfach-Auswahlfeld mit Business-Defaults und max. fünf sichtbaren Linien."
+    "changelog": "3.0.35: Microsoft-Preiserhöhung-Tracker führt Währungsanpassungen als eigenen Ereignistyp und ergänzt einen Q1-2026-Kontext für Februar/März-Preislisten-/Währungsanpassungen getrennt von der Juli-2026-Suite-Erhöhung; unverified FX-Kontext wird nicht in price_history geschrieben. 3.0.34: Visueller Jahresvergleich klassifiziert Zeitreihen anhand des echten Vorperioden-Deltas statt pauschal ab Q3/Juli als Mehrkosten. 3.0.33: Alte Pill-Legend und sichtbare Chart.js-Fallback-Meldung entfernt."
   }
 }

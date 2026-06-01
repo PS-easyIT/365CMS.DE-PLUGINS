@@ -26,6 +26,7 @@
   "event_type_options": {
     "all": "Alle Ereignistypen",
     "price_increase": "Preisänderung",
+    "currency_adjustment": "Währungsanpassung",
     "packaging": "Packaging / Struktur",
     "sku_split": "SKU-Split",
     "end_of_sale": "End of sale",

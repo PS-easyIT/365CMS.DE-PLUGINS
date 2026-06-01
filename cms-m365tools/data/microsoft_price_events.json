@@ -131,6 +131,25 @@
       "weight": 3
     },
     {
+      "event_id": "regional_currency_adjustment_2026_q1",
+      "title": "Q1 local currency and price list adjustment review",
+      "event_type": "currency_adjustment",
+      "published_at": "2026-02-01",
+      "effective_at": "2026-03-01",
+      "packaging_rollout_at": null,
+      "applies_on_renewal": true,
+      "region_scope": ["global", "eea"],
+      "segment_scope": ["commercial"],
+      "product_family": ["microsoft_365", "office_365", "teams", "power_platform", "windows_ems_entra", "fabric_power_bi"],
+      "source_url": "https://www.microsoft.com/en-us/licensing/news",
+      "source_label": "Microsoft Licensing News – local currency / price list review",
+      "official": false,
+      "verified": false,
+      "summary": "Local currency and price-list adjustments around February/March should be treated as a separate Q1 pricing context and not as part of the July 2026 Microsoft 365 packaging increase.",
+      "customer_rule": "Review CSP, EA or partner price lists for February/March currency adjustments separately. This tracker records the context but does not write unverified FX changes into canonical SKU price_history.",
+      "weight": 2
+    },
+    {
       "event_id": "m365_packaging_pricing_2026",
       "title": "Microsoft 365 Pricing and Packaging Updates",
       "event_type": "price_increase",

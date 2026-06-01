@@ -278,7 +278,7 @@ Der M365 Backup-Kosten-Rechner bewertet unter anderem:
 
 Der Microsoft-Preiserhöhung-Tracker bewertet unter anderem:
 
-- offizielle Microsoft Licensing News Ereignisse für Pricing, Packaging, SKU-Split, End-of-sale, Retirement, Verbrauchsabrechnung und Pricing Consistency
+- offizielle Microsoft Licensing News Ereignisse für Pricing, Packaging, SKU-Split, End-of-sale, Retirement, Verbrauchsabrechnung, Pricing Consistency und separat geführte Währungsanpassungs-Kontexte
 - getrennte Datumslogik für Veröffentlichung, Wirksamkeit, Packaging-Rollout und Renewal-Wirkung
 - Microsoft 365 Commercial Suites Pricing and Packaging Updates 2026 inklusive Bestandskundenlogik bis zum Renewal
 - Teams-/No-Teams-Strukturereignisse 2024 und 2025 inklusive Teams Enterprise / EEA Preiszeile
