@@ -249,6 +249,7 @@ if (class_exists('CMS\\ThemeManager')) {
                 <p class="phinit-overline">Pricing Matrix</p>
                 <h2 id="m365ai-pricing-title">Normalisierte Preis-Tiers im Direktvergleich</h2>
                 <p>Vergleich über vier Anbieter hinweg. Zeilen sind auf gemeinsame Tiers normiert, fehlende Tiers bleiben bewusst als <strong>k. A.</strong> markiert.</p>
+                <p><?php echo $esc((string) ($pricingMatrix['alignment_note'] ?? 'Vergleich ist preis-/tierbasiert und nicht namensbasiert.')); ?></p>
             </section>
         </header>
 
@@ -272,21 +273,42 @@ if (class_exists('CMS\\ThemeManager')) {
                         $vendorLabel = (string) ($vendor['label'] ?? 'Anbieter');
                         $cells = is_array($vendor['cells'] ?? null) ? $vendor['cells'] : [];
                         $cell = is_array($cells[$tierKey] ?? null) ? $cells[$tierKey] : [];
-                        $value = (string) ($cell['value'] ?? 'k. A.');
-                        $sourceUrl = (string) ($cell['source_url'] ?? '');
-                        $lastVerified = (string) ($cell['last_verified'] ?? ($pricingMatrix['last_verified'] ?? 'k. A.'));
-                        $billingNote = (string) ($cell['billing_note'] ?? '');
+                        $items = array_values(array_filter((array) ($cell['items'] ?? []), 'is_array'));
                         ?>
                         <td data-label="<?php echo $esc($vendorLabel); ?>">
-                            <strong class="m365calc-pricing-value"><?php echo $esc($value); ?></strong>
-                            <small class="m365calc-pricing-meta">geprüft am <?php echo $esc($lastVerified !== '' ? $lastVerified : 'k. A.'); ?></small>
-                            <?php if ($billingNote !== ''): ?>
-                            <small class="m365calc-pricing-meta"><?php echo $esc($billingNote); ?></small>
-                            <?php endif; ?>
-                            <?php if ($sourceUrl !== ''): ?>
-                            <small class="m365calc-pricing-meta">
-                                <a href="<?php echo $esc($sourceUrl); ?>" target="_blank" rel="noopener noreferrer">Quelle</a>
-                            </small>
+                            <?php if ($items === []): ?>
+                            <strong class="m365calc-pricing-value">k. A.</strong>
+                            <?php else: ?>
+                                <?php foreach ($items as $item): ?>
+                                <?php
+                                $value = (string) ($item['price_display'] ?? 'k. A.');
+                                $tierName = (string) ($item['tier_label'] ?? 'Tier');
+                                $sourceUrl = (string) ($item['source_url'] ?? '');
+                                $lastVerified = (string) ($item['last_verified'] ?? ($pricingMatrix['last_verified'] ?? 'k. A.'));
+                                $billingNote = (string) ($item['billing_note'] ?? '');
+                                $basisNote = (string) ($item['basis_note'] ?? '');
+                                $currencyNote = (string) ($item['currency_note'] ?? '');
+                                ?>
+                                <article class="m365calc-pricing-item">
+                                    <strong class="m365calc-pricing-value"><?php echo $esc($value); ?></strong>
+                                    <small class="m365calc-pricing-tier"><?php echo $esc($tierName); ?></small>
+                                    <small class="m365calc-pricing-meta">geprüft am <?php echo $esc($lastVerified !== '' ? $lastVerified : 'k. A.'); ?></small>
+                                    <?php if ($currencyNote !== ''): ?>
+                                    <small class="m365calc-pricing-meta"><?php echo $esc($currencyNote); ?></small>
+                                    <?php endif; ?>
+                                    <?php if ($basisNote !== ''): ?>
+                                    <small class="m365calc-pricing-meta"><?php echo $esc($basisNote); ?></small>
+                                    <?php endif; ?>
+                                    <?php if ($billingNote !== ''): ?>
+                                    <small class="m365calc-pricing-meta"><?php echo $esc($billingNote); ?></small>
+                                    <?php endif; ?>
+                                    <?php if ($sourceUrl !== ''): ?>
+                                    <small class="m365calc-pricing-meta">
+                                        <a href="<?php echo $esc($sourceUrl); ?>" target="_blank" rel="noopener noreferrer">Quelle</a>
+                                    </small>
+                                    <?php endif; ?>
+                                </article>
+                                <?php endforeach; ?>
                             <?php endif; ?>
                         </td>
                         <?php endforeach; ?>

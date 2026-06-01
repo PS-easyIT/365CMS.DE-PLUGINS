@@ -346,12 +346,13 @@ final class CMS_M365CALCULATOR_AI_Product_Comparison
     private static function pricing_matrix(array $productCatalog): array
     {
         $matrix = is_array($productCatalog['pricing_matrix'] ?? null) ? $productCatalog['pricing_matrix'] : [];
-        $tiers = array_values(array_filter((array) ($matrix['tiers'] ?? []), 'is_array'));
-        $vendors = array_values(array_filter((array) ($matrix['vendors'] ?? []), 'is_array'));
+        $sourceTiers = array_values(array_filter((array) ($matrix['tiers'] ?? []), 'is_array'));
+        $sourceVendors = array_values(array_filter((array) ($matrix['vendors'] ?? []), 'is_array'));
+        $bands = self::pricing_bands();
         $overrides = self::pricing_matrix_overrides();
 
-        if ($tiers === []) {
-            $tiers = [
+        if ($sourceTiers === []) {
+            $sourceTiers = [
                 ['key' => 'free_std', 'label' => 'Free / Std'],
                 ['key' => 'pro', 'label' => 'Pro'],
                 ['key' => 'pro_plus', 'label' => 'Pro+'],
@@ -360,7 +361,9 @@ final class CMS_M365CALCULATOR_AI_Product_Comparison
             ];
         }
 
-        foreach ($vendors as $vendorIndex => $vendor) {
+        $vendors = [];
+
+        foreach ($sourceVendors as $vendor) {
             if (!is_array($vendor)) {
                 continue;
             }
@@ -370,22 +373,43 @@ final class CMS_M365CALCULATOR_AI_Product_Comparison
                 continue;
             }
 
-            $cells = is_array($vendor['cells'] ?? null) ? $vendor['cells'] : [];
+            $rawCells = is_array($vendor['cells'] ?? null) ? $vendor['cells'] : [];
+            $bandCells = [];
 
-            foreach ($tiers as $tier) {
-                $tierKey = self::clean_key((string) ($tier['key'] ?? ''));
-                if ($tierKey === '') {
+            foreach ($bands as $band) {
+                $bandKey = (string) ($band['key'] ?? '');
+                if ($bandKey === '') {
                     continue;
                 }
 
-                $cell = is_array($cells[$tierKey] ?? null) ? $cells[$tierKey] : [];
-                $overrideValue = self::resolve_matrix_override_value($overrides, $vendorKey, $tierKey);
+                $bandCells[$bandKey] = [
+                    'value' => 'k. A.',
+                    'items' => [],
+                    'verification' => 'official',
+                    'last_verified' => (string) ($matrix['last_verified'] ?? $productCatalog['meta']['source_checked'] ?? 'k. A.'),
+                ];
+            }
+
+            foreach ($sourceTiers as $sourceTier) {
+                $sourceTierKey = self::clean_key((string) ($sourceTier['key'] ?? ''));
+                if ($sourceTierKey === '') {
+                    continue;
+                }
+
+                $sourceTierLabel = trim((string) ($sourceTier['label'] ?? $sourceTierKey));
+                $cell = is_array($rawCells[$sourceTierKey] ?? null) ? $rawCells[$sourceTierKey] : [];
+                $overrideValue = self::resolve_matrix_override_value($overrides, $vendorKey, $sourceTierKey);
+                $overrideApplied = false;
 
                 if ($overrideValue !== '') {
                     $cell['value'] = $overrideValue;
+                    $cell['amount'] = self::parse_first_numeric_amount($overrideValue);
+                    $cell['currency'] = self::detect_currency_code($overrideValue, (string) ($cell['currency'] ?? 'EUR'));
+                    $cell['period'] = 'user/month';
                     $cell['verification'] = 'official';
                     $cell['last_verified'] = (string) date('Y-m-d');
-                    $cell['billing_note'] = 'Preis aus zentral gepflegter Datenbank-Konfiguration.';
+                    $cell['billing_note'] = 'Preis aus zentral gepflegter Datenbank-Konfiguration (pro Nutzer/Monat).';
+                    $overrideApplied = true;
                 }
 
                 $cell['value'] = self::clean_matrix_text((string) ($cell['value'] ?? 'k. A.'));
@@ -395,21 +419,56 @@ final class CMS_M365CALCULATOR_AI_Product_Comparison
                     $cell['value'] = 'k. A.';
                 }
 
-                if (!empty($cell['verification']) && strtolower((string) $cell['verification']) !== 'official') {
-                    $cell['verification'] = 'official';
-                }
+                foreach (self::extract_pricing_offers($cell, $sourceTierLabel) as $offer) {
+                    $bandKey = self::classify_offer_band($offer, $cell);
+                    if ($bandKey === '' || !isset($bandCells[$bandKey])) {
+                        continue;
+                    }
 
-                $cells[$tierKey] = $cell;
+                    $item = self::build_band_item($offer, $cell, $sourceTierLabel, $overrideApplied);
+                    $bandCells[$bandKey]['items'][] = $item;
+
+                    if (!empty($item['unverified'])) {
+                        $bandCells[$bandKey]['verification'] = 'unverified';
+                    }
+                }
             }
 
-            $vendors[$vendorIndex]['cells'] = $cells;
+            foreach ($bandCells as $bandKey => $bandCell) {
+                $items = array_values(array_filter((array) ($bandCell['items'] ?? []), 'is_array'));
+                if ($items === []) {
+                    $bandCells[$bandKey]['value'] = 'k. A.';
+                    $bandCells[$bandKey]['items'] = [];
+                    continue;
+                }
+
+                usort($items, static function (array $left, array $right): int {
+                    return ((float) ($left['normalized_amount_eur'] ?? 999999.0)) <=> ((float) ($right['normalized_amount_eur'] ?? 999999.0));
+                });
+
+                $bandCells[$bandKey]['items'] = $items;
+                $bandCells[$bandKey]['value'] = implode(' · ', array_map(static fn(array $item): string => (string) ($item['price_display'] ?? 'k. A.'), $items));
+                $bandCells[$bandKey]['last_verified'] = (string) ($items[0]['last_verified'] ?? ($matrix['last_verified'] ?? ''));
+            }
+
+            $vendors[] = [
+                'key' => $vendorKey,
+                'label' => $vendorKey === 'microsoft'
+                    ? ((string) ($vendor['label'] ?? 'Microsoft Copilot') . ' (Add-on Track)')
+                    : (string) ($vendor['label'] ?? $vendorKey),
+                'track' => $vendorKey === 'microsoft' ? 'addon' : 'standard',
+                'track_label' => $vendorKey === 'microsoft' ? 'Add-on Track' : '',
+                'cells' => $bandCells,
+            ];
         }
 
         return [
             'last_verified' => (string) ($matrix['last_verified'] ?? $productCatalog['meta']['source_checked'] ?? '2026-06-01'),
             'disclaimer' => (string) ($matrix['disclaimer'] ?? 'Preise und Funktionsumfänge ändern sich häufig. Vor Kauf immer die Originalquelle prüfen.'),
             'microsoft_addon_note' => (string) ($matrix['microsoft_addon_note'] ?? ''),
-            'tiers' => $tiers,
+            'alignment_note' => 'Vergleich ist preis-/tierbandbasiert (Nutzer/Monat); Produktnamen sind kein Matching-Key.',
+            'normalization_note' => 'Normalisierung auf pro Nutzer/Monat, bevorzugt Jahresbindung; Monatsbindung wird separat ausgewiesen.',
+            'tiers' => $bands,
             'vendors' => $vendors,
         ];
     }
@@ -450,6 +509,220 @@ final class CMS_M365CALCULATOR_AI_Product_Comparison
         }
 
         return '';
+    }
+
+    /**
+     * @return array<int,array<string,string>>
+     */
+    private static function pricing_bands(): array
+    {
+        return [
+            ['key' => 'free_0', 'label' => 'Free / 0 €'],
+            ['key' => 'entry_10_20', 'label' => 'Entry (~10–20 €)'],
+            ['key' => 'pro_power_20_30', 'label' => 'Pro / Power (~20–30 €)'],
+            ['key' => 'pro_heavy_100_200', 'label' => 'Pro+ / Heavy (~100–200 €)'],
+            ['key' => 'team_per_user', 'label' => 'Team (per-user)'],
+            ['key' => 'enterprise_custom', 'label' => 'Enterprise (custom)'],
+        ];
+    }
+
+    /**
+     * @param array<string,mixed> $cell
+     * @return array<int,array<string,mixed>>
+     */
+    private static function extract_pricing_offers(array $cell, string $sourceTierLabel): array
+    {
+        $offers = [];
+        $value = trim((string) ($cell['value'] ?? ''));
+        $defaultCurrency = self::detect_currency_code($value, (string) ($cell['currency'] ?? 'EUR'));
+        $lastVerified = (string) ($cell['last_verified'] ?? '');
+
+        if ($value !== '' && preg_match_all('/(\d+(?:[.,]\d+)?)\s*(€|\$|EUR|USD)(?:\s*\(([^)]+)\))?/iu', $value, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $amount = self::parse_number_to_float((string) ($match[1] ?? ''));
+                $currency = self::detect_currency_code((string) ($match[2] ?? ''), $defaultCurrency);
+                $symbol = $currency === 'USD' ? '$' : '€';
+                $tierLabel = trim((string) ($match[3] ?? ''));
+
+                $offers[] = [
+                    'amount' => $amount,
+                    'currency' => $currency,
+                    'period' => (string) ($cell['period'] ?? 'user/month'),
+                    'value' => rtrim(rtrim(number_format($amount, 2, ',', ''), '0'), ',') . ' ' . $symbol,
+                    'tier_label' => $tierLabel !== '' ? $tierLabel : $sourceTierLabel,
+                    'last_verified' => $lastVerified,
+                ];
+            }
+        }
+
+        if ($offers === []) {
+            $offers[] = [
+                'amount' => is_numeric($cell['amount'] ?? null) ? (float) $cell['amount'] : self::parse_first_numeric_amount($value),
+                'currency' => $defaultCurrency,
+                'period' => (string) ($cell['period'] ?? 'user/month'),
+                'value' => $value !== '' ? $value : 'k. A.',
+                'tier_label' => $sourceTierLabel,
+                'last_verified' => $lastVerified,
+            ];
+        }
+
+        return $offers;
+    }
+
+    /**
+     * @param array<string,mixed> $offer
+     * @param array<string,mixed> $cell
+     */
+    private static function classify_offer_band(array $offer, array $cell): string
+    {
+        $value = strtolower((string) ($offer['value'] ?? ''));
+        $billingNote = strtolower((string) ($cell['billing_note'] ?? ''));
+        $period = strtolower((string) ($offer['period'] ?? ($cell['period'] ?? '')));
+
+        if (self::looks_enterprise_custom($value, $billingNote, $period)) {
+            return 'enterprise_custom';
+        }
+
+        if (self::looks_team_per_user($value, $billingNote, $period)) {
+            return 'team_per_user';
+        }
+
+        $amount = is_numeric($offer['amount'] ?? null) ? (float) $offer['amount'] : null;
+        if ($amount === null) {
+            return '';
+        }
+
+        $currency = strtoupper((string) ($offer['currency'] ?? 'EUR'));
+        $amountEur = self::normalize_amount_to_eur($amount, $currency);
+
+        if ($amountEur <= 0.01) {
+            return 'free_0';
+        }
+        if ($amountEur >= 10.0 && $amountEur < 20.0) {
+            return 'entry_10_20';
+        }
+        if ($amountEur >= 20.0 && $amountEur <= 30.0) {
+            return 'pro_power_20_30';
+        }
+        if ($amountEur >= 100.0 && $amountEur <= 200.0) {
+            return 'pro_heavy_100_200';
+        }
+
+        return '';
+    }
+
+    private static function looks_team_per_user(string $value, string $billingNote, string $period): bool
+    {
+        $haystack = $value . ' ' . $billingNote . ' ' . $period;
+
+        return preg_match('/\b(team|seat|seats|nutzer|user|business)\b/u', $haystack) === 1
+            && str_contains($haystack, '/');
+    }
+
+    private static function looks_enterprise_custom(string $value, string $billingNote, string $period): bool
+    {
+        $haystack = $value . ' ' . $billingNote . ' ' . $period;
+
+        return preg_match('/\b(custom|kontakt|contact|individuell|enterprise|vertrieb)\b/u', $haystack) === 1
+            || str_contains($period, 'custom');
+    }
+
+    private static function normalize_amount_to_eur(float $amount, string $currency): float
+    {
+        if ($currency === 'USD') {
+            return round($amount * 0.92, 2);
+        }
+
+        return round($amount, 2);
+    }
+
+    /**
+     * @param array<string,mixed> $offer
+     * @param array<string,mixed> $cell
+     * @return array<string,mixed>
+     */
+    private static function build_band_item(array $offer, array $cell, string $sourceTierLabel, bool $overrideApplied): array
+    {
+        $amount = is_numeric($offer['amount'] ?? null) ? (float) $offer['amount'] : null;
+        $currency = strtoupper((string) ($offer['currency'] ?? 'EUR'));
+        $value = trim((string) ($offer['value'] ?? ($cell['value'] ?? 'k. A.')));
+        $billingNote = trim((string) ($cell['billing_note'] ?? ''));
+        $period = trim((string) ($offer['period'] ?? ($cell['period'] ?? 'user/month')));
+        $tierLabel = trim((string) ($offer['tier_label'] ?? $sourceTierLabel));
+        $sourceUrl = trim((string) ($cell['source_url'] ?? ''));
+        $lastVerified = trim((string) ($offer['last_verified'] ?? ($cell['last_verified'] ?? '')));
+        $verification = strtolower(trim((string) ($cell['verification'] ?? 'official')));
+        $isVerified = $verification === 'official' || $overrideApplied;
+
+        $displayValue = $value !== '' ? $value : 'k. A.';
+
+        if (!$isVerified && ($amount === null || str_contains(strtolower($displayValue), 'k. a'))) {
+            $displayValue = 'k. A. (unbestätigt) // UNVERIFIED';
+        }
+
+        $currencyNote = '';
+        if ($currency === 'USD') {
+            $currencyNote = 'USD (nicht fix umgerechnet)';
+        }
+
+        $termNote = self::term_note($billingNote, $period);
+
+        return [
+            'price_display' => $displayValue,
+            'tier_label' => $tierLabel !== '' ? $tierLabel : $sourceTierLabel,
+            'last_verified' => $lastVerified,
+            'source_url' => $sourceUrl,
+            'billing_note' => $billingNote,
+            'currency_note' => $currencyNote,
+            'basis_note' => $termNote,
+            'unverified' => !$isVerified,
+            'normalized_amount_eur' => $amount !== null ? self::normalize_amount_to_eur($amount, $currency) : 999999.0,
+        ];
+    }
+
+    private static function term_note(string $billingNote, string $period): string
+    {
+        $haystack = strtolower($billingNote . ' ' . $period);
+
+        if (str_contains($haystack, 'jähr') || str_contains($haystack, 'annual')) {
+            return 'Basis: pro Nutzer/Monat, Jahresbindung';
+        }
+        if (str_contains($haystack, 'monat')) {
+            return 'Basis: pro Nutzer/Monat, Monatsbindung';
+        }
+
+        return 'Basis: pro Nutzer/Monat (soweit verfügbar)';
+    }
+
+    private static function parse_first_numeric_amount(string $value): ?float
+    {
+        if (preg_match('/(\d+(?:[.,]\d+)?)/u', $value, $match) !== 1) {
+            return null;
+        }
+
+        return self::parse_number_to_float((string) ($match[1] ?? ''));
+    }
+
+    private static function parse_number_to_float(string $value): float
+    {
+        $normalized = str_replace([' ', '.'], ['', ''], trim($value));
+        $normalized = str_replace(',', '.', $normalized);
+
+        return (float) $normalized;
+    }
+
+    private static function detect_currency_code(string $value, string $fallback = 'EUR'): string
+    {
+        $value = strtoupper($value);
+
+        if (str_contains($value, '$') || str_contains($value, 'USD')) {
+            return 'USD';
+        }
+        if (str_contains($value, '€') || str_contains($value, 'EUR')) {
+            return 'EUR';
+        }
+
+        return strtoupper($fallback) !== '' ? strtoupper($fallback) : 'EUR';
     }
 
     private static function clean_matrix_text(string $value): string
