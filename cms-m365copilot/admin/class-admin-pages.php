@@ -21,6 +21,15 @@ final class CMS_M365Copilot_Admin_Pages
         self::check_access();
         $notice = '';
         $error = '';
+        $tabs = [
+            'content-header' => '🖼️ Content Header',
+            'service-band' => '🤝 Dienstleistungsband',
+            'cards' => '🃏 Bereichscards',
+            'posts' => '📰 Beiträge',
+            'layout' => '📐 Layout & Spacing',
+            'texts' => '✍️ Texte & Labels',
+        ];
+        $tab = self::clean_tab((string) ($_GET['tab'] ?? 'content-header'), array_keys($tabs));
 
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             if (!self::verify_request()) {
@@ -47,7 +56,6 @@ final class CMS_M365Copilot_Admin_Pages
             renderAdminLayoutStart('M365 Copilot Landing', self::PAGE_SLUG);
         }
 
-        self::enqueue_admin_assets();
         include CMS_M365COPILOT_PLUGIN_DIR . 'admin/views/page-settings.php';
 
         if (function_exists('cms_plugin_admin_layout_end')) {
@@ -77,14 +85,29 @@ final class CMS_M365Copilot_Admin_Pages
         return \CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), self::CSRF_ACTION);
     }
 
-    private static function enqueue_admin_assets(): void
+    public static function enqueue_admin_assets(): void
     {
+        if (!self::is_admin_request()) {
+            return;
+        }
+
         $css = CMS_M365COPILOT_PLUGIN_DIR . 'assets/css/cms-m365copilot-admin.css';
         if (file_exists($css)) {
             echo '<link rel="stylesheet" href="'
                 . htmlspecialchars(CMS_M365COPILOT_PLUGIN_URL . 'assets/css/cms-m365copilot-admin.css', ENT_QUOTES, 'UTF-8')
                 . '?v=' . filemtime($css) . '">' . "\n";
         }
+    }
+
+    private static function is_admin_request(): bool
+    {
+        $page = trim((string) ($_GET['page'] ?? ''));
+        if ($page === self::PAGE_SLUG) {
+            return true;
+        }
+
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        return str_contains($uri, '/plugins/cms-m365copilot/') || str_contains($uri, self::PAGE_SLUG);
     }
 
     private static function safe_redirect_url(string $url): string
@@ -97,5 +120,16 @@ final class CMS_M365Copilot_Admin_Pages
             return $url;
         }
         return filter_var($url, FILTER_VALIDATE_URL) !== false ? $url : '/';
+    }
+
+    /** @param array<int,string> $allowed */
+    private static function clean_tab(string $tab, array $allowed): string
+    {
+        $tab = strtolower(trim((string) preg_replace('/[^a-z0-9-]+/i', '-', $tab), '-'));
+        if ($tab === '' || !in_array($tab, $allowed, true)) {
+            return $allowed[0] ?? 'content-header';
+        }
+
+        return $tab;
     }
 }

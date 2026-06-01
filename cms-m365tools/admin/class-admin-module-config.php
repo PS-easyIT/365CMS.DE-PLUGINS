@@ -129,6 +129,49 @@ final class CMS_M365CALCULATOR_Admin_Module_Config
             $fields[] = self::number('renewal_buffer_percent', 'Renewal-Puffer in %', '10', 0, 100, 0.1, 'Budgetpuffer für Renewal- oder Packaging-Änderungen.');
         }
 
+        if ($key === 'ai-pack-vs-copilot-pro') {
+            foreach (self::ai_pricing_matrix_fields() as $field) {
+                $fields[] = $field;
+            }
+        }
+
+        return $fields;
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function ai_pricing_matrix_fields(): array
+    {
+        $vendors = [
+            'openai' => 'OpenAI',
+            'anthropic' => 'Anthropic',
+            'mistral' => 'Mistral',
+            'microsoft' => 'Microsoft',
+        ];
+        $tiers = [
+            'free-std' => 'Free/Std',
+            'pro' => 'Pro',
+            'pro-plus' => 'Pro+',
+            'team' => 'Team',
+            'enterprise' => 'Enterprise',
+        ];
+
+        $fields = [
+            self::textarea('ai-price-admin-note', 'AI-Preismatrix Notiz', '', 'Optionaler interner Hinweis zur gepflegten AI-Preismatrix.'),
+        ];
+
+        foreach ($vendors as $vendorKey => $vendorLabel) {
+            foreach ($tiers as $tierKey => $tierLabel) {
+                $fields[] = self::text(
+                    'ai-price-' . $vendorKey . '-' . $tierKey,
+                    'AI Preis · ' . $vendorLabel . ' · ' . $tierLabel,
+                    '',
+                    'Wird in der AI-Preismatrix bevorzugt aus der Datenbank verwendet (z. B. „21 € / Nutzer“).'
+                );
+            }
+        }
+
         return $fields;
     }
 

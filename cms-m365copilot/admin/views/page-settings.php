@@ -83,11 +83,9 @@ $number = static function (string $key, string $label, int $min, int $max, strin
     <?php endif; ?>
 
     <div class="m365cp-tabs" aria-label="Einstellungsbereiche">
-        <a class="m365cp-tab active" href="#content-header">Content Header</a>
-        <a class="m365cp-tab" href="#service-band">Dienstleistungsband</a>
-        <a class="m365cp-tab" href="#cards">Bereichscards</a>
-        <a class="m365cp-tab" href="#posts">Beiträge</a>
-        <a class="m365cp-tab" href="#layout">Layout & Spacing</a>
+        <?php foreach ($tabs as $tabKey => $tabLabel): ?>
+        <a class="m365cp-tab<?php echo $tab === $tabKey ? ' active' : ''; ?>" href="?page=m365copilot-settings&amp;tab=<?php echo $esc($tabKey); ?>"><?php echo $esc($tabLabel); ?></a>
+        <?php endforeach; ?>
     </div>
 
     <div class="admin-card m365cp-admin-card">
@@ -95,6 +93,7 @@ $number = static function (string $key, string $label, int $min, int $max, strin
             <input type="hidden" name="action" value="save_settings">
             <input type="hidden" name="csrf_token" value="<?php echo $esc($csrfToken); ?>">
 
+            <?php if ($tab === 'content-header'): ?>
             <?php $section('content-header', '🖼️ Content Header', 'Hero-Inhalt, Bild, CTA und Layoutvariante.'); ?>
             <div class="m365cp-admin-grid">
                 <?php $input('route_slug', 'Public Route', 'Ohne führenden Slash, z. B. microsoft-365-copilot.'); ?>
@@ -107,25 +106,33 @@ $number = static function (string $key, string $label, int $min, int $max, strin
                 <?php $textarea('header_intro', 'Subtitle / Intro'); ?>
             </div>
             <?php $endSection(); ?>
+            <?php endif; ?>
 
+            <?php if ($tab === 'service-band'): ?>
             <?php $section('service-band', '🤝 Dienstleistungsband', 'Beratungs- und Sales-CTA direkt am unteren Header-Rand.'); ?>
             <label class="checkbox-label m365cp-admin-toggle">
+                <input type="hidden" name="service_enabled" value="0">
                 <input type="checkbox" name="service_enabled" value="1"<?php echo $value('service_enabled') === '1' ? ' checked' : ''; ?>>
                 Dienstleistungsband anzeigen
             </label>
             <div class="m365cp-admin-grid">
+                <?php $input('service_section_label', 'Band Label', 'Text im linken Abschnittslabel.'); ?>
                 <?php $select('service_layout', 'Band Layout', ['1' => '1 – Logo + Text + Button', '2' => '2 – Zentriert', '3' => '3 – Split']); ?>
                 <?php $input('service_logo_url', 'Service Logo URL'); ?>
                 <?php $input('service_logo_alt', 'Service Logo Alt-Text'); ?>
                 <?php $input('service_cta_label', 'Kontakt CTA Label'); ?>
                 <?php $input('service_cta_url', 'Kontakt CTA URL'); ?>
+                <?php $input('service_section_aria_label', 'Band ARIA Label', 'Für Screenreader / Accessibility.'); ?>
                 <?php $textarea('service_text', 'Kurztext'); ?>
             </div>
             <?php $endSection(); ?>
+            <?php endif; ?>
 
+            <?php if ($tab === 'cards'): ?>
             <?php $section('cards', '🃏 Bereichscards', 'Drei steuerbare Einstiegsflächen für Lizenzen, Informationen und Datenschutz.'); ?>
             <div class="m365cp-admin-grid">
                 <?php $input('cards_link_label', 'Card Link Label', 'Wird auf allen drei Cards genutzt, z. B. Mehr erfahren →'); ?>
+                <?php $input('cards_section_aria_label', 'Cards ARIA Label', 'Für Screenreader / Accessibility.'); ?>
             </div>
             <?php for ($i = 1; $i <= 3; $i++): ?>
             <div class="m365cp-admin-cardset">
@@ -139,14 +146,41 @@ $number = static function (string $key, string $label, int $min, int $max, strin
                 </div>
             </div>
             <?php endfor; ?>
-            <?php $endSection(); ?>
 
+            <div class="m365cp-admin-cardset">
+                <h4>Hero Cards – Dienstleistungsinfos</h4>
+                <label class="checkbox-label m365cp-admin-toggle">
+                    <input type="hidden" name="service_cards_show" value="0">
+                    <input type="checkbox" name="service_cards_show" value="1"<?php echo $value('service_cards_show') === '1' ? ' checked' : ''; ?>>
+                    Hero-Dienstleistungs-Cards anzeigen (zwischen Bereichscards und Beiträgen)
+                </label>
+                <div class="m365cp-admin-grid">
+                    <?php $input('service_cards_section_label', 'Section Label', 'Kleines Label über den Hero-Cards.'); ?>
+                    <?php $input('service_cards_aria_label', 'Section ARIA Label', 'Für Screenreader / Accessibility.'); ?>
+                    <?php $input('service_cards_title', 'Überschrift'); ?>
+                    <?php $textarea('service_cards_intro', 'Introtext'); ?>
+                </div>
+
+                <?php for ($i = 1; $i <= 3; $i++): ?>
+                <div class="m365cp-admin-grid">
+                    <?php $input('service_info_' . $i . '_title', 'Hero Card ' . $i . ' Titel'); ?>
+                    <?php $textarea('service_info_' . $i . '_text', 'Hero Card ' . $i . ' Text'); ?>
+                </div>
+                <?php endfor; ?>
+            </div>
+
+            <?php $endSection(); ?>
+            <?php endif; ?>
+
+            <?php if ($tab === 'posts'): ?>
             <?php $section('posts', '📰 Beiträge', 'Aktuelle Beiträge per bestehender Kategorie-/Post-Abfrage.'); ?>
             <label class="checkbox-label m365cp-admin-toggle">
+                <input type="hidden" name="posts_show" value="0">
                 <input type="checkbox" name="posts_show" value="1"<?php echo $value('posts_show') === '1' ? ' checked' : ''; ?>>
                 Beitragsbereich anzeigen
             </label>
             <div class="m365cp-admin-grid">
+                <?php $input('posts_section_label', 'Section Label', 'Kleines Label oberhalb der Beitragsüberschrift.'); ?>
                 <?php $input('posts_title', 'Bereichstitel'); ?>
                 <?php $number('posts_count', 'Anzahl Beiträge', 1, 12); ?>
                 <?php $input('posts_readmore_label', 'Read-More Label'); ?>
@@ -165,7 +199,9 @@ $number = static function (string $key, string $label, int $min, int $max, strin
                 <?php $textarea('posts_empty_text', 'Empty-State Text'); ?>
             </div>
             <?php $endSection(); ?>
+            <?php endif; ?>
 
+            <?php if ($tab === 'layout'): ?>
             <?php $section('layout', '📐 Global Layout & Spacing', 'Alle Werte werden als CSS-Variablen ausgegeben.'); ?>
             <div class="m365cp-admin-grid">
                 <?php $number('layout_content_max_width', 'Content Max-Width px', 720, 1800); ?>
@@ -178,6 +214,21 @@ $number = static function (string $key, string $label, int $min, int $max, strin
                 <?php $number('layout_footer_offset', 'Abstand zum Theme-Footer px', 0, 160); ?>
             </div>
             <?php $endSection(); ?>
+            <?php endif; ?>
+
+            <?php if ($tab === 'texts'): ?>
+            <?php $section('texts', '✍️ Texte & Labels', 'Zentrale Steuerung der verbleibenden sichtbaren Standardtexte.'); ?>
+            <div class="m365cp-admin-grid">
+                <?php $input('header_cta_label', 'Header CTA Label'); ?>
+                <?php $input('service_cta_label', 'Service CTA Label'); ?>
+                <?php $input('cards_link_label', 'Cards Link Label'); ?>
+                <?php $input('posts_readmore_label', 'Read-More Label'); ?>
+                <?php $input('posts_read_aria_prefix', 'Read-More ARIA Präfix'); ?>
+                <?php $input('posts_empty_title', 'Empty-Title'); ?>
+                <?php $textarea('posts_empty_text', 'Empty-Text'); ?>
+            </div>
+            <?php $endSection(); ?>
+            <?php endif; ?>
 
             <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
         </form>

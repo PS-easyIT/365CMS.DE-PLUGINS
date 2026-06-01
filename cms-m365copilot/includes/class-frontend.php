@@ -97,13 +97,28 @@ final class CMS_M365Copilot_Frontend
             $path = '/';
         }
 
-        return in_array($path, ['/' . $slug, '/en/' . $slug], true);
+        $candidates = [
+            '/' . $slug,
+            '/en/' . $slug,
+            '/de/' . $slug,
+        ];
+
+        if (in_array($path, $candidates, true)) {
+            return true;
+        }
+
+        return preg_match('~^/[a-z]{2}(?:-[a-z]{2})?/' . preg_quote($slug, '~') . '$~i', $path) === 1;
     }
 
     private function render_page(): void
     {
         $settings = CMS_M365Copilot_Settings::all();
         $posts = $this->load_posts($settings);
+        $publicCssUrl = '';
+        $publicCssPath = CMS_M365COPILOT_PLUGIN_DIR . 'assets/css/style.css';
+        if (is_file($publicCssPath)) {
+            $publicCssUrl = CMS_M365COPILOT_PLUGIN_URL . 'assets/css/style.css?v=' . (string) filemtime($publicCssPath);
+        }
 
         if (class_exists('CMS\\ThemeManager')) {
             \CMS\ThemeManager::instance()->getHeader(['title' => (string) ($settings['header_title'] ?? 'Microsoft 365 Copilot')]);
@@ -148,7 +163,7 @@ final class CMS_M365Copilot_Frontend
                 ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC
                 LIMIT {$limit}");
             $stmtLatest->execute();
-            return $stmtLatest->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            return $this->prepare_posts($stmtLatest->fetchAll(\PDO::FETCH_ASSOC) ?: []);
         }
 
         $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
@@ -165,6 +180,100 @@ final class CMS_M365Copilot_Frontend
             LIMIT {$limit}");
         $stmt->execute(array_merge($categoryIds, $categoryIds));
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        return $this->prepare_posts($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: []);
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $posts
+     * @return array<int,array<string,mixed>>
+     */
+    private function prepare_posts(array $posts): array
+    {
+        foreach ($posts as &$post) {
+            if (!is_array($post)) {
+                continue;
+            }
+
+            $excerptSource = trim((string) ($post['excerpt'] ?? ''));
+            $contentSource = trim((string) ($post['content'] ?? ''));
+            $post['excerpt_plain'] = $this->plain_excerpt($excerptSource !== '' ? $excerptSource : $contentSource);
+        }
+        unset($post);
+
+        return $posts;
+    }
+
+    private function plain_excerpt(string $content): string
+    {
+        $content = trim($content);
+        if ($content === '') {
+            return '';
+        }
+
+        $decoded = json_decode($content, true);
+        if (is_array($decoded) && isset($decoded['blocks']) && is_array($decoded['blocks'])) {
+            $parts = [];
+            foreach ($decoded['blocks'] as $block) {
+                if (!is_array($block)) {
+                    continue;
+                }
+                $data = $block['data'] ?? null;
+                if (!is_array($data)) {
+                    continue;
+                }
+                foreach (['text', 'caption', 'message', 'title'] as $key) {
+                    if (!empty($data[$key]) && is_string($data[$key])) {
+                        $parts[] = $data[$key];
+                    }
+                }
+                if (!empty($data['items']) && is_array($data['items'])) {
+                    foreach ($data['items'] as $item) {
+                        if (is_string($item) && trim($item) !== '') {
+                            $parts[] = $item;
+                        }
+                    }
+                }
+            }
+            $content = implode(' ', $parts);
+        } elseif (str_contains($content, '"blocks"') && (str_starts_with($content, '{') || str_starts_with($content, '['))) {
+            $recovered = $this->extract_malformed_editorjs_text($content);
+            if ($recovered !== '') {
+                $content = $recovered;
+            }
+        }
+
+        $text = trim(html_entity_decode(strip_tags($content), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        return preg_replace('/\s+/u', ' ', $text) ?? '';
+    }
+
+    private function extract_malformed_editorjs_text(string $raw): string
+    {
+        $parts = [];
+        foreach (['text', 'caption', 'message', 'title'] as $key) {
+            if (preg_match_all('/"' . preg_quote($key, '/') . '"\s*:\s*"((?:\\\\.|[^"\\\\])*)"/u', $raw, $matches)) {
+                foreach ($matches[1] as $value) {
+                    $decoded = json_decode('"' . $value . '"');
+                    if (is_string($decoded) && trim($decoded) !== '') {
+                        $parts[] = $decoded;
+                    }
+                }
+            }
+        }
+
+        if (preg_match_all('/"items"\s*:\s*\[(.*?)\]/us', $raw, $itemGroups)) {
+            foreach ($itemGroups[1] as $group) {
+                if (preg_match_all('/"((?:\\\\.|[^"\\\\])*)"/u', $group, $itemMatches)) {
+                    foreach ($itemMatches[1] as $value) {
+                        $decoded = json_decode('"' . $value . '"');
+                        if (is_string($decoded) && trim($decoded) !== '') {
+                            $parts[] = $decoded;
+                        }
+                    }
+                }
+            }
+        }
+
+        $text = trim(html_entity_decode(strip_tags(implode(' ', $parts)), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        return preg_replace('/\s+/u', ' ', $text) ?? '';
     }
 }

@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "AI Product Catalog",
-    "source_checked": "2026-05-16",
+    "source_checked": "2026-06-01",
     "currency": "EUR",
     "price_basis": "Orientierungswerte und Kostenmodelle; finale Preise, Capacity und Angebotsnamen im jeweiligen Kanal prüfen.",
     "notes": [
@@ -20,7 +20,268 @@
       "https://learn.microsoft.com/en-us/microsoft-copilot-studio/fundamentals-what-is-copilot-studio",
       "https://docs.github.com/copilot/about-github-copilot/what-is-github-copilot",
       "https://www.microsoft.com/en-us/licensing/news",
-      "https://learn.microsoft.com/en-us/power-platform/admin/powerapps-flow-licensing-faq"
+      "https://learn.microsoft.com/en-us/power-platform/admin/powerapps-flow-licensing-faq",
+      "https://chatgpt.com/pricing",
+      "https://claude.com/pricing",
+      "https://claude.com/pricing/team",
+      "https://claude.com/pricing/enterprise",
+      "https://mistral.ai/pricing",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/pay-as-you-go/overview",
+      "https://www.microsoft.com/microsoft-365-copilot"
+    ]
+  },
+  "pricing_matrix": {
+    "last_verified": "2026-06-01",
+    "disclaimer": "Preise und Funktionsumfänge ändern sich häufig. Vor Kauf immer die Originalquelle prüfen.",
+    "microsoft_addon_note": "Microsoft 365 Copilot ist ein Add-on zu berechtigten Basislizenzen; Copilot Chat kann mit geeigneter Microsoft-365-Lizenz ohne Zusatzkosten verfügbar sein. Pay-as-you-go wird über Azure-Meter abgerechnet.",
+    "tiers": [
+      {
+        "key": "free_std",
+        "label": "Free / Std"
+      },
+      {
+        "key": "pro",
+        "label": "Pro"
+      },
+      {
+        "key": "pro_plus",
+        "label": "Pro+"
+      },
+      {
+        "key": "team",
+        "label": "Team"
+      },
+      {
+        "key": "enterprise",
+        "label": "Enterprise"
+      }
+    ],
+    "vendors": [
+      {
+        "key": "openai",
+        "label": "OpenAI",
+        "cells": {
+          "free_std": {
+            "value": "0 € (Free) / 8 € (Go)",
+            "amount": null,
+            "currency": "EUR",
+            "period": "month",
+            "billing_note": "Go: monatlich",
+            "last_verified": "2026-06-01",
+            "source_url": "https://chatgpt.com/pricing",
+            "verification": "official"
+          },
+          "pro": {
+            "value": "23 €",
+            "amount": 23,
+            "currency": "EUR",
+            "period": "user/month",
+            "billing_note": "Plus",
+            "last_verified": "2026-06-01",
+            "source_url": "https://chatgpt.com/pricing",
+            "verification": "official"
+          },
+          "pro_plus": {
+            "value": "ab 103 €",
+            "amount": 103,
+            "currency": "EUR",
+            "period": "month",
+            "billing_note": "Pro",
+            "last_verified": "2026-06-01",
+            "source_url": "https://chatgpt.com/pricing",
+            "verification": "official"
+          },
+          "team": {
+            "value": "21 € / Nutzer",
+            "amount": 21,
+            "currency": "EUR",
+            "period": "user/month",
+            "billing_note": "jährlich; 26 € monatlich",
+            "last_verified": "2026-06-01",
+            "source_url": "https://chatgpt.com/pricing",
+            "verification": "official"
+          },
+          "enterprise": {
+            "value": "k. A. (individuell)",
+            "amount": null,
+            "currency": "EUR",
+            "period": "custom",
+            "billing_note": "Kontakt Vertrieb",
+            "last_verified": "2026-06-01",
+            "source_url": "https://chatgpt.com/pricing",
+            "verification": "official"
+          }
+        }
+      },
+      {
+        "key": "anthropic",
+        "label": "Anthropic (Claude)",
+        "cells": {
+          "free_std": {
+            "value": "0 $",
+            "amount": 0,
+            "currency": "USD",
+            "period": "month",
+            "billing_note": "Free",
+            "last_verified": "2026-06-01",
+            "source_url": "https://claude.com/pricing",
+            "verification": "official"
+          },
+          "pro": {
+            "value": "20 $",
+            "amount": 20,
+            "currency": "USD",
+            "period": "month",
+            "billing_note": "17 $ bei jährlicher Zahlung",
+            "last_verified": "2026-06-01",
+            "source_url": "https://claude.com/pricing/pro",
+            "verification": "official"
+          },
+          "pro_plus": {
+            "value": "ab 100 $",
+            "amount": 100,
+            "currency": "USD",
+            "period": "user/month",
+            "billing_note": "Max 5x; 20x = 200 $",
+            "last_verified": "2026-06-01",
+            "source_url": "https://claude.com/pricing/max",
+            "verification": "official"
+          },
+          "team": {
+            "value": "25 $ / Seat",
+            "amount": 25,
+            "currency": "USD",
+            "period": "user/month",
+            "billing_note": "20 $ jährlich; Premium Seat 125 $ monatlich",
+            "last_verified": "2026-06-01",
+            "source_url": "https://claude.com/pricing/team",
+            "verification": "official"
+          },
+          "enterprise": {
+            "value": "k. A. / teils ab 20 $ + PAYG",
+            "amount": null,
+            "currency": "USD",
+            "period": "custom",
+            "billing_note": "Enterprise self-serve: 20 $/Seat jährlich + usage; sales-assisted mind. 50 Seats",
+            "last_verified": "2026-06-01",
+            "source_url": "https://claude.com/pricing/enterprise",
+            "verification": "official"
+          }
+        }
+      },
+      {
+        "key": "mistral",
+        "label": "Mistral",
+        "cells": {
+          "free_std": {
+            "value": "0 $",
+            "amount": 0,
+            "currency": "USD",
+            "period": "month",
+            "billing_note": "Free",
+            "last_verified": "2026-06-01",
+            "source_url": "https://mistral.ai/pricing",
+            "verification": "official"
+          },
+          "pro": {
+            "value": "14,99 $",
+            "amount": 14.99,
+            "currency": "USD",
+            "period": "month",
+            "billing_note": "Excluding taxes",
+            "last_verified": "2026-06-01",
+            "source_url": "https://mistral.ai/pricing",
+            "verification": "official"
+          },
+          "pro_plus": {
+            "value": "k. A.",
+            "amount": null,
+            "currency": "USD",
+            "period": "n/a",
+            "billing_note": "NO TIER: kein separates Pro+-Tier auf offizieller Pricing-Seite",
+            "last_verified": "2026-06-01",
+            "source_url": "https://mistral.ai/pricing",
+            "verification": "official"
+          },
+          "team": {
+            "value": "24,99 $ / Nutzer",
+            "amount": 24.99,
+            "currency": "USD",
+            "period": "user/month",
+            "billing_note": "Excluding taxes",
+            "last_verified": "2026-06-01",
+            "source_url": "https://mistral.ai/pricing",
+            "verification": "official"
+          },
+          "enterprise": {
+            "value": "k. A. (Kontakt)",
+            "amount": null,
+            "currency": "USD",
+            "period": "custom",
+            "billing_note": "Private deployments / Contact us",
+            "last_verified": "2026-06-01",
+            "source_url": "https://mistral.ai/pricing",
+            "verification": "official"
+          }
+        }
+      },
+      {
+        "key": "microsoft",
+        "label": "Microsoft Copilot",
+        "cells": {
+          "free_std": {
+            "value": "0 € (Copilot Chat)",
+            "amount": 0,
+            "currency": "EUR",
+            "period": "month",
+            "billing_note": "Web-based Copilot Chat bei geeigneter Microsoft-365-Lizenz ohne Zusatzkosten",
+            "last_verified": "2026-06-01",
+            "source_url": "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing#microsoft-365-copilot-chat",
+            "verification": "official"
+          },
+          "pro": {
+            "value": "k. A.",
+            "amount": null,
+            "currency": "EUR",
+            "period": "user/month",
+            "billing_note": "UNVERIFIED: öffentliche Microsoft-Produktseite lieferte im Abruf keine stabile Preisangabe",
+            "last_verified": "2026-06-01",
+            "source_url": "https://www.microsoft.com/microsoft-365-copilot",
+            "verification": "unverified"
+          },
+          "pro_plus": {
+            "value": "k. A.",
+            "amount": null,
+            "currency": "EUR",
+            "period": "n/a",
+            "billing_note": "NO TIER: kein klar ausgewiesenes Pro+-Tier in verifizierbarer öffentlicher Quelle",
+            "last_verified": "2026-06-01",
+            "source_url": "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
+            "verification": "official"
+          },
+          "team": {
+            "value": "k. A.",
+            "amount": null,
+            "currency": "EUR",
+            "period": "user/month",
+            "billing_note": "UNVERIFIED: keine stabile Team-Preistafel ohne Login abrufbar",
+            "last_verified": "2026-06-01",
+            "source_url": "https://www.microsoft.com/microsoft-365-copilot",
+            "verification": "unverified"
+          },
+          "enterprise": {
+            "value": "Add-on Modell (Preis k. A.)",
+            "amount": null,
+            "currency": "EUR",
+            "period": "user/month",
+            "billing_note": "Microsoft 365 Copilot als Add-on-Lizenz zu berechtigten Basisplänen; zusätzliche PAYG-Szenarien via Azure-Meter",
+            "last_verified": "2026-06-01",
+            "source_url": "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
+            "verification": "official"
+          }
+        }
+      }
     ]
   },
   "products": [

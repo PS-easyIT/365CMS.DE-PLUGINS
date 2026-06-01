@@ -1,6 +1,14 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.37 – 2026-06-01
+
+- `AI-Pack-vs-Copilot-Pro`: Neue normalisierte Pricing-Matrix über vier Anbieter ergänzt (OpenAI, Anthropic/Claude, Mistral, Microsoft) mit den Tiers `Free/Std`, `Pro`, `Pro+`, `Team`, `Enterprise`.
+- Jede Matrixzelle führt jetzt strukturierte Metadaten (`source_url`, `last_verified`, Verifikationsstatus, Abrechnungsnotiz), damit volatile Preise nachvollziehbar bleiben.
+- Fehlende oder nicht stabil verifizierbare Tiers werden bewusst als `k. A.` mit `NO TIER` bzw. `UNVERIFIED` markiert statt geraten.
+- Microsoft-Pricing-Hinweis ergänzt: Add-on-Modell für Microsoft 365 Copilot, Copilot-Chat-Ohne-Aufpreis-Context (bei geeigneter Lizenz) und PAYG-/Azure-Meter-Einordnung.
+- Public-Template erweitert: Pricing-Matrix-Sektion mit Quellenlinks, "geprüft am"-Zeile, Pflicht-Disclaimer und 768px-Mobile-Stacking ohne abgeschnittene Inhalte.
+
 ## 3.0.36 – 2026-06-01
 
 - `Microsoft-Preiserhöhung-Tracker`: Microsoft 365 Business Premium bleibt im Juli-2026-Update preislich stabil und zeigt nach der Feb-2026-Währungsanpassung keinen zusätzlichen Up-Step.

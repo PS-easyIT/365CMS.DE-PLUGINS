@@ -9,11 +9,13 @@
     gap: 0;
     border-bottom: 2px solid #e2e8f0;
     margin-bottom: 0;
+    overflow-x: auto;
 }
 
 .m365cp-tab {
     display: inline-flex;
     align-items: center;
+    gap: .35rem;
     padding: .6rem 1rem;
     text-decoration: none;
     color: #475569;
@@ -21,6 +23,8 @@
     border-bottom: 2px solid transparent;
     border-radius: 6px 6px 0 0;
     margin-bottom: -2px;
+    white-space: nowrap;
+    transition: color .15s ease, background .15s ease;
 }
 
 .m365cp-tab.active,
@@ -36,7 +40,7 @@
 }
 
 .m365cp-admin-section {
-    padding: 1rem 0;
+    padding: 1.15rem 0;
     border-top: 1px solid #f1f5f9;
 }
 
@@ -52,12 +56,22 @@
 .m365cp-admin-section__head h3 {
     margin: 0;
     color: #1e293b;
+    font-size: 1rem;
 }
 
 .m365cp-admin-section__head p {
     margin: .25rem 0 0;
     color: #64748b;
     font-size: .9rem;
+}
+
+.m365cp-admin-section__head {
+    margin-bottom: .95rem;
+    padding: .6rem .75rem;
+    border-left: 3px solid #14b8a6;
+    border-bottom: 1px solid rgba(30, 58, 95, .2);
+    border-radius: 4px 4px 0 0;
+    background: linear-gradient(90deg, rgba(30, 58, 95, .12), rgba(20, 184, 166, .1) 40%, rgba(232, 168, 56, .06) 100%);
 }
 
 .m365cp-admin-grid {
@@ -77,17 +91,48 @@
 .m365cp-admin-cardset {
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    padding: .9rem;
+    padding: .95rem;
     margin-bottom: .75rem;
+    background: #f8fafc;
 }
 
 .m365cp-admin-cardset h4 {
     margin: 0 0 .6rem;
     font-size: .95rem;
+    color: #334155;
+}
+
+.m365cp-admin-cardset .m365cp-admin-grid {
+    gap: .7rem .95rem;
+}
+
+.m365cp-admin-shell .btn.btn-primary {
+    margin-top: .35rem;
 }
 
 @media (max-width: 960px) {
     .m365cp-admin-grid {
         grid-template-columns: 1fr;
+    }
+
+    .m365cp-tabs {
+        flex-wrap: nowrap;
+    }
+}
+
+@media (max-width: 640px) {
+    .m365cp-admin-shell .admin-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .75rem;
+    }
+
+    .m365cp-admin-shell .header-actions {
+        width: 100%;
+    }
+
+    .m365cp-admin-shell .header-actions .btn {
+        width: 100%;
+        justify-content: center;
     }
 }

@@ -25,6 +25,9 @@ $roleOptions = is_array($result['role_options'] ?? null) ? $result['role_options
 $dataOptions = is_array($result['data_scope_options'] ?? null) ? $result['data_scope_options'] : CMS_M365CALCULATOR_AI_Product_Comparison::data_scope_options();
 $goalOptions = is_array($result['goal_options'] ?? null) ? $result['goal_options'] : CMS_M365CALCULATOR_AI_Product_Comparison::goal_options();
 $offerOptions = is_array($result['dynamic_offer_options'] ?? null) ? $result['dynamic_offer_options'] : CMS_M365CALCULATOR_AI_Product_Comparison::dynamic_offer_options();
+$pricingMatrix = is_array($result['pricing_matrix'] ?? null) ? $result['pricing_matrix'] : [];
+$pricingTiers = array_values(array_filter((array) ($pricingMatrix['tiers'] ?? []), 'is_array'));
+$pricingVendors = array_values(array_filter((array) ($pricingMatrix['vendors'] ?? []), 'is_array'));
 
 if (class_exists('CMS\\ThemeManager')) {
     \CMS\ThemeManager::instance()->getHeader(['title' => 'AI Pack vs. Copilot Pro Vergleich']);
@@ -238,6 +241,73 @@ if (class_exists('CMS\\ThemeManager')) {
             </table>
         </section>
     </section>
+
+    <?php if ($pricingTiers !== [] && $pricingVendors !== []): ?>
+    <section class="phinit-result m365calc-result-card" aria-labelledby="m365ai-pricing-title">
+        <header class="m365calc-result-heading">
+            <section>
+                <p class="phinit-overline">Pricing Matrix</p>
+                <h2 id="m365ai-pricing-title">Normalisierte Preis-Tiers im Direktvergleich</h2>
+                <p>Vergleich über vier Anbieter hinweg. Zeilen sind auf gemeinsame Tiers normiert, fehlende Tiers bleiben bewusst als <strong>k. A.</strong> markiert.</p>
+            </section>
+        </header>
+
+        <section class="phinit-table-wrap" aria-label="Normalisierte AI-Preismatrix">
+            <table class="phinit-table m365calc-pricing-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Tier</th>
+                        <?php foreach ($pricingVendors as $vendor): ?>
+                        <th scope="col"><?php echo $esc($vendor['label'] ?? 'Anbieter'); ?></th>
+                        <?php endforeach; ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($pricingTiers as $tier): ?>
+                    <?php $tierKey = (string) ($tier['key'] ?? ''); ?>
+                    <tr>
+                        <th scope="row"><?php echo $esc($tier['label'] ?? $tierKey); ?></th>
+                        <?php foreach ($pricingVendors as $vendor): ?>
+                        <?php
+                        $vendorLabel = (string) ($vendor['label'] ?? 'Anbieter');
+                        $cells = is_array($vendor['cells'] ?? null) ? $vendor['cells'] : [];
+                        $cell = is_array($cells[$tierKey] ?? null) ? $cells[$tierKey] : [];
+                        $value = (string) ($cell['value'] ?? 'k. A.');
+                        $sourceUrl = (string) ($cell['source_url'] ?? '');
+                        $lastVerified = (string) ($cell['last_verified'] ?? ($pricingMatrix['last_verified'] ?? 'k. A.'));
+                        $billingNote = (string) ($cell['billing_note'] ?? '');
+                        ?>
+                        <td data-label="<?php echo $esc($vendorLabel); ?>">
+                            <strong class="m365calc-pricing-value"><?php echo $esc($value); ?></strong>
+                            <small class="m365calc-pricing-meta">geprüft am <?php echo $esc($lastVerified !== '' ? $lastVerified : 'k. A.'); ?></small>
+                            <?php if ($billingNote !== ''): ?>
+                            <small class="m365calc-pricing-meta"><?php echo $esc($billingNote); ?></small>
+                            <?php endif; ?>
+                            <?php if ($sourceUrl !== ''): ?>
+                            <small class="m365calc-pricing-meta">
+                                <a href="<?php echo $esc($sourceUrl); ?>" target="_blank" rel="noopener noreferrer">Quelle</a>
+                            </small>
+                            <?php endif; ?>
+                        </td>
+                        <?php endforeach; ?>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="m365calc-result-grid" aria-label="Pricing Hinweise">
+            <article class="phinit-note phinit-note--warning">
+                <h3>Hinweis</h3>
+                <p><?php echo $esc((string) ($pricingMatrix['disclaimer'] ?? 'Preise und Funktionsumfänge ändern sich häufig. Vor Kauf immer die Originalquelle prüfen.')); ?></p>
+            </article>
+            <article class="phinit-note phinit-note--info">
+                <h3>Microsoft-Modell</h3>
+                <p><?php echo $esc((string) ($pricingMatrix['microsoft_addon_note'] ?? 'Microsoft Copilot ist in Unternehmen oft als Add-on bzw. über PAYG-Modelle organisiert.')); ?></p>
+            </article>
+        </section>
+    </section>
+    <?php endif; ?>
 
     <section class="m365calc-result-grid" aria-label="Nächste Schritte und Angebotslabel">
         <article class="phinit-note phinit-note--info">

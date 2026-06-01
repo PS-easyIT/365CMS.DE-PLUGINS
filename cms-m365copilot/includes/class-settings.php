@@ -28,7 +28,10 @@ final class CMS_M365Copilot_Settings
             'header_cta_label' => 'Copilot Beratung anfragen',
             'header_cta_url' => '/kontakt',
             'header_layout' => '1',
+            'cards_section_aria_label' => 'Copilot Bereiche',
             'service_enabled' => '1',
+            'service_section_label' => '365CMS Service',
+            'service_section_aria_label' => 'Dienstleistungsband',
             'service_text' => 'Wir unterstützen bei Copilot Readiness, Lizenzwahl, Governance, Datenschutz und Einführung in Fachbereichen.',
             'service_logo_url' => '',
             'service_logo_alt' => 'Beratungspartner',
@@ -51,12 +54,25 @@ final class CMS_M365Copilot_Settings
             'card_3_image_alt' => 'Datenschutz und Sicherheit',
             'card_3_url' => '/m365-lizenz-audit-checkliste',
             'cards_link_label' => 'Mehr erfahren →',
+            'service_cards_show' => '1',
+            'service_cards_aria_label' => 'Dienstleistungsinformationen',
+            'service_cards_section_label' => 'Dienstleistungen',
+            'service_cards_title' => 'Unsere Dienstleistungsbausteine',
+            'service_cards_intro' => 'Diese Leistungen begleiten euch von Readiness über Umsetzung bis Governance.',
+            'service_info_1_title' => 'Readiness & Assessment',
+            'service_info_1_text' => 'Wir analysieren Ausgangslage, Lizenzen, Datenzugriffe und organisatorische Voraussetzungen für Copilot.',
+            'service_info_2_title' => 'Einführung & Enablement',
+            'service_info_2_text' => 'Wir begleiten Pilotgruppen, definieren Use-Cases und schulen Fachbereiche für produktiven Alltagseinsatz.',
+            'service_info_3_title' => 'Governance & Betrieb',
+            'service_info_3_text' => 'Wir etablieren Rollen, Prozesse und Leitplanken für Datenschutz, Sicherheit und nachhaltigen Betrieb.',
             'posts_show' => '1',
+            'posts_section_label' => 'Aktuelle Beiträge',
             'posts_title' => 'Aktuelles zu Microsoft Copilot',
             'posts_intro' => 'Neueste Beiträge, Einordnungen und Praxisnotizen aus der Kategorie Microsoft Copilot.',
             'posts_category' => 'Microsoft Copilot',
             'posts_count' => '3',
             'posts_readmore_label' => 'Weiter lesen →',
+            'posts_read_aria_prefix' => 'Beitrag lesen:',
             'posts_empty_title' => 'Keine Beiträge gefunden',
             'posts_empty_text' => 'Bitte Kategorie oder Beitragsanzahl in den Einstellungen prüfen.',
             'layout_content_max_width' => '1200',
@@ -137,14 +153,18 @@ final class CMS_M365Copilot_Settings
     public static function sanitize_from_post(array $posted): array
     {
         $defaults = self::defaults();
-        $settings = [];
+        $settings = array_merge($defaults, self::all());
         foreach ($defaults as $key => $default) {
+            if (!array_key_exists($key, $posted)) {
+                continue;
+            }
+
             $raw = (string) ($posted[$key] ?? $default);
             if (in_array($key, ['header_layout', 'service_layout'], true)) {
                 $settings[$key] = in_array($raw, ['1', '2', '3'], true) ? $raw : $default;
                 continue;
             }
-            if ($key === 'service_enabled' || $key === 'posts_show') {
+            if (in_array($key, ['service_enabled', 'service_cards_show', 'posts_show'], true)) {
                 $settings[$key] = !empty($posted[$key]) ? '1' : '0';
                 continue;
             }
@@ -296,7 +316,7 @@ final class CMS_M365Copilot_Settings
 
     private static function text_limit(string $key): int
     {
-        return str_contains($key, '_intro') || str_contains($key, '_text') ? 600 : 190;
+        return str_contains($key, '_intro') || str_contains($key, '_text') ? 600 : 255;
     }
 
     private static function limit(string $value, int $length): string

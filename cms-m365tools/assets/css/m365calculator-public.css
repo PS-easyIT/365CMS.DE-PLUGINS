@@ -695,6 +695,22 @@ body.m365tools-detail-buttons-full .m365calc-provider-cta .m365calc-actions :is(
     text-align: right;
 }
 
+.m365calc-pricing-table .m365calc-pricing-value {
+    display: block;
+    margin-bottom: var(--phinit-space-1);
+}
+
+.m365calc-pricing-table .m365calc-pricing-meta {
+    color: var(--phinit-color-ink-secondary);
+    display: block;
+    line-height: 1.4;
+    margin-bottom: var(--phinit-space-1);
+}
+
+.m365calc-pricing-table .m365calc-pricing-meta:last-child {
+    margin-bottom: 0;
+}
+
 .m365calc-source-card summary {
     cursor: pointer;
     font-weight: 500;
@@ -1767,6 +1783,50 @@ body.m365tools-detail-buttons-full .m365calc-provider-cta .m365calc-actions :is(
 
     .m365calc-chart__row {
         grid-template-columns: 1fr;
+    }
+
+    .m365calc-pricing-table,
+    .m365calc-pricing-table thead,
+    .m365calc-pricing-table tbody,
+    .m365calc-pricing-table tr,
+    .m365calc-pricing-table th,
+    .m365calc-pricing-table td {
+        display: block;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .m365calc-pricing-table thead {
+        clip: rect(0 0 0 0);
+        height: 1px;
+        overflow: hidden;
+        position: absolute;
+        white-space: nowrap;
+        width: 1px;
+    }
+
+    .m365calc-pricing-table tbody tr {
+        border: 1px solid var(--phinit-color-border);
+        border-radius: var(--m365tools-ui-radius, 2px);
+        margin-bottom: var(--phinit-space-4);
+        padding: var(--phinit-space-3);
+    }
+
+    .m365calc-pricing-table tbody th,
+    .m365calc-pricing-table tbody td {
+        border-bottom: 0;
+        padding: var(--phinit-space-1) 0;
+    }
+
+    .m365calc-pricing-table tbody td::before {
+        color: var(--phinit-color-ink-secondary);
+        content: attr(data-label);
+        display: block;
+        font-size: var(--phinit-text-xs);
+        font-weight: 500;
+        letter-spacing: .04em;
+        margin-bottom: var(--phinit-space-1);
+        text-transform: uppercase;
     }
 }
 

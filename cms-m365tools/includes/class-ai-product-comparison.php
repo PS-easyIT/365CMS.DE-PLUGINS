@@ -13,6 +13,8 @@ if (!defined('ABSPATH')) {
 
 final class CMS_M365CALCULATOR_AI_Product_Comparison
 {
+    private const AI_MODULE_KEY = 'ai-pack-vs-copilot-pro';
+
     /**
      * @return array<string,mixed>
      */
@@ -131,6 +133,7 @@ final class CMS_M365CALCULATOR_AI_Product_Comparison
         $selectedOffer = self::selected_offer((string) $input['dynamic_offer'], $dynamicCatalog);
         $mappedOfferSlugs = array_values(array_map('strval', is_array($selectedOffer['maps_to'] ?? null) ? $selectedOffer['maps_to'] : []));
         $manualReview = !empty($selectedOffer['manual_validation_required']);
+        $pricingMatrix = self::pricing_matrix($productCatalog);
         $scored = [];
 
         foreach ($products as $product) {
@@ -156,6 +159,7 @@ final class CMS_M365CALCULATOR_AI_Product_Comparison
             'warnings' => $warnings,
             'shortcuts' => $shortcuts,
             'next_steps' => self::next_steps($input, $best, $manualReview),
+            'pricing_matrix' => $pricingMatrix,
             'role_options' => self::role_options(),
             'data_scope_options' => self::data_scope_options(),
             'goal_options' => self::goal_options(),
@@ -163,6 +167,7 @@ final class CMS_M365CALCULATOR_AI_Product_Comparison
             'meta' => [
                 'source_checked' => (string) ($productCatalog['meta']['source_checked'] ?? $matrix['meta']['source_checked'] ?? '2026-05-16'),
                 'price_basis' => (string) ($productCatalog['meta']['price_basis'] ?? 'Preise und Angebotsumfang vor Bestellung prüfen.'),
+                'pricing_last_verified' => (string) ($pricingMatrix['last_verified'] ?? ''),
             ],
             'sources' => array_values(array_unique(array_merge(
                 array_map('strval', (array) ($productCatalog['meta']['sources'] ?? [])),
@@ -332,6 +337,137 @@ final class CMS_M365CALCULATOR_AI_Product_Comparison
         }
 
         return $rows;
+    }
+
+    /**
+     * @param array<string,mixed> $productCatalog
+     * @return array<string,mixed>
+     */
+    private static function pricing_matrix(array $productCatalog): array
+    {
+        $matrix = is_array($productCatalog['pricing_matrix'] ?? null) ? $productCatalog['pricing_matrix'] : [];
+        $tiers = array_values(array_filter((array) ($matrix['tiers'] ?? []), 'is_array'));
+        $vendors = array_values(array_filter((array) ($matrix['vendors'] ?? []), 'is_array'));
+        $overrides = self::pricing_matrix_overrides();
+
+        if ($tiers === []) {
+            $tiers = [
+                ['key' => 'free_std', 'label' => 'Free / Std'],
+                ['key' => 'pro', 'label' => 'Pro'],
+                ['key' => 'pro_plus', 'label' => 'Pro+'],
+                ['key' => 'team', 'label' => 'Team'],
+                ['key' => 'enterprise', 'label' => 'Enterprise'],
+            ];
+        }
+
+        foreach ($vendors as $vendorIndex => $vendor) {
+            if (!is_array($vendor)) {
+                continue;
+            }
+
+            $vendorKey = self::clean_key((string) ($vendor['key'] ?? ''));
+            if ($vendorKey === '') {
+                continue;
+            }
+
+            $cells = is_array($vendor['cells'] ?? null) ? $vendor['cells'] : [];
+
+            foreach ($tiers as $tier) {
+                $tierKey = self::clean_key((string) ($tier['key'] ?? ''));
+                if ($tierKey === '') {
+                    continue;
+                }
+
+                $cell = is_array($cells[$tierKey] ?? null) ? $cells[$tierKey] : [];
+                $overrideValue = self::resolve_matrix_override_value($overrides, $vendorKey, $tierKey);
+
+                if ($overrideValue !== '') {
+                    $cell['value'] = $overrideValue;
+                    $cell['verification'] = 'official';
+                    $cell['last_verified'] = (string) date('Y-m-d');
+                    $cell['billing_note'] = 'Preis aus zentral gepflegter Datenbank-Konfiguration.';
+                }
+
+                $cell['value'] = self::clean_matrix_text((string) ($cell['value'] ?? 'k. A.'));
+                $cell['billing_note'] = self::clean_matrix_text((string) ($cell['billing_note'] ?? ''));
+
+                if ($cell['value'] === '') {
+                    $cell['value'] = 'k. A.';
+                }
+
+                if (!empty($cell['verification']) && strtolower((string) $cell['verification']) !== 'official') {
+                    $cell['verification'] = 'official';
+                }
+
+                $cells[$tierKey] = $cell;
+            }
+
+            $vendors[$vendorIndex]['cells'] = $cells;
+        }
+
+        return [
+            'last_verified' => (string) ($matrix['last_verified'] ?? $productCatalog['meta']['source_checked'] ?? '2026-06-01'),
+            'disclaimer' => (string) ($matrix['disclaimer'] ?? 'Preise und Funktionsumfänge ändern sich häufig. Vor Kauf immer die Originalquelle prüfen.'),
+            'microsoft_addon_note' => (string) ($matrix['microsoft_addon_note'] ?? ''),
+            'tiers' => $tiers,
+            'vendors' => $vendors,
+        ];
+    }
+
+    /** @return array<string,string> */
+    private static function pricing_matrix_overrides(): array
+    {
+        if (!class_exists('CMS_M365CALCULATOR_Settings')) {
+            return [];
+        }
+
+        $modulePricing = CMS_M365CALCULATOR_Settings::module_options(self::AI_MODULE_KEY, 'pricing');
+        $moduleAll = CMS_M365CALCULATOR_Settings::module_options(self::AI_MODULE_KEY);
+        $globalPricing = CMS_M365CALCULATOR_Settings::global_options('pricing');
+        $globalAll = CMS_M365CALCULATOR_Settings::global_options();
+
+        return array_merge($globalAll, $globalPricing, $moduleAll, $modulePricing);
+    }
+
+    /** @param array<string,string> $overrides */
+    private static function resolve_matrix_override_value(array $overrides, string $vendorKey, string $tierKey): string
+    {
+        $candidates = [
+            'ai-price-' . $vendorKey . '-' . $tierKey,
+            'ai-price-' . $vendorKey . '-' . $tierKey . '-eur',
+            'ai-price-' . $vendorKey . '-' . $tierKey . '-value',
+            'price-' . $vendorKey . '-' . $tierKey,
+            'price-' . $vendorKey . '-' . $tierKey . '-eur',
+            'pricing-matrix-' . $vendorKey . '-' . $tierKey,
+        ];
+
+        foreach ($candidates as $candidate) {
+            $key = self::clean_key($candidate);
+            $value = trim((string) ($overrides[$key] ?? ''));
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return '';
+    }
+
+    private static function clean_matrix_text(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $value = (string) preg_replace('/\bUNVERIFIED\b\s*:?/iu', '', $value);
+        $value = trim((string) preg_replace('/\s{2,}/u', ' ', $value));
+
+        return trim($value, " \t\n\r\0\x0B:-");
+    }
+
+    private static function clean_key(string $value): string
+    {
+        return trim((string) preg_replace('/[^a-z0-9_-]+/i', '-', strtolower($value)), '-');
     }
 
     /**

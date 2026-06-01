@@ -3,7 +3,7 @@
  * Plugin Name: CMS M365 Copilot
  * Plugin URI: https://365network.de/cms-m365copilot
  * Description: Admin-konfigurierbare Copilot-Landingpage im PHINIT-Stil für Beratung, Lizenzvertrieb und Microsoft-Copilot-Inhalte.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-defined('CMS_M365COPILOT_VERSION') || define('CMS_M365COPILOT_VERSION', '1.0.0');
+defined('CMS_M365COPILOT_VERSION') || define('CMS_M365COPILOT_VERSION', '1.0.1');
 defined('CMS_M365COPILOT_PLUGIN_DIR') || define('CMS_M365COPILOT_PLUGIN_DIR', dirname(__FILE__) . '/');
 defined('CMS_M365COPILOT_PLUGIN_URL') || define('CMS_M365COPILOT_PLUGIN_URL', '/plugins/cms-m365copilot/');
 
@@ -67,6 +67,7 @@ final class CMS_M365Copilot
         \CMS\Hooks::addAction('cms_admin_menu', [CMS_M365Copilot_Admin_Menu::class, 'register'], 10);
         \CMS\Hooks::addAction('register_routes', [CMS_M365Copilot_Admin_Menu::class, 'register_routes'], 9);
         \CMS\Hooks::addAction('register_routes', [CMS_M365Copilot_Frontend::class, 'instance'], 10);
+        \CMS\Hooks::addAction('head', [CMS_M365Copilot_Admin_Pages::class, 'enqueue_admin_assets'], 20);
     }
 
     public function init_plugin(): void
