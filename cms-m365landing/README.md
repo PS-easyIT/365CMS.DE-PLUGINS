@@ -2,6 +2,8 @@
 
 `cms-m365landing` stellt eine zentrale, öffentlich erreichbare Landingpage für M365-Inhalte bereit. Die Seite bündelt Matrixen, Azure Services, Tutorials und die M365 Tools in administrierbaren Cards.
 
+Aktuelle Version: `1.0.27`
+
 ## Features
 
 - Öffentliche Route standardmäßig unter `/m365`
@@ -15,6 +17,8 @@
 - Tool-Sammlung mit maximal drei Cards pro Reihe
 - Jede Card steuerbar: Bereich, Titel, Kurzzeile, Beschreibung, Icon, Mediathek-Bild, Link, Button-Text, Sortierung und Status
 - Design steuerbar: Farben, Breite, Header-/Footer-Abstände, Radius, Icongröße, Bildhöhe und drei Layoutvarianten
+- Publicsite ist vollständig Dark-Mode-fähig, inklusive Zusatzdomain-Root-Rendering, Cards, Status-Panels, Beitragssektion und `html.dark-mode`-Initialisierung des PHINIT-Themes
+- Mobile- und Tablet-Ansichten stapeln Hero, Cards, Status-Panels und Latest Posts ohne horizontales Scrollen und mit touchfreundlichen CTAs
 - Standard-Slugs und Ziel-URLs der M365-Plugins als Vorschläge im Card-Admin
 - Adminbereich als direkter Sidebar-Menüpunkt `M365 Landing`
 

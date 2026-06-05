@@ -1,15 +1,15 @@
 {
   "slug": "cms-m365landing",
   "name": "CMS M365 Landing",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "requires": "2.9.0",
   "tested": "2.9.7",
   "author": "365 Network",
   "homepage": "https://365network.de/cms-m365landing",
-  "download_url": "https://365network.de/releases/cms-m365landing-1.0.26.zip",
-  "last_updated": "2026-05-31",
+  "download_url": "https://365network.de/releases/cms-m365landing-1.0.27.zip",
+  "last_updated": "2026-06-05",
   "sections": {
     "description": "Zentrale Landingpage für M365 Matrixen, Azure Services, Tutorials und M365 Tools mit steuerbaren Karten, Domain-Mapping, optionalem Beitragsbereich, Texten, Bildern und Design-Tokens.",
-    "changelog": "### 1.0.26\n- Google-/PageSpeed-Audit umgesetzt: Hero-Bild wird im Head mit `rel=\"preload\"` und hoher Priorität angekündigt, damit der LCP-Kandidat früher verfügbar ist.\n- Abschnitts-Rendering gehärtet: leere Abschnittstitel erzeugen keine leeren `h2` mehr; stattdessen erhält die Section ein sinnvolles `aria-label`.\n- Card-Bilder erhalten auch bei ausgeblendeten oder leeren Titeln einen stabilen Alt-Fallback; Offscreen-Sektionen nutzen `content-visibility:auto` mit reservierter Intrinsic Size für weniger Rendering-Arbeit und stabileres Scrolling.\n\n### 1.0.25\n- Je Abschnitt kann der Kartentitel jetzt ausgeblendet werden; die Option gilt bereichsweit für Matrixen, Weitere M365 Bereiche oder Tools.\n- Titel-ausgeblendete Karten rendern Kurzzeile oberhalb, Bild oben und Beschreibung darunter – ohne pro-Kachel-Sonderlogik.\n- Bestehende Layoutwahl pro Abschnitt bleibt erhalten; die Titel-Ausblendung überschreibt nur die sichtbare Titelzeile.\n\n### 1.0.24\n- Card-Layout je Abschnitt steuerbar: Matrixen, Weitere M365 Bereiche und Tools können separat zwischen `Bild links, Titel rechts` und klassischem `Bild oben, Inhalt darunter` wechseln."
+    "changelog": "### 1.0.27\n- Publicsite-Dark-Mode vollständig nachgezogen: Landing-Hintergrund, Hero, Cards, Status-Panels, Empty-State, Separatoren und Beitragssektion erhalten eigene dunkle Token auch bei `html.dark-mode`.\n- Mobile-/Tablet-Responsiveness erweitert: Hero mit Bild stapelt ab Tabletbreite sauber, Grids und Latest-Posts wechseln ohne horizontales Scrollen auf eine Spalte, CTAs bleiben touchfreundlich.\n- Card-Media-Layouts sind auf kleinen Displays stapelbar und begrenzen Bildhöhen, damit 375px-Ansichten nicht überlaufen.\n\n### 1.0.26\n- Google-/PageSpeed-Audit umgesetzt: Hero-Bild wird im Head mit `rel=\"preload\"` und hoher Priorität angekündigt, damit der LCP-Kandidat früher verfügbar ist.\n- Abschnitts-Rendering gehärtet: leere Abschnittstitel erzeugen keine leeren `h2` mehr; stattdessen erhält die Section ein sinnvolles `aria-label`.\n- Card-Bilder erhalten auch bei ausgeblendeten oder leeren Titeln einen stabilen Alt-Fallback; Offscreen-Sektionen nutzen `content-visibility:auto` mit reservierter Intrinsic Size für weniger Rendering-Arbeit und stabileres Scrolling.\n\n### 1.0.25\n- Je Abschnitt kann der Kartentitel jetzt ausgeblendet werden; die Option gilt bereichsweit für Matrixen, Weitere M365 Bereiche oder Tools.\n- Titel-ausgeblendete Karten rendern Kurzzeile oberhalb, Bild oben und Beschreibung darunter – ohne pro-Kachel-Sonderlogik.\n- Bestehende Layoutwahl pro Abschnitt bleibt erhalten; die Titel-Ausblendung überschreibt nur die sichtbare Titelzeile."
   }
 }

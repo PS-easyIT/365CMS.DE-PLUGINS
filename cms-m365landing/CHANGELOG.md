@@ -1,5 +1,11 @@
 # CMS M365 Landing – Changelog
 
+## 1.0.27 – 2026-06-05
+
+- Publicsite-Dark-Mode vollständig nachgezogen: Landing-Hintergrund, Hero, Cards, Status-Panels, Empty-State, Separatoren und Beitragssektion erhalten eigene dunkle Token auch bei `html.dark-mode`.
+- Mobile-/Tablet-Responsiveness erweitert: Hero mit Bild stapelt ab Tabletbreite sauber, Grids und Latest-Posts wechseln ohne horizontales Scrollen auf eine Spalte, CTAs bleiben touchfreundlich.
+- Card-Media-Layouts sind auf kleinen Displays stapelbar und begrenzen Bildhöhen, damit 375px-Ansichten nicht überlaufen.
+
 ## 1.0.26 – 2026-05-31
 
 - Google-/PageSpeed-Audit umgesetzt: Hero-Bild wird im Head mit `rel="preload"` und hoher Priorität angekündigt, damit der LCP-Kandidat früher verfügbar ist.
