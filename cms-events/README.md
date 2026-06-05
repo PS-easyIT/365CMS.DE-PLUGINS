@@ -1,6 +1,6 @@
 ﻿# CMS Events Manager Plugin
 
-**Version:** 3.0.33
+**Version:** 3.0.37
 **Requires:** 365CMS 3.0+  
 **PHP:** 8.4+
 
@@ -125,6 +125,10 @@ Templates can be added to the `templates/` directory:
 - Version `3.0.28` begrenzt die Public-Events-Detailseite auf maximal `1160px`, hält die Hintergrund-Shell bündig zum Theme, füllt kurze Seiten bis zum Footer und sichert Responsive Layout sowie Dark Mode ab.
 - Version `3.0.29` baut die Event-Detailseite nach der PHINIT-HTML-Preview neu: Navy/Amber-Hero mit Datebox, Status, Agenda aus `cms_event_speakers.presentation_title/session_time/role`, Speaker-Lineup, Teilnahme-/Social-/Details-/Venue-/Related-Sidebar, lokaler YAML-Übersetzungsfallback und Inline-SVGs statt Icon-Font. Nicht direkt vorhandene Preview-Felder wie separate Agenda-Abschnitte, Sprache und Anmeldeschluss werden nicht erfunden; Sprache fällt auf den lokalen Default zurück.
 - Version `3.0.33` härtet den Admin-Save-Pfad für Event-Bearbeiten/Speichern: EditorService-/Sanitizer-Ausnahmen und DB-Updatefehler werden abgefangen, leere Adminfelder bekommen sichere Fallbacks und führen nicht mehr zu 500-Serverfehlern.
+- Version `3.0.34` zieht die vollständige Event-Spaltenmigration beim Speichern defensiv nach, damit bestehende Installationen mit altem Schema nicht mehr als „Datenbank-Fehler“ beim Bearbeiten abbrechen.
+- Version `3.0.35` filtert Save-Daten zusätzlich gegen die tatsächlich vorhandenen Tabellenspalten und nutzt `SHOW COLUMNS` als Fallback, falls `INFORMATION_SCHEMA` serverseitig nicht lesbar ist.
+- Version `3.0.36` ergänzt einen konservativen Legacy-Retry, falls ein vollständiges Update auf Alt-Schemas weiterhin von einzelnen modernen Feldern blockiert wird.
+- Version `3.0.37` ergänzt als letzte Rückfallebene ein spaltenweises Update, damit kompatible Event-Felder weiter gespeichert werden und einzelne problematische Alt-Schema-Felder nicht mehr den gesamten Admin-Save blockieren.
 - Bootstrap und Include-Dateien sind gegen doppelte Ladepfade/klassische Redeclare-Fatals abgesichert.
 - DB-Migrationen nutzen `INFORMATION_SCHEMA` statt `SHOW COLUMNS`, Foreign Keys werden idempotent und nicht-blockierend ergänzt.
 - Plugin-Settings werden primär über den 365CMS `SettingsService` gelesen/geschrieben; die alte `event_settings`-Tabelle bleibt nur als kompatibler Fallback.

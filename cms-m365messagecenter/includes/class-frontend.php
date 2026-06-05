@@ -123,6 +123,19 @@ final class CMS_M365MessageCenter_Frontend
     {
         $repo = $this->repo();
         $settings = $repo->settings();
+        $baseUrl = '/' . $this->route_slug();
+        if ($this->public_language() === 'en') {
+            $baseUrl = '/en' . $baseUrl;
+        }
+
+        if ((string) ($settings['show_detail_pages'] ?? '1') !== '1') {
+            if (class_exists('CMS\\Router')) {
+                \CMS\Router::instance()->redirect($baseUrl);
+            }
+            header('Location: ' . $baseUrl);
+            exit;
+        }
+
         $item = $repo->public_message($messageId);
         if ($item === null) {
             http_response_code(404);
@@ -134,11 +147,6 @@ final class CMS_M365MessageCenter_Frontend
                 \CMS\ThemeManager::instance()->getFooter();
             }
             exit;
-        }
-
-        $baseUrl = '/' . $this->route_slug();
-        if ($this->public_language() === 'en') {
-            $baseUrl = '/en' . $baseUrl;
         }
 
         $title = trim((string) ($item['title'] ?? '')) ?: 'M365 Message Center';

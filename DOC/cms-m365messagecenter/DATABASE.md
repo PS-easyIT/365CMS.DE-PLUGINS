@@ -9,6 +9,8 @@
 | `setting_value` | TEXT | Einstellungswert |
 | `updated_at` | TIMESTAMP | Aktualisierung |
 
+Wichtige Public-Settings: `route_slug`, `items_per_page`, `public_layout`, `public_max_width`, `show_detail_pages`, `show_status_panel`, `show_filters`, `show_body_excerpt`, `show_external_links`.
+
 ## `{prefix}m365messagecenter_messages`
 
 | Feld | Typ | Beschreibung |

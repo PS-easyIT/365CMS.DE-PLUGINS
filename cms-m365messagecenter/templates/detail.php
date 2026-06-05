@@ -15,6 +15,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
 $item = is_array($item ?? null) ? $item : [];
 $settings = is_array($settings ?? null) ? $settings : [];
 $baseUrl = trim((string) ($baseUrl ?? '/m365-messagecenter'));
+$publicMaxWidth = max(900, min(1600, (int) ($settings['public_max_width'] ?? 1160)));
 
 $title = trim((string) ($item['title'] ?? '')) ?: 'M365 Message Center';
 $graphId = trim((string) ($item['graph_id'] ?? ''));
@@ -27,6 +28,16 @@ if ($body === '') {
     $body = trim((string) ($item['body_excerpt'] ?? ''));
 }
 $externalUrl = trim((string) ($item['external_url'] ?? ''));
+if ($externalUrl !== '') {
+    $parts = parse_url($externalUrl);
+    $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+    if (!in_array($scheme, ['https', 'http'], true)) {
+        $externalUrl = '';
+    }
+}
+if ($externalUrl === '' && $graphId !== '') {
+    $externalUrl = 'https://admin.microsoft.com/Adminportal/Home#/MessageCenter/:/messages/' . rawurlencode($graphId);
+}
 
 $formatDateTime = static function (string $value): string {
     $timestamp = strtotime($value);
@@ -41,7 +52,7 @@ $dateFields = [
     'raw_updated_at' => 'Lokal aktualisiert',
 ];
 ?>
-<main class="phinit-plugin m365mc-archive m365mc-detail" id="m365-messagecenter-detail">
+<main class="phinit-plugin m365mc-archive m365mc-detail" id="m365-messagecenter-detail" style="--m365mc-public-max-width: <?php echo $publicMaxWidth; ?>px;">
     <nav class="m365mc-breadcrumb" aria-label="Breadcrumb">
         <a href="<?php echo $esc($baseUrl); ?>">← Zurück zur Übersicht</a>
     </nav>
@@ -92,7 +103,7 @@ $dateFields = [
         <footer class="m365mc-detail__footer">
             <a class="phinit-btn phinit-btn--secondary" href="<?php echo $esc($baseUrl); ?>">Zur Übersicht</a>
             <?php if ($externalUrl !== ''): ?>
-            <a class="phinit-btn phinit-btn--link" href="<?php echo $esc($externalUrl); ?>" target="_blank" rel="noopener noreferrer">Microsoft-Link öffnen <span aria-hidden="true">→</span></a>
+            <a class="phinit-btn phinit-btn--primary m365mc-admin-link" href="<?php echo $esc($externalUrl); ?>" target="_blank" rel="noopener noreferrer">Original im M365 Admin Center <span aria-hidden="true">→</span></a>
             <?php endif; ?>
         </footer>
     </article>

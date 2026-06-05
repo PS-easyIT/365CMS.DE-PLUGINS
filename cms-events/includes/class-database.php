@@ -145,31 +145,41 @@ final class CMS_Events_Database
     /** Fügt neue Spalten zur bestehenden events-Tabelle hinzu (idempotent). */
     private function maybe_add_event_columns(\PDO $pdo, string $prefix): void
     {
-        $existing = [];
-        try {
-            $stmt = $pdo->prepare(
-                'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
-            );
-            $stmt->execute([$prefix . 'events']);
-            foreach ($stmt->fetchAll(\PDO::FETCH_COLUMN) as $columnName) {
-                $existing[(string) $columnName] = true;
-            }
-        } catch (\Throwable) {
-            return;
+        $existing = $this->event_table_columns($pdo, $prefix);
+        if ($existing === []) {
+            error_log('CMS Events: column detection returned empty result for events table migration.');
         }
 
         $alterations = [
-            'excerpt'           => "VARCHAR(500) DEFAULT NULL AFTER title",
-            'tags'              => "TEXT DEFAULT NULL AFTER category",
-            'price_type'        => "ENUM('free','paid','donation') DEFAULT 'free' AFTER registration_url",
-            'price'             => "DECIMAL(10,2) DEFAULT NULL AFTER price_type",
-            'price_currency'    => "VARCHAR(10) DEFAULT 'EUR' AFTER price",
-            'banner_url'        => "VARCHAR(500) DEFAULT NULL AFTER image_url",
-            'is_featured'       => "BOOLEAN DEFAULT FALSE AFTER is_online",
-            'organizer_name'    => "VARCHAR(255) DEFAULT NULL AFTER is_featured",
-            'organizer_email'   => "VARCHAR(150) DEFAULT NULL AFTER organizer_name",
-            'organizer_phone'   => "VARCHAR(50) DEFAULT NULL AFTER organizer_email",
-            'organizer_website' => "VARCHAR(500) DEFAULT NULL AFTER organizer_phone",
+            'user_id'           => 'INT UNSIGNED DEFAULT NULL',
+            'excerpt'           => 'VARCHAR(500) DEFAULT NULL',
+            'description'       => 'TEXT DEFAULT NULL',
+            'event_date'        => 'DATE DEFAULT NULL',
+            'event_time'        => 'TIME DEFAULT NULL',
+            'end_date'          => 'DATE DEFAULT NULL',
+            'end_time'          => 'TIME DEFAULT NULL',
+            'location'          => 'VARCHAR(255) DEFAULT NULL',
+            'address'           => 'TEXT DEFAULT NULL',
+            'city'              => 'VARCHAR(100) DEFAULT NULL',
+            'zip'               => 'VARCHAR(20) DEFAULT NULL',
+            'country'           => "VARCHAR(100) DEFAULT 'Deutschland'",
+            'category'          => 'VARCHAR(100) DEFAULT NULL',
+            'tags'              => 'TEXT DEFAULT NULL',
+            'capacity'          => 'INT UNSIGNED DEFAULT NULL',
+            'registration_url'  => 'VARCHAR(500) DEFAULT NULL',
+            'price_type'        => "ENUM('free','paid','donation') DEFAULT 'free'",
+            'price'             => 'DECIMAL(10,2) DEFAULT NULL',
+            'price_currency'    => "VARCHAR(10) DEFAULT 'EUR'",
+            'image_url'         => 'VARCHAR(500) DEFAULT NULL',
+            'banner_url'        => 'VARCHAR(500) DEFAULT NULL',
+            'is_online'         => 'BOOLEAN DEFAULT FALSE',
+            'online_url'        => 'VARCHAR(500) DEFAULT NULL',
+            'is_featured'       => 'BOOLEAN DEFAULT FALSE',
+            'organizer_name'    => 'VARCHAR(255) DEFAULT NULL',
+            'organizer_email'   => 'VARCHAR(150) DEFAULT NULL',
+            'organizer_phone'   => 'VARCHAR(50) DEFAULT NULL',
+            'organizer_website' => 'VARCHAR(500) DEFAULT NULL',
+            'status'            => "VARCHAR(20) NOT NULL DEFAULT 'published'",
         ];
 
         foreach ($alterations as $column => $definition) {
@@ -180,6 +190,72 @@ final class CMS_Events_Database
                     error_log("CMS Events: ALTER TABLE add {$column} failed – " . $e->getMessage());
                 }
             }
+        }
+    }
+
+    /**
+     * @return array<string,bool>
+     */
+    private function event_table_columns(?\PDO $pdo = null, ?string $prefix = null): array
+    {
+        try {
+            $db = CMS\Database::instance();
+            $pdo ??= $db->getPdo();
+            $prefix ??= $db->prefix();
+            $table = $prefix . 'events';
+
+            $columns = [];
+            try {
+                $stmt = $pdo->prepare(
+                    'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
+                );
+                $stmt->execute([$table]);
+                foreach ($stmt->fetchAll(\PDO::FETCH_COLUMN) ?: [] as $columnName) {
+                    $columns[(string) $columnName] = true;
+                }
+            } catch (\Throwable $e) {
+                error_log('CMS Events INFORMATION_SCHEMA column lookup failed: ' . $e->getMessage());
+            }
+
+            if ($columns !== []) {
+                return $columns;
+            }
+
+            try {
+                $stmt = $pdo->query('SHOW COLUMNS FROM ' . $this->quote_identifier($table));
+                foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+                    $field = (string) ($row['Field'] ?? '');
+                    if ($field !== '') {
+                        $columns[$field] = true;
+                    }
+                }
+            } catch (\Throwable $e) {
+                error_log('CMS Events SHOW COLUMNS fallback failed: ' . $e->getMessage());
+            }
+
+            return $columns;
+        } catch (\Throwable $e) {
+            error_log('CMS Events event_table_columns failed: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function ensure_event_schema_for_save(): void
+    {
+        try {
+            $db     = CMS\Database::instance();
+            $pdo    = $db->getPdo();
+            $prefix = $db->prefix();
+
+            if (!$this->table_exists($pdo, $prefix . 'events')) {
+                $this->create_tables();
+                return;
+            }
+
+            $this->maybe_add_event_columns($pdo, $prefix);
+            $this->maybe_add_indexes($pdo, $prefix);
+        } catch (\Throwable $e) {
+            error_log('CMS Events ensure_event_schema_for_save skipped: ' . $e->getMessage());
         }
     }
 
@@ -416,11 +492,16 @@ final class CMS_Events_Database
 
     public function save_event(array $data): int
     {
+        $this->ensure_event_schema_for_save();
+
         $db = CMS\Database::instance();
         $event_id = (int)($data['id'] ?? 0);
 
-        if (trim((string) ($data['title'] ?? '')) === '' || trim((string) ($data['event_date'] ?? '')) === '') {
-            return 0;
+        if (trim((string) ($data['title'] ?? '')) === '') {
+            $data['title'] = 'Unbenanntes Event';
+        }
+        if (trim((string) ($data['event_date'] ?? '')) === '') {
+            $data['event_date'] = date('Y-m-d');
         }
 
         if ($event_id > 0 && !CMS\Auth::instance()->isAdmin()) {
@@ -472,15 +553,25 @@ final class CMS_Events_Database
             'status'            => $data['status']            ?? 'published',
         ];
 
+        $existing_columns = $this->event_table_columns();
+        if ($existing_columns !== []) {
+            $event_data = array_intersect_key($event_data, $existing_columns);
+        }
+
+        if ($event_data === []) {
+            error_log('CMS Events save_event aborted: no writable event columns detected.');
+            return 0;
+        }
+
         if ($event_id > 0) {
             try {
                 if (!$db->update('events', $event_data, ['id' => $event_id])) {
                     error_log('CMS Events save_event update failed: ' . (string) ($db->last_error ?? 'unknown error'));
-                    return 0;
+                    return $this->save_event_legacy_update($event_id, $event_data) || $this->save_event_columnwise_update($event_id, $event_data) ? $event_id : 0;
                 }
             } catch (\Throwable $e) {
                 error_log('CMS Events save_event update exception: ' . $e->getMessage());
-                return 0;
+                return $this->save_event_legacy_update($event_id, $event_data) || $this->save_event_columnwise_update($event_id, $event_data) ? $event_id : 0;
             }
         } else {
             $event_data['user_id'] = CMS\Auth::instance()->currentUser()?->id ?? null;
@@ -499,6 +590,106 @@ final class CMS_Events_Database
         }
 
         return $event_id;
+    }
+
+    /** @param array<string,mixed> $event_data */
+    private function save_event_legacy_update(int $event_id, array $event_data): bool
+    {
+        if ($event_id <= 0) {
+            return false;
+        }
+
+        $legacy_columns = array_flip([
+            'title',
+            'description',
+            'event_date',
+            'event_time',
+            'end_date',
+            'end_time',
+            'location',
+            'address',
+            'city',
+            'zip',
+            'country',
+            'category',
+            'capacity',
+            'registration_url',
+            'image_url',
+            'is_online',
+            'online_url',
+            'status',
+        ]);
+
+        $data = array_intersect_key($event_data, $legacy_columns);
+        $existing_columns = $this->event_table_columns();
+        if ($existing_columns !== []) {
+            $data = array_intersect_key($data, $existing_columns);
+        }
+
+        if (($data['status'] ?? '') === 'completed') {
+            unset($data['status']);
+        }
+
+        if ($data === []) {
+            return false;
+        }
+
+        try {
+            $db = CMS\Database::instance();
+            if ($db->update('events', $data, ['id' => $event_id])) {
+                error_log('CMS Events save_event legacy update succeeded for event_id=' . $event_id);
+                return true;
+            }
+
+            error_log('CMS Events save_event legacy update failed: ' . (string) ($db->last_error ?? 'unknown error'));
+        } catch (\Throwable $e) {
+            error_log('CMS Events save_event legacy update exception: ' . $e->getMessage());
+        }
+
+        return false;
+    }
+
+    /** @param array<string,mixed> $event_data */
+    private function save_event_columnwise_update(int $event_id, array $event_data): bool
+    {
+        if ($event_id <= 0 || $event_data === []) {
+            return false;
+        }
+
+        $existing_columns = $this->event_table_columns();
+        if ($existing_columns !== []) {
+            $event_data = array_intersect_key($event_data, $existing_columns);
+        }
+
+        unset($event_data['id'], $event_data['created_at'], $event_data['updated_at']);
+
+        if ($event_data === []) {
+            return false;
+        }
+
+        $savedAny = false;
+        $db = CMS\Database::instance();
+        foreach ($event_data as $column => $value) {
+            try {
+                if ($column === 'status' && !in_array((string) $value, ['published', 'draft', 'cancelled'], true)) {
+                    continue;
+                }
+
+                if ($db->update('events', [$column => $value], ['id' => $event_id])) {
+                    $savedAny = true;
+                } else {
+                    error_log('CMS Events save_event column update failed for ' . $column . ': ' . (string) ($db->last_error ?? 'unknown error'));
+                }
+            } catch (\Throwable $e) {
+                error_log('CMS Events save_event column update exception for ' . $column . ': ' . $e->getMessage());
+            }
+        }
+
+        if ($savedAny) {
+            error_log('CMS Events save_event columnwise update succeeded for event_id=' . $event_id);
+        }
+
+        return $savedAny;
     }
 
     public function assign_speaker(int $event_id, int $speaker_id, string $speaker_type = 'speaker', array $data = []): bool

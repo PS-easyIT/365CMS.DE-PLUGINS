@@ -1,5 +1,24 @@
 # CMS M365 Message Center – Changelog
 
+## 1.0.5 – 2026-06-05
+
+- 🟢 Public-Übersichtskarten zeigen pro Message-Center-Meldung einen deutlich sichtbaren Button `Original im M365 Admin Center`.
+- 🟢 In der Public-Übersicht sitzt die Karten-Fußzeile jetzt links mit Tags/Badges und rechts mit dem Original-M365-Admin-Center-Button.
+- 🟡 Wenn Microsoft Graph keinen `details.externalLink` liefert, wird ein Admin-Center-Fallback aus der Graph-Message-ID erzeugt.
+- 🟢 Die maximale Content-Breite der Publicsite ist im Adminbereich einstellbar; Standard ist `1160px`.
+
+## 1.0.4 – 2026-06-05
+
+- 🟢 Public-Übersichtskarten und Detailseiten zeigen den externen Original-Link jetzt eindeutig als Button `Original im M365 Admin Center`.
+- 🟡 Der Button nutzt weiterhin den sicher gecachten Graph-`externalLink` und bleibt über die Admin-Option `Externe Microsoft-Links anzeigen` steuerbar.
+
+## 1.0.3 – 2026-06-05
+
+- 🟢 Admin-Schalter ergänzt, um Detailseiten, Info-Kachelbereich mit Cache-/Aktualisierungsdaten, Filterbereich, Auszüge und externe Links unabhängig zu aktivieren/deaktivieren.
+- 🟢 Drei Public-Layouts ergänzt: `Standard`, `Kompakt` und `Liste`.
+- 🔴 Public-Badges sind auf maximal 4px Radius begrenzt; Message-Center-Nachrichtenkarten nutzen maximal 2px Radius.
+- 🟡 Detailrouten leiten bei deaktivierten Detailseiten zurück zur Übersicht und Archivkarten entfernen dann Detail-Links sauber.
+
 ## 1.0.2 – 2026-06-05
 
 - 🔴 Public-Abstand zwischen Theme-Header/Footer und Message-Center-Content auf maximal 25px begrenzt.

@@ -10,8 +10,13 @@ Eigenständiges 365CMS-Plugin für Microsoft-365-Message-Center-Meldungen.
 - Automatischer Tagesabruf per `cron.php` einmal täglich ab 12:00 Uhr.
 - Lokale Cache-Tabelle für Message-Center-Meldungen.
 - Moderne Publicsite unter `/m365-messagecenter` mit Statuspanel, Suche, Service-/Kategorie-Filter, Sortierung, Richtung, Pagination und Detailseiten je Meldung.
+- Admin-Schalter für Detailseiten, Info-Kachelbereich, Filterbereich, Auszüge und externe Microsoft-Links.
+- Drei Public-Layouts: Standard, Kompakt und Liste.
+- Übersichtskarten und Detailseiten können pro Meldung per Button `Original im M365 Admin Center` zur Microsoft-365-Admin-Center-Originalmeldung führen; ohne Graph-`externalLink` wird ein Admin-Center-Fallback aus der Message-ID genutzt.
+- Max. Content-Breite der Publicsite ist im Adminbereich einstellbar; Standard ist `1160px`.
 - Übersichts-Auszüge werden nach 200 Wörtern mit `...` gekürzt; Detailseiten zeigen den vollständigen gecachten Meldungstext.
 - Abstand zwischen Theme-Header/Footer und Plugin-Content ist auf maximal 25px begrenzt.
+- Public-Badges nutzen maximal 4px Radius; Nachrichtenkarten maximal 2px Radius.
 
 ## Microsoft Graph Berechtigung
 

@@ -1,5 +1,29 @@
 # CMS Events – Changelog
 
+## [3.0.37] – 2026-06-05
+
+- **Admin-Save-Hotfix:** Falls vollständiges Update und Legacy-Retry scheitern, speichert `save_event()` kompatible Felder einzeln weiter.
+- **Alt-Schema-Resilienz:** Einzelne problematische Spalten oder alte ENUM-Einschränkungen blockieren dadurch nicht mehr den kompletten Save-Vorgang.
+- **Fehlerführung:** Technische Spaltenfehler werden serverseitig geloggt; die Admin-Bearbeitung kann trotzdem erfolgreich abschließen, sobald mindestens ein kompatibles Feld gespeichert wurde.
+
+## [3.0.36] – 2026-06-05
+
+- **Admin-Save-Hotfix:** Wenn das vollständige Event-Update weiterhin durch Alt-Schema-/DB-Eigenheiten scheitert, versucht `save_event()` automatisch einen konservativen Legacy-Retry.
+- **Legacy-Retry:** Gespeichert werden dann stabile Kernfelder wie Titel, Beschreibung, Datum/Zeit, Ort, Kapazität, Registrierung, Bild, Online-Felder und kompatibler Status.
+- **UX:** Das Bearbeiten bestehender Events soll dadurch nicht mehr mit dem generischen „Datenbank-Fehler“ abbrechen, nur weil einzelne neuere optionale Felder nicht akzeptiert werden.
+
+## [3.0.35] – 2026-06-05
+
+- **Admin-Save-Hotfix:** Event-Speichern filtert Insert-/Update-Daten zusätzlich gegen die tatsächlich vorhandenen `cms_events`-Spalten.
+- **Server-Kompatibilität:** Die Spaltenerkennung nutzt `INFORMATION_SCHEMA` und fällt auf `SHOW COLUMNS` zurück, falls der Server oder DB-User `INFORMATION_SCHEMA` nicht zuverlässig liefert.
+- **Alt-Schema-Resilienz:** Fehlende optionale Spalten führen nicht mehr zu einem harten Datenbank-Fehler beim Bearbeiten; vorhandene Felder werden weiter gespeichert.
+
+## [3.0.34] – 2026-06-05
+
+- **Admin-Save-Fix:** Beim Speichern eines Events wird die `cms_events`-Schema-Migration defensiv direkt vor Insert/Update nachgezogen.
+- **Bestehende Installationen:** Alle vom Adminformular verwendeten Spalten (`excerpt`, Datum/Zeit, Ort, Kapazität, Medien, Online-Felder, Veranstalter, Status usw.) werden idempotent ergänzt, falls eine ältere Installation sie noch nicht besitzt.
+- **Keine Admin-Pflichtfelder:** Leere Titel und Startdaten erhalten zusätzlich in der DB-Schicht sichere Fallbacks, damit Admin-Speichern auch bei direkter Methodennutzung stabil bleibt.
+
 ## [3.0.33] – 2026-06-05
 
 - **Admin-Save-Hotfix:** Der Save-Pfad für `Event bearbeiten` ist vollständig gegen Ausnahmen beim EditorService-/HTML-Sanitizing und gegen DB-Updatefehler abgesichert.

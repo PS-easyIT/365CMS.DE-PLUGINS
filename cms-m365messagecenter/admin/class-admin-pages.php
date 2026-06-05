@@ -73,7 +73,12 @@ final class CMS_M365MessageCenter_Admin_Pages
         self::textarea('empty_text', 'Leerzustand', self::setting($s, 'empty_text', ''), 2);
         self::select('default_sort', 'Standard-Sortierung', self::setting($s, 'default_sort', 'last_modified'), self::sort_options());
         self::select('default_direction', 'Standard-Richtung', self::setting($s, 'default_direction', 'desc'), ['desc' => 'Absteigend', 'asc' => 'Aufsteigend']);
+        self::select('public_layout', 'Public-Layout', self::setting($s, 'public_layout', 'standard'), self::layout_options());
+        self::number('public_max_width', 'Max. Content-Breite der Publicsite (px)', (int) self::setting($s, 'public_max_width', '1160'), 900, 1600);
         self::number('items_per_page', 'Einträge pro Seite', (int) self::setting($s, 'items_per_page', '24'), 6, 60);
+        self::checkbox('show_detail_pages', 'Detailseiten aktivieren', self::setting($s, 'show_detail_pages', '1') === '1');
+        self::checkbox('show_status_panel', 'Info-Kachelbereich mit Cache, Aktualisierung und Sprache anzeigen', self::setting($s, 'show_status_panel', '1') === '1');
+        self::checkbox('show_filters', 'Such-, Filter- und Sortierbereich anzeigen', self::setting($s, 'show_filters', '1') === '1');
         self::checkbox('show_body_excerpt', 'Auszug auf Publicsite anzeigen', self::setting($s, 'show_body_excerpt', '1') === '1');
         self::checkbox('show_external_links', 'Externe Microsoft-Links anzeigen', self::setting($s, 'show_external_links', '1') === '1');
 
@@ -138,11 +143,16 @@ final class CMS_M365MessageCenter_Admin_Pages
         $settings['route_slug'] = CMS_M365MessageCenter_Repository::slug($settings['route_slug']);
         $settings['default_sort'] = CMS_M365MessageCenter_Repository::public_sort($settings['default_sort']);
         $settings['default_direction'] = $settings['default_direction'] === 'asc' ? 'asc' : 'desc';
+        $settings['public_layout'] = in_array((string) ($_POST['public_layout'] ?? ''), ['standard', 'compact', 'list'], true) ? (string) $_POST['public_layout'] : 'standard';
+        $settings['public_max_width'] = (string) max(900, min(1600, (int) ($_POST['public_max_width'] ?? 1160)));
         $settings['items_per_page'] = (string) max(6, min(60, (int) ($_POST['items_per_page'] ?? 24)));
         $settings['fetch_limit'] = (string) max(1, min(200, (int) ($_POST['fetch_limit'] ?? 100)));
         $settings['cache_ttl_minutes'] = (string) max(15, min(1440, (int) ($_POST['cache_ttl_minutes'] ?? 120)));
         $settings['cron_enabled'] = !empty($_POST['cron_enabled']) ? '1' : '0';
         $settings['cron_hour'] = '12';
+        $settings['show_detail_pages'] = !empty($_POST['show_detail_pages']) ? '1' : '0';
+        $settings['show_status_panel'] = !empty($_POST['show_status_panel']) ? '1' : '0';
+        $settings['show_filters'] = !empty($_POST['show_filters']) ? '1' : '0';
         $settings['show_body_excerpt'] = !empty($_POST['show_body_excerpt']) ? '1' : '0';
         $settings['show_external_links'] = !empty($_POST['show_external_links']) ? '1' : '0';
 
@@ -255,6 +265,16 @@ final class CMS_M365MessageCenter_Admin_Pages
             'category' => 'Kategorie',
             'service' => 'Service',
             'title' => 'Titel',
+        ];
+    }
+
+    /** @return array<string,string> */
+    private static function layout_options(): array
+    {
+        return [
+            'standard' => 'Standard – breite Meldungskarten',
+            'compact' => 'Kompakt – Kartenraster',
+            'list' => 'Liste – dichter Informationsfluss',
         ];
     }
 

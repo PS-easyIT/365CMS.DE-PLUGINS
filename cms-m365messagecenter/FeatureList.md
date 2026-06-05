@@ -5,9 +5,13 @@
 - **Feature name:** M365 Message Center Public Archive
 - **Umsetzungsgrund:** Die bisherige Graph-Funktion aus `cms-m365landing` soll eigenständig, sicher und performanter betrieben werden.
 - **Public:** `/m365-messagecenter` mit Suche, Service-/Kategorie-Filter, Sortierung, Pagination und Detailseiten je Meldung.
-- **Admin:** Graph-Zugangsdaten, Abrufmenge, Cache-Hinweis, Standard-Sortierung und Darstellung.
+- **Admin:** Graph-Zugangsdaten, Abrufmenge, Cache-Hinweis, Standard-Sortierung, Darstellung, Public-Schalter, Layoutwahl und max. Public-Content-Breite.
 - **Design:** Modernes Public-Layout mit Hero, Statuspanel, Filterkopf und lesbaren Karten.
+- **Layouts:** Maximal drei Varianten: `standard`, `compact`, `list`.
+- **Radius-Vertrag:** Badges max. 4px, Message-Center-Nachrichtenkarten max. 2px.
 - **Lesbarkeit:** Archivkarten kürzen nach 200 Wörtern mit `...`; Detailseiten zeigen den vollständigen gecachten Klartext-Body.
+- **Original-Link:** Jede Übersichtskarte kann einen Button `Original im M365 Admin Center` anzeigen; wenn Graph keinen externen Link liefert, wird ein Admin-Center-Fallback aus der Message-ID genutzt.
+- **Breite:** Public-Content ist standardmäßig auf 1160px begrenzt und im Adminbereich zwischen 900px und 1600px einstellbar.
 
 ## 2) Secure Graph Fetch
 
@@ -27,3 +31,9 @@
 - **Route:** `/{route_slug}/{messageId}` und `/en/{route_slug}/{messageId}`.
 - **Inhalte:** Volltext, Graph-ID, Kategorie, Schweregrad, Services, Tags, Major-Change-Flag, Zeitpunkte und externer Microsoft-Link.
 - **Abstand:** Plugin-Content hält zum Theme-Header und Theme-Footer maximal 25px Abstand.
+- **Admin-Schalter:** Detailseiten können deaktiviert werden; Archivkarten entfernen dann Detail-Links und Detailrouten leiten zur Übersicht zurück.
+
+## 5) Public Display Controls
+
+- **Schalter:** Detailseiten, Status-/Cache-Kachelbereich, Filterbereich, Meldungsauszüge und externe Microsoft-Links.
+- **Statuspanel:** Zeigt Cache-Anzahl, letzte Aktualisierung und Graph-Sprache nur wenn aktiviert.
