@@ -3,7 +3,7 @@
  * Plugin Name: CMS Events
  * Plugin URI: https://365network.de/cms-events
  * Description: Verwaltung von Events mit Speakeranbindung, Veranstaltern aus cms-companies und voller Metaverwaltung
- * Version: 3.0.37
+ * Version: 3.0.38
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
-defined('CMS_EVENTS_VERSION') || define('CMS_EVENTS_VERSION', '3.0.37');
+defined('CMS_EVENTS_VERSION') || define('CMS_EVENTS_VERSION', '3.0.38');
 defined('CMS_EVENTS_PLUGIN_DIR') || define('CMS_EVENTS_PLUGIN_DIR', function_exists('cms_plugin_path') ? rtrim((string) cms_plugin_path('cms-events'), '/\\') . DIRECTORY_SEPARATOR : dirname(__FILE__) . '/');
 defined('CMS_EVENTS_PLUGIN_URL') || define('CMS_EVENTS_PLUGIN_URL', function_exists('cms_plugin_url') ? rtrim((string) cms_plugin_url('cms-events'), '/') . '/' : '/plugins/cms-events/');
 
@@ -20,7 +20,7 @@ if (!class_exists('CMS_Events', false)) {
 final class CMS_Events {
     private static ?self $instance = null;
     private bool $components_bootstrapped = false;
-    private string $version = '3.0.37';
+    private string $version = '3.0.38';
     private string $plugin_dir;
     private string $plugin_url;
 
@@ -149,7 +149,7 @@ final class CMS_Events {
 
         $db = CMS_Events_Database::instance();
         $settings = method_exists($db, 'get_settings') ? $db->get_settings() : [];
-        $schema_version = '3.0.37';
+        $schema_version = '3.0.38';
         if (($settings['schema_version'] ?? '') === $schema_version) {
             return;
         }

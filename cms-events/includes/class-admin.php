@@ -1130,6 +1130,7 @@ final class CMS_Events_Admin
                 <?php match($formErrorCode) {
                     'csrf'       => print ' – Sicherheitscheck fehlgeschlagen.',
                     'save'       => print ' – Datenbank-Fehler.',
+                    'save_direct'=> print ' – Direktes Speichern fehlgeschlagen. Bitte Event-ID und Tabellenrechte prüfen.',
                     'validation' => print ' – Eingaben prüfen.',
                     default      => print '.',
                 }; ?>

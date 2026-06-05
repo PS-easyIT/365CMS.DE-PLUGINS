@@ -1,6 +1,6 @@
 ﻿# CMS Events Manager Plugin
 
-**Version:** 3.0.37
+**Version:** 3.0.38
 **Requires:** 365CMS 3.0+  
 **PHP:** 8.4+
 
@@ -129,6 +129,7 @@ Templates can be added to the `templates/` directory:
 - Version `3.0.35` filtert Save-Daten zusätzlich gegen die tatsächlich vorhandenen Tabellenspalten und nutzt `SHOW COLUMNS` als Fallback, falls `INFORMATION_SCHEMA` serverseitig nicht lesbar ist.
 - Version `3.0.36` ergänzt einen konservativen Legacy-Retry, falls ein vollständiges Update auf Alt-Schemas weiterhin von einzelnen modernen Feldern blockiert wird.
 - Version `3.0.37` ergänzt als letzte Rückfallebene ein spaltenweises Update, damit kompatible Event-Felder weiter gespeichert werden und einzelne problematische Alt-Schema-Felder nicht mehr den gesamten Admin-Save blockieren.
+- Version `3.0.38` ergänzt im Admin-Handler einen direkten Prepared-Statement-Fallback, der den DB-Service umgeht und vorhandene kompatible Spalten beim Bearbeiten einzeln speichert.
 - Bootstrap und Include-Dateien sind gegen doppelte Ladepfade/klassische Redeclare-Fatals abgesichert.
 - DB-Migrationen nutzen `INFORMATION_SCHEMA` statt `SHOW COLUMNS`, Foreign Keys werden idempotent und nicht-blockierend ergänzt.
 - Plugin-Settings werden primär über den 365CMS `SettingsService` gelesen/geschrieben; die alte `event_settings`-Tabelle bleibt nur als kompatibler Fallback.

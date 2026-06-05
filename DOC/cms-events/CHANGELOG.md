@@ -1,5 +1,11 @@
 # CMS Events – Changelog
 
+## [3.0.38] – 2026-06-05
+
+- **Admin-Save-Hotfix:** Der Admin-Handler besitzt nun einen direkten Prepared-Statement-Fallback für bestehende Events.
+- **DB-Service umgehen:** Wenn `CMS_Events_Database::save_event()` fehlschlägt oder eine Exception wirft, speichert der Handler vorhandene kompatible Spalten einzeln direkt per `UPDATE`.
+- **Fehlerbild:** Der generische „Datenbank-Fehler“ soll dadurch beim Bearbeiten bestehender Events auch dann verschwinden, wenn der zentrale DB-Service oder optionale Spalten weiterhin blockieren.
+
 ## [3.0.37] – 2026-06-05
 
 - **Admin-Save-Hotfix:** Falls vollständiges Update und Legacy-Retry scheitern, speichert `save_event()` kompatible Felder einzeln weiter.

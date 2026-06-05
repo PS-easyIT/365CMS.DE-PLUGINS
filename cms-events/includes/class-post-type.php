@@ -706,17 +706,89 @@ final class CMS_Events_Post_Type
                 $data['event_date'] = date('Y-m-d');
             }
 
+            $original_event_id = $event_id;
             if ($event_id > 0) { $data['id'] = $event_id; }
             $event_id = $db_manager->save_event($data);
+            if ($event_id <= 0 && $original_event_id > 0 && $this->admin_direct_event_update($original_event_id, $data)) {
+                CMS\Router::instance()->redirect('/admin/events/edit/' . $original_event_id . '?success=1&fallback=1');
+                return;
+            }
             if ($event_id <= 0) {
-                CMS\Router::instance()->redirect($this->admin_event_form_error_path((int)($_POST['event_id'] ?? 0), 'save'));
+                CMS\Router::instance()->redirect($this->admin_event_form_error_path((int)($_POST['event_id'] ?? 0), 'save_direct'));
                 return;
             }
             CMS\Router::instance()->redirect('/admin/events/edit/' . $event_id . '?success=1');
         } catch (\Throwable $e) {
+            $fallbackEventId = (int) ($_POST['event_id'] ?? 0);
+            if ($fallbackEventId > 0 && isset($data) && is_array($data) && $this->admin_direct_event_update($fallbackEventId, $data)) {
+                CMS\Router::instance()->redirect('/admin/events/edit/' . $fallbackEventId . '?success=1&fallback=1');
+                return;
+            }
+
             error_log('Event save error: ' . $e->getMessage());
-            CMS\Router::instance()->redirect($this->admin_event_form_error_path((int)($_POST['event_id'] ?? 0), 'save'));
+            CMS\Router::instance()->redirect($this->admin_event_form_error_path($fallbackEventId, 'save_direct'));
         }
+    }
+
+    /** @param array<string,mixed> $data */
+    private function admin_direct_event_update(int $eventId, array $data): bool
+    {
+        if ($eventId <= 0) {
+            return false;
+        }
+
+        $allowedColumns = [
+            'title', 'excerpt', 'description', 'event_date', 'event_time', 'end_date', 'end_time',
+            'location', 'address', 'city', 'zip', 'country', 'category', 'tags', 'capacity',
+            'registration_url', 'price_type', 'price', 'price_currency', 'image_url', 'banner_url',
+            'is_online', 'online_url', 'is_featured', 'organizer_name', 'organizer_email',
+            'organizer_phone', 'organizer_website', 'status',
+        ];
+        $payload = array_intersect_key($data, array_flip($allowedColumns));
+        unset($payload['id']);
+
+        if (isset($payload['tags']) && is_array($payload['tags'])) {
+            $payload['tags'] = json_encode(array_values(array_filter($payload['tags'])), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        if (($payload['status'] ?? '') === 'completed') {
+            unset($payload['status']);
+        }
+
+        if ($payload === []) {
+            return false;
+        }
+
+        try {
+            $db = CMS\Database::instance();
+            $prefix = $db->prefix();
+            $savedAny = false;
+
+            foreach ($payload as $column => $value) {
+                if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', (string) $column)) {
+                    continue;
+                }
+
+                try {
+                    $stmt = $db->prepare('UPDATE ' . $this->quote_sql_identifier($prefix . 'events') . ' SET ' . $this->quote_sql_identifier((string) $column) . ' = ? WHERE id = ?');
+                    if ($stmt !== false && $stmt->execute([$value, $eventId])) {
+                        $savedAny = true;
+                    }
+                } catch (\Throwable $columnError) {
+                    error_log('CMS Events admin direct update skipped column ' . (string) $column . ': ' . $columnError->getMessage());
+                }
+            }
+
+            return $savedAny;
+        } catch (\Throwable $e) {
+            error_log('CMS Events admin direct update failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function quote_sql_identifier(string $identifier): string
+    {
+        return '`' . str_replace('`', '``', $identifier) . '`';
     }
 
     private function sanitize_event_description(mixed $value): string
