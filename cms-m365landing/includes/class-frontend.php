@@ -314,31 +314,18 @@ final class CMS_M365Landing_Frontend
         $cardsBySection = $repo->cards_by_section(true);
         $isDomainLandingRequest = $this->is_domain_landing_request();
         $publicLang = $this->public_language();
+        $postsCategoryId = (int) ($settings['posts_section_category_id'] ?? 0);
+        $postsCategoryUrl = $this->posts_category_archive_url($repo, $postsCategoryId, $publicLang);
         $latestPosts = [];
-        $serviceHealthItems = [];
-        $serviceHealthError = '';
-        $messageCenterItems = [];
-        $messageCenterError = '';
 
         if ($this->should_render_posts_section($settings, $isDomainLandingRequest)) {
-            $postsLimit = (int) ($settings['posts_section_limit'] ?? 6);
-            $postsLimit = in_array($postsLimit, [6, 9], true) ? $postsLimit : 6;
+            $postsLimit = 6;
             $postsMode = (string) ($settings['posts_section_mode'] ?? 'category');
             if ($postsMode === 'all' && method_exists($repo, 'latest_posts')) {
                 $latestPosts = $repo->latest_posts($postsLimit);
             } elseif (method_exists($repo, 'latest_posts_by_category')) {
-                $latestPosts = $repo->latest_posts_by_category((int) ($settings['posts_section_category_id'] ?? 0), $postsLimit);
+                $latestPosts = $repo->latest_posts_by_category($postsCategoryId, $postsLimit);
             }
-        }
-
-        if ((string) ($settings['show_service_health_panel'] ?? '0') === '1'
-            || (string) ($settings['show_message_center_panel'] ?? '0') === '1'
-        ) {
-            $graphPayload = $this->fetch_graph_panels_data($settings);
-            $serviceHealthItems = is_array($graphPayload['service_health_items'] ?? null) ? $graphPayload['service_health_items'] : [];
-            $serviceHealthError = trim((string) ($graphPayload['service_health_error'] ?? ''));
-            $messageCenterItems = is_array($graphPayload['message_center_items'] ?? null) ? $graphPayload['message_center_items'] : [];
-            $messageCenterError = trim((string) ($graphPayload['message_center_error'] ?? ''));
         }
 
         $title = $this->setting($settings, 'seo_title', $this->setting($settings, 'page_title', 'Microsoft 365 Hub'));
@@ -423,6 +410,47 @@ final class CMS_M365Landing_Frontend
         }
 
         return true;
+    }
+
+    private function posts_category_archive_url(CMS_M365Landing_Repository $repo, int $categoryId, string $publicLang): string
+    {
+        if ($categoryId <= 0 || !method_exists($repo, 'post_categories')) {
+            return '';
+        }
+
+        $categories = $repo->post_categories();
+        foreach ($categories as $category) {
+            $id = (int) ($category['id'] ?? 0);
+            if ($id !== $categoryId) {
+                continue;
+            }
+
+            $slug = trim((string) ($category['slug'] ?? ''));
+            if ($slug === '') {
+                $name = trim((string) ($category['name'] ?? ''));
+                $slug = $name !== ''
+                    ? (function_exists('phinit_display_text') ? (string) phinit_display_text($name) : CMS_M365Landing_Repository::slug($name))
+                    : '';
+            }
+
+            $slug = CMS_M365Landing_Repository::slug($slug);
+            if ($slug === '') {
+                return '';
+            }
+
+            if (function_exists('cms_get_archive_url')) {
+                $archiveUrl = (string) cms_get_archive_url('category', $slug, $publicLang);
+                return CMS_M365Landing_Repository::main_site_url($archiveUrl);
+            }
+
+            $archivePath = $publicLang === 'en'
+                ? '/en/category/' . rawurlencode($slug)
+                : '/kategorie/' . rawurlencode($slug);
+
+            return CMS_M365Landing_Repository::main_site_url($archivePath);
+        }
+
+        return '';
     }
 
     private function is_domain_landing_request(): bool
@@ -540,263 +568,6 @@ final class CMS_M365Landing_Frontend
         }
 
         return $normalizedPath;
-    }
-
-    /** @param array<string,string> $settings @return array<string,mixed> */
-    private function fetch_graph_panels_data(array $settings): array
-    {
-        $showServiceHealth = (string) ($settings['show_service_health_panel'] ?? '0') === '1';
-        $showMessageCenter = (string) ($settings['show_message_center_panel'] ?? '0') === '1';
-        if (!$showServiceHealth && !$showMessageCenter) {
-            return [];
-        }
-
-        $tenantId = trim((string) ($settings['graph_tenant_id'] ?? ''));
-        $clientId = trim((string) ($settings['graph_client_id'] ?? ''));
-        $clientSecret = trim((string) ($settings['graph_client_secret'] ?? ''));
-        if ($tenantId === '' || $clientId === '' || $clientSecret === '') {
-            $missingConfig = 'missing-credentials';
-            return [
-                'service_health_items' => [],
-                'service_health_error' => $showServiceHealth ? $missingConfig : '',
-                'message_center_items' => [],
-                'message_center_error' => $showMessageCenter ? $missingConfig : '',
-            ];
-        }
-
-        $token = $this->graph_access_token($tenantId, $clientId, $clientSecret);
-        if ($token === '') {
-            $authFailed = 'token-unavailable';
-            return [
-                'service_health_items' => [],
-                'service_health_error' => $showServiceHealth ? $authFailed : '',
-                'message_center_items' => [],
-                'message_center_error' => $showMessageCenter ? $authFailed : '',
-            ];
-        }
-
-        $result = [
-            'service_health_items' => [],
-            'service_health_error' => '',
-            'message_center_items' => [],
-            'message_center_error' => '',
-        ];
-
-        if ($showServiceHealth) {
-            $maxItems = max(1, min(12, (int) ($settings['service_health_max_items'] ?? 5)));
-            $issues = $this->graph_collection(
-                'https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/issues?$top=' . $maxItems,
-                $token
-            );
-            if (!is_array($issues)) {
-                $result['service_health_error'] = 'load-failed';
-            } else {
-                foreach ($issues as $issue) {
-                    if (!is_array($issue)) {
-                        continue;
-                    }
-                    $result['service_health_items'][] = [
-                        'id' => trim((string) ($issue['id'] ?? '')),
-                        'title' => trim((string) ($issue['title'] ?? '')),
-                        'service' => trim((string) ($issue['service'] ?? '')),
-                        'status' => trim((string) ($issue['status'] ?? '')),
-                        'classification' => trim((string) ($issue['classification'] ?? '')),
-                        'started_at' => trim((string) ($issue['startDateTime'] ?? '')),
-                    ];
-                }
-                $result['service_health_items'] = array_slice($result['service_health_items'], 0, $maxItems);
-            }
-        }
-
-        if ($showMessageCenter) {
-            $maxItems = max(1, min(12, (int) ($settings['message_center_max_items'] ?? 5)));
-            $messages = $this->graph_collection(
-                'https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/messages?$top=' . $maxItems,
-                $token
-            );
-            if (!is_array($messages)) {
-                $result['message_center_error'] = 'load-failed';
-            } else {
-                $filter = $this->normalize_services_filter((string) ($settings['message_center_service_filter'] ?? ''));
-                foreach ($messages as $message) {
-                    if (!is_array($message)) {
-                        continue;
-                    }
-                    $services = [];
-                    foreach ((array) ($message['services'] ?? []) as $service) {
-                        $service = trim((string) $service);
-                        if ($service !== '') {
-                            $services[] = $service;
-                        }
-                    }
-
-                    if ($filter !== [] && !$this->services_match_filter($services, $filter)) {
-                        continue;
-                    }
-
-                    $result['message_center_items'][] = [
-                        'id' => trim((string) ($message['id'] ?? '')),
-                        'title' => trim((string) ($message['title'] ?? '')),
-                        'category' => trim((string) ($message['category'] ?? '')),
-                        'services' => $services,
-                        'last_modified' => trim((string) ($message['lastModifiedDateTime'] ?? '')),
-                    ];
-                    if (count($result['message_center_items']) >= $maxItems) {
-                        break;
-                    }
-                }
-            }
-        }
-
-        return $result;
-    }
-
-    /** @return array<int,array<string,mixed>>|null */
-    private function graph_collection(string $url, string $token): ?array
-    {
-        $payload = $this->http_request_json($url, 'GET', [
-            'Accept: application/json',
-            'Authorization: Bearer ' . $token,
-        ]);
-        if (!is_array($payload) || !is_array($payload['value'] ?? null)) {
-            return null;
-        }
-
-        return $payload['value'];
-    }
-
-    private function graph_access_token(string $tenantId, string $clientId, string $clientSecret): string
-    {
-        $endpoint = 'https://login.microsoftonline.com/' . rawurlencode($tenantId) . '/oauth2/v2.0/token';
-        $body = http_build_query([
-            'client_id' => $clientId,
-            'client_secret' => $clientSecret,
-            'scope' => 'https://graph.microsoft.com/.default',
-            'grant_type' => 'client_credentials',
-        ], '', '&', PHP_QUERY_RFC3986);
-        $payload = $this->http_request_json($endpoint, 'POST', [
-            'Accept: application/json',
-            'Content-Type: application/x-www-form-urlencoded',
-        ], $body);
-
-        return is_array($payload) ? trim((string) ($payload['access_token'] ?? '')) : '';
-    }
-
-    /** @return array<string,mixed>|null */
-    private function http_request_json(string $url, string $method = 'GET', array $headers = [], ?string $body = null): ?array
-    {
-        $method = strtoupper($method);
-        try {
-            if (function_exists('curl_init')) {
-                $ch = curl_init($url);
-                if ($ch === false) {
-                    return null;
-                }
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 8);
-                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-                if ($headers !== []) {
-                    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-                }
-                if ($body !== null && $body !== '') {
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
-                }
-                $response = curl_exec($ch);
-                $statusCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                curl_close($ch);
-                if (!is_string($response) || $statusCode < 200 || $statusCode >= 300) {
-                    return null;
-                }
-
-                $decoded = json_decode($response, true);
-                return is_array($decoded) ? $decoded : null;
-            }
-
-            $requestHeaders = $headers;
-            if ($body !== null && $body !== '' && !$this->headers_contain_content_type($requestHeaders)) {
-                $requestHeaders[] = 'Content-Type: application/x-www-form-urlencoded';
-            }
-            $context = stream_context_create([
-                'http' => [
-                    'method' => $method,
-                    'header' => implode("\r\n", $requestHeaders),
-                    'content' => $body ?? '',
-                    'timeout' => 8,
-                    'ignore_errors' => true,
-                ],
-            ]);
-            $response = @file_get_contents($url, false, $context);
-            if (!is_string($response) || $response === '') {
-                return null;
-            }
-
-            $statusLine = '';
-            $responseHeaders = $http_response_header ?? [];
-            if (is_array($responseHeaders) && isset($responseHeaders[0]) && is_string($responseHeaders[0])) {
-                $statusLine = $responseHeaders[0];
-            }
-            if ($statusLine === '' || preg_match('#\s2\d\d\s#', $statusLine) !== 1) {
-                return null;
-            }
-
-            $decoded = json_decode($response, true);
-            return is_array($decoded) ? $decoded : null;
-        } catch (\Throwable $e) {
-            self::log_exception('http_request_json_failed', $e);
-            return null;
-        }
-    }
-
-    /** @param array<int,string> $headers */
-    private function headers_contain_content_type(array $headers): bool
-    {
-        foreach ($headers as $header) {
-            if (stripos((string) $header, 'content-type:') === 0) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /** @return array<int,string> */
-    private function normalize_services_filter(string $value): array
-    {
-        $parts = preg_split('/[\s,;|]+/', strtolower(trim($value))) ?: [];
-        $services = [];
-        foreach ($parts as $part) {
-            $part = trim($part);
-            if ($part !== '' && !in_array($part, $services, true)) {
-                $services[] = $part;
-            }
-        }
-
-        return $services;
-    }
-
-    /** @param array<int,string> $services @param array<int,string> $filter */
-    private function services_match_filter(array $services, array $filter): bool
-    {
-        if ($filter === []) {
-            return true;
-        }
-
-        $normalizedServices = [];
-        foreach ($services as $service) {
-            $normalizedServices[] = strtolower(trim($service));
-        }
-
-        foreach ($normalizedServices as $service) {
-            foreach ($filter as $needle) {
-                if ($needle !== '' && str_contains($service, $needle)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     /** @param array<int,array<string,mixed>> $posts @return array<int,array<string,mixed>> */

@@ -473,13 +473,28 @@ final class CMS_Events_Database
         ];
 
         if ($event_id > 0) {
-            $db->update('events', $event_data, ['id' => $event_id]);
+            try {
+                if (!$db->update('events', $event_data, ['id' => $event_id])) {
+                    error_log('CMS Events save_event update failed: ' . (string) ($db->last_error ?? 'unknown error'));
+                    return 0;
+                }
+            } catch (\Throwable $e) {
+                error_log('CMS Events save_event update exception: ' . $e->getMessage());
+                return 0;
+            }
         } else {
             $event_data['user_id'] = CMS\Auth::instance()->currentUser()?->id ?? null;
-            $insert_result = $db->insert('events', $event_data);
+            try {
+                $insert_result = $db->insert('events', $event_data);
+            } catch (\Throwable $e) {
+                error_log('CMS Events save_event insert exception: ' . $e->getMessage());
+                return 0;
+            }
             if ($insert_result) {
                 $event_id = (int)$insert_result;
                 CMS\Hooks::doAction('event_created', $event_id);
+            } else {
+                error_log('CMS Events save_event insert failed: ' . (string) ($db->last_error ?? 'unknown error'));
             }
         }
 

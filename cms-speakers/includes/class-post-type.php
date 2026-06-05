@@ -261,89 +261,94 @@ final class CMS_Speakers_Post_Type
         if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'save_speaker')) {
             CMS\Router::instance()->redirect('/admin/speakers?error=csrf'); return;
         }
-        $id      = (int)($_POST['speaker_id'] ?? 0);
-        $allowed_genders = ['', 'm', 'f', 'd'];
-        $allowed_travel_radius = ['local', 'regional', 'national', 'international', 'worldwide'];
-        $allowed_availability = ['available', 'limited', 'booked'];
-        $allowed_statuses = ['active', 'inactive', 'draft', 'pending'];
-        $formats = is_array($_POST['formats'] ?? null)
-            ? array_values(array_filter(array_map(static fn($value) => trim((string) $value), $_POST['formats'])))
-            : [];
-        $langs   = array_values(array_filter(array_map('trim', explode(',', $_POST['languages'] ?? ''))));
-        $gender = in_array(trim((string)($_POST['gender'] ?? '')), $allowed_genders, true) ? trim((string)($_POST['gender'] ?? '')) : '';
-        $travel_radius = in_array(trim((string)($_POST['travel_radius'] ?? 'national')), $allowed_travel_radius, true)
-            ? trim((string)($_POST['travel_radius'] ?? 'national'))
-            : 'national';
-        $availability = in_array(trim((string)($_POST['availability'] ?? 'available')), $allowed_availability, true)
-            ? trim((string)($_POST['availability'] ?? 'available'))
-            : 'available';
-        $status = in_array(trim((string)($_POST['status'] ?? 'active')), $allowed_statuses, true)
-            ? trim((string)($_POST['status'] ?? 'active'))
-            : 'active';
+        try {
+            $id      = (int)($_POST['speaker_id'] ?? 0);
+            $allowed_genders = ['', 'm', 'f', 'd'];
+            $allowed_travel_radius = ['local', 'regional', 'national', 'international', 'worldwide'];
+            $allowed_availability = ['available', 'limited', 'booked'];
+            $allowed_statuses = ['active', 'inactive', 'draft', 'pending'];
+            $formats = is_array($_POST['formats'] ?? null)
+                ? array_values(array_filter(array_map(static fn($value) => trim((string) $value), $_POST['formats'])))
+                : [];
+            $langs   = array_values(array_filter(array_map('trim', explode(',', $_POST['languages'] ?? ''))));
+            $gender = in_array(trim((string)($_POST['gender'] ?? '')), $allowed_genders, true) ? trim((string)($_POST['gender'] ?? '')) : '';
+            $travel_radius = in_array(trim((string)($_POST['travel_radius'] ?? 'national')), $allowed_travel_radius, true)
+                ? trim((string)($_POST['travel_radius'] ?? 'national'))
+                : 'national';
+            $availability = in_array(trim((string)($_POST['availability'] ?? 'available')), $allowed_availability, true)
+                ? trim((string)($_POST['availability'] ?? 'available'))
+                : 'available';
+            $status = in_array(trim((string)($_POST['status'] ?? 'active')), $allowed_statuses, true)
+                ? trim((string)($_POST['status'] ?? 'active'))
+                : 'active';
 
-        // Feldnamen auf DB-Spaltennamen mappen
-        $data = [
-            'first_name'        => $this->clean_text((string) ($_POST['first_name'] ?? ''), 100),
-            'last_name'         => $this->clean_text((string) ($_POST['last_name'] ?? ''), 100),
-            'title'             => $this->clean_text((string) ($_POST['academic_title'] ?? ''), 100),  // DB-Spalte: title
-            'gender'            => $gender,
-            'position'          => $this->clean_text((string) ($_POST['position'] ?? ''), 200),
-            'company'           => $this->clean_text((string) ($_POST['company'] ?? ''), 200),
-            'company_id'        => (int)($_POST['company_id']     ?? 0) ?: null,
-            'email'             => filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL) ?: '',
-            'phone'             => preg_replace('/[^0-9+()\s.\-]/', '', (string) ($_POST['phone'] ?? '')) ?: '',
-            'website'           => $this->clean_url((string) ($_POST['website'] ?? '')),
-            'linkedin'          => $this->clean_url((string) ($_POST['linkedin'] ?? '')),
-            'twitter'           => trim(strip_tags($_POST['twitter'] ?? '')),
-            'xing'              => $this->clean_url((string) ($_POST['xing'] ?? '')),
-            'instagram'         => trim(strip_tags($_POST['instagram'] ?? '')),
-            'youtube'           => $this->clean_url((string) ($_POST['youtube'] ?? '')),
-            'location_city'     => $this->clean_text((string) ($_POST['location_city'] ?? ''), 100),
-            'location_zip'      => $this->clean_text((string) ($_POST['location_zip'] ?? ''), 20),
-            'location_country'  => $this->clean_text((string) ($_POST['location_country'] ?? 'Deutschland'), 100),
-            'bio'               => class_exists('\CMS\Services\EditorService')
-                                    ? \CMS\Services\EditorService::getInstance()->sanitize(
-                                          html_entity_decode($_POST['bio'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8')
-                                      )
-                                    : ($_POST['bio'] ?? ''),
-            'short_bio'         => trim(strip_tags($_POST['short_bio'] ?? '')),
-            'photo_url'         => $this->clean_url((string) ($_POST['photo_url'] ?? '')),
-            'formats'           => $this->encode_string_array($formats),
-            'languages'         => $this->encode_string_array($langs),
-            'target_audience'   => $this->clean_text((string) ($_POST['target_audience'] ?? ''), 400),
-            'speaking_style'    => $this->clean_text((string) ($_POST['speaking_style'] ?? ''), 200),
-            'awards'            => $this->clean_textarea((string) ($_POST['awards'] ?? ''), 4000),
-            'travel_radius'     => $travel_radius,
-            'availability'      => $availability,
-            'speaking_fee_min'  => (int)($_POST['speaking_fee_min'] ?? 0) ?: null,
-            'speaking_fee_max'  => (int)($_POST['speaking_fee_max'] ?? 0) ?: null,
-            'max_audience_size' => (int)($_POST['max_audience_size'] ?? 0) ?: null,
-            'status'            => $status,
-            'is_featured'       => isset($_POST['is_featured']) ? 1 : 0,
-            'is_verified'       => isset($_POST['is_verified'])  ? 1 : 0,
-            'recognitions'      => $this->encode_string_array(
-                is_array($_POST['recognitions'] ?? null)
-                    ? array_values(array_filter(array_map(static fn($value) => trim((string) $value), $_POST['recognitions'])))
-                    : []
-            ),
-            'skills'            => $this->encode_string_array(
-                is_array($_POST['skills'] ?? null)
-                    ? array_values(array_filter(array_map(static fn($value) => trim((string) $value), $_POST['skills'])))
-                    : []
-            ),
-        ];
-        $db       = CMS_Speakers_Database::instance();
-        $saved_id = $db->save_speaker($data, $id);
-        if ($saved_id > 0) {
-            $tj = trim($_POST['topics_json'] ?? '');
-            if ($tj !== '') {
-                $decodedTopics = json_decode($tj, true);
-                if (is_array($decodedTopics)) {
-                    $db->save_topics($saved_id, $decodedTopics);
+            // Feldnamen auf DB-Spaltennamen mappen
+            $data = [
+                'first_name'        => $this->clean_text((string) ($_POST['first_name'] ?? ''), 100),
+                'last_name'         => $this->clean_text((string) ($_POST['last_name'] ?? ''), 100),
+                'title'             => $this->clean_text((string) ($_POST['academic_title'] ?? ''), 100),  // DB-Spalte: title
+                'gender'            => $gender,
+                'position'          => $this->clean_text((string) ($_POST['position'] ?? ''), 200),
+                'company'           => $this->clean_text((string) ($_POST['company'] ?? ''), 200),
+                'company_id'        => (int)($_POST['company_id']     ?? 0) ?: null,
+                'email'             => filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL) ?: '',
+                'phone'             => preg_replace('/[^0-9+()\s.\-]/', '', (string) ($_POST['phone'] ?? '')) ?: '',
+                'website'           => $this->clean_url((string) ($_POST['website'] ?? '')),
+                'linkedin'          => $this->clean_url((string) ($_POST['linkedin'] ?? '')),
+                'twitter'           => trim(strip_tags($_POST['twitter'] ?? '')),
+                'xing'              => $this->clean_url((string) ($_POST['xing'] ?? '')),
+                'instagram'         => trim(strip_tags($_POST['instagram'] ?? '')),
+                'youtube'           => $this->clean_url((string) ($_POST['youtube'] ?? '')),
+                'location_city'     => $this->clean_text((string) ($_POST['location_city'] ?? ''), 100),
+                'location_zip'      => $this->clean_text((string) ($_POST['location_zip'] ?? ''), 20),
+                'location_country'  => $this->clean_text((string) ($_POST['location_country'] ?? 'Deutschland'), 100),
+                'bio'               => class_exists('\CMS\Services\EditorService')
+                                        ? \CMS\Services\EditorService::getInstance()->sanitize(
+                                              html_entity_decode($_POST['bio'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8')
+                                          )
+                                        : ($_POST['bio'] ?? ''),
+                'short_bio'         => trim(strip_tags($_POST['short_bio'] ?? '')),
+                'photo_url'         => $this->clean_url((string) ($_POST['photo_url'] ?? '')),
+                'formats'           => $this->encode_string_array($formats),
+                'languages'         => $this->encode_string_array($langs),
+                'target_audience'   => $this->clean_text((string) ($_POST['target_audience'] ?? ''), 400),
+                'speaking_style'    => $this->clean_text((string) ($_POST['speaking_style'] ?? ''), 200),
+                'awards'            => $this->clean_textarea((string) ($_POST['awards'] ?? ''), 4000),
+                'travel_radius'     => $travel_radius,
+                'availability'      => $availability,
+                'speaking_fee_min'  => (int)($_POST['speaking_fee_min'] ?? 0) ?: null,
+                'speaking_fee_max'  => (int)($_POST['speaking_fee_max'] ?? 0) ?: null,
+                'max_audience_size' => (int)($_POST['max_audience_size'] ?? 0) ?: null,
+                'status'            => $status,
+                'is_featured'       => isset($_POST['is_featured']) ? 1 : 0,
+                'is_verified'       => isset($_POST['is_verified'])  ? 1 : 0,
+                'recognitions'      => $this->encode_string_array(
+                    is_array($_POST['recognitions'] ?? null)
+                        ? array_values(array_filter(array_map(static fn($value) => trim((string) $value), $_POST['recognitions'])))
+                        : []
+                ),
+                'skills'            => $this->encode_string_array(
+                    is_array($_POST['skills'] ?? null)
+                        ? array_values(array_filter(array_map(static fn($value) => trim((string) $value), $_POST['skills'])))
+                        : []
+                ),
+            ];
+            $db       = CMS_Speakers_Database::instance();
+            $saved_id = $db->save_speaker($data, $id);
+            if ($saved_id > 0) {
+                $tj = trim($_POST['topics_json'] ?? '');
+                if ($tj !== '') {
+                    $decodedTopics = json_decode($tj, true);
+                    if (is_array($decodedTopics)) {
+                        $db->save_topics($saved_id, $decodedTopics);
+                    }
                 }
+                CMS\Router::instance()->redirect('/admin/speakers/edit/' . $saved_id . '?saved=1');
+            } else {
+                CMS\Router::instance()->redirect('/admin/speakers?error=save');
             }
-            CMS\Router::instance()->redirect('/admin/speakers/edit/' . $saved_id . '?saved=1');
-        } else {
+        } catch (\Throwable $e) {
+            error_log('CMS Speakers admin_save: ' . $e->getMessage());
             CMS\Router::instance()->redirect('/admin/speakers?error=save');
         }
     }

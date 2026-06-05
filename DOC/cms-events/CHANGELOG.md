@@ -1,5 +1,11 @@
 # CMS Events – Changelog
 
+## [3.0.33] – 2026-06-05
+
+- **Admin-Save-Hotfix:** Der Save-Pfad für `Event bearbeiten` ist vollständig gegen Ausnahmen beim EditorService-/HTML-Sanitizing und gegen DB-Updatefehler abgesichert.
+- **Keine Admin-Pflichtfelder:** Leere Titel und Startdaten bekommen im Admin sichere Fallbacks (`Unbenanntes Event`, aktuelles Datum), damit optionale Adminfelder nicht zu 500-Serverfehlern führen.
+- **Fehlerführung:** Speichern schlägt bei DB-Problemen kontrolliert zur Edit-/Neu-Seite mit Fehlerhinweis zurück, statt einen generischen Serverfehler auszulösen.
+
 ## [3.0.32] – 2026-06-01
 
 - **Admin-Übersicht:** Events mit hinterlegter Veranstalter-Website (`organizer_website`) zeigen nun einen eigenen Website-Schnelllink.

@@ -736,6 +736,8 @@ final class CMS_Experts_Post_Type
             return;
         }
 
+        try {
+
         $expert_id = (int)($_POST['expert_id'] ?? 0);
         
         // Limit-Check nur bei Neuanlage
@@ -1009,7 +1011,16 @@ final class CMS_Experts_Post_Type
 
             CMS\Router::instance()->redirect('/admin/experts/edit/' . $expert_id . '?success=1');
         } else {
-            CMS\Router::instance()->redirect('/admin/experts/new?error=1');
+            CMS\Router::instance()->redirect('/admin/experts/new?error=save');
+        }
+        } catch (\Throwable $e) {
+            $this->logError('admin_save', $e);
+            $expert_id_err = (int) ($_POST['expert_id'] ?? 0);
+            if ($expert_id_err > 0) {
+                CMS\Router::instance()->redirect('/admin/experts/edit/' . $expert_id_err . '?error=save');
+            } else {
+                CMS\Router::instance()->redirect('/admin/experts/new?error=save');
+            }
         }
     }
 

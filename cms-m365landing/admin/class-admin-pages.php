@@ -13,8 +13,9 @@ if (!defined('ABSPATH')) {
 
 final class CMS_M365Landing_Admin_Pages
 {
-    public const ADMIN_BASE_URL = '/admin/plugins/m365landing-dashboard';
-    private const MENU_BASE_SLUG = 'm365landing-dashboard';
+    public const ADMIN_BASE_URL = '/admin/plugins/m365landing';
+    private const MENU_BASE_SLUG = 'm365landing';
+    private const LEGACY_MENU_BASE_SLUG = 'm365landing-dashboard';
 
     private static string $dispatchNotice = '';
 
@@ -22,7 +23,7 @@ final class CMS_M365Landing_Admin_Pages
     private static function section_page_slugs(): array
     {
         return [
-            'dashboard' => 'm365landing-dashboard',
+            'dashboard' => 'm365landing',
             'cards' => 'm365landing-cards',
             'settings' => 'm365landing-settings',
             'system' => 'm365landing-system',
@@ -34,26 +35,25 @@ final class CMS_M365Landing_Admin_Pages
         self::check_access();
 
         $callbackMap = [
+            'm365landing' => [self::class, 'render_dashboard'],
             'm365landing-dashboard' => [self::class, 'render_dashboard'],
             'm365landing-cards' => [self::class, 'render_cards'],
             'm365landing-settings' => [self::class, 'render_settings'],
             'm365landing-system' => [self::class, 'render_system'],
         ];
         $defaultSlug = self::section_page_slugs()['dashboard'] ?? 'm365landing-dashboard';
-        $requestedSlug = function_exists('cms_plugin_admin_active_slug')
-            ? cms_plugin_admin_active_slug($defaultSlug)
-            : self::clean_slug((string) ($_GET['page'] ?? $defaultSlug));
+        $requestedSlug = self::resolve_requested_slug($defaultSlug);
+        if ($requestedSlug !== '') {
+            $_GET['page'] = $requestedSlug;
+        }
 
         if (!isset($callbackMap[$requestedSlug])) {
             self::$dispatchNotice = 'Die angeforderte Unterseite ist nicht verfügbar. Dashboard wird angezeigt.';
+            $_GET['page'] = $defaultSlug;
+            $requestedSlug = $defaultSlug;
         }
 
-        if (function_exists('cms_plugin_admin_dispatch_page')) {
-            cms_plugin_admin_dispatch_page($callbackMap, $defaultSlug, self::MENU_BASE_SLUG);
-            return;
-        }
-
-        $callback = $callbackMap[$requestedSlug] ?? $callbackMap[$defaultSlug];
+        $callback = $callbackMap[$requestedSlug] ?? $callbackMap[$defaultSlug] ?? null;
         if (is_callable($callback)) {
             call_user_func($callback);
             return;
@@ -316,11 +316,6 @@ final class CMS_M365Landing_Admin_Pages
             'posts_section_overline', 'posts_section_title', 'posts_section_intro', 'posts_section_mode',
             'separator_label', 'empty_state_title', 'empty_state_text', 'seo_title', 'seo_description',
             'card_button_label_default', 'layout_variant', 'matrix_card_layout', 'areas_card_layout', 'tools_card_layout',
-            'graph_tenant_id', 'graph_client_id', 'graph_client_secret', 'message_center_service_filter',
-            'service_health_section_overline', 'service_health_section_overline_en', 'service_health_section_title', 'service_health_section_title_en',
-            'service_health_section_intro', 'service_health_section_intro_en', 'service_health_empty_text', 'service_health_empty_text_en',
-            'message_center_section_overline', 'message_center_section_overline_en', 'message_center_section_title', 'message_center_section_title_en',
-            'message_center_section_intro', 'message_center_section_intro_en', 'message_center_empty_text', 'message_center_empty_text_en',
         ];
     }
 
@@ -330,7 +325,6 @@ final class CMS_M365Landing_Admin_Pages
         return [
             'show_hero', 'show_hero_actions', 'show_matrix_section', 'show_separator', 'show_areas_section', 'show_tools_section',
             'show_posts_section', 'posts_section_domain_only', 'matrix_card_hide_title', 'areas_card_hide_title', 'tools_card_hide_title',
-            'show_service_health_panel', 'show_message_center_panel',
         ];
     }
 
@@ -363,9 +357,7 @@ final class CMS_M365Landing_Admin_Pages
             'card_image_height' => [90, 420],
             'card_image_width' => [72, 220],
             'posts_section_category_id' => [0, 999999],
-            'posts_section_limit' => [6, 9],
-            'service_health_max_items' => [1, 12],
-            'message_center_max_items' => [1, 12],
+            'posts_section_limit' => [6, 6],
         ];
     }
 
@@ -484,7 +476,7 @@ final class CMS_M365Landing_Admin_Pages
         self::replace_checkbox('show_posts_section', 'Beitragsbereich anzeigen', (string) ($s['show_posts_section'] ?? '0') === '1');
         self::replace_checkbox('posts_section_domain_only', 'Nur auf hinterlegten Zusatzdomains anzeigen', (string) ($s['posts_section_domain_only'] ?? '1') === '1');
         self::select('posts_section_mode', 'Beitragsquelle', self::setting_value($s, 'posts_section_mode', 'category'), ['category' => 'Ausgewählte Kategorie inkl. Unterkategorien', 'all' => 'Alle News / alle veröffentlichten Beiträge']);
-        self::select('posts_section_limit', 'Anzahl Beiträge', self::setting_value($s, 'posts_section_limit', '6'), ['6' => 'Letzte 6 Beiträge', '9' => 'Letzte 9 Beiträge']);
+        self::select('posts_section_limit', 'Anzahl Beiträge', self::setting_value($s, 'posts_section_limit', '6'), ['6' => 'Letzte 6 Beiträge']);
         $categoryOptions = ['0' => '— Kategorie auswählen —'];
         $categories = method_exists($repo, 'post_categories') ? $repo->post_categories() : [];
         foreach ($categories as $category) {
@@ -498,33 +490,6 @@ final class CMS_M365Landing_Admin_Pages
         self::replace_input('posts_section_overline', 'Overline', (string) ($s['posts_section_overline'] ?? ''));
         self::replace_input('posts_section_title', 'Titel', (string) ($s['posts_section_title'] ?? ''));
         self::replace_textarea('posts_section_intro', 'Intro', (string) ($s['posts_section_intro'] ?? ''), 3);
-
-        echo '<hr class="m365landing-separator"><h3 id="graph">🔔 M365 Live-Meldungen (Graph)</h3>';
-        echo '<div class="alert" style="background:#f0f9ff;color:#0c4a6e;border-left:4px solid #0ea5e9;margin-bottom:1.25rem;">ℹ️ Optional: Service-Health-Panel und Message-Center-Highlights werden direkt aus Microsoft Graph geladen. Benötigt eine Azure-App mit Application Permissions für Service Communications.</div>';
-        self::replace_input('graph_tenant_id', 'Tenant-ID', self::setting_value($s, 'graph_tenant_id', ''));
-        self::replace_input('graph_client_id', 'Client-ID', self::setting_value($s, 'graph_client_id', ''));
-        self::replace_input('graph_client_secret', 'Client-Secret', self::setting_value($s, 'graph_client_secret', ''));
-        self::replace_checkbox('show_service_health_panel', 'Service-Health-Panel anzeigen', (string) ($s['show_service_health_panel'] ?? '0') === '1');
-        self::replace_number('service_health_max_items', 'Service-Health Einträge', (int) self::setting_value($s, 'service_health_max_items', '5'), 1, 12);
-        self::replace_input('service_health_section_overline', 'Service-Health Overline (de)', self::setting_value($s, 'service_health_section_overline', 'Live-Status'));
-        self::replace_input('service_health_section_overline_en', 'Service-Health Overline (en)', self::setting_value($s, 'service_health_section_overline_en', 'Live status'));
-        self::replace_input('service_health_section_title', 'Service-Health Titel (de)', self::setting_value($s, 'service_health_section_title', 'Tenant Service Health'));
-        self::replace_input('service_health_section_title_en', 'Service-Health Titel (en)', self::setting_value($s, 'service_health_section_title_en', 'Tenant service health'));
-        self::replace_textarea('service_health_section_intro', 'Service-Health Intro (de)', self::setting_value($s, 'service_health_section_intro', 'Aktuelle Vorfälle und Advisories aus Microsoft 365 Services.'), 2);
-        self::replace_textarea('service_health_section_intro_en', 'Service-Health Intro (en)', self::setting_value($s, 'service_health_section_intro_en', 'Current incidents and advisories from Microsoft 365 services.'), 2);
-        self::replace_textarea('service_health_empty_text', 'Service-Health Hinweis bei leer/Fehler (de)', self::setting_value($s, 'service_health_empty_text', 'Der Service-Health-Feed ist aktuell nicht verfügbar.'), 2);
-        self::replace_textarea('service_health_empty_text_en', 'Service-Health Hinweis bei leer/Fehler (en)', self::setting_value($s, 'service_health_empty_text_en', 'The service health feed is currently unavailable.'), 2);
-        self::replace_checkbox('show_message_center_panel', 'Message-Center-Panel anzeigen', (string) ($s['show_message_center_panel'] ?? '0') === '1');
-        self::replace_number('message_center_max_items', 'Message-Center Einträge', (int) self::setting_value($s, 'message_center_max_items', '5'), 1, 12);
-        self::replace_input('message_center_service_filter', 'Message-Center Service-Filter (optional, z. B. teams, sharepoint)', self::setting_value($s, 'message_center_service_filter', ''));
-        self::replace_input('message_center_section_overline', 'Message-Center Overline (de)', self::setting_value($s, 'message_center_section_overline', 'Änderungsankündigungen'));
-        self::replace_input('message_center_section_overline_en', 'Message-Center Overline (en)', self::setting_value($s, 'message_center_section_overline_en', 'Change announcements'));
-        self::replace_input('message_center_section_title', 'Message-Center Titel (de)', self::setting_value($s, 'message_center_section_title', 'Message Center Highlights'));
-        self::replace_input('message_center_section_title_en', 'Message-Center Titel (en)', self::setting_value($s, 'message_center_section_title_en', 'Message center highlights'));
-        self::replace_textarea('message_center_section_intro', 'Message-Center Intro (de)', self::setting_value($s, 'message_center_section_intro', 'Wichtige angekündigte Änderungen mit Relevanz für Betrieb und Governance.'), 2);
-        self::replace_textarea('message_center_section_intro_en', 'Message-Center Intro (en)', self::setting_value($s, 'message_center_section_intro_en', 'Important upcoming Microsoft 365 changes for operations and governance.'), 2);
-        self::replace_textarea('message_center_empty_text', 'Message-Center Hinweis bei leer/Fehler (de)', self::setting_value($s, 'message_center_empty_text', 'Der Message-Center-Feed ist aktuell nicht verfügbar.'), 2);
-        self::replace_textarea('message_center_empty_text_en', 'Message-Center Hinweis bei leer/Fehler (en)', self::setting_value($s, 'message_center_empty_text_en', 'The message center feed is currently unavailable.'), 2);
 
         echo '<hr class="m365landing-separator"><h3 id="visibility">👁️ Sichtbarkeit</h3>';
         self::replace_checkbox('show_hero', 'Content Header anzeigen', (string) ($s['show_hero'] ?? '1') === '1');
@@ -577,8 +542,6 @@ final class CMS_M365Landing_Admin_Pages
             'card_image_width' => 120,
             'posts_section_category_id' => 0,
             'posts_section_limit' => 6,
-            'service_health_max_items' => 5,
-            'message_center_max_items' => 5,
         ];
 
         return $defaults[$key] ?? 0;
@@ -917,7 +880,7 @@ final class CMS_M365Landing_Admin_Pages
     private static function admin_url(string $section = 'dashboard', array $params = []): string
     {
         $slug = self::section_slug($section);
-        $url = self::ADMIN_BASE_URL . '/' . rawurlencode($slug);
+        $url = self::admin_base_url() . '/' . rawurlencode($slug);
         if ($params !== []) {
             $url .= '?' . http_build_query($params, '', '&', PHP_QUERY_RFC3986);
         }
@@ -940,6 +903,80 @@ final class CMS_M365Landing_Admin_Pages
         }
 
         return trim((string) preg_replace('/[^a-z0-9_-]+/i', '-', strtolower(trim($value))), '-');
+    }
+
+    private static function admin_base_url(): string
+    {
+        return '/admin/plugins/' . rawurlencode(self::current_parent_slug());
+    }
+
+    private static function current_parent_slug(): string
+    {
+        $route = self::parse_plugins_route();
+        $parent = self::clean_slug($route['parent'] ?? '');
+
+        if ($parent === self::LEGACY_MENU_BASE_SLUG) {
+            return self::LEGACY_MENU_BASE_SLUG;
+        }
+
+        return self::MENU_BASE_SLUG;
+    }
+
+    private static function resolve_requested_slug(string $defaultSlug): string
+    {
+        $defaultSlug = self::clean_slug($defaultSlug);
+
+        if (function_exists('cms_plugin_admin_sync_page_from_request')) {
+            cms_plugin_admin_sync_page_from_request(self::MENU_BASE_SLUG, [self::LEGACY_MENU_BASE_SLUG]);
+        }
+
+        $requested = function_exists('cms_plugin_admin_active_slug')
+            ? self::clean_slug((string) cms_plugin_admin_active_slug($defaultSlug))
+            : self::clean_slug((string) ($_GET['page'] ?? ''));
+
+        if ($requested === '') {
+            $route = self::parse_plugins_route();
+            $parent = self::clean_slug($route['parent'] ?? '');
+            $page = self::clean_slug($route['page'] ?? '');
+
+            if (
+                $page !== ''
+                && in_array($parent, [self::MENU_BASE_SLUG, self::LEGACY_MENU_BASE_SLUG], true)
+            ) {
+                $requested = $page;
+            }
+        }
+
+        return $requested !== '' ? $requested : $defaultSlug;
+    }
+
+    /** @return array{parent:string,page:string} */
+    private static function parse_plugins_route(): array
+    {
+        if (function_exists('cms_plugin_admin_parse_plugins_path')) {
+            $parsed = cms_plugin_admin_parse_plugins_path();
+            if (is_array($parsed)) {
+                return [
+                    'parent' => self::clean_slug((string) ($parsed['parent'] ?? '')),
+                    'page' => self::clean_slug((string) ($parsed['page'] ?? '')),
+                ];
+            }
+        }
+
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        $path = (string) parse_url($uri, PHP_URL_PATH);
+        if ($path === '') {
+            return ['parent' => '', 'page' => ''];
+        }
+
+        if (preg_match('#^/admin/plugins/([^/]+)/([^/]+)#i', $path, $matches) !== 1) {
+            return ['parent' => '', 'page' => ''];
+        }
+
+        return [
+            'parent' => self::clean_slug(rawurldecode((string) ($matches[1] ?? ''))),
+            'page' => self::clean_slug(rawurldecode((string) ($matches[2] ?? ''))),
+        ];
     }
 
     private static function page_title(string $section): string

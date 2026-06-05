@@ -218,7 +218,7 @@ final class CMS_Events_Admin
         $settings    = $data['settings']    ?? [];
         $csrf        = (string) ($data['csrf'] ?? '');
         $csrfEsc     = htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8');
-        $eventsAdminBaseUrl = htmlspecialchars((string) SITE_URL . '/admin/events', ENT_QUOTES, 'UTF-8');
+        $eventsAdminBaseUrl = htmlspecialchars('/admin/events', ENT_QUOTES, 'UTF-8');
         $approveCsrf = htmlspecialchars((string) ($data['approve_csrf'] ?? ''), ENT_QUOTES, 'UTF-8');
         $sec         = CMS\Security::instance();
         $listErrorCode = self::query_param_string('error', 40);
@@ -293,7 +293,7 @@ final class CMS_Events_Admin
             </div>
             <div class="header-actions">
                 <a href="<?= SITE_URL ?>/events" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">👁️ Öffentlich</a>
-                <a href="<?= SITE_URL ?>/admin/events/new" class="btn btn-primary">➕ Neues Event</a>
+                <a href="/admin/events/new" class="btn btn-primary">➕ Neues Event</a>
             </div>
         </div>
 
@@ -312,7 +312,7 @@ final class CMS_Events_Admin
                 <?php match($listErrorCode) {
                     'csrf'       => print 'Sicherheitscheck fehlgeschlagen.',
                     'save'       => print 'Datenbank-Fehler beim Speichern.',
-                    'validation' => print 'Pflichtfelder prüfen.',
+                    'validation' => print 'Eingaben prüfen.',
                     default      => print 'Unbekannter Fehler.',
                 }; ?>
             </div>
@@ -391,7 +391,7 @@ final class CMS_Events_Admin
                 <p><strong>Keine Events <?= $filter !== 'all' ? 'in diesem Filter' : '' ?> gefunden.</strong></p>
                 <p class="text-muted">Passe die Filter an oder lege direkt ein neues Event an.</p>
                 <?php if ($filter === 'all'): ?>
-                    <a href="<?= SITE_URL ?>/admin/events/new" class="btn btn-primary">➕ Erstes Event anlegen</a>
+                    <a href="/admin/events/new" class="btn btn-primary">➕ Erstes Event anlegen</a>
                 <?php endif; ?>
             </div>
         <?php else: ?>
@@ -445,7 +445,7 @@ final class CMS_Events_Admin
                         <tr<?= $isDraft ? ' class="ev-row-pending"' : ($isPast ? ' class="ev-row-muted"' : '') ?>>
                             <td>
                                 <div class="ev-table-primary">
-                                    <a href="<?= SITE_URL ?>/admin/events/edit/<?= $id ?>" class="ev-table-title"><?= $title !== '' ? $title : 'Unbenanntes Event' ?></a>
+                                    <a href="/admin/events/edit/<?= $id ?>" class="ev-table-title"><?= $title !== '' ? $title : 'Unbenanntes Event' ?></a>
                                     <div class="ev-table-meta">
                                         <?php if ($category !== ''): ?><span>📂 <?= $category ?></span><?php endif; ?>
                                         <?php if (!empty($ev->organizer_name)): ?><span>🏢 <?= htmlspecialchars((string)$ev->organizer_name, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
@@ -481,7 +481,7 @@ final class CMS_Events_Admin
                             <td>
                                 <div class="ev-row-actions">
                                     <?php if ($isDraft): ?>
-                                        <form method="POST" action="<?= SITE_URL ?>/admin/events/approve/<?= $id ?>" id="ev-approve-form-<?= $id ?>" class="ev-inline-form-compact">
+                                        <form method="POST" action="/admin/events/approve/<?= $id ?>" id="ev-approve-form-<?= $id ?>" class="ev-inline-form-compact">
                                             <input type="hidden" name="csrf_token" value="<?= $approveCsrf ?>">
                                             <button type="button" class="btn btn-sm btn-primary"
                                                     data-ev-approve-event
@@ -499,11 +499,11 @@ final class CMS_Events_Admin
                                            title="Website öffnen"
                                            aria-label="Website von <?= htmlspecialchars($titleRaw !== '' ? $titleRaw : 'Event', ENT_QUOTES, 'UTF-8') ?> öffnen">🌐</a>
                                     <?php endif; ?>
-                                    <a href="<?= SITE_URL ?>/admin/events/edit/<?= $id ?>" class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
+                                    <a href="/admin/events/edit/<?= $id ?>" class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
                                     <button type="button" class="btn btn-sm btn-danger"
                                             data-ev-delete-event
                                             data-ev-event-name="<?= htmlspecialchars($titleRaw, ENT_QUOTES, 'UTF-8') ?>"
-                                            data-ev-delete-action="<?= SITE_URL ?>/admin/events/delete/<?= $id ?>"
+                                            data-ev-delete-action="/admin/events/delete/<?= $id ?>"
                                             title="Löschen">🗑️</button>
                                 </div>
                             </td>
@@ -547,7 +547,7 @@ final class CMS_Events_Admin
                                 <td><code><?= $sec->escape($cat->slug ?? '') ?></code></td>
                                 <td>
                                     <?php if (($cat->id ?? 0) > 0): ?>
-                                        <form method="POST" action="<?= SITE_URL ?>/admin/events/category/delete/<?= (int)$cat->id ?>" class="ev-inline-form-compact"
+                                        <form method="POST" action="/admin/events/category/delete/<?= (int)$cat->id ?>" class="ev-inline-form-compact"
                                               data-ev-confirm-title="Kategorie löschen?"
                                               data-ev-confirm-message="Kategorie „<?= htmlspecialchars((string)($cat->name ?? ''), ENT_QUOTES, 'UTF-8') ?>” wirklich löschen?"
                                               data-ev-confirm-button="Löschen"
@@ -568,7 +568,7 @@ final class CMS_Events_Admin
             </div>
             <div class="ev-side-panel">
                 <h3>➕ Neue Kategorie</h3>
-                <form method="POST" action="<?= SITE_URL ?>/admin/events/category/add" class="admin-form" novalidate>
+                <form method="POST" action="/admin/events/category/add" class="admin-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                     <div class="form-group">
                         <label class="form-label">Icon (Emoji)</label>
@@ -616,7 +616,7 @@ final class CMS_Events_Admin
                             <?php foreach ($tag_presets[$type] ?? [] as $tg): ?>
                                 <span class="ev-tag">
                                     <?= $sec->escape($tg->tag_name) ?>
-                                    <form method="POST" action="<?= SITE_URL ?>/admin/events/tagpreset/delete/<?= (int)$tg->id ?>" class="ev-inline-form-compact"
+                                    <form method="POST" action="/admin/events/tagpreset/delete/<?= (int)$tg->id ?>" class="ev-inline-form-compact"
                                           data-ev-confirm-title="Tag löschen?"
                                           data-ev-confirm-message="Tag „<?= htmlspecialchars((string)($tg->tag_name ?? ''), ENT_QUOTES, 'UTF-8') ?>” wirklich löschen?"
                                           data-ev-confirm-button="Löschen"
@@ -636,7 +636,7 @@ final class CMS_Events_Admin
             </div>
             <div class="ev-side-panel">
                 <h3>➕ Neues Tag</h3>
-                <form method="POST" action="<?= SITE_URL ?>/admin/events/tagpreset/add" class="admin-form" novalidate>
+                <form method="POST" action="/admin/events/tagpreset/add" class="admin-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                     <div class="form-group">
                         <label class="form-label">Tag-Name <span class="ev-required">*</span></label>
@@ -660,7 +660,7 @@ final class CMS_Events_Admin
         // ══════════════════════════════════════════════════════════════════
         elseif ($tab === 'design'):
         ?>
-        <form method="POST" action="<?= SITE_URL ?>/admin/events/settings/save" class="admin-form" novalidate>
+        <form method="POST" action="/admin/events/settings/save" class="admin-form" novalidate>
             <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
             <input type="hidden" name="_from_tab"  value="design">
 
@@ -856,7 +856,7 @@ final class CMS_Events_Admin
         // ══════════════════════════════════════════════════════════════════
         elseif ($tab === 'settings'):
         ?>
-        <form method="POST" action="<?= SITE_URL ?>/admin/events/settings/save" class="admin-form" novalidate>
+        <form method="POST" action="/admin/events/settings/save" class="admin-form" novalidate>
             <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
             <input type="hidden" name="_from_tab"  value="settings">
 
@@ -1117,7 +1117,7 @@ final class CMS_Events_Admin
                           <a href="<?= function_exists('cms_event_url') ? cms_event_url($event) : SITE_URL . '/event/event-' . (int)$event->id ?>"
                               target="_blank" rel="noopener noreferrer" class="btn btn-secondary">&#128065; Ansehen</a>
                 <?php endif; ?>
-                <a href="<?= SITE_URL ?>/admin/events" class="btn btn-secondary">← Zurück</a>
+                <a href="/admin/events" class="btn btn-secondary">← Zurück</a>
             </div>
         </div>
 
@@ -1130,14 +1130,14 @@ final class CMS_Events_Admin
                 <?php match($formErrorCode) {
                     'csrf'       => print ' – Sicherheitscheck fehlgeschlagen.',
                     'save'       => print ' – Datenbank-Fehler.',
-                    'validation' => print ' – Pflichtfeld "Titel" fehlt.',
+                    'validation' => print ' – Eingaben prüfen.',
                     default      => print '.',
                 }; ?>
             </div>
         <?php endif; ?>
 
         <div class="ev-content-max">
-        <form method="POST" action="<?= SITE_URL ?>/admin/events/save" id="ev-main-form" class="admin-form" novalidate>
+        <form method="POST" action="/admin/events/save" id="ev-main-form" class="admin-form" novalidate>
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="event_id"   value="<?= $is_edit ? (int)$event->id : 0 ?>">
 
@@ -1147,11 +1147,11 @@ final class CMS_Events_Admin
 
                 <div class="form-group">
                     <label class="form-label" for="ev_title">
-                        Titel <span class="ev-required">*</span>
+                        Titel
                     </label>
                     <input type="text" id="ev_title" name="title" class="form-control"
                            value="<?= htmlspecialchars((string)($event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                           placeholder="z.B. Cloud Computing Summit 2026" required>
+                           placeholder="z.B. Cloud Computing Summit 2026">
                 </div>
 
                 <div class="form-group">
@@ -1229,10 +1229,10 @@ final class CMS_Events_Admin
                 <div class="ev-grid-auto-date">
                     <div class="form-group">
                         <label class="form-label" for="ev_date">
-                            Startdatum <span class="ev-required">*</span>
+                            Startdatum
                         </label>
                         <input type="date" id="ev_date" name="event_date" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->event_date ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+                               value="<?= htmlspecialchars((string)($event->event_date ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Startzeit</label>
@@ -1430,9 +1430,9 @@ final class CMS_Events_Admin
                         <button type="submit" class="btn btn-primary">
                             <?= $is_edit ? '💾 Änderungen speichern' : '➕ Event anlegen' ?>
                         </button>
-                        <a href="<?= SITE_URL ?>/admin/events" class="btn btn-secondary">Abbrechen</a>
+                        <a href="/admin/events" class="btn btn-secondary">Abbrechen</a>
                     </div>
-                    <span class="form-text">Pflichtfelder (*) müssen ausgefüllt sein.</span>
+                    <span class="form-text">Alle Felder sind optional und können später ergänzt werden.</span>
                 </div>
             </div>
 

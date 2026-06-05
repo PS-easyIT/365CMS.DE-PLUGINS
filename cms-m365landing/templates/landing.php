@@ -71,15 +71,11 @@ $imageDimensions = static function (string $url, int $fallbackWidth, int $fallba
     return [max(1, $fallbackWidth), max(1, $fallbackHeight)];
 };
 $latestPosts = is_array($latestPosts ?? null) ? $latestPosts : [];
-$serviceHealthItems = is_array($serviceHealthItems ?? null) ? $serviceHealthItems : [];
-$serviceHealthError = trim((string) ($serviceHealthError ?? ''));
-$messageCenterItems = is_array($messageCenterItems ?? null) ? $messageCenterItems : [];
-$messageCenterError = trim((string) ($messageCenterError ?? ''));
-$isDomainLandingRequest = !empty($isDomainLandingRequest);
-$showPostsJumpBadge = $isDomainLandingRequest && $latestPosts !== [];
+$postsCategoryUrl = trim((string) ($postsCategoryUrl ?? ''));
+$showPostsCategoryButton = $postsCategoryUrl !== '';
+$messageCenterUrl = $publicLang === 'en' ? '/en/m365-messagecenter' : '/m365-messagecenter';
 $hasAnyCards = !empty($cardsBySection['matrix']) || !empty($cardsBySection['areas']) || !empty($cardsBySection['tools']);
-$hasGraphPanels = $enabled('show_service_health_panel', '0') || $enabled('show_message_center_panel', '0');
-$hasAnyContent = $hasAnyCards || $latestPosts !== [] || $hasGraphPanels;
+$hasAnyContent = $hasAnyCards || $latestPosts !== [];
 
 $renderCard = static function (array $card, string $cardLayout = 'media', bool $hideTitle = false) use ($esc, $buttonLabelDefault, $isExternal, $resolveCardUrl, $imageDimensions, $t): void {
     $url = $resolveCardUrl($card);
@@ -259,9 +255,12 @@ $renderPostCard = static function (array $post) use ($esc, $publicLang, $t): voi
 <main class="phinit-plugin m365landing-page m365landing-layout--<?php echo $esc($layoutVariant); ?>" id="m365landing-page">
     <?php if ($enabled('show_hero')): ?>
     <header class="m365landing-hero" aria-labelledby="m365landing-title">
-        <?php if ($showPostsJumpBadge): ?>
-        <a class="m365landing-posts-jump-badge" href="#m365landing-latest-posts"><?php echo $esc($t('zu den letzten Beiträgen', 'jump to latest posts')); ?></a>
-        <?php endif; ?>
+        <nav class="m365landing-hero-jump" aria-label="<?php echo $esc($t('M365 Schnelllinks', 'M365 quick links')); ?>">
+            <a class="m365landing-posts-jump-badge m365landing-posts-jump-badge--messagecenter" href="<?php echo $esc($messageCenterUrl); ?>"><?php echo $esc($t('zum M365 Message Center', 'to M365 Message Center')); ?></a>
+            <?php if ($showPostsCategoryButton): ?>
+            <a class="m365landing-posts-jump-badge" href="<?php echo $esc($postsCategoryUrl); ?>"><?php echo $esc($t('alle M365 Beiträge', 'all M365 posts')); ?></a>
+            <?php endif; ?>
+        </nav>
         <div class="m365landing-hero__inner<?php echo $heroImageUrl !== '' ? ' m365landing-hero__inner--with-image' : ''; ?>">
             <?php if ($heroImageUrl !== ''): ?>
             <?php [$heroImageWidth, $heroImageHeightAttr] = $imageDimensions($heroImageUrl, 420, $heroImageHeight); ?>
@@ -310,104 +309,6 @@ $renderPostCard = static function (array $post) use ($esc, $publicLang, $t): voi
 
     <?php if ($enabled('show_tools_section')): ?>
         <?php $renderSection('tools', 'm365landing-section--tools', $cardsBySection['tools'] ?? []); ?>
-    <?php endif; ?>
-
-    <?php if ($enabled('show_service_health_panel', '0')): ?>
-        <?php
-        $serviceOverline = $i18nValue('service_health_section_overline', $t('Live-Status', 'Live status'));
-        $serviceTitle = $i18nValue('service_health_section_title', $t('Tenant Service Health', 'Tenant service health'));
-        $serviceIntro = $i18nValue('service_health_section_intro', $t('Aktuelle Vorfälle und Advisories aus Microsoft 365 Services.', 'Current incidents and advisories from Microsoft 365 services.'));
-        $serviceEmpty = $i18nValue('service_health_empty_text', $t('Der Service-Health-Feed ist aktuell nicht verfügbar.', 'The service health feed is currently unavailable.'));
-        ?>
-    <section class="m365landing-section m365landing-section--service-health" aria-labelledby="m365landing-service-health-title">
-        <?php if ($serviceOverline !== '' || $serviceTitle !== '' || $serviceIntro !== ''): ?>
-        <div class="m365landing-section__head">
-            <?php if ($serviceOverline !== ''): ?>
-            <p class="phinit-overline m365landing-overline"><?php echo $esc($serviceOverline); ?></p>
-            <?php endif; ?>
-            <?php if ($serviceTitle !== ''): ?>
-            <h2 id="m365landing-service-health-title"><?php echo $esc($serviceTitle); ?></h2>
-            <?php endif; ?>
-            <?php if ($serviceIntro !== ''): ?>
-            <p class="m365landing-section__intro"><?php echo $esc($serviceIntro); ?></p>
-            <?php endif; ?>
-        </div>
-        <?php endif; ?>
-        <?php if ($serviceHealthItems !== []): ?>
-        <div class="m365landing-status-list" role="list">
-            <?php foreach ($serviceHealthItems as $item): ?>
-                <?php
-                $itemTitle = trim((string) ($item['title'] ?? ''));
-                $itemTitle = $itemTitle !== '' ? $itemTitle : $t('Ohne Titel', 'Untitled');
-                $itemService = trim((string) ($item['service'] ?? ''));
-                $itemState = trim((string) ($item['status'] ?? ''));
-                $itemClass = trim((string) ($item['classification'] ?? ''));
-                ?>
-            <article class="m365landing-status-card" role="listitem">
-                <h3><?php echo $esc($itemTitle); ?></h3>
-                <p class="m365landing-status-card__meta">
-                    <?php if ($itemService !== ''): ?><span><?php echo $esc($itemService); ?></span><?php endif; ?>
-                    <?php if ($itemState !== ''): ?><span><?php echo $esc($itemState); ?></span><?php endif; ?>
-                    <?php if ($itemClass !== ''): ?><span><?php echo $esc($itemClass); ?></span><?php endif; ?>
-                </p>
-            </article>
-            <?php endforeach; ?>
-        </div>
-        <?php else: ?>
-        <p class="m365landing-status-empty"><?php echo $esc($serviceEmpty); ?></p>
-        <?php endif; ?>
-    </section>
-    <?php endif; ?>
-
-    <?php if ($enabled('show_message_center_panel', '0')): ?>
-        <?php
-        $messageOverline = $i18nValue('message_center_section_overline', $t('Änderungsankündigungen', 'Change announcements'));
-        $messageTitle = $i18nValue('message_center_section_title', $t('Message Center Highlights', 'Message center highlights'));
-        $messageIntro = $i18nValue('message_center_section_intro', $t('Wichtige angekündigte Änderungen mit Relevanz für Betrieb und Governance.', 'Important upcoming Microsoft 365 changes for operations and governance.'));
-        $messageEmpty = $i18nValue('message_center_empty_text', $t('Der Message-Center-Feed ist aktuell nicht verfügbar.', 'The message center feed is currently unavailable.'));
-        ?>
-    <section class="m365landing-section m365landing-section--message-center" aria-labelledby="m365landing-message-center-title">
-        <?php if ($messageOverline !== '' || $messageTitle !== '' || $messageIntro !== ''): ?>
-        <div class="m365landing-section__head">
-            <?php if ($messageOverline !== ''): ?>
-            <p class="phinit-overline m365landing-overline"><?php echo $esc($messageOverline); ?></p>
-            <?php endif; ?>
-            <?php if ($messageTitle !== ''): ?>
-            <h2 id="m365landing-message-center-title"><?php echo $esc($messageTitle); ?></h2>
-            <?php endif; ?>
-            <?php if ($messageIntro !== ''): ?>
-            <p class="m365landing-section__intro"><?php echo $esc($messageIntro); ?></p>
-            <?php endif; ?>
-        </div>
-        <?php endif; ?>
-        <?php if ($messageCenterItems !== []): ?>
-        <div class="m365landing-status-list" role="list">
-            <?php foreach ($messageCenterItems as $item): ?>
-                <?php
-                $itemTitle = trim((string) ($item['title'] ?? ''));
-                $itemTitle = $itemTitle !== '' ? $itemTitle : $t('Ohne Titel', 'Untitled');
-                $itemCategory = trim((string) ($item['category'] ?? ''));
-                $itemServices = [];
-                foreach ((array) ($item['services'] ?? []) as $service) {
-                    $service = trim((string) $service);
-                    if ($service !== '') {
-                        $itemServices[] = $service;
-                    }
-                }
-                ?>
-            <article class="m365landing-status-card" role="listitem">
-                <h3><?php echo $esc($itemTitle); ?></h3>
-                <p class="m365landing-status-card__meta">
-                    <?php if ($itemCategory !== ''): ?><span><?php echo $esc($itemCategory); ?></span><?php endif; ?>
-                    <?php if ($itemServices !== []): ?><span><?php echo $esc(implode(' · ', $itemServices)); ?></span><?php endif; ?>
-                </p>
-            </article>
-            <?php endforeach; ?>
-        </div>
-        <?php else: ?>
-        <p class="m365landing-status-empty"><?php echo $esc($messageEmpty); ?></p>
-        <?php endif; ?>
-    </section>
     <?php endif; ?>
 
     <?php if ($latestPosts !== []): ?>

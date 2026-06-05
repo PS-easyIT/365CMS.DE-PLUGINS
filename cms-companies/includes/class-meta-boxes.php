@@ -63,9 +63,9 @@ final class CMS_Companies_Meta_Boxes
             <h3>🏢 Unternehmensinformationen</h3>
 
             <div class="form-group">
-                <label class="form-label">Firmenname <span style="color:#ef4444;">*</span></label>
+                  <label class="form-label">Firmenname</label>
                 <input type="text" name="name" class="form-control"
-                       value="<?= $sec->escape($name) ?>" required
+                      value="<?= $sec->escape($name) ?>"
                        placeholder="Name des Unternehmens">
             </div>
 
@@ -170,10 +170,10 @@ final class CMS_Companies_Meta_Boxes
             <h3>📬 Kontaktinformationen</h3>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
                 <div class="form-group">
-                    <label class="form-label">E-Mail-Adresse <span style="color:#ef4444;">*</span></label>
+                      <label class="form-label">E-Mail-Adresse</label>
                     <input type="email" name="email" class="form-control"
                            value="<?= $sec->escape($email) ?>"
-                           required placeholder="kontakt@beispiel.de">
+                          placeholder="kontakt@beispiel.de">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Telefon</label>

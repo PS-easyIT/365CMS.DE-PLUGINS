@@ -923,7 +923,7 @@ final class CMS_Companies_Admin
             <div class="alert alert-error">✕ Fehler beim Speichern
                 <?php if ((string) $_GET['error'] === 'csrf'): ?> &ndash; Sicherheitscheck fehlgeschlagen. Bitte Seite neu laden.
                 <?php elseif ((string) $_GET['error'] === 'save'): ?> &ndash; Datenbank-Fehler. Bitte Log prüfen.
-                <?php else: ?> &ndash; Bitte Pflichtfelder prüfen.
+                <?php else: ?> &ndash; Bitte Eingaben prüfen.
                 <?php endif; ?>
             </div>
         <?php endif; ?>
@@ -943,7 +943,7 @@ final class CMS_Companies_Admin
                             </button>
                             <a href="<?= htmlspecialchars($this->admin_url('overview'), ENT_QUOTES, 'UTF-8') ?>" class="btn btn-secondary">Abbrechen</a>
                         </div>
-                        <span class="form-text">Alle Pflichtfelder (*) müssen ausgefüllt sein.</span>
+                        <span class="form-text">Alle Felder sind optional und können später ergänzt werden.</span>
                     </div>
                 </div>
             </form>

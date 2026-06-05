@@ -402,80 +402,90 @@ final class CMS_Companies_Post_Type
             return;
         }
 
-        $sec  = CMS\Security::instance();
+        try {
+            $sec  = CMS\Security::instance();
 
-        // Beschreibung: HTML-Sanitierung + Inline-Style-Attribute entfernen.
-        // html_entity_decode() als Schutt: falls Browser/Editor die Entities
-        // bereits kodiert übermittelt hat, wird das vor dem Sanitize rückgängig gemacht.
-        $desc_raw = html_entity_decode((string) ($_POST['description'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        if (class_exists('\CMS\Services\EditorService')) {
-            $desc_raw = \CMS\Services\EditorService::getInstance()->sanitize($desc_raw);
-        } else {
-            $desc_raw = strip_tags($desc_raw);
-        }
-        $description = preg_replace('/\s+style\s*=\s*(?:"[^"]*"|\x27[^\x27]*\x27)/i', '', $desc_raw) ?? $desc_raw;
-        $description = mb_substr($description, 0, 10000);
-
-        $industryInput = $sec->sanitize($_POST['industry'] ?? '', 'text');
-        $allowedIndustries = [];
-        foreach (CMS_Companies_Database::instance()->get_all_industries() as $industryOption) {
-            $slug = trim((string) ($industryOption->slug ?? ''));
-            $name = trim((string) ($industryOption->name ?? ''));
-            if ($slug !== '') {
-                $allowedIndustries[] = $slug;
+            // Beschreibung: HTML-Sanitierung + Inline-Style-Attribute entfernen.
+            // html_entity_decode() als Schutt: falls Browser/Editor die Entities
+            // bereits kodiert übermittelt hat, wird das vor dem Sanitize rückgängig gemacht.
+            $desc_raw = html_entity_decode((string) ($_POST['description'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if (class_exists('\CMS\Services\EditorService')) {
+                $desc_raw = \CMS\Services\EditorService::getInstance()->sanitize($desc_raw);
+            } else {
+                $desc_raw = strip_tags($desc_raw);
             }
-            if ($name !== '') {
-                $allowedIndustries[] = $name;
+            $description = preg_replace('/\s+style\s*=\s*(?:"[^"]*"|\x27[^\x27]*\x27)/i', '', $desc_raw) ?? $desc_raw;
+            $description = mb_substr($description, 0, 10000);
+
+            $industryInput = $sec->sanitize($_POST['industry'] ?? '', 'text');
+            $allowedIndustries = [];
+            foreach (CMS_Companies_Database::instance()->get_all_industries() as $industryOption) {
+                $slug = trim((string) ($industryOption->slug ?? ''));
+                $name = trim((string) ($industryOption->name ?? ''));
+                if ($slug !== '') {
+                    $allowedIndustries[] = $slug;
+                }
+                if ($name !== '') {
+                    $allowedIndustries[] = $name;
+                }
             }
-        }
-        $industry = in_array($industryInput, $allowedIndustries, true) ? $industryInput : '';
-        $foundedYear = !empty($_POST['founded_year']) ? (int) $_POST['founded_year'] : null;
-        $currentYear = (int) date('Y');
-        if ($foundedYear !== null && ($foundedYear < 1800 || $foundedYear > $currentYear)) {
-            $foundedYear = null;
-        }
-        $employeeCount = !empty($_POST['employee_count']) ? max(0, (int) $_POST['employee_count']) : null;
-        $website = function_exists('cms_companies_public_url')
-            ? cms_companies_public_url((string) ($_POST['website'] ?? ''))
-            : (string) $sec->sanitize($_POST['website'] ?? '', 'url');
-        $logoUrl = function_exists('cms_companies_public_url')
-            ? cms_companies_public_url((string) ($_POST['logo_url'] ?? ''))
-            : (string) $sec->sanitize($_POST['logo_url'] ?? '', 'url');
+            $industry = in_array($industryInput, $allowedIndustries, true) ? $industryInput : '';
+            $foundedYear = !empty($_POST['founded_year']) ? (int) $_POST['founded_year'] : null;
+            $currentYear = (int) date('Y');
+            if ($foundedYear !== null && ($foundedYear < 1800 || $foundedYear > $currentYear)) {
+                $foundedYear = null;
+            }
+            $employeeCount = !empty($_POST['employee_count']) ? max(0, (int) $_POST['employee_count']) : null;
+            $website = function_exists('cms_companies_public_url')
+                ? cms_companies_public_url((string) ($_POST['website'] ?? ''))
+                : (string) $sec->sanitize($_POST['website'] ?? '', 'url');
+            $logoUrl = function_exists('cms_companies_public_url')
+                ? cms_companies_public_url((string) ($_POST['logo_url'] ?? ''))
+                : (string) $sec->sanitize($_POST['logo_url'] ?? '', 'url');
 
-        $data = [
-            'id'               => (int)($_POST['company_id'] ?? 0),
-            'name'             => $sec->sanitize($_POST['name']             ?? '', 'text'),
-            'email'            => $sec->sanitize($_POST['email']            ?? '', 'email'),
-            'phone'            => $sec->sanitize($_POST['phone']            ?? '', 'text'),
-            'industry'         => $industry,
-            'company_size'     => $sec->sanitize($_POST['company_size']     ?? '', 'text'),
-            'description'      => $description,
-            'website'          => $website ?: null,
-            'location_city'    => $sec->sanitize($_POST['location_city']    ?? '', 'text'),
-            'location_zip'     => $sec->sanitize($_POST['location_zip']     ?? '', 'text'),
-            'location_country' => $sec->sanitize($_POST['location_country'] ?? '', 'text'),
-            'founded_year'     => $foundedYear,
-            'employee_count'   => $employeeCount,
-            // Checkboxen ohne Hidden-Feld: isset() prüft ob das Feld gesendet wurde
-            'is_partner'       => isset($_POST['is_partner'])     ? 1 : 0,
-            'is_top_partner'   => isset($_POST['is_top_partner']) ? 1 : 0,
-            'is_sponsor'       => isset($_POST['is_sponsor'])     ? 1 : 0,
-            'logo_url'         => $logoUrl ?: null,
-            'status'           => in_array($_POST['company_status'] ?? 'active', ['active', 'inactive'], true)
-                                  ? $_POST['company_status'] : 'active',
-        ];
+            $data = [
+                'id'               => (int)($_POST['company_id'] ?? 0),
+                'name'             => $sec->sanitize($_POST['name']             ?? '', 'text'),
+                'email'            => $sec->sanitize($_POST['email']            ?? '', 'email'),
+                'phone'            => $sec->sanitize($_POST['phone']            ?? '', 'text'),
+                'industry'         => $industry,
+                'company_size'     => $sec->sanitize($_POST['company_size']     ?? '', 'text'),
+                'description'      => $description,
+                'website'          => $website ?: null,
+                'location_city'    => $sec->sanitize($_POST['location_city']    ?? '', 'text'),
+                'location_zip'     => $sec->sanitize($_POST['location_zip']     ?? '', 'text'),
+                'location_country' => $sec->sanitize($_POST['location_country'] ?? '', 'text'),
+                'founded_year'     => $foundedYear,
+                'employee_count'   => $employeeCount,
+                // Checkboxen ohne Hidden-Feld: isset() prüft ob das Feld gesendet wurde
+                'is_partner'       => isset($_POST['is_partner'])     ? 1 : 0,
+                'is_top_partner'   => isset($_POST['is_top_partner']) ? 1 : 0,
+                'is_sponsor'       => isset($_POST['is_sponsor'])     ? 1 : 0,
+                'logo_url'         => $logoUrl ?: null,
+                'status'           => in_array($_POST['company_status'] ?? 'active', ['active', 'inactive'], true)
+                                      ? $_POST['company_status'] : 'active',
+            ];
 
-        $original_id = (int)($_POST['company_id'] ?? 0);
-        $db_manager  = CMS_Companies_Database::instance();
-        $company_id  = $db_manager->save_company($data);
+            $original_id = (int)($_POST['company_id'] ?? 0);
+            $db_manager  = CMS_Companies_Database::instance();
+            $company_id  = $db_manager->save_company($data);
 
-        if ($company_id > 0) {
-            CMS\Router::instance()->redirect('/admin/companies/edit/' . $company_id . '?success=1');
-        } elseif ($original_id > 0) {
-            // Update fehlgeschlagen – zurück zur Edit-Seite mit Fehlerhinweis
-            CMS\Router::instance()->redirect('/admin/companies/edit/' . $original_id . '?error=save');
-        } else {
-            CMS\Router::instance()->redirect('/admin/companies/new?error=1');
+            if ($company_id > 0) {
+                CMS\Router::instance()->redirect('/admin/companies/edit/' . $company_id . '?success=1');
+            } elseif ($original_id > 0) {
+                // Update fehlgeschlagen – zurück zur Edit-Seite mit Fehlerhinweis
+                CMS\Router::instance()->redirect('/admin/companies/edit/' . $original_id . '?error=save');
+            } else {
+                CMS\Router::instance()->redirect('/admin/companies/new?error=save');
+            }
+        } catch (\Throwable $e) {
+            $this->log_error('admin_save', $e);
+            $company_id_err = (int)($_POST['company_id'] ?? 0);
+            if ($company_id_err > 0) {
+                CMS\Router::instance()->redirect('/admin/companies/edit/' . $company_id_err . '?error=save');
+            } else {
+                CMS\Router::instance()->redirect('/admin/companies/new?error=save');
+            }
         }
     }
 

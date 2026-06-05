@@ -48,13 +48,12 @@ final class CMS_Events_Meta_Boxes
         <div class="meta-box event-basic-info">
             <h3>Event-Informationen</h3>
             <div class="form-group">
-                <label for="title">Event-Titel <span class="required">*</span></label>
+                <label for="title">Event-Titel</label>
                 <input 
                     type="text" 
                     id="title" 
                     name="title" 
                     value="<?= CMS\Security::instance()->escape($title) ?>" 
-                    required 
                     class="form-control"
                     placeholder="z.B. Cloud Computing Summit 2026"
                 />
@@ -107,13 +106,12 @@ final class CMS_Events_Meta_Boxes
             <h3>Datum & Uhrzeit</h3>
             <div class="form-row">
                 <div class="form-group col-md-6">
-                    <label for="event_date">Startdatum <span class="required">*</span></label>
+                    <label for="event_date">Startdatum</label>
                     <input 
                         type="date" 
                         id="event_date" 
                         name="event_date" 
                         value="<?= CMS\Security::instance()->escape($event_date) ?>" 
-                        required 
                         class="form-control"
                     />
                 </div>
@@ -297,9 +295,9 @@ final class CMS_Events_Meta_Boxes
         $available  = $db->get_available_speakers();
         $csrf       = CMS\Security::instance()->generateToken('event_speaker');
         ?>
-        <div class="admin-card" id="ev-speaker-box"
-             data-ev-speaker-endpoint-add="<?= SITE_URL ?>/admin/events/speaker/add"
-             data-ev-speaker-endpoint-remove-base="<?= SITE_URL ?>/admin/events/speaker/remove/"
+           <div class="admin-card" id="ev-speaker-box"
+               data-ev-speaker-endpoint-add="/admin/events/speaker/add"
+               data-ev-speaker-endpoint-remove-base="/admin/events/speaker/remove/"
              data-ev-speaker-csrf="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>"
              data-ev-speaker-event-id="<?= $event_id ?>"
              data-ev-speaker-empty-message="Noch keine Person zugeordnet.">

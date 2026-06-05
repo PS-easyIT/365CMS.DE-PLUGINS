@@ -1,6 +1,6 @@
 ﻿# CMS Events Manager Plugin
 
-**Version:** 3.0.31
+**Version:** 3.0.33
 **Requires:** 365CMS 3.0+  
 **PHP:** 8.4+
 
@@ -124,6 +124,7 @@ Templates can be added to the `templates/` directory:
 - Version `3.0.27` setzt in der Public-Events-Filterleiste einen primären „Suchen“-Button als Hauptaktion; Zurücksetzen bleibt gezielt im Empty-State.
 - Version `3.0.28` begrenzt die Public-Events-Detailseite auf maximal `1160px`, hält die Hintergrund-Shell bündig zum Theme, füllt kurze Seiten bis zum Footer und sichert Responsive Layout sowie Dark Mode ab.
 - Version `3.0.29` baut die Event-Detailseite nach der PHINIT-HTML-Preview neu: Navy/Amber-Hero mit Datebox, Status, Agenda aus `cms_event_speakers.presentation_title/session_time/role`, Speaker-Lineup, Teilnahme-/Social-/Details-/Venue-/Related-Sidebar, lokaler YAML-Übersetzungsfallback und Inline-SVGs statt Icon-Font. Nicht direkt vorhandene Preview-Felder wie separate Agenda-Abschnitte, Sprache und Anmeldeschluss werden nicht erfunden; Sprache fällt auf den lokalen Default zurück.
+- Version `3.0.33` härtet den Admin-Save-Pfad für Event-Bearbeiten/Speichern: EditorService-/Sanitizer-Ausnahmen und DB-Updatefehler werden abgefangen, leere Adminfelder bekommen sichere Fallbacks und führen nicht mehr zu 500-Serverfehlern.
 - Bootstrap und Include-Dateien sind gegen doppelte Ladepfade/klassische Redeclare-Fatals abgesichert.
 - DB-Migrationen nutzen `INFORMATION_SCHEMA` statt `SHOW COLUMNS`, Foreign Keys werden idempotent und nicht-blockierend ergänzt.
 - Plugin-Settings werden primär über den 365CMS `SettingsService` gelesen/geschrieben; die alte `event_settings`-Tabelle bleibt nur als kompatibler Fallback.

@@ -1,0 +1,15 @@
+{
+  "slug": "cms-m365messagecenter",
+  "name": "CMS M365 Message Center",
+  "version": "1.0.2",
+  "requires": "2.9.0",
+  "tested": "2.9.7",
+  "author": "365 Network",
+  "homepage": "https://365network.de/cms-m365messagecenter",
+  "download_url": "https://365network.de/releases/cms-m365messagecenter-1.0.2.zip",
+  "last_updated": "2026-06-05",
+  "sections": {
+    "description": "Eigenständiges Microsoft-365-Message-Center-Plugin mit deutschem Graph-Abruf, täglichem 12-Uhr-Cron, lokalem Cache, 200-Wort-Archivkarten und Detailseiten.",
+    "changelog": "### 1.0.2\n- Public-Abstand zwischen Theme-Header/Footer und Plugin-Content auf maximal 25px begrenzt.\n- Archivkarten kürzen Meldungsauszüge nach 200 Wörtern mit `...` und verlinken auf Detailseiten.\n- Detailroute `/{route_slug}/{messageId}` ergänzt und vollständigen Klartext-Body im lokalen Cache gespeichert.\n\n### 1.0.1\n- Publicsite mit modernem Hero, Statuspanel, Filterkopf und überarbeiteten Meldungskarten gestaltet.\n- Microsoft Graph wird standardmäßig mit deutscher Sprache `de-DE` angefragt.\n- Automatischer Abruf per `cron.php` ergänzt: einmal täglich ab 12:00 Uhr über `cms_cron_hourly`, plus direkter Hook `cms_cron_m365messagecenter`.\n\n### 1.0.0\n- Eigenständiges Plugin aus der bisherigen M365-Landing-Graph-Funktion herausgelöst.\n- Microsoft Graph Message Center wird per Least-Privilege `ServiceMessage.Read.All` im Adminbereich abgerufen und lokal gecacht.\n- Publicsite liest ausschließlich den Cache und bietet Suche, Service-/Kategorie-Filter, Sortierung, Richtung und Pagination."
+  }
+}

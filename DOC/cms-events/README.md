@@ -1,7 +1,7 @@
 # CMS Events – Dokumentation
 
 **Plugin:** `cms-events`  
-**Version:** 3.0.31
+**Version:** 3.0.33
 **Namespace:** `CMS_Events`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
 **Audit-/Dokustand:** PHINIT-Preview-Detailseite am 2026-05-31
@@ -37,6 +37,7 @@ Das **CMS Events**-Plugin verwaltet Veranstaltungen – von Webinaren bis zu Kon
 - Version `3.0.28` begrenzt die Public-Events-Detailseite auf maximal `1160px`, hält die Hintergrund-Shell bündig zum Theme, füllt kurze Seiten bis zum Footer und sichert Responsive Layout sowie Dark Mode ab.
 - Version `3.0.29` ersetzt die Event-Detailseite durch das PHINIT-Preview-Layout mit Navy/Amber-Hero, Datebox, Status, Agenda aus zugeordneten Speaker-Sessiondaten, Speaker-Lineup, Teilnahme-/Social-/Details-/Venue-/Related-Sidebar, Inline-SVGs statt Icon-Font und lokalem YAML-Übersetzungsfallback.
 - Version `3.0.30` entfernt den externen Tabler-Icons-CDN-Fallback und lädt die Icon-Kompatibilität ausschließlich über das lokale Core-Asset `/assets/tabler-icons/tabler-icons.min.css`.
+- Version `3.0.33` härtet den Admin-Save-Pfad für Event-Bearbeiten/Speichern: EditorService-/Sanitizer-Ausnahmen und DB-Updatefehler werden abgefangen, leere Adminfelder bekommen sichere Fallbacks und führen nicht mehr zu 500-Serverfehlern.
 - Bootstrap, Include-Klassen und Lifecycle-Hooks sind idempotent und gegen Redeclare-Fatals abgesichert.
 - Datenbankmigrationen nutzen `INFORMATION_SCHEMA`, erstellen die Settings-Tabelle im Installer und ergänzen Foreign Keys nicht-blockierend.
 - Öffentliche Fehlerpfade nutzen die 365CMS-404/Error-Fallbacks und protokollieren technische Details serverseitig.

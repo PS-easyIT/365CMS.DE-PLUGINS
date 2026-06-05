@@ -649,81 +649,100 @@ final class CMS_Events_Post_Type
             return;
         }
 
+        $event_id = (int)($_POST['event_id'] ?? 0);
         $csrf_token = (string) ($_POST['csrf_token'] ?? '');
         if (!CMS\Security::instance()->verifyToken($csrf_token, 'save_event')) {
-            CMS\Router::instance()->redirect('/admin/events?error=csrf');
-            return;
-        }
-
-        $event_id   = (int)($_POST['event_id'] ?? 0);
-        $db_manager = CMS_Events_Database::instance();
-
-        // Beschreibung: HTML-Sanitierung + Inline-Style-Attribute entfernen.
-        // html_entity_decode() als Schutz: falls Entities bereits kodiert übermittelt wurden.
-        $desc_raw    = html_entity_decode((string) ($_POST['description'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        if (class_exists('CMS\\Services\\EditorService')) {
-            $desc_raw = \CMS\Services\EditorService::getInstance()->sanitize($desc_raw);
-        } else {
-            $desc_raw = strip_tags($desc_raw, '<p><a><strong><em><ul><ol><li><br><blockquote><h2><h3>');
-        }
-        $description = preg_replace('/\s+style\s*=\s*(?:"[^"]*"|\x27[^\x27]*\x27)/i', '', $desc_raw) ?? $desc_raw;
-
-        $allowed_statuses = ['draft', 'published', 'cancelled', 'completed'];
-        $allowed_price_types = ['free', 'paid', 'donation'];
-        $status = in_array($_POST['status'] ?? '', $allowed_statuses, true) ? (string) $_POST['status'] : 'published';
-        $price_type = in_array($_POST['price_type'] ?? '', $allowed_price_types, true) ? (string) $_POST['price_type'] : 'free';
-
-        $data = [
-            'title'             => $this->sanitize_required_text($_POST['title'] ?? '', 255),
-            'excerpt'           => $this->sanitize_text_param($_POST['excerpt'] ?? '', 500) ?? '',
-            'description'       => $description,
-            'event_date'        => $this->sanitize_date($_POST['event_date'] ?? null),
-            'event_time'        => $this->sanitize_time($_POST['event_time'] ?? null),
-            'end_date'          => $this->sanitize_date($_POST['end_date'] ?? null),
-            'end_time'          => $this->sanitize_time($_POST['end_time'] ?? null),
-            'location'          => $this->sanitize_text_param($_POST['location'] ?? '', 255) ?? '',
-            'address'           => $this->sanitize_text_param($_POST['address'] ?? '', 500) ?? '',
-            'city'              => $this->sanitize_text_param($_POST['city'] ?? '', 100) ?? '',
-            'zip'               => $this->sanitize_text_param($_POST['zip'] ?? '', 20) ?? '',
-            'country'           => $this->sanitize_text_param($_POST['country'] ?? 'Deutschland', 100) ?? 'Deutschland',
-            'category'          => $this->sanitize_text_param($_POST['category'] ?? '', 100) ?? '',
-            'tags'              => isset($_POST['tags']) && is_array($_POST['tags'])
-                                    ? array_values(array_filter(array_map(fn($tag) => $this->sanitize_text_param($tag, 80) ?? '', $_POST['tags'])))
-                                    : [],
-            'capacity'          => max(0, (int)($_POST['capacity'] ?? 0)) ?: null,
-            'registration_url'  => $this->sanitize_public_url($_POST['registration_url'] ?? ''),
-            'price_type'        => $price_type,
-            'price'             => !empty($_POST['price']) ? max(0.0, (float)$_POST['price']) : null,
-            'price_currency'    => $this->sanitize_currency($_POST['price_currency'] ?? 'EUR'),
-            'image_url'         => $this->sanitize_public_url($_POST['image_url'] ?? ''),
-            'banner_url'        => $this->sanitize_public_url($_POST['banner_url'] ?? ''),
-            'is_online'         => isset($_POST['is_online'])   ? 1 : 0,
-            'online_url'        => $this->sanitize_public_url($_POST['online_url'] ?? ''),
-            'is_featured'       => isset($_POST['is_featured']) ? 1 : 0,
-            'organizer_name'    => $this->sanitize_text_param($_POST['organizer_name'] ?? '', 255) ?? '',
-            'organizer_email'   => filter_var(trim((string) ($_POST['organizer_email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '',
-            'organizer_phone'   => $this->sanitize_text_param($_POST['organizer_phone'] ?? '', 50) ?? '',
-            'organizer_website' => $this->sanitize_public_url($_POST['organizer_website'] ?? ''),
-            'status'            => $status,
-        ];
-
-        if (empty($data['title'])) {
-            CMS\Router::instance()->redirect('/admin/events' . ($event_id > 0 ? '/edit/' . $event_id : '/new') . '?error=validation');
+            CMS\Router::instance()->redirect($this->admin_event_form_error_path($event_id, 'csrf'));
             return;
         }
 
         try {
+            $db_manager = CMS_Events_Database::instance();
+            $description = $this->sanitize_event_description($_POST['description'] ?? '');
+
+            $allowed_statuses = ['draft', 'published', 'cancelled', 'completed'];
+            $allowed_price_types = ['free', 'paid', 'donation'];
+            $status = in_array($_POST['status'] ?? '', $allowed_statuses, true) ? (string) $_POST['status'] : 'published';
+            $price_type = in_array($_POST['price_type'] ?? '', $allowed_price_types, true) ? (string) $_POST['price_type'] : 'free';
+
+            $data = [
+                'title'             => $this->sanitize_required_text($_POST['title'] ?? '', 255),
+                'excerpt'           => $this->sanitize_text_param($_POST['excerpt'] ?? '', 500) ?? '',
+                'description'       => $description,
+                'event_date'        => $this->sanitize_date($_POST['event_date'] ?? null),
+                'event_time'        => $this->sanitize_time($_POST['event_time'] ?? null),
+                'end_date'          => $this->sanitize_date($_POST['end_date'] ?? null),
+                'end_time'          => $this->sanitize_time($_POST['end_time'] ?? null),
+                'location'          => $this->sanitize_text_param($_POST['location'] ?? '', 255) ?? '',
+                'address'           => $this->sanitize_text_param($_POST['address'] ?? '', 500) ?? '',
+                'city'              => $this->sanitize_text_param($_POST['city'] ?? '', 100) ?? '',
+                'zip'               => $this->sanitize_text_param($_POST['zip'] ?? '', 20) ?? '',
+                'country'           => $this->sanitize_text_param($_POST['country'] ?? 'Deutschland', 100) ?? 'Deutschland',
+                'category'          => $this->sanitize_text_param($_POST['category'] ?? '', 100) ?? '',
+                'tags'              => isset($_POST['tags']) && is_array($_POST['tags'])
+                                        ? array_values(array_filter(array_map(fn($tag) => $this->sanitize_text_param($tag, 80) ?? '', $_POST['tags'])))
+                                        : [],
+                'capacity'          => max(0, (int)($_POST['capacity'] ?? 0)) ?: null,
+                'registration_url'  => $this->sanitize_public_url($_POST['registration_url'] ?? ''),
+                'price_type'        => $price_type,
+                'price'             => !empty($_POST['price']) ? max(0.0, (float)$_POST['price']) : null,
+                'price_currency'    => $this->sanitize_currency($_POST['price_currency'] ?? 'EUR'),
+                'image_url'         => $this->sanitize_public_url($_POST['image_url'] ?? ''),
+                'banner_url'        => $this->sanitize_public_url($_POST['banner_url'] ?? ''),
+                'is_online'         => isset($_POST['is_online'])   ? 1 : 0,
+                'online_url'        => $this->sanitize_public_url($_POST['online_url'] ?? ''),
+                'is_featured'       => isset($_POST['is_featured']) ? 1 : 0,
+                'organizer_name'    => $this->sanitize_text_param($_POST['organizer_name'] ?? '', 255) ?? '',
+                'organizer_email'   => filter_var(trim((string) ($_POST['organizer_email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '',
+                'organizer_phone'   => $this->sanitize_text_param($_POST['organizer_phone'] ?? '', 50) ?? '',
+                'organizer_website' => $this->sanitize_public_url($_POST['organizer_website'] ?? ''),
+                'status'            => $status,
+            ];
+
+            if ($data['title'] === '') {
+                $data['title'] = 'Unbenanntes Event';
+            }
+            if (empty($data['event_date'])) {
+                $data['event_date'] = date('Y-m-d');
+            }
+
             if ($event_id > 0) { $data['id'] = $event_id; }
             $event_id = $db_manager->save_event($data);
             if ($event_id <= 0) {
-                CMS\Router::instance()->redirect('/admin/events' . ((int)($_POST['event_id'] ?? 0) > 0 ? '/edit/' . (int)$_POST['event_id'] : '/new') . '?error=validation');
+                CMS\Router::instance()->redirect($this->admin_event_form_error_path((int)($_POST['event_id'] ?? 0), 'save'));
                 return;
             }
             CMS\Router::instance()->redirect('/admin/events/edit/' . $event_id . '?success=1');
         } catch (\Throwable $e) {
             error_log('Event save error: ' . $e->getMessage());
-            CMS\Router::instance()->redirect('/admin/events?error=save');
+            CMS\Router::instance()->redirect($this->admin_event_form_error_path((int)($_POST['event_id'] ?? 0), 'save'));
         }
+    }
+
+    private function sanitize_event_description(mixed $value): string
+    {
+        $desc_raw = html_entity_decode((string) $value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        try {
+            if (class_exists('CMS\\Services\\EditorService')) {
+                $desc_raw = \CMS\Services\EditorService::getInstance()->sanitize($desc_raw);
+            } else {
+                $desc_raw = strip_tags($desc_raw, '<p><a><strong><em><ul><ol><li><br><blockquote><h2><h3>');
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS Events description sanitize fallback: ' . $e->getMessage());
+            $desc_raw = strip_tags($desc_raw, '<p><a><strong><em><ul><ol><li><br><blockquote><h2><h3>');
+        }
+
+        return preg_replace('/\s+style\s*=\s*(?:"[^"]*"|\x27[^\x27]*\x27)/i', '', $desc_raw) ?? $desc_raw;
+    }
+
+    private function admin_event_form_error_path(int $eventId, string $errorCode): string
+    {
+        $safeError = preg_replace('/[^a-z0-9_-]+/i', '', $errorCode) ?: 'save';
+        $path = $eventId > 0 ? '/admin/events/edit/' . $eventId : '/admin/events/new';
+
+        return $path . '?error=' . rawurlencode($safeError);
     }
 
     public function admin_delete(string $id = ''): void
@@ -855,8 +874,13 @@ final class CMS_Events_Post_Type
             $settings[$key] = isset($_POST[$key]) ? '1' : '0';
         }
 
-        CMS_Events_Database::instance()->save_settings($settings);
-        CMS\Router::instance()->redirect('/admin/events?tab=' . $tab . '&saved=1');
+        try {
+            CMS_Events_Database::instance()->save_settings($settings);
+            CMS\Router::instance()->redirect('/admin/events?tab=' . $tab . '&saved=1');
+        } catch (\Throwable $e) {
+            error_log('CMS Events settings save error: ' . $e->getMessage());
+            CMS\Router::instance()->redirect('/admin/events?tab=' . $tab . '&error=save');
+        }
     }
 
     public function admin_list(): void

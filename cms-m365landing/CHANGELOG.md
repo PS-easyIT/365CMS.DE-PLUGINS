@@ -1,5 +1,22 @@
 # CMS M365 Landing – Changelog
 
+## 1.0.30 – 2026-06-05
+
+- 🟢 Im Public-Hero steht links neben `alle M365 Beiträge` ein zusätzlicher Button `zum M365 Message Center` auf gleicher Höhe.
+- 🟢 Der neue Schnelllink führt sprachabhängig nach `/m365-messagecenter` bzw. `/en/m365-messagecenter`.
+
+## 1.0.29 – 2026-06-05
+
+- 🔴 Graph-/Message-Center-Block aus der M365-Landing entfernt.
+- 🟢 Die Funktion ist jetzt als eigenständiges Plugin `cms-m365messagecenter` vorgesehen: eigener sicherer Graph-Abruf, lokaler Cache und sortierbare Publicsite.
+- 🟡 Landing bleibt damit auf Karten, Domain-Mapping, Beitragsbereich und Design fokussiert.
+
+## 1.0.28 – 2026-06-05
+
+- Admin-Menü korrigiert: Die automatisch eingefügte Übersicht wird nicht mehr durch einen zusätzlichen Dashboard-Unterpunkt gedoppelt.
+- Unterpunkte nutzen direkte Callbacks für Karten, Inhalte & Design und System, damit Klicks zuverlässig die passende Ansicht öffnen.
+- Legacy-Links über `m365landing-dashboard` bleiben weiterhin auf das Dashboard abgebildet.
+
 ## 1.0.27 – 2026-06-05
 
 - Publicsite-Dark-Mode vollständig nachgezogen: Landing-Hintergrund, Hero, Cards, Status-Panels, Empty-State, Separatoren und Beitragssektion erhalten eigene dunkle Token auch bei `html.dark-mode`.

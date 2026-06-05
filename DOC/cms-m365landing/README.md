@@ -9,6 +9,7 @@ Zentrale Landingpage für die M365-Plugin-Welt. Das Plugin bündelt Lizenzmatrix
 - Cards werden aus `m365landing_cards` geladen und nach `matrix`, `areas` und `tools` gruppiert.
 - Falls eine Card ein Bild besitzt, wird dieses angezeigt; sonst greift der Icon-/Emoji-Fallback.
 - Der Content Header unterstützt ein optionales Headerbild aus Mediathek oder URL.
+- Im Public-Hero stehen Schnelllinks zu `zum M365 Message Center` und – sofern konfiguriert – `alle M365 Beiträge` in einer Reihe.
 - Es stehen drei Layoutvarianten zur Verfügung: Standard, Kompakt und Spotlight.
 
 ## Adminbereiche

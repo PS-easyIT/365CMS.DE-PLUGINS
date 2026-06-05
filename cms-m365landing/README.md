@@ -2,13 +2,14 @@
 
 `cms-m365landing` stellt eine zentrale, öffentlich erreichbare Landingpage für M365-Inhalte bereit. Die Seite bündelt Matrixen, Azure Services, Tutorials und die M365 Tools in administrierbaren Cards.
 
-Aktuelle Version: `1.0.27`
+Aktuelle Version: `1.0.30`
 
 ## Features
 
 - Öffentliche Route standardmäßig unter `/m365`
 - Optionale Zusatzdomains, die die Landingpage direkt auf der Domain-Startseite ausliefern
 - Optionaler Beitragsbereich mit den letzten 6 Posts einer im Adminbereich ausgewählten CMS-Kategorie
+- Hero-Schnelllinks zu `zum M365 Message Center` und `alle M365 Beiträge`
 - Beitragsbereich wahlweise nur auf hinterlegten Zusatzdomains sichtbar
 - Content Header mit Overline, Titel, Intro, optionalem Headerbild und zwei Buttons
 - Drei Matrix-Cards nebeneinander für M365, Add-ons und Copilot

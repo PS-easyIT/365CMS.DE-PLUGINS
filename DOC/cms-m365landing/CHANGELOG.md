@@ -1,5 +1,13 @@
 # CMS M365 Landing – Changelog
 
+## 1.0.30 – 2026-06-05
+
+- Public-Hero-Schnelllink `zum M365 Message Center` links neben `alle M365 Beiträge` ergänzt.
+
+## 1.0.29 – 2026-06-05
+
+- Graph-/Message-Center-Block entfernt und an das eigenständige Plugin `cms-m365messagecenter` übergeben.
+
 ## 1.0.6 – 2026-05-30
 
 - Card-CTA `zum Bereich ->` sitzt jetzt rechts unten in jeder Bereichscard.

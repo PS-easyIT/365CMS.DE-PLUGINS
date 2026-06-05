@@ -110,14 +110,14 @@ final class CMS_Experts_Meta_Boxes
             <h3>📝 Basis-Informationen</h3>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="first_name">Vorname *</label>
+                      <label for="first_name">Vorname</label>
                     <input type="text" id="first_name" name="first_name"
-                           value="<?php echo $esc->escape($expert->first_name ?? ''); ?>" required>
+                          value="<?php echo $esc->escape($expert->first_name ?? ''); ?>">
                 </div>
                 <div class="form-group">
-                    <label for="last_name">Nachname *</label>
+                      <label for="last_name">Nachname</label>
                     <input type="text" id="last_name" name="last_name"
-                           value="<?php echo $esc->escape($expert->last_name ?? ''); ?>" required>
+                          value="<?php echo $esc->escape($expert->last_name ?? ''); ?>">
                 </div>
             </div>
             <div class="form-row">
@@ -163,9 +163,9 @@ final class CMS_Experts_Meta_Boxes
             <h3>📞 Kontakt-Informationen</h3>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="email">E-Mail *</label>
+                    <label for="email">E-Mail</label>
                     <input type="email" id="email" name="email"
-                           value="<?php echo $esc->escape($expert->email ?? ''); ?>" required>
+                           value="<?php echo $esc->escape($expert->email ?? ''); ?>">
                 </div>
                 <div class="form-group">
                     <label for="phone">Telefon</label>

@@ -221,12 +221,12 @@ final class CMS_Speakers_Meta_Boxes
             <h3>👤 Persönliche Daten</h3>
             <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
                 <div class="form-group">
-                    <label class="form-label">Vorname <span style="color:#ef4444;">*</span></label>
-                    <input type="text" name="first_name" class="form-control" value="<?= $this->v($sp,'first_name') ?>" required>
+                    <label class="form-label">Vorname</label>
+                    <input type="text" name="first_name" class="form-control" value="<?= $this->v($sp,'first_name') ?>">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Nachname <span style="color:#ef4444;">*</span></label>
-                    <input type="text" name="last_name" class="form-control" value="<?= $this->v($sp,'last_name') ?>" required>
+                    <label class="form-label">Nachname</label>
+                    <input type="text" name="last_name" class="form-control" value="<?= $this->v($sp,'last_name') ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Akadem. Titel (Dr., Prof. …)</label>
@@ -279,8 +279,8 @@ final class CMS_Speakers_Meta_Boxes
             <h3>📞 Kontakt & Social Media</h3>
             <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
                 <div class="form-group">
-                    <label class="form-label">E-Mail <span style="color:#ef4444;">*</span></label>
-                    <input type="email" name="email" class="form-control" value="<?= $this->v($sp,'email') ?>" required>
+                <label class="form-label">E-Mail</label>
+                <input type="email" name="email" class="form-control" value="<?= $this->v($sp,'email') ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Telefon</label>
