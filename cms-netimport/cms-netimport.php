@@ -3,7 +3,7 @@
  * Plugin Name: CMS NetImport
  * Plugin URI: https://365network.de/cms-netimport
  * Description: CSV-Importer für Events, Speaker, Companies und Experts mit vorbereiteten Netzwerk-Datenquellen.
- * Version: 3.0.2
+ * Version: 3.0.4
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_NETIMPORT_VERSION', '3.0.2');
+define('CMS_NETIMPORT_VERSION', '3.0.4');
 define('CMS_NETIMPORT_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_NETIMPORT_PLUGIN_URL', '/plugins/cms-netimport/');
 

@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "source_checked": "2026-05-17",
+    "note": "Mapping für Public-Auswertung und Admin-Pflege. Interne Namen können erweitert werden."
+  },
+  "product_family_options": {
+    "all": "Alle Produktfamilien",
+    "microsoft_365": "Microsoft 365",
+    "office_365": "Office 365",
+    "teams": "Teams",
+    "power_platform": "Power Platform",
+    "windows_ems_entra": "Windows / EMS / Entra",
+    "fabric_power_bi": "Fabric / Power BI"
+  },
+  "region_options": {
+    "global": "Global / weltweit",
+    "eea": "EEA / Schweiz",
+    "government": "Government",
+    "nonprofit": "Nonprofit"
+  },
+  "segment_options": {
+    "commercial": "Commercial",
+    "government": "Government",
+    "nonprofit": "Nonprofit"
+  },
+  "event_type_options": {
+    "all": "Alle Ereignistypen",
+    "price_increase": "Preisänderung",
+    "currency_adjustment": "Währungsanpassung",
+    "packaging": "Packaging / Struktur",
+    "sku_split": "SKU-Split",
+    "end_of_sale": "End of sale",
+    "retirement": "Retirement",
+    "pricing_consistency_update": "Pricing Consistency",
+    "pricing_usage": "Verbrauch / Nutzung",
+    "faq_context": "FAQ-Kontext"
+  },
+  "channel_options": {
+    "unknown": "nicht festgelegt",
+    "csp": "Cloud Solution Provider",
+    "ea": "Enterprise Agreement",
+    "mca": "Microsoft Customer Agreement",
+    "mpsa": "MPSA",
+    "web_direct": "Web Direct"
+  },
+  "sku_options": {
+    "office_365_e1": { "label": "Office 365 E1", "product_family": "office_365", "with_teams_variant": true, "no_teams_variant": false },
+    "office_365_e3": { "label": "Office 365 E3", "product_family": "office_365", "with_teams_variant": true, "no_teams_variant": false },
+    "office_365_e5": { "label": "Office 365 E5", "product_family": "office_365", "with_teams_variant": true, "no_teams_variant": false },
+    "microsoft_365_e3": { "label": "Microsoft 365 E3", "product_family": "microsoft_365", "with_teams_variant": true, "no_teams_variant": false },
+    "microsoft_365_e5": { "label": "Microsoft 365 E5", "product_family": "microsoft_365", "with_teams_variant": true, "no_teams_variant": false },
+    "microsoft_365_f1": { "label": "Microsoft 365 F1", "product_family": "microsoft_365", "with_teams_variant": true, "no_teams_variant": false },
+    "microsoft_365_f3": { "label": "Microsoft 365 F3", "product_family": "microsoft_365", "with_teams_variant": true, "no_teams_variant": false },
+    "business_basic": { "label": "Microsoft 365 Business Basic", "product_family": "microsoft_365", "with_teams_variant": true, "no_teams_variant": false },
+    "business_standard": { "label": "Microsoft 365 Business Standard", "product_family": "microsoft_365", "with_teams_variant": true, "no_teams_variant": false },
+    "business_premium": { "label": "Microsoft 365 Business Premium", "product_family": "microsoft_365", "with_teams_variant": true, "no_teams_variant": false },
+    "office_365_e3_no_teams": { "label": "Office 365 E3 (no Teams)", "product_family": "office_365", "with_teams_variant": false, "no_teams_variant": true },
+    "microsoft_365_e3_no_teams": { "label": "Microsoft 365 E3 (no Teams)", "product_family": "microsoft_365", "with_teams_variant": false, "no_teams_variant": true },
+    "microsoft_365_e5_no_teams": { "label": "Microsoft 365 E5 (no Teams)", "product_family": "microsoft_365", "with_teams_variant": false, "no_teams_variant": true },
+    "business_premium_no_teams": { "label": "Microsoft 365 Business Premium (no Teams)", "product_family": "microsoft_365", "with_teams_variant": false, "no_teams_variant": true },
+    "teams_enterprise": { "label": "Microsoft Teams Enterprise / EEA", "product_family": "teams", "with_teams_variant": false, "no_teams_variant": false },
+    "windows_e3": { "label": "Windows E3", "product_family": "windows_ems_entra", "with_teams_variant": false, "no_teams_variant": false },
+    "windows_e5": { "label": "Windows E5", "product_family": "windows_ems_entra", "with_teams_variant": false, "no_teams_variant": false },
+    "ems_e3": { "label": "Enterprise Mobility + Security E3", "product_family": "windows_ems_entra", "with_teams_variant": false, "no_teams_variant": false },
+    "ems_e5": { "label": "Enterprise Mobility + Security E5", "product_family": "windows_ems_entra", "with_teams_variant": false, "no_teams_variant": false },
+    "entra_p1": { "label": "Entra Plan 1", "product_family": "windows_ems_entra", "with_teams_variant": false, "no_teams_variant": false },
+    "entra_p2": { "label": "Entra Plan 2", "product_family": "windows_ems_entra", "with_teams_variant": false, "no_teams_variant": false },
+    "power_apps_per_app": { "label": "Power Apps per app", "product_family": "power_platform", "with_teams_variant": false, "no_teams_variant": false },
+    "power_bi_p_sku": { "label": "Power BI Premium P-SKU", "product_family": "fabric_power_bi", "with_teams_variant": false, "no_teams_variant": false },
+    "fabric_capacity": { "label": "Microsoft Fabric Capacity", "product_family": "fabric_power_bi", "with_teams_variant": false, "no_teams_variant": false }
+  },
+  "renewal_rules": {
+    "default": { "label": "Standard", "existing_customers_until_renewal": true, "impact_after_effective_at": "renewal" },
+    "new_purchase": { "label": "Neukauf", "existing_customers_until_renewal": false, "impact_after_effective_at": "effective" },
+    "ea": { "label": "Enterprise Agreement", "existing_customers_until_renewal": true, "impact_after_effective_at": "renewal" },
+    "csp": { "label": "CSP", "existing_customers_until_renewal": true, "impact_after_effective_at": "renewal" },
+    "mca": { "label": "Microsoft Customer Agreement", "existing_customers_until_renewal": true, "impact_after_effective_at": "renewal" },
+    "mpsa": { "label": "MPSA", "existing_customers_until_renewal": true, "impact_after_effective_at": "renewal" }
+  }
+}

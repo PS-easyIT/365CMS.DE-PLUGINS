@@ -83,6 +83,11 @@
       "manifest": "PLUGINS/cms-m365tools/update.json"
     },
     {
+      "slug": "cms-m365price-tracker",
+      "name": "CMS M365 Price Tracker",
+      "manifest": "PLUGINS/cms-m365price-tracker/update.json"
+    },
+    {
       "slug": "cms-m365matrices",
       "name": "CMS M365 Matrixen",
       "manifest": "PLUGINS/cms-m365matrices/update.json"

@@ -17,11 +17,13 @@ final class CMS_NetImport_Admin
     private const MENU_IMPORT_SLUG = 'netimport-import';
     private const MENU_HISTORY_SLUG = 'netimport-history';
     private const MENU_SOURCES_SLUG = 'netimport-sources';
+    private const MENU_RESET_SLUG = 'netimport-reset';
 
     private const VIEW_OVERVIEW = 'overview';
     private const VIEW_IMPORT = 'import';
     private const VIEW_HISTORY = 'history';
     private const VIEW_SOURCES = 'sources';
+    private const VIEW_RESET = 'reset';
 
     private static ?self $instance = null;
 
@@ -157,6 +159,15 @@ final class CMS_NetImport_Admin
             self::MENU_SOURCES_SLUG,
             [self::class, 'dispatch_sources_page_bridge']
         );
+
+        add_submenu_page(
+            self::MENU_SLUG,
+            'NetImport Plugin-Reset',
+            'Plugin-Reset',
+            'manage_options',
+            self::MENU_RESET_SLUG,
+            [self::class, 'dispatch_reset_page_bridge']
+        );
     }
 
     public static function dispatch_plugin_page_bridge(): void
@@ -179,6 +190,11 @@ final class CMS_NetImport_Admin
         self::instance()->dispatch_admin_page(self::MENU_SOURCES_SLUG);
     }
 
+    public static function dispatch_reset_page_bridge(): void
+    {
+        self::instance()->dispatch_admin_page(self::MENU_RESET_SLUG);
+    }
+
     private function dispatch_admin_page(?string $forcedPageSlug = null): void
     {
         $callbackMap = [
@@ -193,6 +209,9 @@ final class CMS_NetImport_Admin
             },
             self::MENU_SOURCES_SLUG => function (): void {
                 $this->render_plugin_page_bridge(self::VIEW_SOURCES);
+            },
+            self::MENU_RESET_SLUG => function (): void {
+                $this->render_plugin_page_bridge(self::VIEW_RESET);
             },
         ];
 
@@ -335,6 +354,7 @@ final class CMS_NetImport_Admin
         $router->addRoute('GET', '/admin/netimport', [$this, 'render_page']);
         $router->addRoute('POST', '/admin/netimport/run', [$this, 'handle_run']);
         $router->addRoute('POST', '/admin/netimport/history-action', [$this, 'handle_history_action']);
+        $router->addRoute('POST', '/admin/netimport/plugin-reset', [$this, 'handle_plugin_reset']);
     }
 
     public function add_menu_item(array $menuItems): array
@@ -546,6 +566,69 @@ final class CMS_NetImport_Admin
         $this->render_page($result, $this->read_options(), $filters, self::VIEW_HISTORY);
     }
 
+    public function handle_plugin_reset(): void
+    {
+        if (!$this->is_admin_user()) {
+            $this->redirect_to('/login');
+            return;
+        }
+
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
+            $this->redirect_to('/admin/netimport?view=reset');
+            return;
+        }
+
+        $result = [
+            'errors' => 0,
+            'warnings' => 0,
+            'created' => 0,
+            'updated' => 0,
+            'linked' => 0,
+            'skipped' => 0,
+            'dry_run' => false,
+            'messages' => [],
+            'type' => 'plugin_reset',
+            'file' => '',
+        ];
+
+        if (!class_exists('CMS_NetImport_Importer')) {
+            $result['errors'] = 1;
+            $result['messages'][] = ['level' => 'error', 'text' => 'Importer-Komponente für Plugin-Reset nicht verfügbar.'];
+            $this->render_page($result, $this->read_options(), $this->read_history_filters(), self::VIEW_RESET);
+            return;
+        }
+
+        $csrfToken = (string) ($_POST['csrf_token'] ?? '');
+        if (!$this->verify_csrf_token($csrfToken, 'netimport_plugin_reset')) {
+            $result['errors'] = 1;
+            $result['messages'][] = ['level' => 'error', 'text' => 'Sicherheitscheck für Plugin-Reset fehlgeschlagen.'];
+            $this->render_page($result, $this->read_options(), $this->read_history_filters(), self::VIEW_RESET);
+            return;
+        }
+
+        if (!$this->check_plugin_reset_rate_limit()) {
+            $result['errors'] = 1;
+            $result['messages'][] = ['level' => 'error', 'text' => 'Zu viele Reset-Versuche in kurzer Zeit. Bitte kurz warten und erneut versuchen.'];
+            $this->render_page($result, $this->read_options(), $this->read_history_filters(), self::VIEW_RESET);
+            return;
+        }
+
+        $this->log_plugin_reset_attempt();
+
+        if ((string) ($_POST['confirm_plugin_reset'] ?? '') !== '1') {
+            $result['warnings'] = 1;
+            $result['messages'][] = ['level' => 'warning', 'text' => 'Bitte die Sicherheitsbestätigung aktivieren, bevor Plugin-Daten gelöscht werden.'];
+            $this->render_page($result, $this->read_options(), $this->read_history_filters(), self::VIEW_RESET);
+            return;
+        }
+
+        $targets = $_POST['reset_targets'] ?? [];
+        $targets = is_array($targets) ? array_map('strval', $targets) : [];
+        $result = CMS_NetImport_Importer::instance()->reset_target_plugins($targets);
+
+        $this->render_page($result, $this->read_options(), $this->read_history_filters(), self::VIEW_RESET);
+    }
+
     private function read_options(): array
     {
         $validationProfile = strtolower(trim((string) ($_POST['validation_profile'] ?? 'balanced')));
@@ -583,6 +666,16 @@ final class CMS_NetImport_Admin
     private function log_history_action_attempt(): void
     {
         CMS\Security::recordDbRateLimitAttempt(CMS\Security::getClientIp(), 'netimport_history_action', 'admin-netimport');
+    }
+
+    private function check_plugin_reset_rate_limit(): bool
+    {
+        return CMS\Security::checkDbRateLimit(CMS\Security::getClientIp(), 'netimport_plugin_reset', 3, 600);
+    }
+
+    private function log_plugin_reset_attempt(): void
+    {
+        CMS\Security::recordDbRateLimitAttempt(CMS\Security::getClientIp(), 'netimport_plugin_reset', 'admin-netimport');
     }
 
     private function render_history_filter_inputs(array $historyFilters): void
@@ -624,7 +717,7 @@ final class CMS_NetImport_Admin
         }
 
         $page = $this->normalize_admin_slug((string) ($_GET['page'] ?? ''));
-        return in_array($page, [self::MENU_SLUG, self::MENU_IMPORT_SLUG, self::MENU_HISTORY_SLUG, self::MENU_SOURCES_SLUG], true);
+        return in_array($page, [self::MENU_SLUG, self::MENU_IMPORT_SLUG, self::MENU_HISTORY_SLUG, self::MENU_SOURCES_SLUG, self::MENU_RESET_SLUG], true);
     }
 
     private function resolve_admin_view(?string $forcedView = null): string
@@ -632,7 +725,7 @@ final class CMS_NetImport_Admin
         $rawView = $forcedView ?? (string) ($_POST['active_view'] ?? $_GET['view'] ?? self::VIEW_OVERVIEW);
         $view = strtolower(trim($rawView));
 
-        return in_array($view, [self::VIEW_OVERVIEW, self::VIEW_IMPORT, self::VIEW_HISTORY, self::VIEW_SOURCES], true)
+        return in_array($view, [self::VIEW_OVERVIEW, self::VIEW_IMPORT, self::VIEW_HISTORY, self::VIEW_SOURCES, self::VIEW_RESET], true)
             ? $view
             : self::VIEW_OVERVIEW;
     }
@@ -663,6 +756,7 @@ final class CMS_NetImport_Admin
         $security = CMS\Security::instance();
         $csrfToken = $security->generateToken('netimport_run');
         $historyCsrfToken = $security->generateToken('netimport_history_action');
+        $resetCsrfToken = $security->generateToken('netimport_plugin_reset');
         $adminBaseUrl = SITE_URL . '/admin/netimport';
         $adminCurrentViewUrl = $activeView === self::VIEW_OVERVIEW
             ? $adminBaseUrl
@@ -671,10 +765,13 @@ final class CMS_NetImport_Admin
         $adminCurrentViewUrlEscaped = htmlspecialchars($adminCurrentViewUrl, ENT_QUOTES, 'UTF-8');
         $adminRunUrl = htmlspecialchars($adminBaseUrl . '/run', ENT_QUOTES, 'UTF-8');
         $adminHistoryActionUrl = htmlspecialchars($adminBaseUrl . '/history-action', ENT_QUOTES, 'UTF-8');
+        $adminPluginResetUrl = htmlspecialchars($adminBaseUrl . '/plugin-reset', ENT_QUOTES, 'UTF-8');
         $importer = CMS_NetImport_Importer::instance();
         $needsSources = in_array($activeView, [self::VIEW_OVERVIEW, self::VIEW_IMPORT, self::VIEW_SOURCES], true);
         $needsHistory = in_array($activeView, [self::VIEW_OVERVIEW, self::VIEW_HISTORY], true);
+        $needsReset = in_array($activeView, [self::VIEW_OVERVIEW, self::VIEW_RESET], true);
         $sources = $needsSources ? $importer->get_sources() : [];
+        $resetTargets = $needsReset ? $importer->get_reset_targets() : [];
         $historyFilters = array_merge([
             'type' => '',
             'mode' => '',
@@ -699,26 +796,48 @@ final class CMS_NetImport_Admin
 
         $this->start_admin_layout('NetImport', self::MENU_SLUG);
         $this->output_admin_assets();
+        $viewLinks = [
+            self::VIEW_OVERVIEW => 'Übersicht',
+            self::VIEW_IMPORT => 'Import',
+            self::VIEW_HISTORY => 'Historie',
+            self::VIEW_SOURCES => 'CSV-Quellen',
+            self::VIEW_RESET => 'Plugin-Reset',
+        ];
         ?>
         <div class="admin-page-header">
             <div>
                 <h2>CMS NetImport</h2>
-                <p>Importiert vorbereitete CSV-Daten in Events, Speaker, Companies und Experts.</p>
+                <p>Importiert CSV-Daten in Events, Speaker, Companies und Experts – auch wenn passende CSVs anders heißen.</p>
             </div>
             <div class="header-actions">
                 <a href="<?= $adminCurrentViewUrlEscaped ?>" class="btn btn-secondary">Ansicht aktualisieren</a>
             </div>
         </div>
 
+        <nav class="ni-view-tabs" aria-label="NetImport Ansichten">
+            <?php foreach ($viewLinks as $viewKey => $viewLabel): ?>
+                <?php $url = $viewKey === self::VIEW_OVERVIEW ? $adminBaseUrl : $adminBaseUrl . '?view=' . rawurlencode($viewKey); ?>
+                <a href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>" class="ni-view-tab<?= $activeView === $viewKey ? ' ni-view-tab--active' : '' ?>">
+                    <?= htmlspecialchars($viewLabel, ENT_QUOTES, 'UTF-8') ?>
+                </a>
+            <?php endforeach; ?>
+        </nav>
+
         <?php if ($result !== null): ?>
             <div class="alert <?= !empty($result['errors']) ? 'alert-error' : 'alert-success' ?>">
-                Import „<?= htmlspecialchars((string) ($result['type'] ?? 'unbekannt'), ENT_QUOTES, 'UTF-8') ?>“ abgeschlossen –
-                Modus: <?= !empty($result['dry_run']) ? 'Dry-Run / Preview' : 'Live-Import' ?>,
-                erstellt: <?= (int) ($result['created'] ?? 0) ?>,
-                aktualisiert: <?= (int) ($result['updated'] ?? 0) ?>,
-                verknüpft: <?= (int) ($result['linked'] ?? 0) ?>,
-                übersprungen: <?= (int) ($result['skipped'] ?? 0) ?>,
-                Fehler: <?= (int) ($result['errors'] ?? 0) ?>.
+                <?php if (($result['type'] ?? '') === 'plugin_reset'): ?>
+                    Plugin-Reset abgeschlossen – entfernte Zeilen: <?= (int) ($result['skipped'] ?? 0) ?>,
+                    Warnungen: <?= (int) ($result['warnings'] ?? 0) ?>,
+                    Fehler: <?= (int) ($result['errors'] ?? 0) ?>.
+                <?php else: ?>
+                    Import „<?= htmlspecialchars((string) ($result['type'] ?? 'unbekannt'), ENT_QUOTES, 'UTF-8') ?>“ abgeschlossen –
+                    Modus: <?= !empty($result['dry_run']) ? 'Dry-Run / Preview' : 'Live-Import' ?>,
+                    erstellt: <?= (int) ($result['created'] ?? 0) ?>,
+                    aktualisiert: <?= (int) ($result['updated'] ?? 0) ?>,
+                    verknüpft: <?= (int) ($result['linked'] ?? 0) ?>,
+                    übersprungen: <?= (int) ($result['skipped'] ?? 0) ?>,
+                    Fehler: <?= (int) ($result['errors'] ?? 0) ?>.
+                <?php endif; ?>
             </div>
         <?php endif; ?>
 
@@ -1070,6 +1189,7 @@ final class CMS_NetImport_Admin
         <?php if (in_array($activeView, [self::VIEW_OVERVIEW, self::VIEW_SOURCES], true)): ?>
         <div class="admin-card ni-card-spacer">
             <h3>Vorbereitete CSV-Quellen</h3>
+            <p class="text-muted">NetImport bevorzugt bekannte Dateifamilien, akzeptiert aber auch anders benannte CSV-Dateien im Ordner <code>files_import/</code>, wenn die Pflichtspalten zum gewählten Importtyp passen.</p>
             <div class="users-table-container">
                 <table class="users-table ni-table">
                     <thead>
@@ -1090,6 +1210,8 @@ final class CMS_NetImport_Admin
                                 <code><?= htmlspecialchars((string) $source['relative_path'], ENT_QUOTES, 'UTF-8') ?></code>
                                 <?php if (($source['mode'] ?? 'base') === 'update'): ?>
                                     <div><span class="status-badge pending">Update erkannt</span></div>
+                                <?php elseif (($source['mode'] ?? 'base') === 'custom'): ?>
+                                    <div><span class="status-badge pending">Alternative CSV</span></div>
                                 <?php endif; ?>
                                 <?php if (!empty($source['detected_date'])): ?>
                                     <div class="text-muted">Datei-Datum: <?= htmlspecialchars((string) $source['detected_date'], ENT_QUOTES, 'UTF-8') ?></div>
@@ -1102,6 +1224,8 @@ final class CMS_NetImport_Admin
                                     <span class="status-badge active">Bereit</span>
                                     <?php if (($source['mode'] ?? 'base') === 'update'): ?>
                                         <span class="status-badge pending">UPDATE</span>
+                                    <?php elseif (($source['mode'] ?? 'base') === 'custom'): ?>
+                                        <span class="status-badge pending">CUSTOM</span>
                                     <?php endif; ?>
                                 <?php elseif (empty($source['exists'])): ?>
                                     <span class="status-badge danger">Datei fehlt</span>
@@ -1115,6 +1239,70 @@ final class CMS_NetImport_Admin
                     </tbody>
                 </table>
             </div>
+        </div>
+        <?php endif; ?>
+
+        <?php if (in_array($activeView, [self::VIEW_OVERVIEW, self::VIEW_RESET], true)): ?>
+        <div class="admin-card ni-card-spacer ni-reset-card">
+            <h3>Plugin-Daten bereinigen</h3>
+            <p class="text-muted">
+                Löscht Inhalte, Meta- und Relationstabellen der ausgewählten Zielplugins. Plugin-Einstellungen und Preset-/Kategorie-Listen bleiben erhalten.
+                Es werden keine Core-Tabellen und keine Daten außerhalb von Companies, Experts, Speakers und Events gelöscht.
+            </p>
+
+            <form method="POST" action="<?= $adminPluginResetUrl ?>" class="admin-form ni-form-grid"
+                  data-confirm-action="true"
+                  data-confirm-title="Plugin-Daten endgültig löschen?"
+                  data-confirm-message="Diese Aktion entfernt Daten aus den ausgewählten Zielplugins. Einstellungen bleiben erhalten, die gelöschten Inhalte können aber nicht automatisch wiederhergestellt werden."
+                  data-confirm-button="Plugin-Daten löschen">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($resetCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="active_view" value="<?= htmlspecialchars(self::VIEW_RESET, ENT_QUOTES, 'UTF-8') ?>">
+
+                <div class="users-table-container">
+                    <table class="users-table ni-table">
+                        <thead>
+                            <tr>
+                                <th>Auswahl</th>
+                                <th>Plugin</th>
+                                <th>Aktueller Umfang</th>
+                                <th>Status</th>
+                                <th>Wird gelöscht</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($resetTargets as $targetKey => $target): ?>
+                            <tr>
+                                <td>
+                                    <label class="checkbox-label ni-reset-checkbox">
+                                        <input type="checkbox" name="reset_targets[]" value="<?= htmlspecialchars((string) $targetKey, ENT_QUOTES, 'UTF-8') ?>" checked>
+                                        auswählen
+                                    </label>
+                                </td>
+                                <td><strong><?= htmlspecialchars((string) ($target['label'] ?? $targetKey), ENT_QUOTES, 'UTF-8') ?></strong></td>
+                                <td><?= (int) ($target['records'] ?? 0) ?> Zeilen</td>
+                                <td>
+                                    <?php if (!empty($target['ready'])): ?>
+                                        <span class="status-badge active">Plugin aktiv</span>
+                                    <?php else: ?>
+                                        <span class="status-badge pending">Plugin nicht aktiv / Tabellen optional</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?= htmlspecialchars((string) ($target['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <label class="checkbox-label ni-reset-confirm">
+                    <input type="checkbox" name="confirm_plugin_reset" value="1">
+                    Ich bestätige, dass die ausgewählten Plugin-Inhalte dauerhaft gelöscht werden dürfen.
+                </label>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary ni-btn-danger">Ausgewählte Plugin-Daten löschen</button>
+                </div>
+            </form>
         </div>
         <?php endif; ?>
 

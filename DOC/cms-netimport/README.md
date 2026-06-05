@@ -2,7 +2,7 @@
 
 ## Überblick
 
-`cms-netimport` ist ein vorbereiteter CSV-Importer für Netzwerkdaten im Plugin-Repository. Er liest definierte Dateien aus `cms-netimport/files_import/`, erkennt neuere datierte Update-Dateien derselben Dateifamilie automatisch und schreibt die Daten in die Ziel-Plugins `cms-companies`, `cms-experts`, `cms-speakers` und `cms-events`.
+`cms-netimport` ist ein vorbereiteter CSV-Importer für Netzwerkdaten im Plugin-Repository. Er liest CSV-Dateien aus `cms-netimport/files_import/`, erkennt neuere datierte Update-Dateien derselben Dateifamilie automatisch und schreibt korrekt formatierte Dateien auch dann in die Ziel-Plugins, wenn sie anders heißen als die Musterdateien.
 
 ## Importquellen
 
@@ -33,6 +33,8 @@ Optionen:
 
 Zusätzlich zeigt die Admin-Tabelle an, ob statt der Basisdatei bereits eine neuere `UPDATE`-CSV verwendet wird.
 
+Seit `3.0.3` gilt zusätzlich: Anders benannte CSV-Dateien im Ordner `files_import/` werden als `CUSTOM`-Quelle verwendet, wenn die Pflichtspalten zum Importtyp passen.
+
 Alle neu angelegten oder beim Import berührten Datensätze werden nach dem Import dem aktiven Admin über `user_id` zugeordnet.
 
 Unterhalb der Importmaske wird außerdem eine persistente Historie der letzten Läufe angezeigt. Die Reports enthalten Zeit, Quelle, Counts, Fehler/Warnungen, Dry-Run/Live-Modus und den zugeordneten Admin.
@@ -45,6 +47,8 @@ Seit `1.5.0` gilt zusätzlich:
 - Historien-Aktionen besitzen ein eigenes Rate-Limit zusätzlich zum eigentlichen Import-Run-Limit
 - pro Lauf steht eine aufklappbare Detailansicht mit gespeicherten Messages, Teil-Schritten, Cleanup-Daten und Reset-Summary bereit
 - `Reset` und `Historie löschen` laufen zusätzlich über ein vorgeschaltetes Confirm-Modal im Admin
+
+Seit `3.0.3` steht außerdem die Ansicht `Plugin-Reset` bereit. Sie löscht Inhalte, Meta- und Relationstabellen der Zielplugins `cms-companies`, `cms-experts`, `cms-speakers` und `cms-events`, ohne Plugin-Einstellungen, Presets/Kategorien oder Core-Tabellen zu entfernen.
 
 ## Empfohlener Ablauf
 

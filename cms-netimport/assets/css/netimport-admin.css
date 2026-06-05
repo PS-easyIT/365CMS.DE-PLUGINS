@@ -30,6 +30,56 @@
     margin-top: 25px;
 }
 
+.ni-view-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 0 25px;
+    padding: 0.35rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.ni-view-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.25rem;
+    padding: 0.45rem 0.8rem;
+    border-radius: 9px;
+    color: #475569;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ni-view-tab:hover,
+.ni-view-tab:focus,
+.ni-view-tab--active {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+}
+
+.ni-reset-card .users-table-container {
+    margin-top: 1rem;
+}
+
+.ni-reset-checkbox,
+.ni-reset-confirm {
+    align-items: flex-start;
+}
+
+.ni-reset-confirm {
+    margin-top: 0.5rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    background: #fef2f2;
+    color: #7f1d1d;
+}
+
 .stat-icon {
     font-size: 0.78rem;
     font-weight: 800;
@@ -261,6 +311,11 @@
 }
 
 @media (max-width: 640px) {
+    .ni-view-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
     .ni-table th:nth-child(4),
     .ni-table td:nth-child(4) {
         display: none;

@@ -11,7 +11,7 @@ CSV-Importer für das 365CMS-Plugin-Ökosystem.
 - `cms-speakers`
 - `cms-events`
 
-Der Import arbeitet mit vorhandenen CSV-Dateien im Ordner `files_import/` und unterstützt Upserts, Dry-Run-Vorschauen, dateibasierte Update-Erkennung, Admin-Ownership sowie optionale Cross-Plugin-Verknüpfungen.
+Der Import arbeitet mit vorhandenen CSV-Dateien im Ordner `files_import/` und unterstützt Upserts, Dry-Run-Vorschauen, dateibasierte Update-Erkennung, Header-basierte Alternativdateien, Admin-Ownership sowie optionale Cross-Plugin-Verknüpfungen.
 
 ## Vorbereitete Quellen
 
@@ -25,6 +25,7 @@ Der Import arbeitet mit vorhandenen CSV-Dateien im Ordner `files_import/` und un
 
 - Semikolon-CSV-Parsing mit Header-Normalisierung
 - Pflichtspalten-Prüfung pro CSV-Typ vor dem Import
+- flexible CSV-Auswahl: anders benannte Dateien im Ordner `files_import/` werden akzeptiert, wenn ihre Header zum Importtyp passen
 - Validierungsprofile `strict` / `balanced` / `permissive` mit zeilen- und feldgenauer Vorabprüfung
 - Dry-Run / Preview ohne Schreibzugriffe
 - Dry-Run nutzt simulierte IDs und Laufzeit-Caches, damit wiederholte Referenzen und Event-Verknüpfungen innerhalb desselben Laufs realitätsnah bewertet werden
@@ -38,6 +39,7 @@ Der Import arbeitet mit vorhandenen CSV-Dateien im Ordner `files_import/` und un
 - persistente Import-Historie pro Lauf mit Zeit, Quelle, Counts, Fehlern und Dry-Run/Live-Status
 - Filter in der Historie nach Typ, Dry-Run/Live und Fehlerstatus
 - Cleanup-Funktionen für Historie löschen und Reset einzelner Import-Läufe
+- `Plugin-Reset`-Ansicht zum Bereinigen der Inhalts-, Meta- und Relationstabellen von Companies, Experts, Speakers und Events
 - Reset funktioniert auch für Komplettimporte, weil Cleanup-Daten aus allen Teil-Läufen aggregiert werden
 - Transaktionsschutz für Live-Imports
 - Lookup- und Parsing-Caches für schnellere Dubletten-, Relations- und Quellenprüfung
@@ -53,6 +55,19 @@ Wenn im Ordner `files_import/` eine neuere CSV mit identischem Basisnamen und Da
 - `Speaker-update-2026-03-29.csv` → ebenfalls als Update-Datei erkannt
 
 In der Admin-Tabelle wird die erkannte Datei inklusive `UPDATE`-Hinweis angezeigt.
+
+Anders benannte CSV-Dateien werden als `CUSTOM`-Quelle erkannt, wenn sie die Pflichtspalten des gewählten Importtyps enthalten. Beispiel: `kundenliste_juni.csv` kann als Companies-Quelle dienen, wenn eine Spalte `name`, `firma` oder `company` vorhanden ist.
+
+## Plugin-Reset
+
+Die Ansicht `/admin/netimport?view=reset` kann Inhalte der Zielplugins bereinigen:
+
+- Companies: Unternehmen, Company-Meta und Company↔Expert-Zuordnungen
+- Experts: Experten inklusive Meta, Skills, Zertifikaten, Projekten, Ausbildung und Fachrichtungs-Zuordnungen
+- Speakers: Speaker inklusive Themen und manuellen Auftritten
+- Events: Events inklusive Meta und Event↔Speaker/Expert-Zuordnungen
+
+Der Reset ist CSRF-geschützt, rate-limitiert und transaktional. Plugin-Einstellungen sowie Preset-/Kategorie-Listen bleiben erhalten; Core-Tabellen werden nicht gelöscht.
 
 ## Sicherheits- und Qualitätsmerkmale
 

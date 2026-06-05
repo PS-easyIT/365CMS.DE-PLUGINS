@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 3.0.4 — 2026-06-04
+
+- Bugfix für die flexible CSV-Erkennung: `Experts*.csv` und andere typbezogene CSV-Namen werden nun gegenüber Beispiel-/Musterdateien bevorzugt.
+- Importtypspezifische Dateinamen-Aliasse verhindern, dass eine kompatible Experts-Datei beim MVP-Import oder einem anderen falschen Ziel landet.
+
+## 3.0.3 — 2026-06-04
+
+- Flexible CSV-Erkennung per Header-Kompatibilität ergänzt, damit korrekt formatierte CSVs im Ordner `files_import/` auch mit abweichendem Dateinamen importiert werden können.
+- Admin-Ansicht `Plugin-Reset` ergänzt, um Inhalts-, Meta- und Relationstabellen von Companies, Experts, Speakers und Events gezielt zu bereinigen.
+- Plugin-Reset mit CSRF, eigenem Rate-Limit, Confirm-Checkbox, Confirm-Modal und Datenbanktransaktion abgesichert.
+
 ## 3.0.2 — 2026-05-25
 
 - Stabilitätsfix: `CMS_NetImport_Importer` ist gegen versehentliches erneutes Laden geschützt, damit Doppel-Include-Pfade keine `Cannot redeclare class`-Fatals erzeugen.

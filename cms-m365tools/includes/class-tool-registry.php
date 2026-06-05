@@ -137,7 +137,6 @@ final class CMS_M365CALCULATOR_Tool_Registry
         self::register_frontline_worker_license_check_module();
         self::register_exchange_online_roi_module();
         self::register_teams_phone_advisor_module();
-        self::register_microsoft_price_tracker_module();
         self::register_license_audit_checklist_module();
         self::register_storage_needs_calculator_module();
         self::register_backup_cost_calculator_module();
@@ -257,20 +256,6 @@ final class CMS_M365CALCULATOR_Tool_Registry
             'category' => 'Teams',
             'status' => 'live',
             'priority' => 8,
-        ]);
-    }
-
-    private static function register_microsoft_price_tracker_module(): void
-    {
-        self::register([
-            'key' => 'microsoft-price-tracker',
-            'title' => 'Microsoft-Preiserhöhung-Tracker',
-            'description' => 'Bewertet offizielle Microsoft-Preis-, Packaging- und Renewal-Ereignisse mit Budgetchart und Forecast-Trennung.',
-            'icon' => 'roi',
-            'url' => '/microsoft-preiserhoehung-tracker',
-            'category' => 'Lizenzen',
-            'status' => 'live',
-            'priority' => 9,
         ]);
     }
 

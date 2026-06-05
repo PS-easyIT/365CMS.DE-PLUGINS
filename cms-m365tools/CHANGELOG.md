@@ -1,6 +1,12 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.38 – 2026-06-02
+
+- `Microsoft-Preiserhöhung-Tracker` aus dem Tools-Plugin ausgelagert: Route, Dependency-Load und Toolbox-Modulregistrierung wurden aus `cms-m365tools` entfernt.
+- Die bestehende Public-URL `/microsoft-preiserhoehung-tracker` wird vom neuen Plugin `cms-m365price-tracker` bereitgestellt.
+- Tools-Dokumentation und Manifest verweisen auf das eigenständige Price-Tracker-Plugin.
+
 ## 3.0.37 – 2026-06-01
 
 - `AI-Pack-vs-Copilot-Pro`: Neue normalisierte Pricing-Matrix über vier Anbieter ergänzt (OpenAI, Anthropic/Claude, Mistral, Microsoft) mit den Tiers `Free/Std`, `Pro`, `Pro+`, `Team`, `Enterprise`.

@@ -2,8 +2,8 @@
 /**
  * Plugin Name: CMS M365 Tools
  * Plugin URI: https://365network.de/cms-m365tools
- * Description: Modulare Microsoft-365-Rechner-Toolbox mit M365LIC-Preisübernahme, Dienstleister- und Kontaktformular-CTA, Landingpage-Designer, UX-optimierter Toolsuche, zentralen Admin-Einstellungen, globalen Paket- und Abopreisbereichen, kurzen Modulmenüs, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass, Power-Platform-Kosten- und Well-Architected-Review, Google-Workspace-M365-TCO-Rechner, Storage-Bedarfs-Rechner, Backup-Kosten-Rechner, Lizenz-Audit-Checkliste, Microsoft-Preiserhöhung-Tracker, Teams-Phone-Lizenz-Berater, Exchange-Online-ROI-Rechner, Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-, Annual-vs-Monthly-Rechner, Add-On-Konfigurator, Lizenzvergleich, Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox- und Copilot-Lizenz-Pflicht-Checker.
- * Version: 3.0.37
+ * Description: Modulare Microsoft-365-Rechner-Toolbox mit M365LIC-Preisübernahme, Dienstleister- und Kontaktformular-CTA, Landingpage-Designer, UX-optimierter Toolsuche, zentralen Admin-Einstellungen, globalen Paket- und Abopreisbereichen, kurzen Modulmenüs, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass, Power-Platform-Kosten- und Well-Architected-Review, Google-Workspace-M365-TCO-Rechner, Storage-Bedarfs-Rechner, Backup-Kosten-Rechner, Lizenz-Audit-Checkliste, Teams-Phone-Lizenz-Berater, Exchange-Online-ROI-Rechner, Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-, Annual-vs-Monthly-Rechner, Add-On-Konfigurator, Lizenzvergleich, Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox- und Copilot-Lizenz-Pflicht-Checker. Der Microsoft-Preiserhöhung-Tracker liegt im eigenständigen Plugin cms-m365price-tracker.
+ * Version: 3.0.38
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-defined('CMS_M365TOOLS_VERSION') || define('CMS_M365TOOLS_VERSION', '3.0.37');
+defined('CMS_M365TOOLS_VERSION') || define('CMS_M365TOOLS_VERSION', '3.0.38');
 defined('CMS_M365TOOLS_PLUGIN_DIR') || define('CMS_M365TOOLS_PLUGIN_DIR', dirname(__FILE__) . '/');
 defined('CMS_M365TOOLS_PLUGIN_URL') || define('CMS_M365TOOLS_PLUGIN_URL', '/plugins/cms-m365tools/');
 
@@ -72,7 +72,6 @@ final class CMS_M365CALCULATOR
             $inc . 'class-frontline-worker-check.php',
             $inc . 'class-exchange-online-roi-calculator.php',
             $inc . 'class-teams-phone-advisor.php',
-            $inc . 'class-microsoft-price-tracker.php',
             $inc . 'class-license-audit-checklist.php',
             $inc . 'class-storage-needs-calculator.php',
             $inc . 'class-backup-cost-calculator.php',

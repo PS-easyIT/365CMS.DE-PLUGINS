@@ -25,7 +25,6 @@ final class CMS_M365CALCULATOR_Frontend
     private const FRONTLINE_WORKER_ROUTE = '/frontline-worker-lizenz-check';
     private const EXCHANGE_ONLINE_ROI_ROUTE = '/exchange-online-roi';
     private const TEAMS_PHONE_ADVISOR_ROUTE = '/teams-phone-lizenzberater';
-    private const MICROSOFT_PRICE_TRACKER_ROUTE = '/microsoft-preiserhoehung-tracker';
     private const LICENSE_AUDIT_CHECKLIST_ROUTE = '/m365-lizenz-audit-checkliste';
     private const STORAGE_NEEDS_ROUTE = '/m365-storage-bedarfsrechner';
     private const BACKUP_COST_ROUTE = '/m365-backup-kostenrechner';
@@ -131,10 +130,6 @@ final class CMS_M365CALCULATOR_Frontend
 
         $this->register_public_route($router, 'GET', self::TEAMS_PHONE_ADVISOR_ROUTE, function (): void {
             $this->render_teams_phone_advisor();
-        });
-
-        $this->register_public_route($router, 'GET', self::MICROSOFT_PRICE_TRACKER_ROUTE, function (): void {
-            $this->render_microsoft_price_tracker();
         });
 
         $this->register_public_route($router, 'GET', self::LICENSE_AUDIT_CHECKLIST_ROUTE, function (): void {
@@ -694,18 +689,6 @@ final class CMS_M365CALCULATOR_Frontend
         exit;
     }
 
-    private function render_microsoft_price_tracker(): void
-    {
-        $this->ensure_tool_available('microsoft-price-tracker');
-
-        $input = CMS_M365CALCULATOR_Microsoft_Price_Tracker::normalize_input($_GET);
-        $result = CMS_M365CALCULATOR_Microsoft_Price_Tracker::evaluate($input);
-
-        $this->set_seo('Microsoft-Preiserhöhung-Tracker', 'Verfolgt offizielle Microsoft-Preis-, Packaging-, Renewal- und SKU-Ereignisse mit Budgetwirkung und visuellem Jahresvergleich.');
-        include CMS_M365CALCULATOR_Microsoft_Price_Tracker::render_price_tracker_page();
-        exit;
-    }
-
     private function render_license_audit_checklist(): void
     {
         $this->ensure_tool_available('license-audit-checklist');
@@ -1115,7 +1098,6 @@ final class CMS_M365CALCULATOR_Frontend
             trim(self::FRONTLINE_WORKER_ROUTE, '/') => 'frontline-worker-license-check',
             trim(self::EXCHANGE_ONLINE_ROI_ROUTE, '/') => 'exchange-online-roi',
             trim(self::TEAMS_PHONE_ADVISOR_ROUTE, '/') => 'teams-phone-advisor',
-            trim(self::MICROSOFT_PRICE_TRACKER_ROUTE, '/') => 'microsoft-price-tracker',
             trim(self::LICENSE_AUDIT_CHECKLIST_ROUTE, '/') => 'license-audit-checklist',
             trim(self::STORAGE_NEEDS_ROUTE, '/') => 'm365-storage-needs-calculator',
             trim(self::BACKUP_COST_ROUTE, '/') => 'm365-backup-cost-calculator',

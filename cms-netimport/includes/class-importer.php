@@ -117,10 +117,21 @@ final class CMS_NetImport_Importer
         'netimport_runs',
         'users',
         'companies',
+        'company_experts',
+        'company_meta',
         'experts',
+        'expert_skills',
+        'expert_meta',
+        'expert_certifications',
+        'expert_projects',
+        'expert_education',
+        'expert_specialization_rel',
         'speakers',
+        'speaker_topics',
+        'speaker_events',
         'events',
         'event_speakers',
+        'event_meta',
     ];
 
     public static function instance(): self
@@ -207,7 +218,7 @@ final class CMS_NetImport_Importer
     {
         $sources = [];
         foreach ($this->sourceDefinitions as $key => $definition) {
-            $resolved = $this->resolve_source_file((string) $definition['canonical_file']);
+            $resolved = $this->resolve_source_file($key);
             $sources[$key] = array_merge($definition, $resolved, [
                 'plugin_ready' => $this->is_plugin_ready((string) $definition['target_plugin'], (string) $definition['target_class']),
                 'rows' => !empty($resolved['exists']) ? $this->count_csv_rows((string) $resolved['path']) : 0,
@@ -271,7 +282,7 @@ final class CMS_NetImport_Importer
         }
 
         $definition = $this->sourceDefinitions[$type];
-        $source = $this->resolve_source_file((string) $definition['canonical_file']);
+        $source = $this->resolve_source_file($type);
         $sourceForReport = $source;
         $result = $this->create_result($type, (string) ($source['selected_file'] ?? ''));
         $result['dry_run'] = $options['dry_run'] === '1';
@@ -335,9 +346,9 @@ final class CMS_NetImport_Importer
             return $result;
         }
 
-        $headerError = $this->validate_required_headers(
+        $headerError = $this->validate_required_header_groups(
             (array) ($csvPayload['headers'] ?? []),
-            (array) ($definition['required_headers'] ?? [])
+            $this->required_field_groups_by_type($type)
         );
         if ($headerError !== null) {
             $result['errors']++;
@@ -350,6 +361,8 @@ final class CMS_NetImport_Importer
 
         if (($source['mode'] ?? 'base') === 'update') {
             $this->add_message($result, 'info', 'Neuere CSV-Datei erkannt: ' . (string) $source['selected_file'] . ' wird als UPDATE-Quelle verwendet.');
+        } elseif (($source['mode'] ?? 'base') === 'custom') {
+            $this->add_message($result, 'info', 'Alternative CSV-Datei mit passender Struktur erkannt: ' . (string) $source['selected_file'] . ' wird als Quelle verwendet.');
         }
 
         $executor = function () use ($type, $options, $source, &$result): void {
@@ -419,7 +432,9 @@ final class CMS_NetImport_Importer
                 'source_mode' => $result['source_mode'] ?? 'base',
             ];
 
-            if (($result['source_mode'] ?? 'base') === 'update') {
+            if (($result['source_mode'] ?? 'base') === 'custom') {
+                $aggregate['source_mode'] = 'custom';
+            } elseif (($result['source_mode'] ?? 'base') === 'update' && ($aggregate['source_mode'] ?? 'base') !== 'custom') {
                 $aggregate['source_mode'] = 'update';
             }
         }
@@ -665,6 +680,275 @@ final class CMS_NetImport_Importer
             $summary['message'] = 'Reset fehlgeschlagen. Details wurden im Server-Log protokolliert.';
             return $summary;
         }
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    public function get_reset_targets(): array
+    {
+        $targets = $this->reset_target_definitions();
+        foreach ($targets as $key => $target) {
+            $targets[$key]['ready'] = $this->is_plugin_ready((string) $target['plugin']);
+            $targets[$key]['records'] = $this->count_reset_target_records($key);
+        }
+
+        return $targets;
+    }
+
+    /**
+     * @param list<string> $targetKeys
+     * @return array<string, mixed>
+     */
+    public function reset_target_plugins(array $targetKeys): array
+    {
+        $allowedTargets = array_keys($this->reset_target_definitions());
+        $targetKeys = array_values(array_unique(array_filter(array_map(static function (mixed $value): string {
+            return strtolower(trim((string) $value));
+        }, $targetKeys))));
+        $targetKeys = array_values(array_intersect($targetKeys, $allowedTargets));
+
+        $result = [
+            'type' => 'plugin_reset',
+            'file' => '',
+            'created' => 0,
+            'updated' => 0,
+            'linked' => 0,
+            'skipped' => 0,
+            'errors' => 0,
+            'warnings' => 0,
+            'dry_run' => false,
+            'source_mode' => 'reset',
+            'messages' => [],
+            'reset_targets' => [],
+        ];
+
+        if ($targetKeys === []) {
+            $result['warnings'] = 1;
+            $this->add_message($result, 'warning', 'Keine Reset-Ziele ausgewählt.');
+            return $result;
+        }
+
+        $db = CMS\Database::instance();
+        $pdo = $db->getPdo();
+
+        try {
+            if (!$pdo->inTransaction()) {
+                $pdo->beginTransaction();
+            }
+
+            $resetSummary = $this->delete_reset_target_data($targetKeys);
+
+            if ($pdo->inTransaction()) {
+                $pdo->commit();
+            }
+
+            $deletedTotal = 0;
+            foreach ($resetSummary as $target => $tables) {
+                $targetDeleted = array_sum(array_map('intval', $tables));
+                $deletedTotal += $targetDeleted;
+                $result['reset_targets'][$target] = [
+                    'deleted' => $targetDeleted,
+                    'tables' => $tables,
+                ];
+            }
+
+            $result['skipped'] = $deletedTotal;
+            $this->add_message($result, 'success', 'Plugin-Daten-Reset abgeschlossen. Entfernte Zeilen: ' . $deletedTotal . '.');
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $result['errors'] = 1;
+            $this->add_message($result, 'error', 'Plugin-Daten-Reset fehlgeschlagen. Details wurden im Server-Log protokolliert.');
+            $this->log_error('Plugin reset failed', $e);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return array<string, array{label:string,plugin:string,description:string,main_table:string,content_tables:list<string>}>
+     */
+    private function reset_target_definitions(): array
+    {
+        return [
+            'companies' => [
+                'label' => 'Companies',
+                'plugin' => 'cms-companies',
+                'description' => 'Unternehmen, Company-Meta und Company↔Expert-Zuordnungen.',
+                'main_table' => 'companies',
+                'content_tables' => ['company_experts', 'company_meta', 'companies'],
+            ],
+            'experts' => [
+                'label' => 'Experts',
+                'plugin' => 'cms-experts',
+                'description' => 'Experten inklusive Meta, Skills, Zertifikaten, Projekten, Ausbildung und Fachrichtungs-Zuordnungen.',
+                'main_table' => 'experts',
+                'content_tables' => ['expert_specialization_rel', 'expert_education', 'expert_projects', 'expert_certifications', 'expert_skills', 'expert_meta', 'experts'],
+            ],
+            'speakers' => [
+                'label' => 'Speakers',
+                'plugin' => 'cms-speakers',
+                'description' => 'Speaker inklusive Themen und manuellen Auftritten.',
+                'main_table' => 'speakers',
+                'content_tables' => ['speaker_events', 'speaker_topics', 'speakers'],
+            ],
+            'events' => [
+                'label' => 'Events',
+                'plugin' => 'cms-events',
+                'description' => 'Events inklusive Event-Meta und Event↔Speaker/Expert-Zuordnungen.',
+                'main_table' => 'events',
+                'content_tables' => ['event_speakers', 'event_meta', 'events'],
+            ],
+        ];
+    }
+
+    private function count_reset_target_records(string $target): int
+    {
+        $definitions = $this->reset_target_definitions();
+        if (!isset($definitions[$target])) {
+            return 0;
+        }
+
+        $total = 0;
+        foreach ($definitions[$target]['content_tables'] as $table) {
+            $total += $this->count_table_rows($table);
+        }
+
+        return $total;
+    }
+
+    /**
+     * @param list<string> $targetKeys
+     * @return array<string, array<string, int>>
+     */
+    private function delete_reset_target_data(array $targetKeys): array
+    {
+        $selected = array_fill_keys($targetKeys, true);
+        $summary = [];
+
+        foreach ($targetKeys as $target) {
+            $summary[$target] = [];
+        }
+
+        if (isset($selected['events'])) {
+            $summary['events']['event_speakers'] = $this->delete_table_rows('event_speakers');
+        } else {
+            if (isset($selected['speakers'])) {
+                $summary['speakers']['event_speakers'] = $this->delete_table_rows('event_speakers', 'speaker_type = ?', ['speaker']);
+            }
+            if (isset($selected['experts'])) {
+                $summary['experts']['event_speakers'] = ($summary['experts']['event_speakers'] ?? 0)
+                    + $this->delete_table_rows('event_speakers', 'speaker_type = ?', ['expert']);
+            }
+        }
+
+        if (isset($selected['companies'])) {
+            $summary['companies']['company_experts'] = $this->delete_table_rows('company_experts');
+        } elseif (isset($selected['experts'])) {
+            $summary['experts']['company_experts'] = $this->delete_company_expert_links_for_all_experts();
+        }
+
+        if (isset($selected['experts'])) {
+            foreach (['expert_specialization_rel', 'expert_education', 'expert_projects', 'expert_certifications', 'expert_skills', 'expert_meta', 'experts'] as $table) {
+                $summary['experts'][$table] = $this->delete_table_rows($table);
+            }
+        }
+
+        if (isset($selected['speakers'])) {
+            foreach (['speaker_events', 'speaker_topics', 'speakers'] as $table) {
+                $summary['speakers'][$table] = $this->delete_table_rows($table);
+            }
+        }
+
+        if (isset($selected['events'])) {
+            foreach (['event_meta', 'events'] as $table) {
+                $summary['events'][$table] = $this->delete_table_rows($table);
+            }
+        }
+
+        if (isset($selected['companies'])) {
+            foreach (['company_meta', 'companies'] as $table) {
+                $summary['companies'][$table] = $this->delete_table_rows($table);
+            }
+        }
+
+        return $summary;
+    }
+
+    private function count_table_rows(string $table, string $where = '', array $params = []): int
+    {
+        if (!$this->database_table_exists($table)) {
+            return 0;
+        }
+
+        $db = CMS\Database::instance();
+        $tableName = $this->table($table);
+        $whereSql = $where !== '' ? ' WHERE ' . $where : '';
+        $stmt = $db->prepare("SELECT COUNT(*) FROM {$tableName}{$whereSql}");
+        $stmt->execute($params);
+        return (int) ($stmt->fetchColumn() ?: 0);
+    }
+
+    private function delete_table_rows(string $table, string $where = '', array $params = []): int
+    {
+        if (!$this->database_table_exists($table)) {
+            return 0;
+        }
+
+        $count = $this->count_table_rows($table, $where, $params);
+        if ($count <= 0) {
+            return 0;
+        }
+
+        $db = CMS\Database::instance();
+        $tableName = $this->table($table);
+        $whereSql = $where !== '' ? ' WHERE ' . $where : '';
+        $stmt = $db->prepare("DELETE FROM {$tableName}{$whereSql}");
+        $stmt->execute($params);
+        return $count;
+    }
+
+    private function delete_company_expert_links_for_all_experts(): int
+    {
+        if (!$this->database_table_exists('company_experts') || !$this->database_table_exists('experts')) {
+            return 0;
+        }
+
+        $count = $this->count_company_expert_links_for_all_experts();
+        if ($count <= 0) {
+            return 0;
+        }
+
+        $db = CMS\Database::instance();
+        $companyExpertsTable = $this->table('company_experts');
+        $expertsTable = $this->table('experts');
+        $stmt = $db->prepare("DELETE ce FROM {$companyExpertsTable} ce INNER JOIN {$expertsTable} e ON e.id = ce.expert_id");
+        $stmt->execute();
+        return $count;
+    }
+
+    private function count_company_expert_links_for_all_experts(): int
+    {
+        $db = CMS\Database::instance();
+        $companyExpertsTable = $this->table('company_experts');
+        $expertsTable = $this->table('experts');
+        $stmt = $db->prepare("SELECT COUNT(*) FROM {$companyExpertsTable} ce INNER JOIN {$expertsTable} e ON e.id = ce.expert_id");
+        $stmt->execute();
+        return (int) ($stmt->fetchColumn() ?: 0);
+    }
+
+    private function database_table_exists(string $table): bool
+    {
+        $db = CMS\Database::instance();
+        $tableName = $this->table($table);
+        $stmt = $db->prepare(
+            'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+        );
+        $stmt->execute([$tableName]);
+
+        return $stmt->fetchColumn() !== false;
     }
 
     private function remove_event_link(int $eventId, int $speakerId, string $speakerType): bool
@@ -1874,12 +2158,15 @@ final class CMS_NetImport_Importer
     /**
      * @return array<string, mixed>
      */
-    private function resolve_source_file(string $canonicalFile): array
+    private function resolve_source_file(string $type): array
     {
+        $definition = $this->sourceDefinitions[$type] ?? null;
+        $canonicalFile = is_array($definition) ? (string) ($definition['canonical_file'] ?? '') : $type;
         $directory = CMS_NETIMPORT_PLUGIN_DIR . 'files_import';
         $canonicalPath = $directory . DIRECTORY_SEPARATOR . $canonicalFile;
         $canonicalExists = is_file($canonicalPath);
         $canonicalFamily = $this->file_family_key(pathinfo($canonicalFile, PATHINFO_FILENAME));
+        $canonicalIsSample = $this->file_name_is_sample($canonicalFile);
         $selected = [
             'path' => $canonicalPath,
             'relative_path' => 'files_import/' . $canonicalFile,
@@ -1889,6 +2176,7 @@ final class CMS_NetImport_Importer
             'mode' => 'base',
             'detected_date' => null,
             'file_size' => $canonicalExists ? (int) filesize($canonicalPath) : 0,
+            'format_match' => false,
         ];
 
         $candidates = [];
@@ -1899,9 +2187,20 @@ final class CMS_NetImport_Importer
                 }
                 $fileName = basename($filePath);
                 $family = $this->file_family_key(pathinfo($fileName, PATHINFO_FILENAME));
-                if ($family !== $canonicalFamily) {
+                $familyMatch = $family === $canonicalFamily;
+                $nameMatch = $this->source_file_name_matches_type($fileName, $type);
+                $reservedForOtherType = $this->source_file_name_matches_other_type($fileName, $type);
+                $payload = $this->get_csv_payload($filePath);
+                $headers = (array) ($payload['headers'] ?? []);
+                $formatMatch = $this->headers_satisfy_required_groups($headers, $this->required_field_groups_by_type($type));
+                if ($reservedForOtherType && !$familyMatch && !$nameMatch) {
                     continue;
                 }
+                if (!$familyMatch && !$nameMatch && !$formatMatch) {
+                    continue;
+                }
+                $isCanonical = $fileName === $canonicalFile;
+                $isSample = $this->file_name_is_sample($fileName);
                 $date = $this->extract_date_from_filename($fileName);
                 $candidates[] = [
                     'path' => $filePath,
@@ -1909,6 +2208,15 @@ final class CMS_NetImport_Importer
                     'date' => $date,
                     'mtime' => (int) filemtime($filePath),
                     'size' => (int) filesize($filePath),
+                    'family_match' => $familyMatch,
+                    'name_match' => $nameMatch,
+                    'format_match' => $formatMatch,
+                    'score' => ($formatMatch ? 100 : 0)
+                        + ($nameMatch ? 80 : 0)
+                        + ($familyMatch ? 40 : 0)
+                        + ($canonicalIsSample && !$isSample ? 70 : 0)
+                        + (!$isCanonical && $nameMatch && !$isSample ? 50 : 0)
+                        - ($isSample ? 60 : 0),
                 ];
             }
         }
@@ -1918,6 +2226,9 @@ final class CMS_NetImport_Importer
         }
 
         usort($candidates, function (array $a, array $b): int {
+            if (($a['score'] ?? 0) !== ($b['score'] ?? 0)) {
+                return ($b['score'] ?? 0) <=> ($a['score'] ?? 0);
+            }
             $aScore = $a['date'] instanceof \DateTimeImmutable ? (int) $a['date']->format('Ymd') : 0;
             $bScore = $b['date'] instanceof \DateTimeImmutable ? (int) $b['date']->format('Ymd') : 0;
             if ($aScore !== $bScore) {
@@ -1936,8 +2247,13 @@ final class CMS_NetImport_Importer
         $selected['exists'] = true;
         $selected['detected_date'] = $best['date'] instanceof \DateTimeImmutable ? $best['date']->format('Y-m-d') : null;
         $selected['file_size'] = $best['size'];
-        if ($best['file'] !== $canonicalFile) {
+        $selected['format_match'] = !empty($best['format_match']);
+        if ($best['file'] === $canonicalFile) {
+            $selected['mode'] = 'base';
+        } elseif (!empty($best['family_match']) || !empty($best['name_match'])) {
             $selected['mode'] = 'update';
+        } else {
+            $selected['mode'] = 'custom';
         }
 
         return $selected;
@@ -2364,6 +2680,49 @@ final class CMS_NetImport_Importer
         return 'CSV-Struktur ungültig. Pflichtspalten fehlen: ' . implode(', ', $missing);
     }
 
+    /**
+     * @param list<string> $headers
+     * @param list<list<string>> $requiredGroups
+     */
+    private function validate_required_header_groups(array $headers, array $requiredGroups): ?string
+    {
+        if ($requiredGroups === []) {
+            return null;
+        }
+
+        $missing = [];
+        foreach ($requiredGroups as $group) {
+            if (!$this->headers_satisfy_required_groups($headers, [$group])) {
+                $missing[] = implode(' oder ', $group);
+            }
+        }
+
+        if ($missing === []) {
+            return null;
+        }
+
+        return 'CSV-Struktur ungültig. Pflichtspalten fehlen: ' . implode(', ', $missing);
+    }
+
+    /**
+     * @param list<string> $headers
+     * @param list<list<string>> $requiredGroups
+     */
+    private function headers_satisfy_required_groups(array $headers, array $requiredGroups): bool
+    {
+        if ($requiredGroups === []) {
+            return true;
+        }
+
+        foreach ($requiredGroups as $group) {
+            if (array_intersect($group, $headers) === []) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private function normalize_header(string $header): string
     {
         $header = trim($header);
@@ -2650,7 +3009,71 @@ final class CMS_NetImport_Importer
         $stem = str_replace(['ä', 'ö', 'ü', 'ß'], ['ae', 'oe', 'ue', 'ss'], $stem);
         $stem = preg_replace('/(?:[_\-\s\(]*(?:update|neu|new))?[_\-\s\(]*(20\d{2}[-_]?\d{2}[-_]?\d{2}|\d{2}[-_]\d{2}[-_]20\d{2})\)?$/u', '', $stem) ?? $stem;
         $stem = preg_replace('/[^a-z0-9]+/u', '_', $stem) ?? $stem;
+        $stem = preg_replace('/(?:^|_)(beispiel|example|muster|sample|vorlage|demo)$/u', '', $stem) ?? $stem;
+        $stem = preg_replace('/(?:^|_)(update|neu|new|import|aktuell|current|daten|data)$/u', '', $stem) ?? $stem;
         return trim($stem, '_');
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    private function source_filename_aliases(): array
+    {
+        return [
+            'companies_example' => ['companies', 'company', 'firmen', 'unternehmen'],
+            'experts_mvps' => ['mvps', 'mvp', 'microsoft_mvps', 'microsoft_mvp'],
+            'experts_example' => ['experts', 'expert', 'experten'],
+            'speakers' => ['speakers', 'speaker'],
+            'events' => ['events_mit_speaker', 'events', 'event'],
+        ];
+    }
+
+    private function source_file_name_matches_type(string $fileName, string $type): bool
+    {
+        $aliases = $this->source_filename_aliases()[$type] ?? [];
+        return $this->file_family_matches_aliases($fileName, $aliases);
+    }
+
+    private function source_file_name_matches_other_type(string $fileName, string $type): bool
+    {
+        foreach ($this->source_filename_aliases() as $otherType => $aliases) {
+            if ($otherType === $type) {
+                continue;
+            }
+            if ($this->file_family_matches_aliases($fileName, $aliases)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param list<string> $aliases
+     */
+    private function file_family_matches_aliases(string $fileName, array $aliases): bool
+    {
+        $family = $this->file_family_key(pathinfo($fileName, PATHINFO_FILENAME));
+        foreach ($aliases as $alias) {
+            $aliasKey = $this->file_family_key($alias);
+            if ($aliasKey === '') {
+                continue;
+            }
+            if ($family === $aliasKey || str_starts_with($family, $aliasKey . '_')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function file_name_is_sample(string $fileName): bool
+    {
+        $family = mb_strtolower(pathinfo($fileName, PATHINFO_FILENAME), 'UTF-8');
+        $family = str_replace(['ä', 'ö', 'ü', 'ß'], ['ae', 'oe', 'ue', 'ss'], $family);
+        $family = preg_replace('/[^a-z0-9]+/u', '_', $family) ?? $family;
+
+        return preg_match('/(?:^|_)(beispiel|example|muster|sample|vorlage|demo)(?:_|$)/u', $family) === 1;
     }
 
     private function normalize_lookup_value(string $value): string

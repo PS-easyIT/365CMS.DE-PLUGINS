@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.0.4 — 2026-06-04
+
+- Bugfix für flexible CSV-Quellenerkennung: Typbezogene Dateien wie `Experts*.csv` werden nun vor `Experts_Beispiel.csv` gewählt, sofern die Header passen.
+- Dateinamen-Prefixes werden importtypspezifisch bewertet, damit `Experts*.csv` nicht mehr versehentlich als MVP-Quelle und andere kompatible CSVs nicht beim falschen Importtyp landen.
+- Beispiel-/Musterdateien bleiben als Fallback erhalten, verlieren aber gegen passend benannte produktive CSV-Dateien.
+
+## 3.0.3 — 2026-06-04
+
+- Flexible CSV-Quellenerkennung ergänzt: CSV-Dateien im Ordner `files_import/` müssen nicht mehr wie die Musterdateien heißen, solange sie die Pflichtspalten des gewählten Importtyps enthalten.
+- Header-Pflichtfeldprüfung akzeptiert jetzt definierte Alias-Gruppen wie `vorname|first_name`, `nachname|last_name`, `event_name|title` und `wann|event_date`.
+- Neue Admin-Tabseite `Plugin-Reset` ergänzt, um Inhalts-, Meta- und Relationstabellen von `cms-events`, `cms-experts`, `cms-speakers` und `cms-companies` gezielt zu bereinigen.
+- Plugin-Reset läuft transaktional, CSRF-geschützt, mit separatem Rate-Limit und löscht nur whitelisted Zielplugin-Tabellen; Einstellungen und Preset-/Kategorie-Listen bleiben erhalten.
+
 ## 3.0.1 — 2026-05-18
 
 - PHP-Anforderung auf 8.4 angehoben und Plugin-Version auf `3.0.1` aktualisiert.
