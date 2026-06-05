@@ -1,6 +1,12 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.39 – 2026-06-05
+
+- Einheitlichen Public-Dark-Mode für den M365Tools-Hub und alle Rechner-Detailseiten ergänzt.
+- Dark-Mode-Tokens decken Theme-/Content-Wrapper, PHINIT-Basiskomponenten, Cards, Hero-/Headerflächen, Such-/Filterelemente, Tabellen, Formulare, Ergebnisbereiche, Status-/Badge-Elemente und CTA-Buttons ab.
+- Hub-spezifische Template-Light-Werte und Detailseiten-Light-Flächen werden per gekapselten `body.dark-mode`- und `html.dark-mode`-Selektoren überschrieben, damit PHINIT-Dark-Mode und Plugin-Design-Tokens konsistent zusammenarbeiten.
+
 ## 3.0.38 – 2026-06-02
 
 - `Microsoft-Preiserhöhung-Tracker` aus dem Tools-Plugin ausgelagert: Route, Dependency-Load und Toolbox-Modulregistrierung wurden aus `cms-m365tools` entfernt.

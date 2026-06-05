@@ -1141,6 +1141,95 @@ body.m365calculator-theme-embed:not(.is-member) #masthead.site-header + :not(#co
     }
 }
 
+/* Hub-/Landingpage Dark-Mode-Feinschliff gegen spätere Template-Styles. */
+body.dark-mode.m365tools-theme-embed #m365tools-landing,
+html.dark-mode body.m365tools-theme-embed #m365tools-landing {
+    background: transparent !important;
+    color: var(--m365tools-dark-text, #f8fafc) !important;
+}
+
+body.dark-mode.m365tools-theme-embed #m365tools-landing:is(.m365tools-page--boxed, .m365-tools--page-boxed),
+html.dark-mode body.m365tools-theme-embed #m365tools-landing:is(.m365tools-page--boxed, .m365-tools--page-boxed) {
+    background: var(--m365tools-dark-surface, #111827) !important;
+    border-color: var(--m365tools-dark-border, #334155) !important;
+}
+
+body.dark-mode.m365tools-theme-embed #m365tools-landing :is(.m365tools-landing__header, .m365tools-finder, .m365tools-category-nav, .m365tools-review-panel, .m365tools-no-results, .phinit-card, .m365-tools .hero .wrap, .m365-tools .toolbar .wrap, .m365-tools .stat, .m365-tools .tool-card, .m365-tools .compass-card, .m365-tools .header-visual, .m365-tools .catalog),
+html.dark-mode body.m365tools-theme-embed #m365tools-landing :is(.m365tools-landing__header, .m365tools-finder, .m365tools-category-nav, .m365tools-review-panel, .m365tools-no-results, .phinit-card, .m365-tools .hero .wrap, .m365-tools .toolbar .wrap, .m365-tools .stat, .m365-tools .tool-card, .m365-tools .compass-card, .m365-tools .header-visual, .m365-tools .catalog) {
+    background-color: var(--m365tools-dark-surface, #111827) !important;
+    border-color: var(--m365tools-dark-border, #334155) !important;
+    color: var(--m365tools-dark-text, #f8fafc) !important;
+}
+
+body.dark-mode.m365tools-theme-embed #m365tools-landing :is(.m365-tools--header-surface .hero .wrap, .m365-tools--header-bordered .hero .wrap, .m365-tools--header-accent .hero .wrap, .m365-tools--header-layout-hero-card .hero .wrap, .m365tools-header--surface .m365tools-landing__header, .m365tools-header--bordered .m365tools-landing__header, .m365tools-header--accent .m365tools-landing__header),
+html.dark-mode body.m365tools-theme-embed #m365tools-landing :is(.m365-tools--header-surface .hero .wrap, .m365-tools--header-bordered .hero .wrap, .m365-tools--header-accent .hero .wrap, .m365-tools--header-layout-hero-card .hero .wrap, .m365tools-header--surface .m365tools-landing__header, .m365tools-header--bordered .m365tools-landing__header, .m365tools-header--accent .m365tools-landing__header) {
+    background-color: var(--m365tools-dark-surface-alt, #1e293b) !important;
+}
+
+body.dark-mode.m365tools-theme-embed #m365tools-landing :is(h1, h2, h3, .m365tools-landing__facts dd, .m365tools-section-head h2, .m365-tools h1, .m365-tools h2, .m365-tools h3, .m365-tools .num, .m365-tools .no-results-title),
+html.dark-mode body.m365tools-theme-embed #m365tools-landing :is(h1, h2, h3, .m365tools-landing__facts dd, .m365tools-section-head h2, .m365-tools h1, .m365-tools h2, .m365-tools h3, .m365-tools .num, .m365-tools .no-results-title) {
+    color: var(--m365tools-dark-text, #f8fafc) !important;
+}
+
+body.dark-mode.m365tools-theme-embed #m365tools-landing :is(.m365tools-landing__intro .phinit-prose, .m365tools-landing__facts dt, .m365tools-section-description, .m365tools-section-count, .m365tools-category-nav small, .m365tools-finder__count, .m365tools-review-domain span, .m365tools-review-check-list li, .phinit-tool-grid p, .m365-tools .lead, .m365-tools .section-sub, .m365-tools .cat-sub, .m365-tools .desc, .m365-tools .checks, .m365-tools .disabled-note, .m365-tools .stat .lbl, .m365-tools .section-tag, .m365-tools .modcount, .m365-tools .d),
+html.dark-mode body.m365tools-theme-embed #m365tools-landing :is(.m365tools-landing__intro .phinit-prose, .m365tools-landing__facts dt, .m365tools-section-description, .m365tools-section-count, .m365tools-category-nav small, .m365tools-finder__count, .m365tools-review-domain span, .m365tools-review-check-list li, .phinit-tool-grid p, .m365-tools .lead, .m365-tools .section-sub, .m365-tools .cat-sub, .m365-tools .desc, .m365-tools .checks, .m365-tools .disabled-note, .m365-tools .stat .lbl, .m365-tools .section-tag, .m365-tools .modcount, .m365-tools .d) {
+    color: var(--m365tools-dark-muted, #cbd5e1) !important;
+}
+
+body.dark-mode.m365tools-theme-embed #m365tools-landing :is(.m365tools-search input, .m365tools-search__hint, .m365tools-tag-chip, .m365tools-category-nav a, .m365tools-section-icon, .m365tools-review-domain, .m365tools-review-chip-list li, .m365tools-btn--secondary, .m365tools-tool-buttons--secondary .m365tools-tool-button, .m365-tools .search-box, .m365-tools .search-box input, .m365-tools .chip, .m365-tools .tag, .m365-tools .cta-btn--secondary, .m365-tools .open-link),
+html.dark-mode body.m365tools-theme-embed #m365tools-landing :is(.m365tools-search input, .m365tools-search__hint, .m365tools-tag-chip, .m365tools-category-nav a, .m365tools-section-icon, .m365tools-review-domain, .m365tools-review-chip-list li, .m365tools-btn--secondary, .m365tools-tool-buttons--secondary .m365tools-tool-button, .m365-tools .search-box, .m365-tools .search-box input, .m365-tools .chip, .m365-tools .tag, .m365-tools .cta-btn--secondary, .m365-tools .open-link) {
+    background-color: var(--m365tools-dark-surface-alt, #1e293b) !important;
+    border-color: var(--m365tools-dark-border, #334155) !important;
+    color: var(--m365tools-dark-text, #f8fafc) !important;
+}
+
+body.dark-mode.m365tools-theme-embed #m365tools-landing :is(.m365tools-tag-chip span, .m365-tools .chip .cnt),
+html.dark-mode body.m365tools-theme-embed #m365tools-landing :is(.m365tools-tag-chip span, .m365-tools .chip .cnt) {
+    color: var(--m365tools-dark-muted, #cbd5e1) !important;
+}
+
+body.dark-mode.m365tools-theme-embed #m365tools-landing :is(.m365tools-tag-chip:hover, .m365tools-tag-chip.is-active, .m365tools-category-nav a:hover, .m365tools-category-nav a.is-active, .m365-tools .chip:hover, .m365-tools .chip:focus-visible),
+html.dark-mode body.m365tools-theme-embed #m365tools-landing :is(.m365tools-tag-chip:hover, .m365tools-tag-chip.is-active, .m365tools-category-nav a:hover, .m365tools-category-nav a.is-active, .m365-tools .chip:hover, .m365-tools .chip:focus-visible) {
+    background-color: color-mix(in srgb, var(--m365tools-primary, #60a5fa) 16%, var(--m365tools-dark-surface-alt, #1e293b)) !important;
+    border-color: var(--m365tools-primary, #60a5fa) !important;
+    color: #dbeafe !important;
+}
+
+body.dark-mode.m365tools-theme-embed #m365tools-landing :is(.m365-tools .chip.active, .m365-tools--button-primary .open-link, .m365-tools .cta-btn, .m365tools-btn--primary, .m365tools-tool-buttons--primary .m365tools-tool-button),
+html.dark-mode body.m365tools-theme-embed #m365tools-landing :is(.m365-tools .chip.active, .m365-tools--button-primary .open-link, .m365-tools .cta-btn, .m365tools-btn--primary, .m365tools-tool-buttons--primary .m365tools-tool-button) {
+    background-color: var(--m365tools-primary, #2563eb) !important;
+    border-color: var(--m365tools-primary, #2563eb) !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode.m365tools-theme-embed #m365tools-landing :is(.m365tools-tool-buttons--minimal .m365tools-tool-button, .m365-tools--button-minimal .open-link, .m365tools-contact-link),
+html.dark-mode body.m365tools-theme-embed #m365tools-landing :is(.m365tools-tool-buttons--minimal .m365tools-tool-button, .m365-tools--button-minimal .open-link, .m365tools-contact-link) {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    color: var(--phinit-color-link, #93c5fd) !important;
+}
+
+body.dark-mode.m365tools-theme-embed #m365tools-landing :is(.m365tools-badge--popular, .m365-tools .flag.beta),
+html.dark-mode body.m365tools-theme-embed #m365tools-landing :is(.m365tools-badge--popular, .m365-tools .flag.beta) {
+    background-color: color-mix(in srgb, var(--phinit-color-warning, #facc15) 14%, var(--m365tools-dark-surface-alt, #1e293b)) !important;
+    border-color: color-mix(in srgb, var(--phinit-color-warning, #facc15) 46%, var(--m365tools-dark-border, #334155)) !important;
+    color: #fde68a !important;
+}
+
+body.dark-mode.m365tools-theme-embed #m365tools-landing :is(.m365tools-badge--new, .m365-tools .flag.soon),
+html.dark-mode body.m365tools-theme-embed #m365tools-landing :is(.m365tools-badge--new, .m365-tools .flag.soon) {
+    background-color: var(--m365tools-dark-surface-alt, #1e293b) !important;
+    border-color: var(--m365tools-dark-border, #334155) !important;
+    color: var(--m365tools-dark-muted, #cbd5e1) !important;
+}
+
+body.dark-mode.m365tools-theme-embed #m365tools-landing .m365-tools .compass-card::after,
+body.dark-mode.m365tools-theme-embed #m365tools-landing .m365-tools--cards-corner-icon .tool-card::after,
+html.dark-mode body.m365tools-theme-embed #m365tools-landing .m365-tools .compass-card::after,
+html.dark-mode body.m365tools-theme-embed #m365tools-landing .m365-tools--cards-corner-icon .tool-card::after {
+    border-top-color: color-mix(in srgb, var(--m365tools-primary, #60a5fa) 18%, var(--m365tools-dark-surface-alt, #1e293b)) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
     #m365tools-landing,
     #m365tools-landing * {
