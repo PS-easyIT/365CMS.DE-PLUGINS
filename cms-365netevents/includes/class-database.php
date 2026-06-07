@@ -255,8 +255,6 @@ final class CMS_365NET_Events_Database
             }
         }
 
-        $this->backfillSeedEventDescriptions();
-
         $speakerColumns = [
             'bio_json' => 'bio_json LONGTEXT DEFAULT NULL',
             'avatar_url' => 'avatar_url VARCHAR(600) DEFAULT NULL',
@@ -802,6 +800,16 @@ final class CMS_365NET_Events_Database
             return false;
         }
 
+        $descriptionJson = $this->cleanEditorJson((string) ($data['description_json'] ?? ''));
+        $description = $this->cleanTextarea((string) ($data['description'] ?? ''), 10000);
+        $descriptionFromEditorJson = '';
+        if ($description === '' && $descriptionJson !== null) {
+            $descriptionFromEditorJson = $this->editorJsonToFallbackText($descriptionJson, 10000);
+            if ($descriptionFromEditorJson !== '') {
+                $description = $descriptionFromEditorJson;
+            }
+        }
+
         $payload = [
             'unique_id' => (string) ($data['unique_id'] ?? ('manual-event-' . substr(hash('sha256', $title . microtime(true)), 0, 12))),
             'source_nr' => isset($data['source_nr']) && (int) $data['source_nr'] > 0 ? (int) $data['source_nr'] : null,
@@ -818,8 +826,8 @@ final class CMS_365NET_Events_Database
             'event_type' => $this->cleanText((string) ($data['event_type'] ?? ''), 120),
             'price' => $this->cleanText((string) ($data['price'] ?? ''), 120),
             'website' => $this->cleanUrl((string) ($data['website'] ?? '')),
-            'description' => $this->cleanTextarea((string) ($data['description'] ?? ''), 10000),
-            'description_json' => $this->cleanEditorJson((string) ($data['description_json'] ?? '')),
+            'description' => $description,
+            'description_json' => $descriptionJson,
             'excerpt' => $this->cleanTextarea((string) ($data['excerpt'] ?? ''), 1200),
             'image_url' => $this->cleanUrl((string) ($data['image_url'] ?? '')),
             'image_alt' => $this->cleanText((string) ($data['image_alt'] ?? ''), 255),
@@ -868,6 +876,10 @@ final class CMS_365NET_Events_Database
             $existing,
             $this->looksLikeSparseUpdate($data, $existing, ['title', 'start_date', 'date_label', 'location', 'organizer', 'category', 'website'])
         );
+
+        if ($descriptionFromEditorJson !== '') {
+            $payload['description'] = $descriptionFromEditorJson;
+        }
 
         $payload = $this->filterPayloadByExistingColumns('365net_events', $payload);
 
@@ -1007,6 +1019,16 @@ final class CMS_365NET_Events_Database
             return false;
         }
 
+        $bioJson = $this->cleanEditorJson((string) ($data['bio_json'] ?? ''));
+        $bio = $this->cleanTextarea((string) ($data['bio'] ?? ''), 10000);
+        $bioFromEditorJson = '';
+        if ($bio === '' && $bioJson !== null) {
+            $bioFromEditorJson = $this->editorJsonToFallbackText($bioJson, 10000);
+            if ($bioFromEditorJson !== '') {
+                $bio = $bioFromEditorJson;
+            }
+        }
+
         $payload = [
             'unique_id' => (string) ($data['unique_id'] ?? ('manual-speaker-' . substr(hash('sha256', $displayName . microtime(true)), 0, 12))),
             'first_name' => $firstName !== '' ? $firstName : null,
@@ -1017,8 +1039,8 @@ final class CMS_365NET_Events_Database
             'topic' => $this->cleanText((string) ($data['topic'] ?? ''), 500),
             'award' => $this->cleanText((string) ($data['award'] ?? ''), 255),
             'website' => $this->cleanUrl((string) ($data['website'] ?? '')),
-            'bio' => $this->cleanTextarea((string) ($data['bio'] ?? ''), 10000),
-            'bio_json' => $this->cleanEditorJson((string) ($data['bio_json'] ?? '')),
+            'bio' => $bio,
+            'bio_json' => $bioJson,
             'avatar_url' => $this->cleanUrl((string) ($data['avatar_url'] ?? '')),
             'avatar_alt' => $this->cleanText((string) ($data['avatar_alt'] ?? ''), 255),
             'categories' => $this->cleanList($data['categories'] ?? '', 500),
@@ -1054,6 +1076,10 @@ final class CMS_365NET_Events_Database
             $existing,
             $this->looksLikeSparseUpdate($data, $existing, ['display_name', 'first_name', 'last_name', 'company', 'topic', 'award', 'website'])
         );
+
+        if ($bioFromEditorJson !== '') {
+            $payload['bio'] = $bioFromEditorJson;
+        }
         $payload = $this->filterPayloadByExistingColumns('365net_event_speakers', $payload);
 
         if ($id > 0) {
@@ -2497,6 +2523,76 @@ final class CMS_365NET_Events_Database
         }
 
         return json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE) ?: null;
+    }
+
+    private function editorJsonToFallbackText(string $json, int $maxLength): string
+    {
+        $decoded = json_decode($json, true);
+        if (!is_array($decoded) || !isset($decoded['blocks']) || !is_array($decoded['blocks'])) {
+            return '';
+        }
+
+        $allowedTextKeys = ['text', 'content', 'caption', 'title', 'message', 'quote', 'code', 'html', 'description'];
+        $ignoredExactValues = ['left', 'right', 'center', 'justify', 'normal', 'small', 'medium', 'large', 'ordered', 'unordered', 'checklist', 'info', 'success', 'warning', 'danger'];
+        $chunks = [];
+        $appendChunk = static function (string $value) use (&$chunks, $ignoredExactValues): void {
+            $value = trim(html_entity_decode(strip_tags($value), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            if ($value !== '') {
+                $normalized = function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
+                if (in_array($normalized, $ignoredExactValues, true)) {
+                    return;
+                }
+                if (preg_match('/^(left|right|center|justify)(\s+(normal|small|medium|large))*$/iu', $normalized) === 1) {
+                    return;
+                }
+                $chunks[] = $value;
+            }
+        };
+
+        $collect = null;
+        $collect = static function (mixed $value, ?string $currentKey = null) use (&$collect, $appendChunk, $allowedTextKeys): void {
+            if (is_string($value)) {
+                if ($currentKey !== null && in_array($currentKey, $allowedTextKeys, true)) {
+                    $appendChunk($value);
+                }
+                return;
+            }
+            if (!is_array($value)) {
+                return;
+            }
+            foreach ($value as $key => $item) {
+                $nextKey = is_string($key) ? strtolower(trim($key)) : null;
+                if (is_string($item) || is_array($item)) {
+                    $collect($item, $nextKey);
+                }
+            }
+        };
+
+        foreach ($decoded['blocks'] as $block) {
+            if (!is_array($block)) {
+                continue;
+            }
+
+            $data = $block['data'] ?? null;
+            if (!is_array($data)) {
+                continue;
+            }
+
+            $collect($data, null);
+        }
+
+        if ($chunks === []) {
+            return '';
+        }
+
+        $deduplicated = [];
+        foreach ($chunks as $chunk) {
+            if ($deduplicated === [] || end($deduplicated) !== $chunk) {
+                $deduplicated[] = $chunk;
+            }
+        }
+
+        return $this->cleanTextarea(implode("\n\n", $deduplicated), $maxLength);
     }
 
     private function cleanJsonList(string $value): ?string

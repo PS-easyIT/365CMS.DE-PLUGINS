@@ -52,7 +52,7 @@ final class CMS_365NET_Events_Admin
             return;
         }
 
-        add_menu_page('365NET Events', '365NET | Events', 'manage_options', '365netevents', [self::class, 'bridgeEvents'], '📅', 45);
+        add_menu_page('365 | Events & Speaker', '365 | Events & Speaker', 'manage_options', '365netevents', [self::class, 'bridgeEvents'], '📅', 45);
         if (function_exists('add_submenu_page')) {
             add_submenu_page('365netevents', 'Events', 'Events', 'manage_options', '365netevents', [self::class, 'bridgeEvents']);
             add_submenu_page('365netevents', 'Speaker', 'Speaker', 'manage_options', '365netevents-speakers', [self::class, 'bridgeSpeakers']);
@@ -87,7 +87,7 @@ final class CMS_365NET_Events_Admin
         $items[] = [
             'type' => 'item',
             'slug' => '365netevents',
-            'label' => '365NET | Events',
+            'label' => '365 | Events & Speaker',
             'icon' => '📅',
             'url' => '/admin/365netevents',
             'active' => str_starts_with($path, '/admin/365netevents'),
@@ -600,7 +600,7 @@ final class CMS_365NET_Events_Admin
     private function renderMediaPickerModal(): void
     {
         $token = CMS\Security::instance()->generateToken('editorjs_media');
-        echo '<div class="modal modal-blur fade cms365-media-modal" id="settingsMediaPickerModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" data-media-picker-title>Bild auswählen</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen">×</button></div><div class="modal-body"><div data-media-picker-modal data-api-url="/api/media" data-csrf-token="' . $this->e($token) . '"><p class="text-secondary small mb-3">Ein Klick übernimmt das Bild in das gewählte Feld; bei Galerien werden Bilder zeilenweise ergänzt.</p><div class="cms365-media-picker-search"><input type="search" class="form-control" placeholder="Mediathek durchsuchen …" data-media-picker-search><span class="description" data-media-picker-status>Lade Medien …</span></div><div class="cms365-media-picker-grid" data-media-picker-grid></div></div></div></div></div></div>';
+        echo '<div class="modal modal-blur fade cms365-media-modal" id="settingsMediaPickerModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" data-media-picker-title>Bild auswählen</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen">×</button></div><div class="modal-body"><div data-media-picker-modal data-api-url="/api/media" data-csrf-token="' . $this->e($token) . '" data-path-prefix="events"><p class="text-secondary small mb-3">Ein Klick übernimmt das Bild in das gewählte Feld; bei Galerien werden Bilder zeilenweise ergänzt.</p><div class="cms365-media-picker-search"><input type="search" class="form-control" placeholder="Mediathek durchsuchen …" data-media-picker-search><span class="description" data-media-picker-status>Lade Medien …</span></div><div class="cms365-media-picker-grid" data-media-picker-grid></div></div></div></div></div></div>';
     }
 
     private function editor(string $name, string $jsonValue, string $fallbackText, string $label): string

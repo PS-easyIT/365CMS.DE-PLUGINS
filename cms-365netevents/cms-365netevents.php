@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: 365NET | Events & Speaker
+ * Plugin Name: 365 | Events & Speaker
  * Plugin URI: https://365network.de/cms-365netevents
  * Description: Modulares Event- und Speaker-Verzeichnis für 365CMS mit Seed-Daten, Admin-CRUD und Public-Views.
  * Version: 3.0.0
@@ -156,7 +156,7 @@ if (!class_exists('CMS_365NET_Events', false)) {
 
             if (class_exists('CMS\\Database') && class_exists('CMS_365NET_Events_Database')) {
                 try {
-                    CMS_365NET_Events_Database::instance()->ensureSchema(true);
+                    CMS_365NET_Events_Database::instance()->ensureSchema();
                 } catch (Throwable $e) {
                     $this->log('activation', $e);
                 }

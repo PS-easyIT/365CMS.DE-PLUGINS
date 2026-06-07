@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: CMS-365Network Hub
+ * Plugin Name: 365 | Landing
  * Plugin Slug: cms-365network
  * Plugin URI: https://365network.de/cms-365network
  * Description: Domainbasierte 365network-HubSite/Landingpage mit konfigurierbarem Layout für Events, Speaker, Firmen und Experten.
@@ -135,9 +135,9 @@ if (!function_exists('hub_admin_page')) {
         }
 
         if (function_exists('cms_plugin_admin_layout_start') && function_exists('cms_plugin_admin_emit_notice') && function_exists('cms_plugin_admin_layout_end')) {
-            cms_plugin_admin_layout_start('365NETWORK', 'cms-365network');
+            cms_plugin_admin_layout_start('365 | Landing', 'cms-365network');
             cms_plugin_admin_emit_notice(
-                'Die 365NETWORK-Adminseite konnte nicht initialisiert werden. Bitte Plugin-Dateien und Server-Log prüfen.',
+                'Die 365 | Landing-Adminseite konnte nicht initialisiert werden. Bitte Plugin-Dateien und Server-Log prüfen.',
                 'error',
                 'cms-365network admin callback missing class=CMS_365NETWORK_Admin method=dispatch_admin_request'
             );
@@ -146,7 +146,7 @@ if (!function_exists('hub_admin_page')) {
         }
 
         error_log('[cms-365network] admin callback missing class=CMS_365NETWORK_Admin method=dispatch_admin_request');
-        echo '<div class="alert alert-error" role="alert">Die 365NETWORK-Adminseite konnte nicht geladen werden.</div>';
+        echo '<div class="alert alert-error" role="alert">Die 365 | Landing-Adminseite konnte nicht geladen werden.</div>';
     }
 }
 

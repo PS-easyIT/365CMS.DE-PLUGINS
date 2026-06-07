@@ -63,7 +63,7 @@ final class CMS_365NETWORK_Admin
         if (function_exists('cms_register_admin_menu')) {
             cms_register_admin_menu([
                 'slug' => self::ADMIN_SLUG,
-                'label' => '365Network Hub',
+                'label' => '365 | Landing',
                 'icon' => 'ti-network',
                 'callback' => 'hub_admin_page',
                 'capability' => 'manage_plugins',
@@ -76,8 +76,8 @@ final class CMS_365NETWORK_Admin
         }
 
         add_menu_page(
-            '365NETWORK',
-            '365NETWORK',
+            '365 | Landing',
+            '365 | Landing',
             'manage_options',
             self::ADMIN_SLUG,
             [self::class, 'render_plugin_page_bridge'],
@@ -114,7 +114,7 @@ final class CMS_365NETWORK_Admin
         $menuItems[] = [
             'type' => 'item',
             'slug' => self::ADMIN_SLUG,
-            'label' => '365NETWORK',
+            'label' => '365 | Landing',
             'icon' => '🌐',
             'url' => self::ADMIN_ROUTE,
             'active' => $isPluginPath && ($requestedPage === self::ADMIN_SLUG || $resolvedTab === 'overview'),
@@ -206,7 +206,7 @@ final class CMS_365NETWORK_Admin
     private function render_settings_for_tab(string $tab): void
     {
         $this->require_admin();
-        $this->start_admin_layout('365NETWORK', self::ADMIN_SLUG);
+        $this->start_admin_layout('365 | Landing', self::ADMIN_SLUG);
         $this->enqueue_admin_css();
 
         $database = CMS_365NETWORK_Database::instance();
@@ -225,7 +225,7 @@ final class CMS_365NETWORK_Admin
 
         echo '<main class="admin-page n365-admin-shell">';
         echo '<header class="admin-page-header n365-admin-hero">';
-        echo '<div><span class="n365-admin-kicker">Hub Control Center <em>v' . htmlspecialchars(CMS_365NETWORK_VERSION, ENT_QUOTES, 'UTF-8') . '</em></span><h2>🌐 CMS 365NETWORK</h2><p>Domain-Landingpage, Public-Bereiche, Beiträge, Toolbox und Analyse zentral konfigurieren.</p></div>';
+        echo '<div><span class="n365-admin-kicker">Hub Control Center <em>v' . htmlspecialchars(CMS_365NETWORK_VERSION, ENT_QUOTES, 'UTF-8') . '</em></span><h2>🌐 365 | Landing</h2><p>Domain-Landingpage, Public-Bereiche, Beiträge, Toolbox und Analyse zentral konfigurieren.</p></div>';
         echo '<div class="header-actions"><a class="btn btn-secondary" href="' . htmlspecialchars($searchUrl, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">🔎 Suche testen</a><a class="btn btn-primary" href="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">👁️ Vorschau öffnen</a></div>';
         echo '</header>';
 

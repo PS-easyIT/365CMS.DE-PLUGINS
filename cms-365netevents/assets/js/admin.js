@@ -147,17 +147,29 @@
 		var status = modal.querySelector('[data-media-picker-status]');
 		var apiUrl = picker ? picker.getAttribute('data-api-url') || '/api/media' : '/api/media';
 		var token = picker ? picker.getAttribute('data-csrf-token') || '' : '';
+		var pathPrefix = picker ? String(picker.getAttribute('data-path-prefix') || 'events').trim() : 'events';
 		var prefix = search ? String(search.value || '').trim() : '';
-		var url = apiUrl + '?action=list_images' + (prefix ? '&filename_prefix=' + encodeURIComponent(prefix) : '') + (token ? '&csrf_token=' + encodeURIComponent(token) : '');
+		var url = apiUrl
+			+ '?action=list_images'
+			+ (pathPrefix ? '&path_prefix=' + encodeURIComponent(pathPrefix) : '')
+			+ (prefix ? '&filename_prefix=' + encodeURIComponent(prefix) : '');
+		var headers = token ? { 'X-CSRF-Token': token } : {};
 
 		if (status) {
 			status.textContent = 'Lade Medien …';
 		}
 
-		fetch(url, { credentials: 'same-origin' })
+		fetch(url, { credentials: 'same-origin', headers: headers })
 			.then(function (response) { return response.json(); })
 			.then(function (payload) {
-				renderMediaGrid(modal, Array.isArray(payload.items) ? payload.items : []);
+				if (payload && Number(payload.success) === 0) {
+					if (status) {
+						status.textContent = payload.message || 'Mediathek konnte nicht geladen werden.';
+					}
+					renderMediaGrid(modal, []);
+					return;
+				}
+				renderMediaGrid(modal, Array.isArray(payload && payload.items) ? payload.items : []);
 			})
 			.catch(function () {
 				if (status) {
@@ -166,13 +178,91 @@
 			});
 	}
 
+	function uploadMediaItem(modal, file) {
+		var picker = modal.querySelector('[data-media-picker-modal]');
+		var status = modal.querySelector('[data-media-picker-status]');
+		var apiUrl = picker ? picker.getAttribute('data-api-url') || '/api/media' : '/api/media';
+		var token = picker ? picker.getAttribute('data-csrf-token') || '' : '';
+		var slugInput = document.querySelector('input[name="slug"]');
+		var titleInput = document.querySelector('input[name="title"], input[name="display_name"]');
+		var formData = new FormData();
+
+		formData.append('action', 'upload_image');
+		formData.append('image', file);
+		formData.append('content_type', 'events');
+		if (slugInput && slugInput.value) {
+			formData.append('content_slug', String(slugInput.value));
+		} else if (titleInput && titleInput.value) {
+			formData.append('content_title', String(titleInput.value));
+		}
+
+		if (status) {
+			status.textContent = 'Lade Bild hoch …';
+		}
+
+		fetch(apiUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: token ? { 'X-CSRF-Token': token } : {},
+			body: formData
+		})
+			.then(function (response) { return response.json(); })
+			.then(function (payload) {
+				if (!payload || Number(payload.success) !== 1) {
+					if (status) {
+						status.textContent = payload && payload.message ? payload.message : 'Upload fehlgeschlagen.';
+					}
+					return;
+				}
+				if (status) {
+					status.textContent = 'Upload erfolgreich.';
+				}
+				loadMediaItems(modal);
+			})
+			.catch(function () {
+				if (status) {
+					status.textContent = 'Upload fehlgeschlagen.';
+				}
+			});
+	}
+
 	function initMediaPicker() {
 		var modal = byId('settingsMediaPickerModal');
 		var instance = null;
 		var searchTimer = null;
+		var picker = null;
+		var uploadButton = null;
+		var uploadInput = null;
 
 		if (!modal) {
 			return;
+		}
+
+		picker = modal.querySelector('[data-media-picker-modal]');
+		uploadButton = modal.querySelector('[data-media-picker-upload-trigger]');
+		uploadInput = modal.querySelector('[data-media-picker-upload-input]');
+
+		if (!uploadInput && picker) {
+			uploadInput = document.createElement('input');
+			uploadInput.type = 'file';
+			uploadInput.accept = 'image/*';
+			uploadInput.hidden = true;
+			uploadInput.setAttribute('data-media-picker-upload-input', '1');
+			picker.appendChild(uploadInput);
+		}
+
+		if (!uploadButton && picker) {
+			uploadButton = document.createElement('button');
+			uploadButton.type = 'button';
+			uploadButton.className = 'btn btn-secondary btn-sm';
+			uploadButton.textContent = 'Bild hochladen';
+			uploadButton.setAttribute('data-media-picker-upload-trigger', '1');
+			var searchWrap = modal.querySelector('.cms365-media-picker-search');
+			if (searchWrap) {
+				searchWrap.appendChild(uploadButton);
+			} else {
+				picker.insertBefore(uploadButton, picker.firstChild);
+			}
 		}
 
 		function showModal() {
@@ -230,6 +320,21 @@
 			search.addEventListener('input', function () {
 				window.clearTimeout(searchTimer);
 				searchTimer = window.setTimeout(function () { loadMediaItems(modal); }, 250);
+			});
+		}
+
+		if (uploadButton && uploadInput) {
+			uploadButton.addEventListener('click', function () {
+				uploadInput.click();
+			});
+
+			uploadInput.addEventListener('change', function () {
+				var file = uploadInput.files && uploadInput.files[0] ? uploadInput.files[0] : null;
+				if (!file) {
+					return;
+				}
+				uploadMediaItem(modal, file);
+				uploadInput.value = '';
 			});
 		}
 	}
@@ -303,4 +408,3 @@
 		initMediaPicker();
 	});
 })();
-(function(){'use strict';document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('form[data-confirm]').forEach(function(form){form.addEventListener('submit',function(event){var message=form.getAttribute('data-confirm')||'Diese Aktion ausführen?';if(!window.confirm(message)){event.preventDefault();}});});document.querySelectorAll('.cms365-multiselect').forEach(function(select){select.addEventListener('dblclick',function(event){if(event.target&&event.target.tagName==='OPTION'){event.target.selected=!event.target.selected;}});});document.querySelectorAll('[data-cms365-image-input]').forEach(function(input){var field=input.closest('.cms365-image-field');var preview=field?field.querySelector('[data-cms365-image-preview]'):null;var render=function(){var value=(input.value||'').trim();if(!preview){return;}preview.innerHTML='';if(!value){var empty=document.createElement('span');empty.textContent='Keine Vorschau';preview.appendChild(empty);return;}var img=document.createElement('img');img.src=value;img.alt='Bildvorschau';img.loading='lazy';img.addEventListener('error',function(){preview.innerHTML='<span>Vorschau nicht verfügbar</span>';});preview.appendChild(img);};input.addEventListener('input',render);render();});document.querySelectorAll('input[name="tags"],input[name="categories"],input[name="specializations"],input[name="languages"]').forEach(function(input){input.addEventListener('blur',function(){var seen=[];input.value=(input.value||'').split(/[,;\n]+/).map(function(item){return item.trim();}).filter(function(item){var key=item.toLowerCase();if(!item||seen.indexOf(key)!==-1){return false;}seen.push(key);return true;}).join(', ');});});});})();
