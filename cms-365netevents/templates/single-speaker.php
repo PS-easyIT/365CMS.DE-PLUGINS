@@ -28,9 +28,15 @@ $tags = array_filter(array_map('trim', explode(',', (string) ($speaker->tags ?? 
         <nav class="cms-events-breadcrumb"><a href="<?= htmlspecialchars($base . '/speakers', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($settings['speaker_archive_title'] ?? 'Speaker'), ENT_QUOTES, 'UTF-8') ?></a><span>/</span><span><?= htmlspecialchars((string) ($speaker->display_name ?? ''), ENT_QUOTES, 'UTF-8') ?></span></nav>
         <article class="cms-events-detail-layout">
             <section class="cms-events-detail-main">
-                <?php if (!empty($speaker->avatar_url)): ?><img class="cms-speaker-photo" src="<?= htmlspecialchars((string) $speaker->avatar_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($speaker->avatar_alt ?? $speaker->display_name ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="eager"><?php else: ?><span class="cms-speaker-avatar cms-speaker-avatar--large"><?= htmlspecialchars(strtoupper(substr((string) ($speaker->display_name ?? 'S'), 0, 1)), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
-                <h1><?= htmlspecialchars((string) ($speaker->display_name ?? ''), ENT_QUOTES, 'UTF-8') ?></h1>
-                <?php if (!empty($speaker->topic)): ?><p class="cms-events-lead"><?= htmlspecialchars((string) $speaker->topic, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+                <header class="cms-speaker-head">
+                    <div class="cms-speaker-head__media">
+                        <?php if (!empty($speaker->avatar_url)): ?><img class="cms-speaker-photo" src="<?= htmlspecialchars((string) $speaker->avatar_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($speaker->avatar_alt ?? $speaker->display_name ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="eager"><?php else: ?><span class="cms-speaker-avatar cms-speaker-avatar--large"><?= htmlspecialchars(strtoupper(substr((string) ($speaker->display_name ?? 'S'), 0, 1)), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                    </div>
+                    <div class="cms-speaker-head__content">
+                        <h1 class="cms-speaker-head__title"><?= htmlspecialchars((string) ($speaker->display_name ?? ''), ENT_QUOTES, 'UTF-8') ?></h1>
+                        <?php if (!empty($speaker->topic)): ?><p class="cms-speaker-head__lead"><?= htmlspecialchars((string) $speaker->topic, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+                    </div>
+                </header>
                 <?php if ($badges !== [] || $tags !== []): ?><div class="cms-events-badges"><?php foreach (array_slice(array_merge($badges, $tags), 0, 12) as $badge): ?><span><?= htmlspecialchars($badge, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?></div><?php endif; ?>
                 <?= $renderEditor($speaker->bio_json ?? '', $speaker->bio ?? '') ?>
                 <section class="cms-events-section"><h2>Events</h2><?php if ($relatedEvents === []): ?><p>Noch keine öffentlichen Events verknüpft.</p><?php else: ?><div class="cms-speaker-list"><?php foreach ($relatedEvents as $event): ?><a class="cms-speaker-row" href="<?= htmlspecialchars($base . '/events/' . rawurlencode((string) $event->slug), ENT_QUOTES, 'UTF-8') ?>"><span>📅</span><span><strong><?= htmlspecialchars((string) $event->title, ENT_QUOTES, 'UTF-8') ?></strong><small><?= htmlspecialchars((string) ($event->date_label ?? ''), ENT_QUOTES, 'UTF-8') ?><?= !empty($event->location) ? ' · ' . htmlspecialchars((string) $event->location, ENT_QUOTES, 'UTF-8') : '' ?></small></span></a><?php endforeach; ?></div><?php endif; ?></section>

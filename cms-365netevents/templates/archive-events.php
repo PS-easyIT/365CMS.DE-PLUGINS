@@ -51,19 +51,23 @@ $eventCardExcerpt = static function (object $event): string {
 ?>
 <main class="cms-events-public cms-events-archive">
     <div class="cms-events-container">
-        <section class="cms-events-hero">
+        <section class="cms-events-hero cms-events-hero--compact">
             <span class="cms-events-kicker"><?= htmlspecialchars((string) ($settings['archive_kicker'] ?? '365NET Event Directory'), ENT_QUOTES, 'UTF-8') ?></span>
             <h1><?= htmlspecialchars((string) ($settings['archive_title'] ?? 'Events & Messen'), ENT_QUOTES, 'UTF-8') ?></h1>
-            <p><?= htmlspecialchars((string) ($settings['archive_description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-            <p class="cms-events-current-label"><?= htmlspecialchars($showPast ? (string) ($settings['archive_past_button'] ?? 'Vergangene Events') : $futureLabel, ENT_QUOTES, 'UTF-8') ?></p>
+            <p class="cms-events-hero__description"><?= htmlspecialchars((string) ($settings['archive_description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
         </section>
 
-        <form method="GET" class="cms-events-search" role="search">
+        <form method="GET" class="cms-events-search cms-events-search--header-card" role="search">
             <?php if ($showPast): ?><input type="hidden" name="past" value="1"><?php endif; ?>
-            <input type="search" name="q" value="<?= $q ?>" placeholder="<?= htmlspecialchars((string) ($settings['archive_search_placeholder'] ?? 'Event, Ort, Thema oder Veranstalter suchen …'), ENT_QUOTES, 'UTF-8') ?>" aria-label="Events suchen">
-            <button type="submit"><?= htmlspecialchars((string) ($settings['archive_search_button'] ?? 'Suchen'), ENT_QUOTES, 'UTF-8') ?></button>
-            <a href="<?= htmlspecialchars($toggleUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($showPast ? $futureButton : (string) ($settings['archive_past_button'] ?? 'Vergangene Events anzeigen'), ENT_QUOTES, 'UTF-8') ?></a>
-            <?php if ($q !== ''): ?><a href="<?= htmlspecialchars($base . '/events' . ($showPast ? '?past=1' : ''), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($settings['archive_reset_label'] ?? 'Zurücksetzen'), ENT_QUOTES, 'UTF-8') ?></a><?php endif; ?>
+            <div class="cms-events-search__field">
+                <p class="cms-events-search__hint"><?= htmlspecialchars($showPast ? (string) ($settings['archive_past_button'] ?? 'Vergangene Events') : $futureLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                <input type="search" name="q" value="<?= $q ?>" placeholder="<?= htmlspecialchars((string) ($settings['archive_search_placeholder'] ?? 'Event, Ort, Thema oder Veranstalter suchen …'), ENT_QUOTES, 'UTF-8') ?>" aria-label="Events suchen">
+            </div>
+            <div class="cms-events-search__actions">
+                <button type="submit"><?= htmlspecialchars((string) ($settings['archive_search_button'] ?? 'Suchen'), ENT_QUOTES, 'UTF-8') ?></button>
+                <a href="<?= htmlspecialchars($toggleUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($showPast ? $futureButton : (string) ($settings['archive_past_button'] ?? 'Vergangene Events anzeigen'), ENT_QUOTES, 'UTF-8') ?></a>
+                <?php if ($q !== ''): ?><a href="<?= htmlspecialchars($base . '/events' . ($showPast ? '?past=1' : ''), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($settings['archive_reset_label'] ?? 'Zurücksetzen'), ENT_QUOTES, 'UTF-8') ?></a><?php endif; ?>
+            </div>
         </form>
 
         <?php if ($events === []): ?>
@@ -74,7 +78,10 @@ $eventCardExcerpt = static function (object $event): string {
                     <?php $eventUrl = $base . '/events/' . rawurlencode((string) $event->slug); ?>
                     <?php $cardExcerpt = $eventCardExcerpt($event); ?>
                     <article class="cms-events-card">
-                        <h2><a href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $event->title, ENT_QUOTES, 'UTF-8') ?></a></h2>
+                        <h2>
+                            <a class="cms-events-card__title-link" href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $event->title, ENT_QUOTES, 'UTF-8') ?></a>
+                            <?php if (!empty($event->image_url)): ?><a class="cms-events-card__title-image-link" href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>" aria-label="<?= htmlspecialchars('Event öffnen: ' . (string) ($event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>"><span class="cms-events-card__title-image"><img src="<?= htmlspecialchars((string) $event->image_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($event->image_alt ?? $event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="lazy"></span></a><?php endif; ?>
+                        </h2>
                         <div class="cms-events-card__meta">
                             <span><?= htmlspecialchars((string) ($event->date_label ?? 'Termin offen'), ENT_QUOTES, 'UTF-8') ?></span>
                             <?php if (!empty($event->location)): ?><span><?= htmlspecialchars((string) $event->location, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>

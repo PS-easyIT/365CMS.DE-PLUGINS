@@ -23,7 +23,10 @@ $paginationUrl = static function (int $page) use ($base, $filters): string {
 };
 
 $speakerCardExcerpt = static function (object $speaker): string {
-    $raw = (string) ($speaker->bio ?? '');
+    $raw = trim((string) ($speaker->bio ?? ''));
+    if ($raw === '') {
+        $raw = trim((string) ($speaker->description ?? ''));
+    }
     if ($raw === '') {
         return '';
     }
@@ -34,18 +37,54 @@ $speakerCardExcerpt = static function (object $speaker): string {
     }
 
     return function_exists('mb_substr')
-        ? (string) mb_substr($text, 0, 360, 'UTF-8')
-        : substr($text, 0, 360);
+        ? (string) mb_substr($text, 0, 180, 'UTF-8')
+        : substr($text, 0, 180);
 };
 ?>
 <main class="cms-events-public cms-speakers-archive">
     <div class="cms-events-container">
-        <section class="cms-events-hero"><span class="cms-events-kicker"><?= htmlspecialchars((string) ($settings['speaker_archive_kicker'] ?? '365NET Speaker Directory'), ENT_QUOTES, 'UTF-8') ?></span><h1><?= htmlspecialchars((string) ($settings['speaker_archive_title'] ?? 'Event-Speaker'), ENT_QUOTES, 'UTF-8') ?></h1><p><?= htmlspecialchars((string) ($settings['speaker_archive_description'] ?? 'Echte Personen mit Bühne, Erfahrung und starken Themen aus dem Event-Datensatz.'), ENT_QUOTES, 'UTF-8') ?></p></section>
-        <form method="GET" class="cms-events-search" role="search"><input type="search" name="q" value="<?= $q ?>" placeholder="<?= htmlspecialchars((string) ($settings['speaker_search_placeholder'] ?? 'Speaker, Thema oder Tag suchen …'), ENT_QUOTES, 'UTF-8') ?>"><button type="submit"><?= htmlspecialchars((string) ($settings['archive_search_button'] ?? 'Suchen'), ENT_QUOTES, 'UTF-8') ?></button></form>
+        <section class="cms-events-hero cms-events-hero--compact">
+            <span class="cms-events-kicker"><?= htmlspecialchars((string) ($settings['speaker_archive_kicker'] ?? '365NET Speaker Directory'), ENT_QUOTES, 'UTF-8') ?></span>
+            <h1><?= htmlspecialchars((string) ($settings['speaker_archive_title'] ?? 'Event-Speaker'), ENT_QUOTES, 'UTF-8') ?></h1>
+            <p class="cms-events-hero__description"><?= htmlspecialchars((string) ($settings['speaker_archive_description'] ?? 'Echte Personen mit Bühne, Erfahrung und starken Themen aus dem Event-Datensatz.'), ENT_QUOTES, 'UTF-8') ?></p>
+        </section>
+        <form method="GET" class="cms-events-search cms-events-search--header-card" role="search">
+            <div class="cms-events-search__field">
+                <input type="search" name="q" value="<?= $q ?>" placeholder="<?= htmlspecialchars((string) ($settings['speaker_search_placeholder'] ?? 'Speaker, Thema oder Tag suchen …'), ENT_QUOTES, 'UTF-8') ?>">
+            </div>
+            <div class="cms-events-search__actions">
+                <button type="submit"><?= htmlspecialchars((string) ($settings['archive_search_button'] ?? 'Suchen'), ENT_QUOTES, 'UTF-8') ?></button>
+                <?php if ($q !== ''): ?><a href="<?= htmlspecialchars($base . '/speakers', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($settings['archive_reset_label'] ?? 'Zurücksetzen'), ENT_QUOTES, 'UTF-8') ?></a><?php endif; ?>
+            </div>
+        </form>
         <div class="cms-events-grid cms-speakers-grid">
             <?php foreach ($speakers as $speaker): ?>
-                <?php $speakerExcerpt = $speakerCardExcerpt($speaker); ?>
-                <article class="cms-events-card cms-speaker-card"><?php if (!empty($speaker->avatar_url)): ?><img class="cms-speaker-photo cms-speaker-photo--card" src="<?= htmlspecialchars((string) $speaker->avatar_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($speaker->avatar_alt ?? $speaker->display_name ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="lazy"><?php else: ?><span class="cms-speaker-avatar"><?= htmlspecialchars(strtoupper(substr((string) ($speaker->display_name ?? 'S'), 0, 1)), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?><h2><a href="<?= htmlspecialchars($base . '/speakers/' . rawurlencode((string) $speaker->slug), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $speaker->display_name, ENT_QUOTES, 'UTF-8') ?></a></h2><?php if ($speakerExcerpt !== ''): ?><p class="cms-speaker-card__excerpt"><?= htmlspecialchars($speakerExcerpt, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?><?php $speakerTags = array_filter(array_map('trim', explode(',', (string) (($speaker->tags ?? '') ?: ($speaker->specializations ?? ''))))); if ($speakerTags !== []): ?><div class="cms-events-mini-tags"><?php foreach (array_slice($speakerTags, 0, 4) as $tag): ?><span><?= htmlspecialchars($tag, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?></div><?php endif; ?><?php if (!empty($speaker->price_class) || (int) ($speaker->event_count ?? 0) > 0): ?><footer><?php if (!empty($speaker->price_class)): ?><span><?= htmlspecialchars((string) $speaker->price_class, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?><?php if ((int) ($speaker->event_count ?? 0) > 0): ?><span class="cms-speaker-card__events"><?= (int) ($speaker->event_count ?? 0) ?> Events</span><?php endif; ?></footer><?php endif; ?></article>
+                <?php
+                $speakerUrl = $base . '/speakers/' . rawurlencode((string) $speaker->slug);
+                $speakerExcerpt = $speakerCardExcerpt($speaker);
+                $speakerEvents = (int) ($speaker->event_count ?? 0);
+                ?>
+                <article class="cms-events-card cms-speaker-card">
+                    <div class="cms-speaker-card__head">
+                        <div class="cms-speaker-card__media">
+                            <?php if (!empty($speaker->avatar_url)): ?>
+                                <img class="cms-speaker-photo cms-speaker-photo--card" src="<?= htmlspecialchars((string) $speaker->avatar_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($speaker->avatar_alt ?? $speaker->display_name ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="lazy">
+                            <?php else: ?>
+                                <span class="cms-speaker-avatar cms-speaker-avatar--card"><?= htmlspecialchars(strtoupper(substr((string) ($speaker->display_name ?? 'S'), 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <h2 class="cms-speaker-card__name"><a href="<?= htmlspecialchars($speakerUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $speaker->display_name, ENT_QUOTES, 'UTF-8') ?></a></h2>
+                    </div>
+
+                    <?php if ($speakerExcerpt !== ''): ?>
+                        <p class="cms-speaker-card__excerpt"><?= htmlspecialchars($speakerExcerpt, ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php endif; ?>
+
+                    <footer>
+                        <span class="cms-speaker-card__events"><?= $speakerEvents ?> Events</span>
+                        <a class="cms-events-card__more" href="<?= htmlspecialchars($speakerUrl, ENT_QUOTES, 'UTF-8') ?>">Mehr Infos …</a>
+                    </footer>
+                </article>
             <?php endforeach; ?>
         </div>
         <?php if ($totalPages > 1): ?>
