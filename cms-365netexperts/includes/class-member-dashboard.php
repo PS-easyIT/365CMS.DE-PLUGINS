@@ -68,7 +68,7 @@ class CMS_Experts_Member_Dashboard
     public function register(\CMS\Member\PluginDashboardRegistry $registry): void
     {
         $registry->register([
-            'plugin'    => 'cms-365NETexperts',
+            'plugin'    => 'cms-365netexperts',
             'slug'      => 'experts',
             'label'     => 'EXPERTS',
             'icon'      => '🧑‍💼',

@@ -1,512 +1,306 @@
 (function () {
-    'use strict';
-
-    function openManagedModal(modal) {
-        if (!modal) {
-            return;
-        }
-
-        modal.hidden = false;
-        modal.style.display = 'flex';
-        modal.setAttribute('aria-hidden', 'false');
-    }
-
-    function closeManagedModal(modal) {
-        if (!modal) {
-            return;
-        }
-
-        modal.style.display = 'none';
-        modal.hidden = true;
-        modal.setAttribute('aria-hidden', 'true');
-    }
-
-    function bindBadgeStyles() {
-        document.querySelectorAll('[data-ev-badge-fg], [data-ev-badge-bg]').forEach(function (badge) {
-            if (badge.dataset.evBadgeFg) {
-                badge.style.color = badge.dataset.evBadgeFg;
-            }
-            if (badge.dataset.evBadgeBg) {
-                badge.style.background = badge.dataset.evBadgeBg;
-            }
-        });
-    }
-
-    function bindConfirmForms() {
-        document.querySelectorAll('form[data-ev-confirm-message]').forEach(function (form) {
-            form.addEventListener('submit', function (event) {
-                if (form.dataset.evConfirmed === '1') {
-                    delete form.dataset.evConfirmed;
-                    return;
-                }
-
-                event.preventDefault();
-
-                if (typeof window.cmsConfirm === 'function') {
-                    window.cmsConfirm({
-                        title: form.dataset.evConfirmTitle || 'Aktion bestätigen',
-                        message: form.dataset.evConfirmMessage || '',
-                        confirmText: form.dataset.evConfirmButton || 'Bestätigen',
-                        confirmClass: form.dataset.evConfirmClass || 'btn-danger',
-                        onConfirm: function () {
-                            form.dataset.evConfirmed = '1';
-                            form.requestSubmit();
-                        }
-                    });
-                    return;
-                }
-
-                form.dataset.evConfirmed = '1';
-                form.requestSubmit();
-            });
-        });
-    }
-
-    function bindOverviewModals() {
-        var approveModal = document.getElementById('evApproveModal');
-        var deleteModal = document.getElementById('evDeleteModal');
-        var approveName = document.getElementById('evApproveName');
-        var deleteName = document.getElementById('evDeleteName');
-        var deleteForm = document.getElementById('evDeleteForm');
-        var approveConfirm = document.getElementById('evApproveConfirm');
-        var pendingApproveForm = null;
-
-        document.querySelectorAll('[data-ev-approve-event]').forEach(function (button) {
-            button.addEventListener('click', function () {
-                if (approveName) {
-                    approveName.textContent = button.dataset.evEventName || '';
-                }
-
-                var submitTargetId = button.dataset.evSubmitTarget || '';
-                pendingApproveForm = submitTargetId ? document.getElementById(submitTargetId) : button.closest('form');
-                openManagedModal(approveModal);
-            });
-        });
-
-        approveConfirm?.addEventListener('click', function () {
-            closeManagedModal(approveModal);
-            pendingApproveForm?.requestSubmit();
-        });
-
-        document.querySelectorAll('[data-ev-delete-event]').forEach(function (button) {
-            button.addEventListener('click', function () {
-                if (deleteName) {
-                    deleteName.textContent = button.dataset.evEventName || '';
-                }
-                if (deleteForm) {
-                    deleteForm.action = button.dataset.evDeleteAction || deleteForm.action;
-                }
-                openManagedModal(deleteModal);
-            });
-        });
-
-        document.querySelectorAll('[data-ev-modal-close]').forEach(function (button) {
-            button.addEventListener('click', function () {
-                var modalId = button.dataset.evModalClose || '';
-                if (!modalId) {
-                    return;
-                }
-                closeManagedModal(document.getElementById(modalId));
-            });
-        });
-
-        document.querySelectorAll('[data-ev-managed-modal]').forEach(function (modal) {
-            modal.addEventListener('click', function (event) {
-                if (event.target === modal) {
-                    closeManagedModal(modal);
-                }
-            });
-        });
-
-        document.addEventListener('keydown', function (event) {
-            if (event.key !== 'Escape') {
-                return;
-            }
-
-            document.querySelectorAll('[data-ev-managed-modal]').forEach(function (modal) {
-                if (modal.style.display === 'flex') {
-                    closeManagedModal(modal);
-                }
-            });
-        });
-    }
-
-    function bindColorFields() {
-        document.querySelectorAll('[data-ev-color-picker]').forEach(function (picker) {
-            picker.addEventListener('input', function () {
-                var textId = picker.dataset.evColorText || '';
-                var textInput = textId ? document.getElementById(textId) : null;
-                if (textInput) {
-                    textInput.value = picker.value;
-                    textInput.dispatchEvent(new CustomEvent('ev:color-updated', { bubbles: true }));
-                }
-            });
-        });
-
-        document.querySelectorAll('[data-ev-color-text]').forEach(function (textInput) {
-            var syncPicker = function () {
-                var pickerId = textInput.dataset.evColorPicker || '';
-                var picker = pickerId ? document.getElementById(pickerId) : null;
-                var value = textInput.value.trim();
-                if (picker && /^#[0-9a-fA-F]{6}$/.test(value)) {
-                    picker.value = value;
-                }
-                textInput.dispatchEvent(new CustomEvent('ev:color-updated', { bubbles: true }));
-            };
-
-            textInput.addEventListener('input', syncPicker);
-            textInput.addEventListener('change', syncPicker);
-        });
-    }
-
-    function bindHeaderPreview() {
-        var preview = document.getElementById('ev_hdr_preview');
-        if (!preview) {
-            return;
-        }
-
-        var icon = document.getElementById('ev_hdr_icon');
-        var title = document.getElementById('ev_hdr_title');
-        var titleText = preview.dataset.evPreviewTitle || 'Events';
-
-        function getValue(id, fallback) {
-            var element = document.getElementById(id);
-            return element ? element.value : fallback;
-        }
-
-        function updatePreview() {
-            var from = getValue('txt_color_hdr_from', '#1d4ed8');
-            var to = getValue('txt_color_hdr_to', '#3b82f6');
-            var color = getValue('txt_color_hdr_title', '#ffffff');
-            var emoji = getValue('txt_archive_header_icon', '📅');
-
-            preview.style.background = 'linear-gradient(135deg,' + from + ',' + to + ')';
-            preview.style.color = color;
-            if (icon) {
-                icon.textContent = emoji;
-            }
-            if (title) {
-                title.textContent = titleText;
-                title.style.color = color;
-            }
-        }
-
-        ['txt_color_hdr_from', 'txt_color_hdr_to', 'txt_color_hdr_title', 'txt_archive_header_icon'].forEach(function (id) {
-            var element = document.getElementById(id);
-            element?.addEventListener('input', updatePreview);
-            element?.addEventListener('ev:color-updated', updatePreview);
-        });
-
-        updatePreview();
-    }
-
-    function bindDesignPreviewCard() {
-        var previewShell = document.getElementById('ev_design_preview');
-        var previewIcon = document.getElementById('prev-icon');
-        var previewTitle = document.getElementById('prev-title');
-
-        if (!previewShell) {
-            return;
-        }
-
-        function getValue(id, fallback) {
-            var element = document.getElementById(id);
-            return element ? element.value : fallback;
-        }
-
-        function updateCardPreview() {
-            previewShell.style.setProperty('--ev-preview-from', getValue('txt_color_hdr_from', '#1d4ed8'));
-            previewShell.style.setProperty('--ev-preview-to', getValue('txt_color_hdr_to', '#3b82f6'));
-            previewShell.style.setProperty('--ev-preview-title-color', getValue('txt_color_hdr_title', '#ffffff'));
-            previewShell.style.setProperty('--ev-preview-card-bg', getValue('txt_color_card_bg', '#f0f7ff'));
-            previewShell.style.setProperty('--ev-preview-border', getValue('txt_color_card_border', '#bfdbfe'));
-            previewShell.style.setProperty('--ev-preview-primary', getValue('txt_color_primary', '#3b82f6'));
-            previewShell.style.setProperty('--ev-preview-radius', getValue('border_radius', '12') + 'px');
-
-            if (previewIcon) {
-                previewIcon.textContent = getValue('txt_archive_header_icon', '📅');
-            }
-
-            if (previewTitle) {
-                previewTitle.textContent = getValue('archive_title', 'Events');
-            }
-        }
-
-        [
-            'txt_color_hdr_from',
-            'txt_color_hdr_to',
-            'txt_color_hdr_title',
-            'txt_color_card_bg',
-            'txt_color_card_border',
-            'txt_color_primary',
-            'txt_archive_header_icon',
-            'archive_title',
-            'border_radius'
-        ].forEach(function (id) {
-            var element = document.getElementById(id);
-            element?.addEventListener('input', updateCardPreview);
-            element?.addEventListener('change', updateCardPreview);
-            element?.addEventListener('ev:color-updated', updateCardPreview);
-        });
-
-        updateCardPreview();
-    }
-
-    function bindEventFormToggles() {
-        var onlineCheckbox = document.getElementById('ev_is_online');
-        var onlineFields = document.getElementById('ev_online_fields');
-        var locationFields = document.getElementById('ev_location_fields');
-        var priceType = document.getElementById('ev_price_type');
-        var priceField = document.getElementById('ev_price_field');
-        var currencyField = document.getElementById('ev_currency_field');
-
-        function syncOnlineMode() {
-            if (!onlineCheckbox || !onlineFields || !locationFields) {
-                return;
-            }
-            onlineFields.hidden = !onlineCheckbox.checked;
-            locationFields.hidden = onlineCheckbox.checked;
-        }
-
-        function syncPriceMode() {
-            if (!priceType || !priceField || !currencyField) {
-                return;
-            }
-            var showPrice = priceType.value !== 'free';
-            priceField.hidden = !showPrice;
-            currencyField.hidden = !showPrice;
-        }
-
-        onlineCheckbox?.addEventListener('change', syncOnlineMode);
-        priceType?.addEventListener('change', syncPriceMode);
-        syncOnlineMode();
-        syncPriceMode();
-    }
-
-    function bindMetaBoxLocationToggles() {
-        var onlineCheckbox = document.querySelector('[data-ev-meta-toggle="location"]');
-        var onlineFields = document.getElementById('online-fields');
-        var physicalFields = document.getElementById('physical-fields');
-
-        if (!onlineCheckbox || !onlineFields || !physicalFields) {
-            return;
-        }
-
-        var sync = function () {
-            onlineFields.hidden = !onlineCheckbox.checked;
-            physicalFields.hidden = onlineCheckbox.checked;
-        };
-
-        onlineCheckbox.addEventListener('change', sync);
-        sync();
-    }
-
-    function bindSpeakerAssignment() {
-        var speakerBox = document.getElementById('ev-speaker-box');
-        if (!speakerBox) {
-            return;
-        }
-
-        var typeSelect = speakerBox.querySelector('[data-ev-speaker-type]');
-        var personSelect = speakerBox.querySelector('[data-ev-speaker-person]');
-        var titleInput = speakerBox.querySelector('[data-ev-speaker-title]');
-        var timeInput = speakerBox.querySelector('[data-ev-speaker-time]');
-        var addButton = speakerBox.querySelector('[data-ev-speaker-add]');
-        var assignedList = document.getElementById('ev-assigned-speakers');
-        var messageBox = speakerBox.querySelector('[data-ev-speaker-message]');
-
-        function showSpeakerMessage(message, type) {
-            if (!messageBox) {
-                return;
-            }
-
-            messageBox.textContent = message;
-            messageBox.hidden = false;
-            messageBox.classList.toggle('alert-success', type === 'success');
-            messageBox.classList.toggle('alert-error', type !== 'success');
-        }
-
-        function clearSpeakerMessage() {
-            if (!messageBox) {
-                return;
-            }
-
-            messageBox.hidden = true;
-            messageBox.textContent = '';
-        }
-
-        async function readJsonResponse(response) {
-            var payload = {};
-            try {
-                payload = await response.json();
-            } catch (error) {
-                payload = {};
-            }
-
-            if (!response.ok) {
-                throw new Error(payload.error || ('HTTP ' + response.status));
-            }
-
-            return payload;
-        }
-
-        function syncPersonOptions() {
-            if (!typeSelect || !personSelect) {
-                return;
-            }
-
-            var activeType = typeSelect.value;
-            var firstVisible = '';
-
-            Array.from(personSelect.options).forEach(function (option, index) {
-                if (index === 0) {
-                    option.hidden = false;
-                    return;
-                }
-
-                var matches = option.dataset.evSpeakerOption === activeType;
-                option.hidden = !matches;
-                if (matches && !firstVisible) {
-                    firstVisible = option.value;
-                }
-            });
-
-            if (personSelect.selectedOptions[0]?.hidden) {
-                personSelect.value = '';
-            }
-        }
-
-        function ensureEmptyMessage() {
-            if (!assignedList) {
-                return;
-            }
-
-            if (assignedList.querySelector('.ev-sp-row')) {
-                return;
-            }
-
-            var emptyMessage = document.createElement('p');
-            emptyMessage.className = 'form-text ev-text-muted';
-            emptyMessage.textContent = speakerBox.dataset.evSpeakerEmptyMessage || 'Noch keine Person zugeordnet.';
-            assignedList.replaceChildren(emptyMessage);
-        }
-
-        async function removeSpeaker(assignmentId) {
-            var fd = new FormData();
-            fd.append('csrf_token', speakerBox.dataset.evSpeakerCsrf || '');
-
-            try {
-                var response = await fetch((speakerBox.dataset.evSpeakerEndpointRemoveBase || '') + assignmentId, {
-                    method: 'POST',
-                    body: fd
-                });
-                var payload = await readJsonResponse(response);
-                if (!payload.success) {
-                    showSpeakerMessage('Fehler beim Entfernen der Zuordnung.', 'error');
-                    return;
-                }
-
-                document.getElementById('ev-sp-row-' + assignmentId)?.remove();
-                ensureEmptyMessage();
-                showSpeakerMessage('Speaker-Zuordnung entfernt.', 'success');
-            } catch (error) {
-                showSpeakerMessage('Netzwerkfehler beim Entfernen: ' + error.message, 'error');
-            }
-        }
-
-        typeSelect?.addEventListener('change', syncPersonOptions);
-        syncPersonOptions();
-
-        addButton?.addEventListener('click', async function () {
-            clearSpeakerMessage();
-            var speakerId = personSelect?.value || '';
-            if (!speakerId) {
-                showSpeakerMessage('Bitte eine Person wählen.', 'error');
-                return;
-            }
-
-            var fd = new FormData();
-            fd.append('csrf_token', speakerBox.dataset.evSpeakerCsrf || '');
-            fd.append('event_id', speakerBox.dataset.evSpeakerEventId || '0');
-            fd.append('speaker_id', speakerId);
-            fd.append('speaker_type', typeSelect?.value || 'speaker');
-            fd.append('presentation_title', titleInput?.value || '');
-            fd.append('session_time', timeInput?.value || '');
-
-            try {
-                var response = await fetch(speakerBox.dataset.evSpeakerEndpointAdd || '', {
-                    method: 'POST',
-                    body: fd
-                });
-                var payload = await readJsonResponse(response);
-                if (payload.success) {
-                    window.location.reload();
-                    return;
-                }
-
-                showSpeakerMessage('Fehler: ' + (payload.error || 'Unbekannt'), 'error');
-            } catch (error) {
-                showSpeakerMessage('Netzwerkfehler: ' + error.message, 'error');
-            }
-        });
-
-        speakerBox.querySelectorAll('[data-ev-speaker-remove]').forEach(function (button) {
-            button.addEventListener('click', function () {
-                var assignmentId = button.dataset.evSpeakerRemove || '';
-                if (!assignmentId) {
-                    return;
-                }
-
-                if (typeof window.cmsConfirm === 'function') {
-                    window.cmsConfirm({
-                        title: 'Speaker entfernen?',
-                        message: 'Soll die Zuordnung dieser Person wirklich entfernt werden?',
-                        confirmText: 'Entfernen',
-                        confirmClass: 'btn-danger',
-                        onConfirm: function () {
-                            removeSpeaker(assignmentId);
-                        }
-                    });
-                    return;
-                }
-
-                removeSpeaker(assignmentId);
-            });
-        });
-    }
-
-    function bindTagToggles() {
-        document.querySelectorAll('.ev-tag-toggle').forEach(function (label) {
-            var input = label.querySelector('input[type="checkbox"]');
-            if (!input) {
-                return;
-            }
-
-            var sync = function () {
-                label.classList.toggle('is-selected', input.checked);
-            };
-
-            input.addEventListener('change', sync);
-            sync();
-        });
-    }
-
-    function initEventsAdmin() {
-        bindConfirmForms();
-        bindBadgeStyles();
-        bindOverviewModals();
-        bindColorFields();
-        bindHeaderPreview();
-        bindDesignPreviewCard();
-        bindEventFormToggles();
-        bindMetaBoxLocationToggles();
-        bindSpeakerAssignment();
-        bindTagToggles();
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initEventsAdmin, { once: true });
-    } else {
-        initEventsAdmin();
-    }
+	'use strict';
+
+	var activeMediaTarget = null;
+	var activeMediaIsGallery = false;
+
+	function byId(id) {
+		return id ? document.getElementById(id) : null;
+	}
+
+	function updateImagePreview(input) {
+		var preview = null;
+		var value = input ? String(input.value || '').trim() : '';
+		var image;
+
+		if (!input) {
+			return;
+		}
+
+		preview = input.id ? document.querySelector('[data-cms365-image-preview][data-input-id="' + input.id + '"]') : null;
+		if (!preview) {
+			var field = input.closest('.cms365-image-field, .cms365-media-field');
+			preview = field ? field.querySelector('[data-cms365-image-preview]') : null;
+		}
+		if (!preview) {
+			return;
+		}
+
+		preview.innerHTML = '';
+		if (!value) {
+			var empty = document.createElement('span');
+			empty.textContent = 'Keine Vorschau';
+			preview.appendChild(empty);
+			return;
+		}
+
+		image = document.createElement('img');
+		image.src = value;
+		image.alt = 'Bildvorschau';
+		image.loading = 'lazy';
+		image.addEventListener('error', function () {
+			preview.innerHTML = '<span>Vorschau nicht verfügbar</span>';
+		});
+		preview.appendChild(image);
+	}
+
+	function galleryUrls(input) {
+		return String(input && input.value ? input.value : '')
+			.split(/[\n,]+/)
+			.map(function (item) { return item.trim(); })
+			.filter(Boolean);
+	}
+
+	function updateGalleryPreview(input) {
+		var preview = input && input.id ? document.querySelector('[data-cms365-gallery-preview][data-input-id="' + input.id + '"]') : null;
+		var urls = input ? galleryUrls(input) : [];
+
+		if (!preview) {
+			return;
+		}
+
+		preview.innerHTML = '';
+		if (!urls.length) {
+			var empty = document.createElement('span');
+			empty.textContent = 'Noch keine Galeriebilder ausgewählt.';
+			preview.appendChild(empty);
+			return;
+		}
+
+		urls.slice(0, 12).forEach(function (url) {
+			var item = document.createElement('span');
+			var img = document.createElement('img');
+			img.src = url;
+			img.alt = 'Galeriebild';
+			img.loading = 'lazy';
+			item.appendChild(img);
+			preview.appendChild(item);
+		});
+	}
+
+	function appendGalleryUrl(input, url) {
+		var urls = galleryUrls(input);
+		if (urls.indexOf(url) === -1) {
+			urls.push(url);
+		}
+		input.value = urls.join('\n');
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		input.dispatchEvent(new Event('change', { bubbles: true }));
+	}
+
+	function selectMediaUrl(url) {
+		if (!activeMediaTarget || !url) {
+			return;
+		}
+
+		if (activeMediaIsGallery && activeMediaTarget.tagName === 'TEXTAREA') {
+			appendGalleryUrl(activeMediaTarget, url);
+			return;
+		}
+
+		activeMediaTarget.value = url;
+		activeMediaTarget.dispatchEvent(new Event('input', { bubbles: true }));
+		activeMediaTarget.dispatchEvent(new Event('change', { bubbles: true }));
+		updateImagePreview(activeMediaTarget);
+	}
+
+	function itemUrl(item) {
+		return String((item && (item.url || item.fileUrl || item.file_url || item.path)) || '').trim();
+	}
+
+	function renderMediaGrid(modal, items) {
+		var grid = modal.querySelector('[data-media-picker-grid]');
+		var status = modal.querySelector('[data-media-picker-status]');
+		if (!grid) {
+			return;
+		}
+		grid.innerHTML = '';
+		if (!items.length) {
+			if (status) {
+				status.textContent = 'Keine Bilder gefunden.';
+			}
+			return;
+		}
+		if (status) {
+			status.textContent = items.length + ' Bilder verfügbar';
+		}
+		items.forEach(function (item) {
+			var url = itemUrl(item);
+			var name = String((item && (item.name || item.title || item.path)) || 'Bild');
+			if (!url) {
+				return;
+			}
+			var button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'cms365-media-picker-item';
+			button.setAttribute('data-media-picker-select', '1');
+			button.setAttribute('data-media-url', url);
+			button.innerHTML = '<img src="' + url.replace(/"/g, '&quot;') + '" alt="" loading="lazy"><span></span>';
+			button.querySelector('span').textContent = name;
+			grid.appendChild(button);
+		});
+	}
+
+	function loadMediaItems(modal) {
+		var picker = modal.querySelector('[data-media-picker-modal]');
+		var search = modal.querySelector('[data-media-picker-search]');
+		var status = modal.querySelector('[data-media-picker-status]');
+		var apiUrl = picker ? picker.getAttribute('data-api-url') || '/api/media' : '/api/media';
+		var token = picker ? picker.getAttribute('data-csrf-token') || '' : '';
+		var prefix = search ? String(search.value || '').trim() : '';
+		var url = apiUrl + '?action=list_images' + (prefix ? '&filename_prefix=' + encodeURIComponent(prefix) : '') + (token ? '&csrf_token=' + encodeURIComponent(token) : '');
+
+		if (status) {
+			status.textContent = 'Lade Medien …';
+		}
+
+		fetch(url, { credentials: 'same-origin' })
+			.then(function (response) { return response.json(); })
+			.then(function (payload) {
+				renderMediaGrid(modal, Array.isArray(payload.items) ? payload.items : []);
+			})
+			.catch(function () {
+				if (status) {
+					status.textContent = 'Mediathek konnte nicht geladen werden.';
+				}
+			});
+	}
+
+	function initMediaPicker() {
+		var modal = byId('settingsMediaPickerModal');
+		var instance = null;
+		var searchTimer = null;
+
+		if (!modal) {
+			return;
+		}
+
+		function showModal() {
+			if (window.bootstrap && window.bootstrap.Modal && typeof window.bootstrap.Modal.getOrCreateInstance === 'function') {
+				instance = window.bootstrap.Modal.getOrCreateInstance(modal);
+				instance.show();
+			} else {
+				modal.hidden = false;
+				modal.classList.add('show');
+				modal.style.display = 'block';
+				modal.removeAttribute('aria-hidden');
+			}
+			loadMediaItems(modal);
+		}
+
+		function hideModal() {
+			if (instance && typeof instance.hide === 'function') {
+				instance.hide();
+			} else {
+				modal.classList.remove('show');
+				modal.style.display = 'none';
+				modal.setAttribute('aria-hidden', 'true');
+			}
+		}
+
+		document.querySelectorAll('[data-open-media-picker]').forEach(function (button) {
+			button.addEventListener('click', function () {
+				activeMediaTarget = byId(button.getAttribute('data-target-input') || '');
+				activeMediaIsGallery = button.getAttribute('data-gallery-target') === '1';
+				var title = modal.querySelector('[data-media-picker-title]');
+				if (title) {
+					title.textContent = button.getAttribute('data-picker-title') || 'Bild auswählen';
+				}
+				showModal();
+			});
+		});
+
+		modal.addEventListener('click', function (event) {
+			var close = event.target.closest('[data-bs-dismiss="modal"], .btn-close');
+			var select = event.target.closest('[data-media-picker-select="1"]');
+			if (close) {
+				hideModal();
+				return;
+			}
+			if (select) {
+				selectMediaUrl(select.getAttribute('data-media-url') || '');
+				if (!activeMediaIsGallery) {
+					hideModal();
+				}
+			}
+		});
+
+		var search = modal.querySelector('[data-media-picker-search]');
+		if (search) {
+			search.addEventListener('input', function () {
+				window.clearTimeout(searchTimer);
+				searchTimer = window.setTimeout(function () { loadMediaItems(modal); }, 250);
+			});
+		}
+	}
+
+	document.addEventListener('DOMContentLoaded', function () {
+		document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+			form.addEventListener('submit', function (event) {
+				var message = form.getAttribute('data-confirm') || 'Diese Aktion ausführen?';
+				if (!window.confirm(message)) {
+					event.preventDefault();
+				}
+			});
+		});
+
+		document.querySelectorAll('.cms365-multiselect').forEach(function (select) {
+			select.addEventListener('dblclick', function (event) {
+				if (event.target && event.target.tagName === 'OPTION') {
+					event.target.selected = !event.target.selected;
+				}
+			});
+		});
+
+		document.querySelectorAll('[data-cms365-image-input]').forEach(function (input) {
+			input.addEventListener('input', function () { updateImagePreview(input); });
+			input.addEventListener('change', function () { updateImagePreview(input); });
+			updateImagePreview(input);
+		});
+
+		document.querySelectorAll('[data-cms365-gallery-input]').forEach(function (input) {
+			input.addEventListener('input', function () { updateGalleryPreview(input); });
+			input.addEventListener('change', function () { updateGalleryPreview(input); });
+			updateGalleryPreview(input);
+		});
+
+		document.querySelectorAll('[data-clear-media-input]').forEach(function (button) {
+			button.addEventListener('click', function () {
+				var input = byId(button.getAttribute('data-target-input') || '');
+				if (input) {
+					input.value = '';
+					input.dispatchEvent(new Event('input', { bubbles: true }));
+				}
+			});
+		});
+
+		document.querySelectorAll('[data-clear-gallery-input]').forEach(function (button) {
+			button.addEventListener('click', function () {
+				var input = byId(button.getAttribute('data-target-input') || '');
+				if (input) {
+					input.value = '';
+					input.dispatchEvent(new Event('input', { bubbles: true }));
+				}
+			});
+		});
+
+		document.querySelectorAll('input[name="tags"],input[name="categories"],input[name="specializations"],input[name="languages"]').forEach(function (input) {
+			input.addEventListener('blur', function () {
+				var seen = [];
+				input.value = (input.value || '').split(/[,;\n]+/).map(function (item) {
+					return item.trim();
+				}).filter(function (item) {
+					var key = item.toLowerCase();
+					if (!item || seen.indexOf(key) !== -1) {
+						return false;
+					}
+					seen.push(key);
+					return true;
+				}).join(', ');
+			});
+		});
+
+		initMediaPicker();
+	});
 })();
+(function(){'use strict';document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('form[data-confirm]').forEach(function(form){form.addEventListener('submit',function(event){var message=form.getAttribute('data-confirm')||'Diese Aktion ausführen?';if(!window.confirm(message)){event.preventDefault();}});});document.querySelectorAll('.cms365-multiselect').forEach(function(select){select.addEventListener('dblclick',function(event){if(event.target&&event.target.tagName==='OPTION'){event.target.selected=!event.target.selected;}});});document.querySelectorAll('[data-cms365-image-input]').forEach(function(input){var field=input.closest('.cms365-image-field');var preview=field?field.querySelector('[data-cms365-image-preview]'):null;var render=function(){var value=(input.value||'').trim();if(!preview){return;}preview.innerHTML='';if(!value){var empty=document.createElement('span');empty.textContent='Keine Vorschau';preview.appendChild(empty);return;}var img=document.createElement('img');img.src=value;img.alt='Bildvorschau';img.loading='lazy';img.addEventListener('error',function(){preview.innerHTML='<span>Vorschau nicht verfügbar</span>';});preview.appendChild(img);};input.addEventListener('input',render);render();});document.querySelectorAll('input[name="tags"],input[name="categories"],input[name="specializations"],input[name="languages"]').forEach(function(input){input.addEventListener('blur',function(){var seen=[];input.value=(input.value||'').split(/[,;\n]+/).map(function(item){return item.trim();}).filter(function(item){var key=item.toLowerCase();if(!item||seen.indexOf(key)!==-1){return false;}seen.push(key);return true;}).join(', ');});});});})();

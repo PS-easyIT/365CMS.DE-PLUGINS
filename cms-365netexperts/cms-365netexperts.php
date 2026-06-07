@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: 365NET | Experts
- * Plugin URI: https://365network.de/cms-365NETexperts
+ * Plugin URI: https://365network.de/cms-365netexperts
  * Description: Verwaltung von IT-Experten-Profilen mit Card-Ansicht, Detailseiten und umfangreichen Meta-Daten
  * Version: 3.0.12
  * Author: 365 Network
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
 // Plugin Constants
 define('CMS_EXPERTS_VERSION', '3.0.12');
 define('CMS_EXPERTS_PLUGIN_DIR', dirname(__FILE__) . '/');
-define('CMS_EXPERTS_PLUGIN_URL', '/plugins/cms-365NETexperts/');
+define('CMS_EXPERTS_PLUGIN_URL', '/plugins/cms-365netexperts/');
 define('CMS_EXPERTS_TEXT_DOMAIN', 'cms-experts');
 
 if (!function_exists('cms_experts_public_url')) {
@@ -157,7 +157,7 @@ final class CMS_Experts
      */
     public function on_activation(string $plugin): void
     {
-        if ($plugin !== 'cms-365NETexperts') {
+        if ($plugin !== 'cms-365netexperts') {
             return;
         }
 

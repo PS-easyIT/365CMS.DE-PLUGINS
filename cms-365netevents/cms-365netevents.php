@@ -1,292 +1,323 @@
 <?php
 /**
- * Plugin Name: 365NET | Events
- * Plugin URI: https://365network.de/cms-365NETevents
- * Description: Verwaltung von Events mit Speakeranbindung, Veranstaltern aus cms-companies und voller Metaverwaltung
- * Version: 3.0.38
+ * Plugin Name: 365NET | Events & Speaker
+ * Plugin URI: https://365network.de/cms-365netevents
+ * Description: Modulares Event- und Speaker-Verzeichnis für 365CMS mit Seed-Daten, Admin-CRUD und Public-Views.
+ * Version: 3.0.0
  * Author: 365 Network
  * Author URI: https://365network.de
  *
- * @package CMS_Events
+ * @package CMS_365NETEvents
  */
+
 declare(strict_types=1);
-if (!defined('ABSPATH')) exit;
 
-defined('CMS_EVENTS_VERSION') || define('CMS_EVENTS_VERSION', '3.0.38');
-defined('CMS_EVENTS_PLUGIN_DIR') || define('CMS_EVENTS_PLUGIN_DIR', function_exists('cms_plugin_path') ? rtrim((string) cms_plugin_path('cms-365NETevents'), '/\\') . DIRECTORY_SEPARATOR : dirname(__FILE__) . '/');
-defined('CMS_EVENTS_PLUGIN_URL') || define('CMS_EVENTS_PLUGIN_URL', function_exists('cms_plugin_url') ? rtrim((string) cms_plugin_url('cms-365NETevents'), '/') . '/' : '/plugins/cms-365NETevents/');
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-if (!class_exists('CMS_Events', false)) {
-final class CMS_Events {
-    private static ?self $instance = null;
-    private bool $components_bootstrapped = false;
-    private string $version = '3.0.38';
-    private string $plugin_dir;
-    private string $plugin_url;
+defined('CMS_365NET_EVENTS_VERSION') || define('CMS_365NET_EVENTS_VERSION', '3.0.0');
+defined('CMS_365NET_EVENTS_PLUGIN_DIR') || define('CMS_365NET_EVENTS_PLUGIN_DIR', dirname(__FILE__) . '/');
+defined('CMS_365NET_EVENTS_PLUGIN_URL') || define('CMS_365NET_EVENTS_PLUGIN_URL', '/plugins/cms-365NETevents/');
+defined('CMS_365NET_EVENTS_TEXT_DOMAIN') || define('CMS_365NET_EVENTS_TEXT_DOMAIN', 'cms-365netevents');
 
-    public static function instance(): self {
-        return self::$instance ??= new self();
-    }
+if (!class_exists('CMS_365NET_Events', false)) {
+    /**
+     * Bootstrap-Klasse des 365NET Event/Speaker-Plugins.
+     *
+     * Die Klasse lädt Abhängigkeiten, registriert CMS-Hooks und hält die
+     * Initialisierung bewusst schlank. Fachlogik befindet sich in den
+     * jeweiligen Include-Klassen.
+     */
+    final class CMS_365NET_Events
+    {
+        private static ?self $instance = null;
+        private bool $componentsBootstrapped = false;
+        private ?string $requestPathCache = null;
 
-    private function __construct() {
-        $this->plugin_dir = CMS_EVENTS_PLUGIN_DIR;
-        $this->plugin_url = CMS_EVENTS_PLUGIN_URL;
-        $this->load_dependencies();
-        $this->init_hooks();
-        $this->bootstrap_hook_components();
-        if ($this->can_bootstrap_components()) {
-            $this->bootstrap_components();
-        }
-    }
+        private string $version = CMS_365NET_EVENTS_VERSION;
+        private string $pluginDir = CMS_365NET_EVENTS_PLUGIN_DIR;
+        private string $pluginUrl = CMS_365NET_EVENTS_PLUGIN_URL;
 
-    private function load_dependencies(): void {
-        $includes = $this->plugin_dir . 'includes/';
-        $dependencies = [
-            'class-database.php'         => 'CMS_Events_Database',
-            'class-post-type.php'        => 'CMS_Events_Post_Type',
-            'class-meta-boxes.php'       => 'CMS_Events_Meta_Boxes',
-            'class-template-loader.php'  => 'CMS_Events_Template_Loader',
-            'class-shortcode.php'        => 'CMS_Events_Shortcode',
-            'class-admin.php'            => 'CMS_Events_Admin',
-            'class-member-dashboard.php' => 'CMS_Events_Member_Dashboard',
-            'class-taxonomies.php'       => 'CMS_Events_Taxonomies',
-        ];
-
-        foreach ($dependencies as $file => $class) {
-            if (class_exists($class, false)) {
-                continue;
+        public static function instance(): self
+        {
+            if (self::$instance === null) {
+                self::$instance = new self();
             }
 
-            $path = $includes . $file;
-            if (file_exists($path)) {
-                require_once $path;
-            }
-        }
-    }
-
-    private function can_bootstrap_components(): bool {
-        return class_exists('CMS\\Hooks') && class_exists('CMS\\Database');
-    }
-
-    private function bootstrap_hook_components(): void {
-        if (!class_exists('CMS\\Hooks')) {
-            return;
+            return self::$instance;
         }
 
-        foreach (['CMS_Events_Post_Type', 'CMS_Events_Meta_Boxes', 'CMS_Events_Shortcode', 'CMS_Events_Admin', 'CMS_Events_Member_Dashboard'] as $class) {
-            if (class_exists($class, false)) {
-                $class::instance();
-            }
-        }
-    }
+        private function __construct()
+        {
+            $this->loadDependencies();
+            $this->initHooks();
+            $this->bootstrapHookComponents();
 
-    private function bootstrap_components(): void {
-        if ($this->components_bootstrapped) {
-            return;
-        }
-
-        $this->components_bootstrapped = true;
-
-        foreach (['CMS_Events_Database', 'CMS_Events_Post_Type', 'CMS_Events_Meta_Boxes', 'CMS_Events_Template_Loader', 'CMS_Events_Shortcode', 'CMS_Events_Admin', 'CMS_Events_Member_Dashboard'] as $class) {
-            if (class_exists($class)) $class::instance();
-        }
-    }
-
-    private function init_hooks(): void {
-        if (class_exists('CMS\Hooks')) {
-            CMS\Hooks::addAction('cms_init', [$this, 'init_plugin'], 10);
-            CMS\Hooks::addAction('plugin_activated', [$this, 'on_activation'], 10);
-            CMS\Hooks::addAction('plugin_uninstalled', [$this, 'on_uninstall'], 10);
-            CMS\Hooks::addAction('plugin_deactivated', [$this, 'on_deactivation'], 10);
-            CMS\Hooks::addAction('head', [$this, 'enqueue_styles'], 10);
-            CMS\Hooks::addAction('body_end', [$this, 'enqueue_scripts'], 10);
-        }
-    }
-
-    public function on_activation(string $plugin): void {
-        if ($plugin === 'cms-365NETevents' && class_exists('CMS\\Database') && class_exists('CMS_Events_Database')) {
-            try {
-                CMS_Events_Database::instance()->create_tables();
-                if (class_exists('CMS\Hooks')) CMS\Hooks::doAction('cms_events_activated');
-            } catch (\Throwable $e) {
-                error_log('CMS Events activation skipped: ' . $e->getMessage());
-            }
-        }
-    }
-
-    public function on_deactivation(string $plugin): void {
-        if ($plugin !== 'cms-365NETevents') {
-            return;
-        }
-
-        if (class_exists('CMS\Hooks')) {
-            CMS\Hooks::doAction('cms_events_deactivated');
-        }
-    }
-
-    public function on_uninstall(string $plugin): void {
-        if ($plugin !== 'cms-365NETevents') {
-            return;
-        }
-
-        if (class_exists('CMS\Hooks')) {
-            CMS\Hooks::doAction('cms_events_uninstalled');
-        }
-    }
-
-    public function init_plugin(): void {
-        if (!$this->can_bootstrap_components()) {
-            return;
-        }
-        $this->ensure_schema();
-        $this->bootstrap_components();
-    }
-
-    private function ensure_schema(): void {
-        if (!class_exists('CMS_Events_Database')) {
-            return;
-        }
-
-        $db = CMS_Events_Database::instance();
-        $settings = method_exists($db, 'get_settings') ? $db->get_settings() : [];
-        $schema_version = '3.0.38';
-        if (($settings['schema_version'] ?? '') === $schema_version) {
-            return;
-        }
-
-        try {
-            $db->create_tables();
-            if (method_exists($db, 'save_settings')) {
-                $db->save_settings(['schema_version' => $schema_version]);
-            }
-        } catch (\Throwable $e) {
-            error_log('CMS Events: ' . $e->getMessage());
-        }
-    }
-
-    public function enqueue_styles(): void {
-        if (!$this->is_event_frontend_route()) {
-            return;
-        }
-
-        $this->enqueue_tabler_icons_fallback();
-        $this->enqueue_style_file('plugin-base.css');
-        $this->enqueue_style_file('style.css');
-        if ($this->is_event_detail_request()) {
-            $this->enqueue_style_file('single.css');
-        }
-    }
-
-    private function is_event_frontend_route(): bool {
-        $path = $this->current_request_path();
-        if (str_starts_with($path, '/admin/')) {
-            return false;
-        }
-
-        $archiveSlug = $this->event_archive_slug();
-        $archiveBase = '/' . $archiveSlug;
-
-        return $path === $archiveBase
-            || str_starts_with($path, $archiveBase . '/')
-            || str_starts_with($path, '/event/');
-    }
-
-    private function is_event_detail_request(): bool {
-        $path = $this->current_request_path();
-        $archiveSlug = preg_quote($this->event_archive_slug(), '#');
-
-        return preg_match('#^/' . $archiveSlug . '/\d+(?:/)?$#', $path) === 1
-            || preg_match('#^/event/[a-z0-9][a-z0-9-]*-\d+(?:/)?$#i', $path) === 1;
-    }
-
-    private function current_request_path(): string {
-        $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
-        if (!is_string($path) || $path === '') {
-            return '/';
-        }
-
-        return '/' . trim($path, '/');
-    }
-
-    private function event_archive_slug(): string {
-        static $cachedSlug = null;
-        if (is_string($cachedSlug)) {
-            return $cachedSlug;
-        }
-
-        $slug = 'events';
-        if (class_exists('CMS_Events_Database', false) && method_exists('CMS_Events_Database', 'instance')) {
-            try {
-                $settings = CMS_Events_Database::instance()->get_settings();
-                if (is_array($settings)) {
-                    $candidate = strtolower(trim((string) ($settings['archive_slug'] ?? '')));
-                    $candidate = trim((string) preg_replace('/[^a-z0-9-]+/', '-', $candidate), '-');
-                    if ($candidate !== '') {
-                        $slug = $candidate;
-                    }
-                }
-            } catch (\Throwable $e) {
-                error_log('CMS Events archive slug fallback: ' . $e->getMessage());
+            if ($this->canBootstrapComponents()) {
+                $this->bootstrapComponents();
             }
         }
 
-        $cachedSlug = $slug;
-        return $cachedSlug;
-    }
-
-    private function enqueue_tabler_icons_fallback(): void {
-        if (defined('CMS_TABLER_ICONS_LOADED')) {
-            return;
-        }
-
-        define('CMS_TABLER_ICONS_LOADED', true);
-        $iconsUrl = function_exists('cms_asset_url')
-            ? cms_asset_url('tabler-icons/tabler-icons.min.css')
-            : rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/') . '/assets/tabler-icons/tabler-icons.min.css';
-
-        if (function_exists('cms_enqueue_style')) {
-            cms_enqueue_style('cms-events-tabler-icons', $iconsUrl, [], CMS_EVENTS_VERSION);
-            return;
-        }
-
-        echo '<link rel="stylesheet" href="' . htmlspecialchars($iconsUrl, ENT_QUOTES, 'UTF-8') . '" data-cms-events-tabler-icons-fallback>' . "\n";
-    }
-
-    private function enqueue_style_file(string $file): void {
-        $css = $this->plugin_dir . 'assets/css/' . $file;
-        if (file_exists($css)) {
-            $cssVersion = (string) filemtime($css);
-            $href = $this->plugin_url . 'assets/css/' . $file . '?v=' . $cssVersion;
-            if (function_exists('cms_enqueue_style')) {
-                cms_enqueue_style('cms-events-' . (preg_replace('/[^a-z0-9_-]+/i', '-', $file) ?: 'asset'), $this->plugin_url . 'assets/css/' . $file, [], $cssVersion);
+        /**
+         * Lädt ausschließlich Plugin-Dateien aus dem eigenen includes-Ordner.
+         */
+        private function loadDependencies(): void
+        {
+            $includesDir = $this->pluginDir . 'includes/';
+            $includesReal = realpath($includesDir);
+            if ($includesReal === false || !is_dir($includesReal)) {
                 return;
             }
 
+            foreach ([
+                'class-database.php',
+                'class-template-loader.php',
+                'class-admin.php',
+                'class-post-type.php',
+            ] as $file) {
+                $candidate = $includesReal . DIRECTORY_SEPARATOR . $file;
+                $realPath = realpath($candidate);
+                if ($realPath !== false && str_starts_with($realPath, $includesReal . DIRECTORY_SEPARATOR) && is_file($realPath)) {
+                    require_once $realPath;
+                }
+            }
+        }
+
+        private function initHooks(): void
+        {
+            if (!class_exists('CMS\\Hooks')) {
+                return;
+            }
+
+            CMS\Hooks::addAction('cms_init', [$this, 'initPlugin'], 10);
+            CMS\Hooks::addAction('plugin_activated', [$this, 'onActivation'], 10);
+            CMS\Hooks::addAction('plugin_deactivated', [$this, 'onDeactivation'], 10);
+            CMS\Hooks::addAction('head', [$this, 'enqueueStyles'], 10);
+            CMS\Hooks::addAction('body_end', [$this, 'enqueueScripts'], 10);
+        }
+
+        /**
+         * Komponenten, die bereits vor DB-Verfügbarkeit Hooks registrieren können.
+         */
+        private function bootstrapHookComponents(): void
+        {
+            if (!class_exists('CMS\\Hooks')) {
+                return;
+            }
+
+            foreach (['CMS_365NET_Events_Post_Type', 'CMS_365NET_Events_Admin', 'CMS_365NET_Events_Template_Loader'] as $class) {
+                if (class_exists($class, false)) {
+                    $class::instance();
+                }
+            }
+        }
+
+        private function canBootstrapComponents(): bool
+        {
+            return class_exists('CMS\\Hooks') && class_exists('CMS\\Database');
+        }
+
+        private function bootstrapComponents(): void
+        {
+            if ($this->componentsBootstrapped) {
+                return;
+            }
+
+            $this->componentsBootstrapped = true;
+
+            foreach (['CMS_365NET_Events_Database', 'CMS_365NET_Events_Template_Loader', 'CMS_365NET_Events_Admin', 'CMS_365NET_Events_Post_Type'] as $class) {
+                if (class_exists($class)) {
+                    $class::instance();
+                }
+            }
+        }
+
+        public function initPlugin(): void
+        {
+            if (!$this->canBootstrapComponents()) {
+                return;
+            }
+
+            try {
+                CMS_365NET_Events_Database::instance()->ensureSchema();
+            } catch (Throwable $e) {
+                $this->log('initPlugin', $e);
+            }
+
+            $this->bootstrapComponents();
+        }
+
+        public function onActivation(string $plugin): void
+        {
+            if (!$this->isCurrentPluginSlug($plugin)) {
+                return;
+            }
+
+            if (class_exists('CMS\\Database') && class_exists('CMS_365NET_Events_Database')) {
+                try {
+                    CMS_365NET_Events_Database::instance()->ensureSchema(true);
+                } catch (Throwable $e) {
+                    $this->log('activation', $e);
+                }
+            }
+
+            if (class_exists('CMS\\Hooks')) {
+                CMS\Hooks::doAction('cms_365net_events_activated');
+            }
+        }
+
+        public function onDeactivation(string $plugin): void
+        {
+            if (!$this->isCurrentPluginSlug($plugin)) {
+                return;
+            }
+
+            if (class_exists('CMS\\Hooks')) {
+                CMS\Hooks::doAction('cms_365net_events_deactivated');
+            }
+        }
+
+        private function isCurrentPluginSlug(string $plugin): bool
+        {
+            $slug = $this->normalizePluginSlug($plugin);
+
+            return $slug === 'cms-365netevents';
+        }
+
+        private function normalizePluginSlug(string $plugin): string
+        {
+            $plugin = str_replace('\\\\', '/', trim((string) $plugin));
+            if ($plugin === '') {
+                return '';
+            }
+
+            $parts = explode('/', trim($plugin, '/'));
+            $last = (string) end($parts);
+            if ($last !== '' && str_ends_with(strtolower($last), '.php')) {
+                $last = substr($last, 0, -4);
+            }
+
+            return strtolower(trim($last));
+        }
+
+        public function enqueueStyles(): void
+        {
+            if ($this->isFrontendRoute()) {
+                $this->enqueueStyleFile('public.css');
+                $this->enqueuePublicSettingsStyle();
+            }
+
+            if ($this->isAdminRoute()) {
+                $this->enqueueStyleFile('admin.css');
+            }
+        }
+
+        public function enqueueScripts(): void
+        {
+            if ($this->isFrontendRoute()) {
+                $this->enqueueScriptFile('public.js');
+            }
+
+            if ($this->isAdminRoute()) {
+                $this->enqueueScriptFile('admin.js');
+            }
+        }
+
+        private function enqueueStyleFile(string $file): void
+        {
+            $path = $this->pluginDir . 'assets/css/' . $file;
+            if (!is_file($path)) {
+                return;
+            }
+
+            $href = $this->pluginUrl . 'assets/css/' . $file . '?v=' . (string) filemtime($path);
             echo '<link rel="stylesheet" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '">' . "\n";
         }
-    }
 
-    public function enqueue_scripts(): void {
-        if (!$this->is_event_frontend_route()) {
-            return;
-        }
-
-        $js = $this->plugin_dir . 'assets/js/script.js';
-        if (file_exists($js)) {
-            $jsVersion = (string) filemtime($js);
-            $src = $this->plugin_url . 'assets/js/script.js?v=' . $jsVersion;
-            if (function_exists('cms_enqueue_script')) {
-                cms_enqueue_script('cms-events-public', $this->plugin_url . 'assets/js/script.js', [], $jsVersion, ['defer' => true]);
+        private function enqueuePublicSettingsStyle(): void
+        {
+            if (!class_exists('CMS_365NET_Events_Database')) {
                 return;
             }
 
+            $settings = CMS_365NET_Events_Database::instance()->getSettings();
+            $color = static fn(string $key, string $fallback): string => preg_match('/^#[0-9a-f]{6}$/i', (string) ($settings[$key] ?? '')) === 1 ? (string) $settings[$key] : $fallback;
+            $number = static fn(string $key, int $fallback, int $min = 0, int $max = 1800): int => max($min, min($max, (int) ($settings[$key] ?? $fallback)));
+            echo '<style id="cms-365netevents-settings">.cms-events-public{--cms-events-primary:' . htmlspecialchars($color('layout_primary_color', '#1d4ed8'), ENT_QUOTES, 'UTF-8') . ';--cms-events-accent:' . htmlspecialchars($color('layout_accent_color', '#f59e0b'), ENT_QUOTES, 'UTF-8') . ';--cms-events-text:' . htmlspecialchars($color('layout_text_color', '#0f172a'), ENT_QUOTES, 'UTF-8') . ';--cms-events-card-bg:' . htmlspecialchars($color('layout_card_background', '#ffffff'), ENT_QUOTES, 'UTF-8') . ';--cms-events-card-border:' . htmlspecialchars($color('layout_card_border', '#e2e8f0'), ENT_QUOTES, 'UTF-8') . ';--cms-events-radius:' . $number('layout_radius', 24, 0, 96) . 'px;--cms-events-card-radius:' . $number('layout_card_radius', 20, 0, 96) . 'px;--cms-events-gap:' . $number('layout_gap', 18, 0, 120) . 'px;--cms-events-top:' . $number('layout_top_spacing', 32, 0, 240) . 'px;--cms-events-bottom:' . $number('layout_bottom_spacing', 56, 0, 240) . 'px;--cms-events-width:' . $number('layout_container_width', 1160, 320, 1800) . 'px;background:transparent!important;padding-top:var(--cms-events-top)!important;padding-bottom:var(--cms-events-bottom)!important;color:var(--cms-events-text)!important}.cms-events-container{max-width:var(--cms-events-width)!important}.cms-events-hero{border-radius:var(--cms-events-radius)!important;background:linear-gradient(135deg,var(--cms-events-primary),#172554)!important}.cms-events-card,.cms-events-detail-main,.cms-events-sidecard,.cms-events-search{background:var(--cms-events-card-bg)!important;border-color:var(--cms-events-card-border)!important;border-radius:var(--cms-events-card-radius)!important}.cms-events-grid{gap:var(--cms-events-gap)!important}.cms-events-search button,.cms-events-btn{background:var(--cms-events-primary)!important}.cms-events-kicker{color:var(--cms-events-accent)!important}.cms-events-card__more{color:var(--cms-events-primary)!important}</style>' . "\n";
+        }
+
+        private function enqueueScriptFile(string $file): void
+        {
+            $path = $this->pluginDir . 'assets/js/' . $file;
+            if (!is_file($path)) {
+                return;
+            }
+
+            $src = $this->pluginUrl . 'assets/js/' . $file . '?v=' . (string) filemtime($path);
             echo '<script src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
         }
-    }
 
-    public function get_version(): string { return $this->version; }
-    public function get_plugin_dir(): string { return $this->plugin_dir; }
-    public function get_plugin_url(): string { return $this->plugin_url; }
+        private function isFrontendRoute(): bool
+        {
+            $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+            if (!in_array($method, ['GET', 'HEAD'], true)) {
+                return false;
+            }
+
+            $path = $this->requestPath();
+            return $path === '/events'
+                || str_starts_with($path, '/events/')
+                || $path === '/event-speakers'
+                || str_starts_with($path, '/event-speakers/');
+        }
+
+        private function isAdminRoute(): bool
+        {
+            return str_starts_with($this->requestPath(), '/admin/365netevents');
+        }
+
+        private function requestPath(): string
+        {
+            if ($this->requestPathCache !== null) {
+                return $this->requestPathCache;
+            }
+
+            $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+            $this->requestPathCache = '/' . trim($path, '/');
+            return $this->requestPathCache === '/' ? '/' : $this->requestPathCache;
+        }
+
+        public function log(string $context, Throwable $error): void
+        {
+            $message = '[' . date('c') . '] ' . $context . ': ' . $error->getMessage() . PHP_EOL;
+            $logDir = $this->pluginDir . 'logs/';
+            if (!is_dir($logDir)) {
+                @mkdir($logDir, 0755, true);
+            }
+
+            if (is_dir($logDir) && is_writable($logDir)) {
+                @file_put_contents($logDir . 'cms-365netevents.log', $message, FILE_APPEND | LOCK_EX);
+            }
+
+            error_log('CMS 365NET Events [' . $context . ']: ' . $error->getMessage());
+        }
+
+        public function getVersion(): string
+        {
+            return $this->version;
+        }
+
+        public function getPluginDir(): string
+        {
+            return $this->pluginDir;
+        }
+
+        public function getPluginUrl(): string
+        {
+            return $this->pluginUrl;
+        }
+    }
 }
-}
-CMS_Events::instance();
+
+CMS_365NET_Events::instance();

@@ -1,10 +1,8 @@
 <?php
 /**
- * Admin Interface für CMS Events
- * 5-Tab-Layout: Übersicht | Kategorien | Tags | Design | Einstellungen
+ * Admin-UI für 365NET Events & Speaker.
  *
- * @package CMS_Events
- * @since   1.1.0
+ * @package CMS_365NETEvents
  */
 
 declare(strict_types=1);
@@ -13,21 +11,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-if (class_exists('CMS_Events_Admin', false)) {
-    return;
-}
-
-final class CMS_Events_Admin
+final class CMS_365NET_Events_Admin
 {
-    private const MENU_PARENT_SLUG = 'events';
-    private const MENU_SECTIONS = [
-        'events'            => 'overview',
-        'events-categories' => 'categories',
-        'events-tags'       => 'tags',
-        'events-design'     => 'design',
-        'events-settings'   => 'settings',
-    ];
-
     private static ?self $instance = null;
 
     public static function instance(): self
@@ -35,1469 +20,616 @@ final class CMS_Events_Admin
         if (self::$instance === null) {
             self::$instance = new self();
         }
+
         return self::$instance;
     }
 
     private function __construct()
     {
-        $this->load_shared_admin_contract();
-        CMS\Hooks::addAction('cms_admin_menu', [$this, 'register_admin_menu'], 10);
-        CMS\Hooks::addFilter('admin_menu_items', [$this, 'add_menu_item'], 10);
+        $this->loadSharedAdminContract();
+        if (class_exists('CMS\\Hooks')) {
+            CMS\Hooks::addAction('cms_admin_menu', [$this, 'registerAdminMenu'], 10);
+            CMS\Hooks::addFilter('admin_menu_items', [$this, 'addMenuItem'], 10);
+        }
     }
 
-    public function register_admin_menu(): void
+    private function loadSharedAdminContract(): void
+    {
+        $contractFile = dirname(__DIR__, 2) . '/shared/admin/plugin-admin-contract.php';
+        if (is_file($contractFile)) {
+            require_once $contractFile;
+        }
+
+        $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
+        if (is_file($menuFile) && !function_exists('renderAdminLayoutStart')) {
+            require_once $menuFile;
+        }
+    }
+
+    public function registerAdminMenu(): void
     {
         if (!function_exists('add_menu_page')) {
             return;
         }
 
-        add_menu_page(
-            'Events',
-            '365NET | Events',
-            'manage_options',
-            self::MENU_PARENT_SLUG,
-            [self::class, 'render_plugin_page_bridge'],
-            '📅',
-            43
-        );
-
-        if (!function_exists('add_submenu_page')) {
-            return;
+        add_menu_page('365NET Events', '365NET | Events', 'manage_options', '365netevents', [self::class, 'bridgeEvents'], '📅', 45);
+        if (function_exists('add_submenu_page')) {
+            add_submenu_page('365netevents', 'Events', 'Events', 'manage_options', '365netevents', [self::class, 'bridgeEvents']);
+            add_submenu_page('365netevents', 'Speaker', 'Speaker', 'manage_options', '365netevents-speakers', [self::class, 'bridgeSpeakers']);
+            add_submenu_page('365netevents', 'Kategorien & Tags', 'Kategorien & Tags', 'manage_options', '365netevents-taxonomies', [self::class, 'bridgeTaxonomies']);
+            add_submenu_page('365netevents', 'Einstellungen', 'Einstellungen', 'manage_options', '365netevents-settings', [self::class, 'bridgeSettings']);
         }
-
-        add_submenu_page(self::MENU_PARENT_SLUG, 'Event Uebersicht', '📅 Uebersicht', 'manage_options', 'events', [self::class, 'render_plugin_page_bridge']);
-        add_submenu_page(self::MENU_PARENT_SLUG, 'Event Kategorien', '📂 Kategorien', 'manage_options', 'events-categories', [self::class, 'render_plugin_page_bridge']);
-        add_submenu_page(self::MENU_PARENT_SLUG, 'Event Tags', '🏷️ Tags', 'manage_options', 'events-tags', [self::class, 'render_plugin_page_bridge']);
-        add_submenu_page(self::MENU_PARENT_SLUG, 'Event Design', '🎨 Design', 'manage_options', 'events-design', [self::class, 'render_plugin_page_bridge']);
-        add_submenu_page(self::MENU_PARENT_SLUG, 'Event Einstellungen', '⚙️ Einstellungen', 'manage_options', 'events-settings', [self::class, 'render_plugin_page_bridge']);
     }
 
-    public static function render_plugin_page_bridge(): void
+    public static function bridgeEvents(): void
     {
-        $callbackMap = [
-            'events'            => [self::class, 'render_overview_bridge'],
-            'events-categories' => [self::class, 'render_categories_bridge'],
-            'events-tags'       => [self::class, 'render_tags_bridge'],
-            'events-design'     => [self::class, 'render_design_bridge'],
-            'events-settings'   => [self::class, 'render_settings_bridge'],
+        CMS\Router::instance()->redirect('/admin/365netevents');
+    }
+
+    public static function bridgeSpeakers(): void
+    {
+        CMS\Router::instance()->redirect('/admin/365netevents/speakers');
+    }
+
+    public static function bridgeSettings(): void
+    {
+        CMS\Router::instance()->redirect('/admin/365netevents/settings');
+    }
+
+    public static function bridgeTaxonomies(): void
+    {
+        CMS\Router::instance()->redirect('/admin/365netevents/taxonomies');
+    }
+
+    public function addMenuItem(array $items): array
+    {
+        $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+        $items[] = [
+            'type' => 'item',
+            'slug' => '365netevents',
+            'label' => '365NET | Events',
+            'icon' => '📅',
+            'url' => '/admin/365netevents',
+            'active' => str_starts_with($path, '/admin/365netevents'),
         ];
 
-        if (function_exists('cms_plugin_admin_dispatch_page')) {
-            cms_plugin_admin_dispatch_page($callbackMap, 'events', self::MENU_PARENT_SLUG);
-            return;
-        }
-
-        $requestedSlug = self::requested_admin_slug();
-        $callback = $callbackMap[$requestedSlug] ?? $callbackMap['events'];
-        if (is_callable($callback)) {
-            call_user_func($callback);
-            return;
-        }
-
-        self::render_admin_bridge_fallback_notice();
+        return $items;
     }
 
-    private static function requested_admin_slug(): string
+    /** @param array<int, object> $events */
+    public function renderEventsList(array $events): void
     {
-        $requested = (string) ($_GET['page'] ?? self::MENU_PARENT_SLUG);
-        if (function_exists('cms_plugin_admin_normalize_slug')) {
-            return cms_plugin_admin_normalize_slug($requested);
-        }
-
-        $normalized = strtolower(trim($requested));
-        $normalized = (string) preg_replace('/[^a-z0-9_-]+/', '-', $normalized);
-        return trim($normalized, '-');
+        $this->start('365NET Events', '365netevents');
+        $csrf = CMS\Security::instance()->generateToken('365net_admin');
+        $q = htmlspecialchars((string) ($_GET['q'] ?? ''), ENT_QUOTES, 'UTF-8');
+        ?>
+        <div class="cms365-admin-header">
+            <div><h2>📅 365NET Events</h2><p>Verwalte Events, Messen und verknüpfte Speaker.</p></div>
+            <div class="cms365-admin-actions"><form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/link-sync', ENT_QUOTES, 'UTF-8') ?>"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>"><button class="btn btn-secondary" type="submit">🔗 Verknüpfungen aktualisieren</button></form><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/events', ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Öffentlich</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/taxonomies', ENT_QUOTES, 'UTF-8') ?>">Kategorien & Tags</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/settings', ENT_QUOTES, 'UTF-8') ?>">Einstellungen</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers', ENT_QUOTES, 'UTF-8') ?>">Speaker</a><a class="btn btn-primary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/new', ENT_QUOTES, 'UTF-8') ?>">Neues Event</a></div>
+        </div>
+        <?php $this->flash(); ?>
+        <div class="admin-card cms365-admin-card">
+            <form method="GET" class="cms365-filter-form">
+                <input type="text" name="q" value="<?= $q ?>" placeholder="Titel, Ort, Veranstalter oder Kategorie suchen …" class="form-control">
+                <button class="btn btn-primary" type="submit">Suchen</button>
+                <?php if ($q !== ''): ?><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents', ENT_QUOTES, 'UTF-8') ?>">Reset</a><?php endif; ?>
+            </form>
+        </div>
+        <div class="admin-card cms365-admin-card">
+            <h3>Eventliste (<?= count($events) ?>)</h3>
+            <div class="cms365-table-wrap"><table class="users-table cms365-table"><thead><tr><th>Event</th><th>Datum</th><th>Ort</th><th>Speaker</th><th>Status</th><th>Aktionen</th></tr></thead><tbody>
+            <?php foreach ($events as $event): ?>
+                <tr>
+                    <td><strong><?= $this->e($event->title ?? '') ?></strong><br><small><?= $this->e($event->organizer ?? '') ?></small></td>
+                    <td><?= $this->e($event->date_label ?? '') ?><?= ($event->end_date_label ?? '') !== '' ? ' – ' . $this->e($event->end_date_label) : '' ?></td>
+                    <td><?= $this->e($event->location ?? '') ?></td>
+                    <td><?= (int) ($event->speaker_count ?? 0) ?></td>
+                    <td><span class="status-badge <?= ($event->status ?? '') === 'published' ? 'active' : 'inactive' ?>"><?= $this->e($event->status ?? '') ?></span></td>
+                    <td class="cms365-row-actions">
+                        <a class="btn btn-sm btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/edit/' . (int) $event->id, ENT_QUOTES, 'UTF-8') ?>">✏️</a>
+                        <a class="btn btn-sm btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/events/' . rawurlencode((string) $event->slug), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">👁️</a>
+                        <form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/delete/' . (int) $event->id, ENT_QUOTES, 'UTF-8') ?>" data-confirm="Dieses Event löschen?">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+                            <button class="btn btn-sm btn-danger" type="submit">🗑️</button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody></table></div>
+        </div>
+        <?php
+        $this->end();
     }
 
-    private function load_shared_admin_contract(): void
+    /** @param array<int, object> $allSpeakers @param array<int, object> $assignedSpeakers @param array<int, object> $companies @param array<int, object> $experts @param array<string, array<int, string>> $taxonomies */
+    public function renderEventForm(?object $event, array $allSpeakers, array $assignedSpeakers = [], array $companies = [], array $experts = [], array $taxonomies = []): void
     {
-        $sharedContract = dirname(rtrim(CMS_EVENTS_PLUGIN_DIR, '/\\')) . '/shared/admin/plugin-admin-contract.php';
-        if (is_file($sharedContract)) {
-            require_once $sharedContract;
-        }
+        $isEdit = $event !== null;
+        $this->start($isEdit ? 'Event bearbeiten' : 'Event erstellen', '365netevents');
+        $csrf = CMS\Security::instance()->generateToken('365net_event_form');
+        $assignedIds = array_map(static fn(object $speaker): int => (int) $speaker->id, $assignedSpeakers);
+        ?>
+        <div class="cms365-admin-header"><div><h2><?= $isEdit ? '✏️ Event bearbeiten' : '➕ Neues Event' ?></h2><p><?= $isEdit ? 'ID #' . (int) $event->id : 'Manuellen Event-Datensatz anlegen.' ?></p></div><div><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents', ENT_QUOTES, 'UTF-8') ?>">← Zurück</a></div></div>
+        <?php $this->flash(); ?>
+        <form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/save', ENT_QUOTES, 'UTF-8') ?>" class="cms365-form" novalidate>
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+            <?php if ($isEdit): ?><input type="hidden" name="id" value="<?= (int) $event->id ?>"><input type="hidden" name="unique_id" value="<?= $this->e($event->unique_id ?? '') ?>"><?php endif; ?>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>1. Basisdaten & Veröffentlichung</h3><p class="description">Pflichtdaten, Slug, Status und redaktionelle Hervorhebung.</p><div class="cms365-form-grid">
+                <?= $this->field('title', 'Titel *', $event->title ?? '', true) ?>
+                <?= $this->field('slug', 'Slug', $event->slug ?? '') ?>
+                <?= $this->field('excerpt', 'Kurzbeschreibung / Teaser', $event->excerpt ?? '') ?>
+                <?= $this->field('source_column', 'Spalte1 / Zusatzquelle', $event->source_column ?? '') ?>
+                <label class="form-group"><span>Status</span><select name="status" class="form-control"><option value="published" <?= ($event->status ?? 'published') === 'published' ? 'selected' : '' ?>>published</option><option value="draft" <?= ($event->status ?? '') === 'draft' ? 'selected' : '' ?>>draft</option></select></label>
+                <?= $this->checkbox('featured', 'Als Highlight anzeigen', !empty($event->featured)) ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>2. Beschreibung (EditorJS)</h3><p class="description">Strukturierter Block-Inhalt mit Medien, Tabellen, Checklisten und Linkkarten.</p><?= $this->editor('description_json', (string) ($event->description_json ?? ''), (string) ($event->description ?? ''), 'Event-Beschreibung') ?></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>3. Bild & Medien</h3><div class="cms365-form-grid">
+                <?= $this->imageField('image_url', 'Event Bild / Hero URL', $event->image_url ?? '', 'image_alt', $event->image_alt ?? '') ?>
+                <?= $this->mediaUrlField('og_image_url', 'Social Sharing Bild', $event->og_image_url ?? '') ?>
+            </div><?= $this->galleryField('gallery_json', 'Galerie (mehrere Bilder aus der Mediathek oder je Zeile ein Bild)', $event->gallery_json ?? '') ?></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>4. Datum, Zeit & Zeitzone</h3><div class="cms365-form-grid">
+                <?= $this->field('start_date', 'Startdatum', $event->start_date ?? '', false, 'date') ?>
+                <?= $this->field('end_date', 'Enddatum', $event->end_date ?? '', false, 'date') ?>
+                <?= $this->field('start_time', 'Startzeit', $event->start_time ?? '', false, 'time') ?>
+                <?= $this->field('end_time', 'Endzeit', $event->end_time ?? '', false, 'time') ?>
+                <?= $this->field('date_label', 'Datumslabel original', $event->date_label ?? '') ?>
+                <?= $this->field('end_date_label', 'Bis-Label original', $event->end_date_label ?? '') ?>
+                <?= $this->field('timezone', 'Zeitzone', $event->timezone ?? 'Europe/Berlin') ?>
+                <?= $this->field('early_bird_until', 'Early-Bird bis', $event->early_bird_until ?? '', false, 'date') ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>5. Ort, Online & Hybrid</h3><div class="cms365-form-grid">
+                <?= $this->field('location', 'Ort', $event->location ?? '') ?>
+                <?= $this->field('venue_name', 'Venue / Locationname', $event->venue_name ?? '') ?>
+                <?= $this->field('street', 'Straße', $event->street ?? '') ?>
+                <?= $this->field('postal_code', 'PLZ', $event->postal_code ?? '') ?>
+                <?= $this->field('city', 'Stadt', $event->city ?? '') ?>
+                <?= $this->field('country', 'Land', $event->country ?? 'Deutschland') ?>
+                <?= $this->select('attendance_mode', 'Durchführung', (string) ($event->attendance_mode ?? ''), ['' => 'Bitte wählen', 'Vor Ort' => 'Vor Ort', 'Online' => 'Online', 'Hybrid' => 'Hybrid']) ?>
+                <?= $this->field('online_url', 'Online-/Stream-Link', $event->online_url ?? '', false, 'url') ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>6. Veranstalter & Kontakt</h3><div class="cms365-form-grid">
+                <?= $this->field('organizer', 'Veranstalter', $event->organizer ?? '') ?>
+                <?= $this->field('contact_name', 'Kontaktperson', $event->contact_name ?? '') ?>
+                <?= $this->field('contact_email', 'Kontakt E-Mail', $event->contact_email ?? '', false, 'email') ?>
+                <?= $this->field('contact_phone', 'Kontakt Telefon', $event->contact_phone ?? '') ?>
+                <?= $this->field('website', 'Website', $event->website ?? '', false, 'url') ?>
+            </div><label class="form-group"><span>Sponsoren / Partner</span><textarea name="sponsors" class="form-control" rows="3"><?= $this->e($event->sponsors ?? '') ?></textarea></label></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>6b. 365CMS-Verknüpfung</h3><p class="description">Optional manuell setzen. Ohne Auswahl versucht das Plugin automatisch, Veranstalter/Kontakt/Website mit bestehenden Firmen oder Experten zu matchen.</p><div class="cms365-form-grid">
+                <?= $this->select('linked_company_id', 'Vorhandene Firma verknüpfen', (string) ($event->linked_company_id ?? ''), $this->companyOptions($companies)) ?>
+                <?= $this->select('linked_expert_id', 'Vorhandenen Expert verknüpfen', (string) ($event->linked_expert_id ?? ''), $this->expertOptions($experts)) ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>7. Kategorien, Tags & Zielgruppe</h3><div class="cms365-form-grid">
+                <?= $this->select('category', 'Hauptkategorie', (string) ($event->category ?? ''), $this->optionMap($taxonomies['event_categories'] ?? [])) ?>
+                <?= $this->multiSelect('categories', 'Weitere Kategorien', (string) ($event->categories ?? ''), $taxonomies['event_categories'] ?? []) ?>
+                <?= $this->multiSelect('tags', 'Tags / Schlagwörter', (string) ($event->tags ?? ''), $taxonomies['event_tags'] ?? [], 8) ?>
+                <?= $this->field('target_audience', 'Zielgruppe', $event->target_audience ?? '') ?>
+                <?= $this->select('event_format', 'Format', (string) ($event->event_format ?? $event->event_type ?? ''), $this->optionMap($taxonomies['event_types'] ?? [])) ?>
+                <?= $this->select('difficulty_level', 'Level', (string) ($event->difficulty_level ?? ''), ['' => 'Bitte wählen', 'Einsteiger' => 'Einsteiger', 'Fortgeschritten' => 'Fortgeschritten', 'Expert' => 'Expert', 'Business' => 'Business', 'Technisch' => 'Technisch']) ?>
+                <?= $this->field('language', 'Sprache', $event->language ?? 'Deutsch') ?>
+                <?= $this->field('event_type', 'Event Art (Legacy)', $event->event_type ?? '') ?>
+            </div><label class="form-group"><span>Barrierefreiheit / Hinweise</span><textarea name="accessibility" class="form-control" rows="3"><?= $this->e($event->accessibility ?? '') ?></textarea></label></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>8. Preise, Tickets & Registrierung</h3><div class="cms365-form-grid">
+                <?= $this->select('price_class', 'Preisklasse', (string) ($event->price_class ?? ''), $this->optionMap($taxonomies['event_price_classes'] ?? [])) ?>
+                <?= $this->field('price', 'Preislabel', $event->price ?? '') ?>
+                <?= $this->field('price_min', 'Preis min.', $event->price_min ?? '', false, 'number') ?>
+                <?= $this->field('price_max', 'Preis max.', $event->price_max ?? '', false, 'number') ?>
+                <?= $this->field('currency', 'Währung', $event->currency ?? 'EUR') ?>
+                <?= $this->field('capacity', 'Kapazität', $event->capacity ?? '', false, 'number') ?>
+                <?= $this->field('registration_url', 'Registrierung', $event->registration_url ?? '', false, 'url') ?>
+                <?= $this->field('ticket_url', 'Ticket-Link', $event->ticket_url ?? '', false, 'url') ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>9. Speaker-Zuordnung</h3><p class="description">Mehrfachauswahl möglich. Neue Speaker können separat angelegt und anschließend hier verknüpft werden.</p><select name="speaker_ids[]" class="form-control cms365-multiselect" multiple size="12">
+                <?php foreach ($allSpeakers as $speaker): ?><option value="<?= (int) $speaker->id ?>" <?= in_array((int) $speaker->id, $assignedIds, true) ? 'selected' : '' ?>><?= $this->e($speaker->display_name ?? '') ?><?= ($speaker->topic ?? '') ? ' – ' . $this->e($speaker->topic) : '' ?></option><?php endforeach; ?>
+            </select></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>10. SEO & Social</h3><div class="cms365-form-grid">
+                <?= $this->field('seo_title', 'SEO-Titel', $event->seo_title ?? '') ?>
+                <?= $this->field('seo_description', 'SEO-Beschreibung', $event->seo_description ?? '') ?>
+            </div></div>
+            <div class="admin-card cms365-actions-card"><button type="submit" class="btn btn-primary">💾 Speichern</button><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents', ENT_QUOTES, 'UTF-8') ?>">Abbrechen</a></div>
+        </form>
+        <?php
+        $this->end();
     }
 
-    private function start_admin_layout(string $title, string $activePage): void
+    /** @param array<int, object> $speakers */
+    public function renderSpeakersList(array $speakers): void
+    {
+        $this->start('365NET Speaker', '365netevents');
+        $csrf = CMS\Security::instance()->generateToken('365net_admin');
+        $q = htmlspecialchars((string) ($_GET['q'] ?? ''), ENT_QUOTES, 'UTF-8');
+        ?>
+        <div class="cms365-admin-header"><div><h2>🎤 Event-Speaker</h2><p>Speaker, Organisationen und Sammel-Speaker aus den Seed-Daten verwalten.</p></div><div class="cms365-admin-actions"><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents', ENT_QUOTES, 'UTF-8') ?>">Events</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/event-speakers', ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Öffentlich</a><a class="btn btn-primary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers/new', ENT_QUOTES, 'UTF-8') ?>">Neuer Speaker</a></div></div>
+        <?php $this->flash(); ?>
+        <div class="admin-card cms365-admin-card"><form method="GET" class="cms365-filter-form"><input type="text" name="q" value="<?= $q ?>" placeholder="Speaker, Thema oder Tag suchen …" class="form-control"><button class="btn btn-primary" type="submit">Suchen</button></form></div>
+        <div class="admin-card cms365-admin-card"><h3>Speakerliste (<?= count($speakers) ?>)</h3><div class="cms365-table-wrap"><table class="users-table cms365-table"><thead><tr><th>Speaker</th><th>Thema</th><th>Events</th><th>Status</th><th>Aktionen</th></tr></thead><tbody>
+        <?php foreach ($speakers as $speaker): ?><tr><td><strong><?= $this->e($speaker->display_name ?? '') ?></strong><br><small><?= $this->e($speaker->award ?? '') ?></small></td><td><?= $this->e($speaker->topic ?? '') ?></td><td><?= (int) ($speaker->event_count ?? 0) ?></td><td><span class="status-badge <?= ($speaker->status ?? '') === 'published' ? 'active' : 'inactive' ?>"><?= $this->e($speaker->status ?? '') ?></span></td><td class="cms365-row-actions"><a class="btn btn-sm btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers/edit/' . (int) $speaker->id, ENT_QUOTES, 'UTF-8') ?>">✏️</a><a class="btn btn-sm btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/event-speakers/' . rawurlencode((string) $speaker->slug), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">👁️</a><form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers/delete/' . (int) $speaker->id, ENT_QUOTES, 'UTF-8') ?>" data-confirm="Diesen Speaker löschen?"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>"><button class="btn btn-sm btn-danger" type="submit">🗑️</button></form></td></tr><?php endforeach; ?>
+        </tbody></table></div></div>
+        <?php $this->end();
+    }
+
+    /** @param array<string, string> $settings */
+    public function renderSettingsForm(array $settings): void
+    {
+        $this->start('365NET Events Einstellungen', '365netevents');
+        $csrf = CMS\Security::instance()->generateToken('365net_settings_form');
+        $backfillCsrf = CMS\Security::instance()->generateToken('365net_settings_backfill');
+        ?>
+        <div class="cms365-admin-header"><div><h2>⚙️ Event-Einstellungen</h2><p>Texte, Layout, Farben, Rundungen und Abstände der öffentlichen Eventseiten steuern.</p></div><div class="cms365-admin-actions"><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents', ENT_QUOTES, 'UTF-8') ?>">Events</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/taxonomies', ENT_QUOTES, 'UTF-8') ?>">Kategorien & Tags</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/events', ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Öffentlich prüfen</a></div></div>
+        <?php $this->flash(); ?>
+        <form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/settings/save', ENT_QUOTES, 'UTF-8') ?>" class="cms365-form" novalidate>
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+            <div class="admin-card cms365-admin-card cms365-section"><h3>1. Navigation & Archivtexte</h3><div class="cms365-form-grid">
+                <?= $this->checkbox('show_nav_link', 'Im Hauptmenü anzeigen', ($settings['show_nav_link'] ?? '0') === '1') ?>
+                <?= $this->field('nav_label', 'Navigationslabel', $settings['nav_label'] ?? 'Events') ?>
+                <?= $this->field('archive_kicker', 'Event-Archiv Kicker', $settings['archive_kicker'] ?? '') ?>
+                <?= $this->field('archive_title', 'Event-Archiv Titel', $settings['archive_title'] ?? '') ?>
+                <?= $this->field('archive_description', 'Event-Archiv Beschreibung', $settings['archive_description'] ?? '') ?>
+                <?= $this->field('archive_current_month_label', 'Label zukünftige Events', $settings['archive_current_month_label'] ?? '') ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>2. Suche, Buttons & Leerzustände</h3><div class="cms365-form-grid">
+                <?= $this->field('archive_search_placeholder', 'Suchfeld Placeholder', $settings['archive_search_placeholder'] ?? '') ?>
+                <?= $this->field('archive_search_button', 'Suchbutton', $settings['archive_search_button'] ?? '') ?>
+                <?= $this->field('archive_reset_label', 'Reset-Text', $settings['archive_reset_label'] ?? '') ?>
+                <?= $this->field('archive_past_button', 'Button vergangene Events', $settings['archive_past_button'] ?? '') ?>
+                <?= $this->field('archive_current_button', 'Button zukünftige Events', $settings['archive_current_button'] ?? '') ?>
+                <?= $this->field('archive_empty_current', 'Leertext zukünftige Events', $settings['archive_empty_current'] ?? '') ?>
+                <?= $this->field('archive_empty_past', 'Leertext vergangene Events', $settings['archive_empty_past'] ?? '') ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>3. Speaker- und Detailtexte</h3><div class="cms365-form-grid">
+                <?= $this->field('speaker_archive_kicker', 'Speaker Kicker', $settings['speaker_archive_kicker'] ?? '') ?>
+                <?= $this->field('speaker_archive_title', 'Speaker Titel', $settings['speaker_archive_title'] ?? '') ?>
+                <?= $this->field('speaker_archive_description', 'Speaker Beschreibung', $settings['speaker_archive_description'] ?? '') ?>
+                <?= $this->field('speaker_search_placeholder', 'Speaker Suche Placeholder', $settings['speaker_search_placeholder'] ?? '') ?>
+                <?= $this->field('detail_back_events_label', 'Breadcrumb Events', $settings['detail_back_events_label'] ?? '') ?>
+                <?= $this->field('detail_speakers_heading', 'Detail Überschrift Speaker', $settings['detail_speakers_heading'] ?? '') ?>
+                <?= $this->field('detail_no_speakers_text', 'Detail Leertext Speaker', $settings['detail_no_speakers_text'] ?? '') ?>
+                <?= $this->field('detail_register_label', 'Registrierungsbutton', $settings['detail_register_label'] ?? '') ?>
+                <?= $this->field('detail_website_label', 'Websitebutton', $settings['detail_website_label'] ?? '') ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>4. Layout, Farben & Abstände</h3><p class="description">Der öffentliche Bereich hat keinen eigenen Seitenhintergrund; diese Werte steuern nur Karten, Buttons, Rundungen und Innenabstände.</p><div class="cms365-form-grid">
+                <?= $this->field('layout_primary_color', 'Primärfarbe', $settings['layout_primary_color'] ?? '#1d4ed8', false, 'color') ?>
+                <?= $this->field('layout_accent_color', 'Akzentfarbe', $settings['layout_accent_color'] ?? '#f59e0b', false, 'color') ?>
+                <?= $this->field('layout_text_color', 'Textfarbe', $settings['layout_text_color'] ?? '#0f172a', false, 'color') ?>
+                <?= $this->field('layout_card_background', 'Kartenhintergrund', $settings['layout_card_background'] ?? '#ffffff', false, 'color') ?>
+                <?= $this->field('layout_card_border', 'Kartenrahmen', $settings['layout_card_border'] ?? '#e2e8f0', false, 'color') ?>
+                <?= $this->field('layout_radius', 'Hero-/Box-Rundung px', $settings['layout_radius'] ?? '24', false, 'number') ?>
+                <?= $this->field('layout_card_radius', 'Karten-Rundung px', $settings['layout_card_radius'] ?? '20', false, 'number') ?>
+                <?= $this->field('layout_gap', 'Grid-Abstand px', $settings['layout_gap'] ?? '18', false, 'number') ?>
+                <?= $this->field('layout_top_spacing', 'Abstand zum Header px', $settings['layout_top_spacing'] ?? '32', false, 'number') ?>
+                <?= $this->field('layout_bottom_spacing', 'Abstand zum Footer px', $settings['layout_bottom_spacing'] ?? '56', false, 'number') ?>
+                <?= $this->field('layout_container_width', 'Containerbreite px', $settings['layout_container_width'] ?? '1160', false, 'number') ?>
+            </div></div>
+            <div class="admin-card cms365-actions-card"><button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents', ENT_QUOTES, 'UTF-8') ?>">Abbrechen</a></div>
+        </form>
+        <form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/settings/backfill-descriptions', ENT_QUOTES, 'UTF-8') ?>" class="cms365-form" novalidate>
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($backfillCsrf, ENT_QUOTES, 'UTF-8') ?>">
+            <div class="admin-card cms365-admin-card cms365-section">
+                <h3>5. Seed-Beschreibungen auf bestehende Events anwenden</h3>
+                <p class="description">Übernimmt die statischen Beschreibungen aus der Seed-Map anhand <code>NR/source_nr</code> in vorhandene Events (inkl. Excerpt und SEO-Beschreibung).</p>
+                <button type="submit" class="btn btn-secondary">🧠 Beschreibungen jetzt einspielen</button>
+            </div>
+        </form>
+        <?php
+        $this->end();
+    }
+
+    /** @param array<string, string> $settings */
+    public function renderTaxonomiesForm(array $settings): void
+    {
+        $this->start('365NET Kategorien & Tags', '365netevents');
+        $csrf = CMS\Security::instance()->generateToken('365net_taxonomies_form');
+        ?>
+        <div class="cms365-admin-header"><div><h2>🏷️ Kategorien, Arten, Klassen & Tags</h2><p>Pflege die Dropdown-Werte für Event- und Speaker-Editoren. Ein Eintrag pro Zeile; Duplikate werden beim Speichern entfernt.</p></div><div class="cms365-admin-actions"><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents', ENT_QUOTES, 'UTF-8') ?>">Events</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/settings', ENT_QUOTES, 'UTF-8') ?>">Einstellungen</a></div></div>
+        <?php $this->flash(); ?>
+        <form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/taxonomies/save', ENT_QUOTES, 'UTF-8') ?>" class="cms365-form" novalidate>
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+            <div class="admin-card cms365-admin-card cms365-section"><h3>Events</h3><div class="cms365-form-grid">
+                <?= $this->textareaSetting('taxonomy_event_categories', 'Event-Kategorien / Hauptkategorie', $settings['taxonomy_event_categories'] ?? '') ?>
+                <?= $this->textareaSetting('taxonomy_event_types', 'Event-Arten / Formate', $settings['taxonomy_event_types'] ?? '') ?>
+                <?= $this->textareaSetting('taxonomy_event_price_classes', 'Event-Preisklassen', $settings['taxonomy_event_price_classes'] ?? '') ?>
+                <?= $this->textareaSetting('taxonomy_event_tags', 'Event-Tags', $settings['taxonomy_event_tags'] ?? '') ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>Speaker</h3><div class="cms365-form-grid">
+                <?= $this->textareaSetting('taxonomy_speaker_categories', 'Speaker-Kategorien / Themen', $settings['taxonomy_speaker_categories'] ?? '') ?>
+                <?= $this->textareaSetting('taxonomy_speaker_types', 'Speaker-Typen', $settings['taxonomy_speaker_types'] ?? '') ?>
+                <?= $this->textareaSetting('taxonomy_speaker_price_classes', 'Speaker-Preisklassen', $settings['taxonomy_speaker_price_classes'] ?? '') ?>
+                <?= $this->textareaSetting('taxonomy_speaker_tags', 'Speaker-Tags', $settings['taxonomy_speaker_tags'] ?? '') ?>
+            </div></div>
+            <div class="admin-card cms365-actions-card"><button type="submit" class="btn btn-primary">💾 Listen speichern</button><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents', ENT_QUOTES, 'UTF-8') ?>">Abbrechen</a></div>
+        </form>
+        <?php
+        $this->end();
+    }
+
+    /** @param array<int, object> $companies @param array<int, object> $experts @param array<string, array<int, string>> $taxonomies */
+    public function renderSpeakerForm(?object $speaker = null, array $companies = [], array $experts = [], array $taxonomies = []): void
+    {
+        $isEdit = $speaker !== null;
+        $this->start($isEdit ? 'Speaker bearbeiten' : 'Speaker erstellen', '365netevents');
+        $csrf = CMS\Security::instance()->generateToken('365net_speaker_form');
+        ?>
+        <div class="cms365-admin-header"><div><h2><?= $isEdit ? '✏️ Speaker bearbeiten' : '➕ Neuer Speaker' ?></h2><p><?= $isEdit ? 'ID #' . (int) $speaker->id : 'Nur echte Personen als Speaker anlegen. Firmen werden über das Companies-Plugin verknüpft.' ?></p></div><div><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers', ENT_QUOTES, 'UTF-8') ?>">← Zurück</a></div></div>
+        <?php $this->flash(); ?>
+        <form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers/save', ENT_QUOTES, 'UTF-8') ?>" class="cms365-form" novalidate>
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+            <?php if ($isEdit): ?><input type="hidden" name="id" value="<?= (int) $speaker->id ?>"><input type="hidden" name="unique_id" value="<?= $this->e($speaker->unique_id ?? '') ?>"><?php endif; ?>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>1. Profil & Veröffentlichung</h3><div class="cms365-form-grid">
+                <?= $this->field('first_name', 'Vorname', $speaker->first_name ?? '') ?>
+                <?= $this->field('last_name', 'Nachname', $speaker->last_name ?? '') ?>
+                <?= $this->field('display_name', 'Anzeigename *', $speaker->display_name ?? '', true) ?>
+                <?= $this->field('slug', 'Slug', $speaker->slug ?? '') ?>
+                <?= $this->field('location', 'Standort', $speaker->location ?? '') ?>
+                <?= $this->select('speaker_type', 'Speaker-Typ', (string) ($speaker->speaker_type ?? ''), $this->optionMap($taxonomies['speaker_types'] ?? [])) ?>
+                <?= $this->checkbox('featured', 'Als Highlight anzeigen', !empty($speaker->featured)) ?>
+                <label class="form-group"><span>Status</span><select name="status" class="form-control"><option value="published" <?= ($speaker->status ?? 'published') === 'published' ? 'selected' : '' ?>>published</option><option value="draft" <?= ($speaker->status ?? '') === 'draft' ? 'selected' : '' ?>>draft</option></select></label>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>2. Bio (EditorJS)</h3><?= $this->editor('bio_json', (string) ($speaker->bio_json ?? ''), (string) ($speaker->bio ?? ''), 'Speaker-Bio') ?></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>3. Bild & Kontakt</h3><div class="cms365-form-grid">
+                <?= $this->imageField('avatar_url', 'Profilbild URL', $speaker->avatar_url ?? '', 'avatar_alt', $speaker->avatar_alt ?? '') ?>
+                <?= $this->field('email', 'E-Mail', $speaker->email ?? '', false, 'email') ?>
+                <?= $this->field('phone', 'Telefon', $speaker->phone ?? '') ?>
+                <?= $this->field('website', 'Website', $speaker->website ?? '', false, 'url') ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>3b. 365CMS-Verknüpfung</h3><p class="description">Optional vorhandenen Expert-/Firmen-Datensatz auswählen. Firmeninformationen bleiben im Companies-Plugin; am Speaker wird nur die Verknüpfung gespeichert.</p><div class="cms365-form-grid">
+                <?= $this->select('linked_expert_id', 'Vorhandenen Expert verknüpfen', (string) ($speaker->linked_expert_id ?? ''), $this->expertOptions($experts)) ?>
+                <?= $this->select('linked_company_id', 'Vorhandene Firma verknüpfen', (string) ($speaker->linked_company_id ?? ''), $this->companyOptions($companies)) ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>4. Themen, Kategorien & Tags</h3><div class="cms365-form-grid">
+                <?= $this->select('topic', 'Thema/Kategorie', (string) ($speaker->topic ?? ''), $this->optionMap($taxonomies['speaker_categories'] ?? [])) ?>
+                <?= $this->field('award', 'MVP/Auszeichnung', $speaker->award ?? '') ?>
+                <?= $this->multiSelect('categories', 'Kategorien', (string) ($speaker->categories ?? ''), $taxonomies['speaker_categories'] ?? []) ?>
+                <?= $this->multiSelect('tags', 'Tags', (string) ($speaker->tags ?? ''), $taxonomies['speaker_tags'] ?? [], 8) ?>
+                <?= $this->field('specializations', 'Spezialisierungen', $speaker->specializations ?? '') ?>
+                <?= $this->field('languages', 'Sprachen', $speaker->languages ?? 'Deutsch, Englisch') ?>
+                <?= $this->field('speaking_formats', 'Formate', $speaker->speaking_formats ?? 'Keynote, Session, Workshop') ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>5. Preisklasse & Verfügbarkeit</h3><div class="cms365-form-grid">
+                <?= $this->select('price_class', 'Preisklasse', (string) ($speaker->price_class ?? ''), $this->optionMap($taxonomies['speaker_price_classes'] ?? [])) ?>
+                <?= $this->field('fee_min', 'Honorar min.', $speaker->fee_min ?? '', false, 'number') ?>
+                <?= $this->field('fee_max', 'Honorar max.', $speaker->fee_max ?? '', false, 'number') ?>
+                <?= $this->field('currency', 'Währung', $speaker->currency ?? 'EUR') ?>
+                <?= $this->field('availability', 'Verfügbarkeit', $speaker->availability ?? '') ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>6. Social Links</h3><div class="cms365-form-grid">
+                <?= $this->field('linkedin_url', 'LinkedIn', $speaker->linkedin_url ?? '', false, 'url') ?>
+                <?= $this->field('x_url', 'X / Twitter', $speaker->x_url ?? '', false, 'url') ?>
+                <?= $this->field('youtube_url', 'YouTube', $speaker->youtube_url ?? '', false, 'url') ?>
+                <?= $this->field('github_url', 'GitHub', $speaker->github_url ?? '', false, 'url') ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>7. SEO & Social</h3><div class="cms365-form-grid">
+                <?= $this->field('seo_title', 'SEO-Titel', $speaker->seo_title ?? '') ?>
+                <?= $this->field('seo_description', 'SEO-Beschreibung', $speaker->seo_description ?? '') ?>
+                <?= $this->mediaUrlField('og_image_url', 'Social Sharing Bild', $speaker->og_image_url ?? '') ?>
+            </div></div>
+            <div class="admin-card cms365-actions-card"><button type="submit" class="btn btn-primary">💾 Speichern</button><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers', ENT_QUOTES, 'UTF-8') ?>">Abbrechen</a></div>
+        </form>
+        <?php $this->end();
+    }
+
+    private function start(string $title, string $activePage): void
     {
         if (function_exists('cms_plugin_admin_layout_start')) {
             cms_plugin_admin_layout_start($title, $activePage);
             return;
         }
-
         if (function_exists('renderAdminLayoutStart')) {
             renderAdminLayoutStart($title, $activePage);
+            echo '<div class="cms-plugin-admin-layout"><div class="cms-plugin-admin-layout__content">';
             return;
         }
-
         $pageTitle = $title;
-        $header = ABSPATH . 'admin/partials/header.php';
-        $sidebar = ABSPATH . 'admin/partials/sidebar.php';
-        if (file_exists($header)) {
-            require_once $header;
-        }
-        if (file_exists($sidebar)) {
-            require_once $sidebar;
-        }
+        require_once ABSPATH . 'admin/partials/header.php';
+        require_once ABSPATH . 'admin/partials/sidebar.php';
     }
 
-    private function end_admin_layout(): void
+    private function end(): void
     {
+        $this->renderMediaPickerModal();
         if (function_exists('cms_plugin_admin_layout_end')) {
             cms_plugin_admin_layout_end();
             return;
         }
-
+        echo '</div></div>';
         if (function_exists('renderAdminLayoutEnd')) {
             renderAdminLayoutEnd();
             return;
         }
-
-        $footer = ABSPATH . 'admin/partials/footer.php';
-        if (file_exists($footer)) {
-            require_once $footer;
-        }
+        require_once ABSPATH . 'admin/partials/footer.php';
     }
 
-    private function outputAdminAssets(): void
+    private function flash(): void
     {
-        $adminCss = CMS_EVENTS_PLUGIN_DIR . 'assets/css/events-admin.css';
-        if (file_exists($adminCss)) {
-            $adminCssVersion = (string) filemtime($adminCss);
-            if (function_exists('cms_enqueue_style')) {
-                cms_enqueue_style('cms-events-admin', CMS_EVENTS_PLUGIN_URL . 'assets/css/events-admin.css', [], $adminCssVersion);
+        if (isset($_GET['saved'])) {
+            echo '<div class="alert alert-success">✅ Gespeichert.</div>';
+        }
+        if (isset($_GET['backfilled'])) {
+            $updated = max(0, (int) ($_GET['updated'] ?? 0));
+            echo '<div class="alert alert-success">🧠 Beschreibungs-Backfill ausgeführt. Aktualisierte Events: ' . htmlspecialchars((string) $updated, ENT_QUOTES, 'UTF-8') . '.</div>';
+        }
+        if (isset($_GET['speaker_backfilled'])) {
+            if ((string) ($_GET['speaker_config'] ?? '') === '0') {
+                echo '<div class="alert alert-warning">⚠️ Speaker-Backfill wurde nicht ausgeführt: Bitte zuerst GOOGLE API Key und CSE-ID in ENV/.env setzen.</div>';
             } else {
-                echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_EVENTS_PLUGIN_URL . 'assets/css/events-admin.css?v=' . $adminCssVersion, ENT_QUOTES, 'UTF-8') . '">' . "\n";
+                $updated = max(0, (int) ($_GET['speaker_updated'] ?? 0));
+                $skipped = max(0, (int) ($_GET['speaker_skipped'] ?? 0));
+                $failed = max(0, (int) ($_GET['speaker_failed'] ?? 0));
+                echo '<div class="alert alert-success">🌐 Speaker-Backfill ausgeführt. Aktualisiert: ' . htmlspecialchars((string) $updated, ENT_QUOTES, 'UTF-8') . ', übersprungen: ' . htmlspecialchars((string) $skipped, ENT_QUOTES, 'UTF-8') . ', Fehler: ' . htmlspecialchars((string) $failed, ENT_QUOTES, 'UTF-8') . '.</div>';
             }
         }
-
-        $adminJs = CMS_EVENTS_PLUGIN_DIR . 'assets/js/admin.js';
-        if (file_exists($adminJs)) {
-            $adminJsVersion = (string) filemtime($adminJs);
-            if (function_exists('cms_enqueue_script')) {
-                cms_enqueue_script('cms-events-admin', CMS_EVENTS_PLUGIN_URL . 'assets/js/admin.js', [], $adminJsVersion, ['defer' => true]);
-            } else {
-                echo '<script src="' . htmlspecialchars(CMS_EVENTS_PLUGIN_URL . 'assets/js/admin.js?v=' . $adminJsVersion, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
-            }
+        if (isset($_GET['deleted'])) {
+            echo '<div class="alert alert-success">🗑️ Gelöscht.</div>';
         }
-    }
-
-    public function add_menu_item(array $menuItems): array
-    {
-        $currentPath = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-        $isActive    = str_starts_with($currentPath, '/admin/events');
-
-        $menuItems[] = [
-            'type'   => 'item',
-            'slug'   => self::MENU_PARENT_SLUG,
-            'label'  => '365NET | Events',
-            'icon'   => '📅',
-            'url'    => '/admin/events',
-            'active' => $isActive,
-        ];
-
-        return $menuItems;
-    }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    // render_list – 5-Tab-Admin
-    // ══════════════════════════════════════════════════════════════════════════
-
-    public function render_list(array $data): void
-    {
-        $this->start_admin_layout('Events', 'events');
-        $this->outputAdminAssets();
-
-        // Daten aus dem assoziativen Array lesen
-        $events      = $data['events']      ?? [];
-        $tab         = in_array((string) ($data['tab'] ?? 'overview'), ['overview', 'categories', 'tags', 'design', 'settings'], true)
-            ? (string) $data['tab']
-            : 'overview';
-        $filter      = $data['filter']      ?? 'all';
-        $categories  = $data['categories']  ?? [];
-        $tag_presets = $data['tag_presets'] ?? ['general' => [], 'special' => [], 'format' => []];
-        $settings    = $data['settings']    ?? [];
-        $csrf        = (string) ($data['csrf'] ?? '');
-        $csrfEsc     = htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8');
-        $eventsAdminBaseUrl = htmlspecialchars('/admin/events', ENT_QUOTES, 'UTF-8');
-        $approveCsrf = htmlspecialchars((string) ($data['approve_csrf'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $sec         = CMS\Security::instance();
-        $listErrorCode = self::query_param_string('error', 40);
-
-        // Settings mit Defaults zusammenführen
-        $s = array_merge([
-            'archive_title'         => 'Veranstaltungen',
-            'archive_description'   => 'Aktuelle Veranstaltungen entdecken',
-            'archive_slug'          => 'events',
-            'show_nav_link'         => '0',
-            'nav_label'             => 'Veranstaltungen',
-            'per_page'              => '12',
-            'grid_columns'          => 'auto',
-            'archive_header_icon'   => '📅',
-            'color_primary'         => '#3b82f6',
-            'color_accent'          => '#60a5fa',
-            'color_hdr_from'        => '#1d4ed8',
-            'color_hdr_to'          => '#3b82f6',
-            'color_hdr_title'       => '#ffffff',
-            'color_card_bg'         => '#f0f7ff',
-            'color_card_border'     => '#bfdbfe',
-            'color_cta'             => '#1e40af',
-            'color_detail_hdr_bg'   => '#0f172a',
-            'color_detail_hdr_text' => '#ffffff',
-            'color_detail_accent'   => '#3b82f6',
-            'color_featured_border' => '#f59e0b',
-            'color_cancelled_bg'    => '#fee2e2',
-            'color_online_badge'    => '#059669',
-            'border_radius'         => '12',
-            'show_category'         => '1',
-            'show_city'             => '1',
-            'show_capacity'         => '1',
-            'show_speakers'         => '1',
-            'show_price'            => '1',
-            'show_organizer'        => '1',
-            'show_tags'             => '1',
-            'show_status_badge'     => '1',
-            'show_featured_badge'   => '1',
-            'show_online_badge'     => '1',
-            'show_date_pill'        => '1',
-            'show_time_pill'        => '1',
-            'color_badge_published_bg'    => '#d1fae5',
-            'color_badge_published_color' => '#065f46',
-            'color_badge_draft_bg'        => '#fef3c7',
-            'color_badge_draft_color'     => '#92400e',
-            'color_badge_cancelled_bg'    => '#fee2e2',
-            'color_badge_cancelled_color' => '#991b1b',
-            'color_badge_completed_bg'    => '#dbeafe',
-            'color_badge_completed_color' => '#1e40af',
-            'color_badge_featured_bg'     => '#fef3c7',
-            'color_badge_featured_color'  => '#92400e',
-            'color_badge_online_bg'       => '#d1fae5',
-            'color_badge_online_color'    => '#065f46',
-        ], $settings);
-
-        // Statistiken
-        $total     = count($events);
-        $published = count(array_filter($events, fn($e) => ($e->status ?? '') === 'published'));
-        $draft     = count(array_filter($events, fn($e) => ($e->status ?? '') === 'draft'));
-        $cancelled = count(array_filter($events, fn($e) => ($e->status ?? '') === 'cancelled'));
-        $featured  = count(array_filter($events, fn($e) => !empty($e->is_featured)));
-        $upcoming  = count(array_filter($events, fn($e) => $this->is_upcoming_event($e)));
-        ?>
-
-        <div class="ev-admin-shell">
-
-        <!-- Page Header -->
-        <div class="admin-page-header">
-            <div>
-                <h2>📅 Events</h2>
-                <p>Veranstaltungen, Workshops und Webinare zentral verwalten.</p>
-            </div>
-            <div class="header-actions">
-                <a href="<?= SITE_URL ?>/events" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">👁️ Öffentlich</a>
-                <a href="/admin/events/new" class="btn btn-primary">➕ Neues Event</a>
-            </div>
-        </div>
-
-        <?php if (isset($_GET['saved'])): ?>
-            <div class="alert alert-success">✅ Einstellungen gespeichert.</div>
-        <?php endif; ?>
-        <?php if (isset($_GET['approved'])): ?>
-            <div class="alert alert-success">✅ Event genehmigt und veröffentlicht.</div>
-        <?php endif; ?>
-        <?php if (isset($_GET['deleted'])): ?>
-            <div class="alert alert-success">✅ Event gelöscht.</div>
-        <?php endif; ?>
-        <?php if ($listErrorCode !== ''): ?>
-            <div class="alert alert-error">
-                ❌ Fehler:
-                <?php match($listErrorCode) {
-                    'csrf'       => print 'Sicherheitscheck fehlgeschlagen.',
-                    'save'       => print 'Datenbank-Fehler beim Speichern.',
-                    'validation' => print 'Eingaben prüfen.',
-                    default      => print 'Unbekannter Fehler.',
-                }; ?>
-            </div>
-        <?php endif; ?>
-
-        <?php
-        // ══════════════════════════════════════════════════════════════════
-        if ($tab === 'overview'):
-
-            $filtered = $events;
-            $search = trim($data['search'] ?? '');
-            if ($search) {
-                $q = mb_strtolower($search);
-                $filtered = array_values(array_filter($filtered, fn($e) =>
-                    str_contains(mb_strtolower($e->title ?? ''), $q) ||
-                    str_contains(mb_strtolower($e->city ?? ''), $q) ||
-                    str_contains(mb_strtolower($e->category ?? ''), $q) ||
-                    str_contains(mb_strtolower($e->organizer_name ?? ''), $q)
-                ));
-            }
-            if ($filter === 'upcoming') $filtered = array_values(array_filter($filtered, fn($e) => $this->is_upcoming_event($e)));
-            elseif ($filter === 'past') $filtered = array_values(array_filter($filtered, fn($e) => $this->is_past_event($e)));
-            elseif ($filter === 'featured') $filtered = array_values(array_filter($filtered, fn($e) => !empty($e->is_featured)));
-            elseif ($filter === 'online') $filtered = array_values(array_filter($filtered, fn($e) => !empty($e->is_online)));
-            elseif ($filter === 'draft') $filtered = array_values(array_filter($filtered, fn($e) => ($e->status ?? 'draft') === 'draft'));
-        ?>
-
-        <!-- Stats -->
-        <div class="dashboard-grid">
-            <?php
-            $stat_items = [
-                ['📅', 'Gesamt',          $total,     ''],
-                ['✅', 'Veröffentlicht',  $published, ''],
-                ['📆', 'Bevorstehend',    $upcoming,  ''],
-                ['📝', 'Entwürfe',        $draft,     ''],
-                ['⭐', 'Featured',        $featured,  ''],
-                ['❌', 'Abgesagt',        $cancelled, ''],
+        if (isset($_GET['synced'])) {
+            echo '<div class="alert alert-success">🔗 Verknüpfungen zu Firmen und Experts wurden aktualisiert.</div>';
+        }
+        if (isset($_GET['warning']) && (string) $_GET['warning'] === 'relations') {
+            echo '<div class="alert alert-warning">⚠️ Event wurde gespeichert, aber die Speaker-Zuordnung konnte nicht aktualisiert werden. Details stehen im Plugin-Log.</div>';
+        }
+        if (isset($_GET['error'])) {
+            $error = (string) $_GET['error'];
+            $messages = [
+                'save' => 'Speichern fehlgeschlagen. Bitte Pflichtfelder, Datenbank-Migration und Plugin-Log prüfen.',
+                'required_title' => 'Speichern fehlgeschlagen: Titel bzw. Anzeigename ist erforderlich.',
+                'csrf' => 'Sicherheitsprüfung fehlgeschlagen. Bitte Seite neu laden und erneut speichern.',
+                'not_found' => 'Datensatz wurde nicht gefunden.',
             ];
-            foreach ($stat_items as [$si_icon, $si_label, $si_value]): ?>
-            <div class="stat-card">
-                <div class="stat-icon"><?= $si_icon ?></div>
-                <div class="stat-number"><?= (int)$si_value ?></div>
-                <div class="stat-label"><?= $si_label ?></div>
-            </div>
-            <?php endforeach; ?>
-        </div>
-
-        <!-- Filter Bar -->
-        <div class="admin-card ev-filter-card">
-            <h3>🔎 Events filtern</h3>
-            <form method="GET" class="admin-form ev-admin-filter-form" novalidate>
-                <input type="hidden" name="tab" value="overview">
-                <div class="form-group ev-form-group--inline-reset ev-form-group--grow-2">
-                    <label class="form-label">Titel / Stichwort</label>
-                    <input type="text" name="search" class="form-control" placeholder="Titel, Ort, Kategorie…" value="<?= htmlspecialchars((string)($data['search'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-                <div class="form-group ev-form-group--inline-reset ev-form-group--grow-1">
-                    <label class="form-label">Status / Typ</label>
-                    <select name="filter" class="form-control">
-                        <option value="all"      <?= $filter==='all'      ?'selected':'' ?>>Alle (<?= $total ?>)</option>
-                        <option value="upcoming" <?= $filter==='upcoming' ?'selected':'' ?>>📆 Bevorstehend (<?= $upcoming ?>)</option>
-                        <option value="past"     <?= $filter==='past'     ?'selected':'' ?>>⌛ Vergangen</option>
-                        <option value="featured" <?= $filter==='featured' ?'selected':'' ?>>⭐ Featured (<?= $featured ?>)</option>
-                        <option value="draft"    <?= $filter==='draft'    ?'selected':'' ?>>📝 Entwürfe (<?= $draft ?>)</option>
-                        <option value="online"   <?= $filter==='online'   ?'selected':'' ?>>🌐 Online</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary">🔍 Filtern</button>
-                <?php if (($data['search'] ?? '') || $filter !== 'all'): ?><a href="<?= $eventsAdminBaseUrl ?>?tab=overview" class="btn btn-secondary">✕ Reset</a><?php endif; ?>
-            </form>
-        </div>
-
-        <?php if (empty($filtered)): ?>
-            <div class="empty-state">
-                <p class="ev-empty-icon">📅</p>
-                <p><strong>Keine Events <?= $filter !== 'all' ? 'in diesem Filter' : '' ?> gefunden.</strong></p>
-                <p class="text-muted">Passe die Filter an oder lege direkt ein neues Event an.</p>
-                <?php if ($filter === 'all'): ?>
-                    <a href="/admin/events/new" class="btn btn-primary">➕ Erstes Event anlegen</a>
-                <?php endif; ?>
-            </div>
-        <?php else: ?>
-        <div class="admin-card ev-tab-panel">
-            <div class="ev-panel-header">
-                <div>
-                    <h3>📋 Event-Übersicht</h3>
-                    <p>Alle Events mit Datum, Status und schnellen Aktionen.</p>
-                </div>
-                <span class="ev-result-count"><?= (int)count($filtered) ?> Einträge</span>
-            </div>
-            <div class="users-table-container ev-events-table-wrap">
-                <table class="users-table ev-events-table">
-                    <thead>
-                        <tr>
-                            <th>Event</th>
-                            <th>Datum</th>
-                            <th>Ort / Typ</th>
-                            <th>Status</th>
-                            <th>Merkmale</th>
-                            <th>Aktionen</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($filtered as $ev):
-                        $id       = (int)($ev->id ?? 0);
-                        $titleRaw = (string)($ev->title ?? '');
-                        $title    = htmlspecialchars($titleRaw, ENT_QUOTES, 'UTF-8');
-                        $category = htmlspecialchars((string)($ev->category ?? ''), ENT_QUOTES, 'UTF-8');
-                        $cityRaw  = trim((string)($ev->city ?? ''));
-                        $city     = htmlspecialchars($cityRaw, ENT_QUOTES, 'UTF-8');
-                        $status   = (string)($ev->status ?? 'draft');
-                        $dateTs   = !empty($ev->event_date) ? strtotime((string)$ev->event_date) : false;
-                        $endTs    = !empty($ev->end_date) ? strtotime((string)$ev->end_date) : false;
-                        $isPast   = $dateTs !== false && $dateTs < strtotime('today');
-                        $isToday  = $dateTs !== false && date('Y-m-d', $dateTs) === date('Y-m-d');
-                        $isDraft  = $status === 'draft';
-                        $statusCfg = [
-                            'draft'     => ['⏳ Entwurf', 'pending'],
-                            'published' => ['✅ Veröffentlicht', 'active'],
-                            'cancelled' => ['❌ Abgesagt', 'danger'],
-                            'completed' => ['📦 Abgeschlossen', 'inactive'],
-                        ];
-                        [$stLabel, $stClass] = $statusCfg[$status] ?? ['ℹ️ Unbekannt', 'inactive'];
-                        $dateLabel = $dateTs ? date('d.m.Y', $dateTs) : '—';
-                        $timeLabel = !empty($ev->event_time) ? substr((string)$ev->event_time, 0, 5) . ' Uhr' : '';
-                        $endLabel  = ($endTs && $dateTs && date('Y-m-d', $endTs) !== date('Y-m-d', $dateTs)) ? 'bis ' . date('d.m.Y', $endTs) : '';
-                        $publicUrl = function_exists('cms_event_url') ? cms_event_url($ev) : SITE_URL . '/event/event-' . $id;
-                        $websiteUrl = $this->normalize_external_url($ev->organizer_website ?? '');
-                    ?>
-                        <tr<?= $isDraft ? ' class="ev-row-pending"' : ($isPast ? ' class="ev-row-muted"' : '') ?>>
-                            <td>
-                                <div class="ev-table-primary">
-                                    <a href="/admin/events/edit/<?= $id ?>" class="ev-table-title"><?= $title !== '' ? $title : 'Unbenanntes Event' ?></a>
-                                    <div class="ev-table-meta">
-                                        <?php if ($category !== ''): ?><span>📂 <?= $category ?></span><?php endif; ?>
-                                        <?php if (!empty($ev->organizer_name)): ?><span>🏢 <?= htmlspecialchars((string)$ev->organizer_name, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <strong><?= htmlspecialchars($dateLabel, ENT_QUOTES, 'UTF-8') ?></strong>
-                                <?php if ($timeLabel !== ''): ?><div class="ev-table-muted">🕐 <?= htmlspecialchars($timeLabel, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
-                                <?php if ($endLabel !== ''): ?><div class="ev-table-muted"><?= htmlspecialchars($endLabel, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if (!empty($ev->is_online)): ?>
-                                    <span class="status-badge active">🌐 Online</span>
-                                <?php elseif ($city !== ''): ?>
-                                    <span><?= $city ?></span>
-                                <?php else: ?>
-                                    <span class="ev-table-muted">—</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <span class="status-badge <?= htmlspecialchars($stClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($stLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                                <?php if ($isToday): ?><div class="ev-table-muted">🔴 Heute</div><?php endif; ?>
-                            </td>
-                            <td>
-                                <div class="ev-soft-badge-stack">
-                                    <?php if (!empty($ev->is_featured)): ?><span class="ev-soft-badge">⭐ Featured</span><?php endif; ?>
-                                    <?php if (!empty($ev->capacity)): ?><span class="ev-soft-badge">👥 <?= (int)$ev->capacity ?></span><?php endif; ?>
-                                    <?php if (!empty($ev->registration_url)): ?><span class="ev-soft-badge">🎟 Anmeldung</span><?php endif; ?>
-                                    <?php if (($ev->price_type ?? 'free') === 'free'): ?><span class="ev-soft-badge">✅ Kostenlos</span><?php endif; ?>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="ev-row-actions">
-                                    <?php if ($isDraft): ?>
-                                        <form method="POST" action="/admin/events/approve/<?= $id ?>" id="ev-approve-form-<?= $id ?>" class="ev-inline-form-compact">
-                                            <input type="hidden" name="csrf_token" value="<?= $approveCsrf ?>">
-                                            <button type="button" class="btn btn-sm btn-primary"
-                                                    data-ev-approve-event
-                                                    data-ev-event-name="<?= htmlspecialchars($titleRaw, ENT_QUOTES, 'UTF-8') ?>"
-                                                    data-ev-submit-target="ev-approve-form-<?= $id ?>">✓</button>
-                                        </form>
-                                    <?php else: ?>
-                                        <a href="<?= htmlspecialchars((string)$publicUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Öffentlich ansehen">👁️</a>
-                                    <?php endif; ?>
-                                    <?php if ($websiteUrl !== ''): ?>
-                                        <a href="<?= htmlspecialchars($websiteUrl, ENT_QUOTES, 'UTF-8') ?>"
-                                           target="_blank"
-                                           rel="noopener noreferrer"
-                                           class="btn btn-sm btn-secondary"
-                                           title="Website öffnen"
-                                           aria-label="Website von <?= htmlspecialchars($titleRaw !== '' ? $titleRaw : 'Event', ENT_QUOTES, 'UTF-8') ?> öffnen">🌐</a>
-                                    <?php endif; ?>
-                                    <a href="/admin/events/edit/<?= $id ?>" class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
-                                    <button type="button" class="btn btn-sm btn-danger"
-                                            data-ev-delete-event
-                                            data-ev-event-name="<?= htmlspecialchars($titleRaw, ENT_QUOTES, 'UTF-8') ?>"
-                                            data-ev-delete-action="/admin/events/delete/<?= $id ?>"
-                                            title="Löschen">🗑️</button>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <?php
-        // ══════════════════════════════════════════════════════════════════
-        elseif ($tab === 'categories'):
-        ?>
-        <div class="admin-card ev-tab-panel">
-            <div class="ev-panel-header">
-                <div>
-                    <h3>📂 Kategorien</h3>
-                    <p>Öffentliche Event-Kategorien mit Icon und Slug verwalten.</p>
-                </div>
-                <span class="ev-result-count"><?= (int)count($categories) ?> Kategorien</span>
-            </div>
-
-            <div class="ev-layout-split-320">
-            <div>
-                <?php if (empty($categories)): ?>
-                    <div class="empty-state ev-empty-state-compact">
-                        <p class="ev-empty-icon">📂</p>
-                        <p><strong>Noch keine Kategorien vorhanden</strong></p>
-                        <p class="text-muted">Lege rechts die erste Kategorie für dein Event-Archiv an.</p>
-                    </div>
-                <?php else: ?>
-                    <div class="users-table-container">
-                        <table class="users-table">
-                            <thead><tr><th>Kategorie</th><th>Slug</th><th>Aktionen</th></tr></thead>
-                            <tbody>
-                            <?php foreach ($categories as $cat): ?>
-                            <tr>
-                                <td><strong><?= $sec->escape($cat->icon ?? '📂') ?> <?= $sec->escape($cat->name) ?></strong></td>
-                                <td><code><?= $sec->escape($cat->slug ?? '') ?></code></td>
-                                <td>
-                                    <?php if (($cat->id ?? 0) > 0): ?>
-                                        <form method="POST" action="/admin/events/category/delete/<?= (int)$cat->id ?>" class="ev-inline-form-compact"
-                                              data-ev-confirm-title="Kategorie löschen?"
-                                              data-ev-confirm-message="Kategorie „<?= htmlspecialchars((string)($cat->name ?? ''), ENT_QUOTES, 'UTF-8') ?>” wirklich löschen?"
-                                              data-ev-confirm-button="Löschen"
-                                              data-ev-confirm-class="btn-danger">
-                                            <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
-                                            <button type="submit" class="btn btn-sm btn-danger">🗑️</button>
-                                        </form>
-                                    <?php else: ?>
-                                        <span class="ev-table-muted">System</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endif; ?>
-            </div>
-            <div class="ev-side-panel">
-                <h3>➕ Neue Kategorie</h3>
-                <form method="POST" action="/admin/events/category/add" class="admin-form" novalidate>
-                    <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
-                    <div class="form-group">
-                        <label class="form-label">Icon (Emoji)</label>
-                        <input type="text" name="category_icon" value="📂" maxlength="4" class="form-control ev-emoji-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Kategorie-Name <span class="ev-required">*</span></label>
-                        <input type="text" name="category_name" required placeholder="z.B. Konferenz" class="form-control">
-                    </div>
-                    <button type="submit" class="btn btn-primary ev-btn-block">➕ Anlegen</button>
-                </form>
-            </div>
-            </div>
-        </div>
-
-        <?php
-        // ══════════════════════════════════════════════════════════════════
-        elseif ($tab === 'tags'):
-            $typeLabels = [
-                'general' => ['🔷', 'Allgemein',      'Allgemeine Event-Merkmale'],
-                'special' => ['⭐', 'Speziell',        'Besondere Eigenschaften'],
-                'format'  => ['📋', 'Format & Niveau', 'Zielgruppe und Format'],
-            ];
-        ?>
-        <div class="admin-card ev-tab-panel">
-            <div class="ev-panel-header">
-                <div>
-                    <h3>🏷️ Tag-Vorlagen</h3>
-                    <p>Vordefinierte Merkmale für Event-Karten und Filter pflegen.</p>
-                </div>
-            </div>
-        <div class="ev-layout-split-280">
-            <div>
-                <div class="ev-layout-card-grid">
-                <?php foreach ($typeLabels as $type => [$icon, $label, $desc]): ?>
-                    <div class="ev-mini-panel">
-                        <div class="ev-inline-stack">
-                            <span class="ev-mini-panel-icon"><?= $icon ?></span>
-                            <div>
-                                <strong><?= $label ?></strong>
-                                <div class="ev-table-muted"><?= $desc ?></div>
-                            </div>
-                        </div>
-                        <div class="ev-tag-list">
-                            <?php foreach ($tag_presets[$type] ?? [] as $tg): ?>
-                                <span class="ev-tag">
-                                    <?= $sec->escape($tg->tag_name) ?>
-                                    <form method="POST" action="/admin/events/tagpreset/delete/<?= (int)$tg->id ?>" class="ev-inline-form-compact"
-                                          data-ev-confirm-title="Tag löschen?"
-                                          data-ev-confirm-message="Tag „<?= htmlspecialchars((string)($tg->tag_name ?? ''), ENT_QUOTES, 'UTF-8') ?>” wirklich löschen?"
-                                          data-ev-confirm-button="Löschen"
-                                          data-ev-confirm-class="btn-danger">
-                                        <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
-                                        <button type="submit" class="ev-tag-del" aria-label="Tag löschen">×</button>
-                                    </form>
-                                </span>
-                            <?php endforeach; ?>
-                            <?php if (empty($tag_presets[$type])): ?>
-                                <span class="ev-table-muted">Noch keine Einträge.</span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-                </div>
-            </div>
-            <div class="ev-side-panel">
-                <h3>➕ Neues Tag</h3>
-                <form method="POST" action="/admin/events/tagpreset/add" class="admin-form" novalidate>
-                    <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
-                    <div class="form-group">
-                        <label class="form-label">Tag-Name <span class="ev-required">*</span></label>
-                        <input type="text" name="tag_name" required placeholder="z.B. Einsteiger" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Kategorie <span class="ev-required">*</span></label>
-                        <select name="tag_type" class="form-control">
-                            <option value="general">🔷 Allgemein</option>
-                            <option value="special">⭐ Speziell</option>
-                            <option value="format">📋 Format & Niveau</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary ev-btn-block">Hinzufügen</button>
-                </form>
-            </div>
-        </div>
-        </div>
-
-        <?php
-        // ══════════════════════════════════════════════════════════════════
-        elseif ($tab === 'design'):
-        ?>
-        <form method="POST" action="/admin/events/settings/save" class="admin-form" novalidate>
-            <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
-            <input type="hidden" name="_from_tab"  value="design">
-
-            <div class="admin-card ev-tab-panel ev-tab-panel--wide">
-                <div class="ev-panel-header">
-                    <div>
-                        <h3>🎨 Design-Einstellungen</h3>
-                        <p>Farben, Badges, Layout und Vorschau der öffentlichen Event-Ansicht.</p>
-                    </div>
-                </div>
-
-                <section class="ev-settings-section">
-                <h4>🎨 Farbpalette</h4>
-                <div class="form-grid ev-color-grid">
-                    <?php
-                    $colorFields = [
-                        'color_primary'         => ['Primärfarbe (Buttons, Akzente)',      '#3b82f6'],
-                        'color_accent'          => ['Akzentfarbe (Hover, Links)',           '#60a5fa'],
-                        'color_card_bg'         => ['Karten-Hintergrund',                  '#f0f7ff'],
-                        'color_card_border'     => ['Karten-Rahmenfarbe',                  '#bfdbfe'],
-                        'color_cta'             => ['CTA-Button-Farbe',                    '#1e40af'],
-                        'color_hdr_from'        => ['Archiv-Header Gradient Von',           '#1d4ed8'],
-                        'color_hdr_to'          => ['Archiv-Header Gradient Bis',           '#3b82f6'],
-                        'color_hdr_title'       => ['Archiv-Header Titelfarbe',             '#ffffff'],
-                        'color_detail_hdr_bg'   => ['Detailseite Header-Hintergrund',       '#0f172a'],
-                        'color_detail_hdr_text' => ['Detailseite Titelfarbe',               '#ffffff'],
-                        'color_detail_accent'   => ['Detailseite Akzentfarbe',              '#3b82f6'],
-                        'color_featured_border' => ['Featured-Karte Rahmen',               '#f59e0b'],
-                        'color_online_badge'    => ['Online-Badge Farbe',                  '#059669'],
-                        'color_cancelled_bg'    => ['Abgesagt-Badge Hintergrund',          '#fee2e2'],
-                    ];
-                    foreach ($colorFields as $key => [$label, $default]):
-                        $val = htmlspecialchars((string) ($s[$key] ?? $default), ENT_QUOTES, 'UTF-8');
-                    ?>
-                    <div class="form-group">
-                        <label class="form-label"><?= $label ?></label>
-                           <div class="ev-color-row">
-                            <input type="color" id="clr_<?= $key ?>" value="<?= $val ?>"
-                                class="ev-color-picker"
-                                data-ev-color-picker
-                                data-ev-color-text="txt_<?= $key ?>">
-                            <input type="text" id="txt_<?= $key ?>" name="<?= $key ?>" class="form-control ev-color-text"
-                                value="<?= $val ?>"
-                                data-ev-color-text
-                                data-ev-color-picker="clr_<?= $key ?>">
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-                </section>
-
-                <section class="ev-settings-section">
-                    <h4>🖼️ Archiv-Header</h4>
-                    <div class="ev-grid-two">
-                        <div class="form-group ev-header-icon-field">
-                            <label class="form-label">Header-Icon (Emoji)</label>
-                            <input type="text" name="archive_header_icon" id="txt_archive_header_icon"
-                                   class="form-control ev-header-icon-input"
-                                   value="<?= htmlspecialchars(html_entity_decode((string)($s['archive_header_icon'] ?? '📅'), ENT_HTML5, 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>"
-                                   maxlength="8">
-                            <small class="form-text">z.B. 📅 🎉 🎤</small>
-                        </div>
-                        <div>
-                            <label class="form-label">Live-Vorschau</label>
-                            <div id="ev_hdr_preview" class="ev-header-preview" data-ev-preview-title="<?= htmlspecialchars((string)($s['archive_title'] ?? 'Events'), ENT_QUOTES, 'UTF-8') ?>">
-                                <span id="ev_hdr_icon" class="ev-header-preview-icon"></span>
-                                <div>
-                                    <div id="ev_hdr_title" class="ev-header-preview-title"></div>
-                                    <div class="ev-header-preview-note">Archiv-Header</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="ev-settings-section">
-                <h4>🏅 Badge-Farben</h4>
-                <p class="ev-note">Hintergrund- und Textfarben der Status-Badges auf Event-Karte und Detailseite.</p>
-                <div class="form-grid ev-color-grid">
-                    <?php
-                    $badgeColorFields = [
-                        'color_badge_published_bg'    => ['Veröffentlicht – Hintergrund', '#d1fae5'],
-                        'color_badge_published_color' => ['Veröffentlicht – Textfarbe',   '#065f46'],
-                        'color_badge_draft_bg'        => ['Entwurf – Hintergrund',        '#fef3c7'],
-                        'color_badge_draft_color'     => ['Entwurf – Textfarbe',          '#92400e'],
-                        'color_badge_cancelled_bg'    => ['Abgesagt – Hintergrund',       '#fee2e2'],
-                        'color_badge_cancelled_color' => ['Abgesagt – Textfarbe',         '#991b1b'],
-                        'color_badge_completed_bg'    => ['Abgeschlossen – Hintergrund',  '#dbeafe'],
-                        'color_badge_completed_color' => ['Abgeschlossen – Textfarbe',    '#1e40af'],
-                        'color_badge_featured_bg'     => ['⭐ Featured – Hintergrund',    '#fef3c7'],
-                        'color_badge_featured_color'  => ['⭐ Featured – Textfarbe',      '#92400e'],
-                        'color_badge_online_bg'       => ['🌐 Online – Hintergrund',      '#d1fae5'],
-                        'color_badge_online_color'    => ['🌐 Online – Textfarbe',        '#065f46'],
-                    ];
-                    foreach ($badgeColorFields as $key => [$label, $default]):
-                        $val = htmlspecialchars((string) ($s[$key] ?? $default), ENT_QUOTES, 'UTF-8');
-                    ?>
-                    <div class="form-group">
-                        <label class="form-label"><?= $label ?></label>
-                        <div class="ev-color-row">
-                            <input type="color" id="clr_<?= $key ?>" value="<?= $val ?>" class="ev-color-picker" data-ev-color-picker data-ev-color-text="txt_<?= $key ?>">
-                            <input type="text" id="txt_<?= $key ?>" name="<?= $key ?>" class="form-control ev-color-text" value="<?= $val ?>" data-ev-color-text data-ev-color-picker="clr_<?= $key ?>">
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-                </section>
-
-                <section class="ev-settings-section">
-                <h4>📐 Layout &amp; Anzeige</h4>
-                <div class="form-grid ev-grid-two">
-                    <div class="form-group">
-                        <label class="form-label">Ecken-Radius (px)</label>
-                        <input type="number" name="border_radius" class="form-control"
-                               value="<?= (int)($s['border_radius'] ?? 12) ?>" min="0" max="32">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Grid-Spalten</label>
-                        <select name="grid_columns" class="form-control">
-                            <?php foreach (['auto' => 'Automatisch (responsive)', '2' => '2 Spalten', '3' => '3 Spalten', '4' => '4 Spalten'] as $v => $l): ?>
-                                <option value="<?= $v ?>" <?= ($s['grid_columns'] ?? 'auto') === $v ? 'selected' : '' ?>><?= $l ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
-                <h5 class="ev-subsection-title">🏷️ Badges auf der Karte</h5>
-                <div class="ev-stack-gap ev-admin-assets-gap">
-                    <?php foreach ([
-                        'show_status_badge'   => '📋 Status-Badge',
-                        'show_featured_badge' => '⭐ Featured-Badge',
-                        'show_online_badge'   => '🌐 Online-Badge',
-                    ] as $key => $label): ?>
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="<?= $key ?>" value="1"
-                               <?= !empty($s[$key]) && $s[$key] !== '0' ? 'checked' : '' ?>>
-                        <?= $label ?>
-                    </label>
-                    <?php endforeach; ?>
-                </div>
-                <h5 class="ev-subsection-title">💊 Pills auf der Karte</h5>
-                <div class="ev-stack-gap">
-                    <?php foreach ([
-                        'show_category'  => '📂 Kategorie',
-                        'show_city'      => '📍 Ort / Stadt',
-                        'show_capacity'  => '👥 Kapazität',
-                        'show_date_pill' => '🕐 Uhrzeit',
-                        'show_price'     => '💶 Preis',
-                        'show_speakers'  => '🎤 Speaker-Anzahl',
-                        'show_organizer' => '🏢 Veranstalter',
-                        'show_tags'      => '🏷️ Tags',
-                    ] as $key => $label): ?>
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="<?= $key ?>" value="1"
-                               <?= !empty($s[$key]) && $s[$key] !== '0' ? 'checked' : '' ?>>
-                        <?= $label ?>
-                    </label>
-                    <?php endforeach; ?>
-                </div>
-                <p class="ev-note-highlight">
-                    ℹ️ <strong>Deaktivierte Badges/Pills</strong> werden auf der öffentlichen Übersichtskarte ausgeblendet.
-                </p>
-                </section>
-
-                <section class="ev-settings-section ev-settings-section--last">
-                    <h4>👁️ Vorschau</h4>
-                    <div class="ev-preview-layout">
-                        <div class="ev-preview-shell" id="ev_design_preview">
-                            <div id="prev-header" class="ev-preview-header">
-                                <span id="prev-icon" class="ev-preview-icon-live"><?= htmlspecialchars((string)$s['archive_header_icon'], ENT_QUOTES, 'UTF-8') ?></span>
-                                <div>
-                                    <div id="prev-title" class="ev-preview-title"><?= htmlspecialchars((string)($s['archive_title'] ?? 'Events'), ENT_QUOTES, 'UTF-8') ?></div>
-                                    <div class="ev-preview-subtitle ev-preview-subtitle-light">Öffentliche Archivkarte</div>
-                                </div>
-                            </div>
-                            <div id="prev-body" class="ev-preview-body">
-                                <span id="prev-cta" class="ev-preview-cta">Details ansehen →</span>
-                            </div>
-                        </div>
-                        <div class="ev-note-card">
-                            <strong>Hinweis</strong>
-                            <span>Die Vorschau zeigt Farben und Radius live. Inhaltliche Felder steuerst du im Bereich „Layout & Anzeige“.</span>
-                        </div>
-                    </div>
-                </section>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">💾 Design speichern</button>
-                </div>
-            </div>
-        </form>
-
-        <?php
-        // ══════════════════════════════════════════════════════════════════
-        elseif ($tab === 'settings'):
-        ?>
-        <form method="POST" action="/admin/events/settings/save" class="admin-form" novalidate>
-            <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
-            <input type="hidden" name="_from_tab"  value="settings">
-
-            <div class="admin-card ev-tab-panel">
-                <div class="ev-panel-header">
-                    <div>
-                        <h3>⚙️ Einstellungen</h3>
-                        <p>Archivseite, Navigation und Shortcode-Nutzung konfigurieren.</p>
-                    </div>
-                </div>
-
-                <section class="ev-settings-section">
-                <h4>📋 Archiv-Seite</h4>
-                <div class="form-group">
-                    <label class="form-label">Seitentitel</label>
-                          <input type="text" id="archive_title" name="archive_title" class="form-control"
-                              value="<?= htmlspecialchars((string)$s['archive_title'], ENT_QUOTES, 'UTF-8') ?>"
-                           placeholder="Events">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Beschreibungstext</label>
-                    <textarea name="archive_description" class="form-control" rows="3"
-                              placeholder="Kurze Beschreibung für Besucher..."><?= htmlspecialchars((string)$s['archive_description'], ENT_QUOTES, 'UTF-8') ?></textarea>
-                    <small class="form-text">Einleitungstext auf der Übersichtsseite.</small>
-                </div>
-                <div class="ev-grid-two ev-settings-grid">
-                    <div class="form-group">
-                        <label class="form-label">URL-Slug</label>
-                        <input type="text" name="archive_slug" class="form-control"
-                               value="<?= htmlspecialchars((string)($s['archive_slug'] ?? 'events'), ENT_QUOTES, 'UTF-8') ?>"
-                               placeholder="events">
-                        <small class="form-text">z.B. «events» → /events/</small>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Events pro Seite</label>
-                           <input type="number" name="per_page" class="form-control ev-width-120"
-                               value="<?= (int)($s['per_page'] ?? 12) ?>"
-                               min="4" max="100" step="4">
-                    </div>
-                </div>
-                </section>
-
-                <section class="ev-settings-section">
-                <h4>🧭 Navigation</h4>
-                <p class="ev-note">Standardmäßig wird kein Link in der öffentlichen Hauptnavigation ausgegeben. Aktiviere diese Option nur, wenn Events dort erscheinen sollen.</p>
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="show_nav_link" value="1"
-                               <?= (string)($s['show_nav_link'] ?? '0') === '1' ? 'checked' : '' ?>>
-                        Link in Hauptnavigation anzeigen
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Navigations-Label</label>
-                    <input type="text" name="nav_label" class="form-control"
-                           value="<?= htmlspecialchars((string)($s['nav_label'] ?? 'Veranstaltungen'), ENT_QUOTES, 'UTF-8') ?>"
-                           maxlength="40" placeholder="Veranstaltungen">
-                    <small class="form-text">Standard: Veranstaltungen. Die Route bleibt <code>/events</code>.</small>
-                </div>
-                </section>
-
-                <section class="ev-settings-section ev-settings-section--last">
-                <h4>ℹ️ Shortcode-Nutzung</h4>
-                <p class="ev-note">Event-Liste per Shortcode in Seiteninhalte einbinden:</p>
-                <div class="ev-shortcode-box">
-                    [cms_events limit="12" featured="1" category="Konferenz"]
-                </div>
-                <div class="ev-stack-gap--column ev-shortcode-meta">
-                    <small><strong>limit</strong> – Anzahl Events (Standard: 12)</small>
-                    <small><strong>featured</strong> – Nur Featured-Events (1/0)</small>
-                    <small><strong>category</strong> – Filter nach Kategorie-Name</small>
-                    <small><strong>upcoming</strong> – Nur zukünftige Events (1/0)</small>
-                    <small><strong>online</strong> – Nur Online-Events (1/0)</small>
-                </div>
-                </section>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
-                </div>
-            </div>
-        </form>
-        <?php endif; ?>
-
-        <!-- Delete Modal -->
-        <div id="evDeleteModal" class="modal" hidden data-ev-managed-modal aria-hidden="true">
-            <div class="modal-content ev-modal-dialog-sm">
-                <div class="modal-header">
-                    <h3>🗑️ Event löschen</h3>
-                    <button class="modal-close" type="button" data-ev-modal-close="evDeleteModal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p>Soll das Event <strong id="evDeleteName"></strong> wirklich gelöscht werden?</p>
-                    <p class="ev-danger-note">⚠️ Diese Aktion kann nicht rückgängig gemacht werden.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-ev-modal-close="evDeleteModal">Abbrechen</button>
-                    <form method="POST" id="evDeleteForm" class="ev-inline-form-compact">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(CMS\Security::instance()->generateToken('delete_event'), ENT_QUOTES, 'UTF-8') ?>">
-                        <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Approve Modal -->
-        <div id="evApproveModal" class="modal" hidden data-ev-managed-modal aria-hidden="true">
-            <div class="modal-content ev-modal-dialog-md">
-                <div class="modal-header">
-                    <h3>✅ Event genehmigen</h3>
-                    <button class="modal-close" type="button" data-ev-modal-close="evApproveModal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p>Soll das Event <strong id="evApproveName"></strong> genehmigt und veröffentlicht werden?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-ev-modal-close="evApproveModal">Abbrechen</button>
-                    <button type="button" id="evApproveConfirm" class="btn btn-primary">✅ Genehmigen</button>
-                </div>
-            </div>
-        </div>
-
-        </div>
-        <?php
-        $this->end_admin_layout();
+            echo '<div class="alert alert-error">❌ Fehler: ' . htmlspecialchars($messages[$error] ?? $error, ENT_QUOTES, 'UTF-8') . '</div>';
+        }
     }
 
-    private function normalize_external_url(mixed $value): string
+    private function field(string $name, string $label, mixed $value, bool $required = false, string $type = 'text'): string
     {
-        $url = trim((string) $value);
-        if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1) {
-            return '';
+        $step = $type === 'number' ? ' step="0.01"' : '';
+        return '<label class="form-group"><span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span><input class="form-control" type="' . htmlspecialchars($type, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '"' . $step . ($required ? ' required' : '') . '></label>';
+    }
+
+    /** @param array<string,string> $options */
+    private function select(string $name, string $label, string $value, array $options): string
+    {
+        if ($value !== '' && !array_key_exists($value, $options)) {
+            $options[$value] = $value . ' (bestehend)';
+        }
+        $html = '<label class="form-group"><span>' . $this->e($label) . '</span><select class="form-control" name="' . $this->e($name) . '">';
+        foreach ($options as $optionValue => $optionLabel) {
+            $html .= '<option value="' . $this->e($optionValue) . '"' . ($value === (string) $optionValue ? ' selected' : '') . '>' . $this->e($optionLabel) . '</option>';
+        }
+        return $html . '</select></label>';
+    }
+
+    /** @param array<int, string> $items @return array<string, string> */
+    private function optionMap(array $items): array
+    {
+        $options = ['' => 'Bitte wählen'];
+        foreach ($items as $item) {
+            $item = trim((string) $item);
+            if ($item !== '') {
+                $options[$item] = $item;
+            }
         }
 
-        if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            return '';
+        return $options;
+    }
+
+    /** @param array<int, string> $options */
+    private function multiSelect(string $name, string $label, string $value, array $options, int $size = 6): string
+    {
+        $selected = array_filter(array_map('trim', preg_split('/[,;\n]+/', $value) ?: []));
+        foreach ($selected as $selectedValue) {
+            if ($selectedValue !== '' && !in_array($selectedValue, $options, true)) {
+                $options[] = $selectedValue;
+            }
+        }
+        $html = '<label class="form-group"><span>' . $this->e($label) . '</span><select class="form-control cms365-multiselect" name="' . $this->e($name) . '[]" multiple size="' . max(3, min(14, $size)) . '">';
+        foreach ($options as $option) {
+            $option = trim((string) $option);
+            if ($option === '') {
+                continue;
+            }
+            $html .= '<option value="' . $this->e($option) . '"' . (in_array($option, $selected, true) ? ' selected' : '') . '>' . $this->e($option) . '</option>';
         }
 
-        $parts = parse_url($url);
-        if (!is_array($parts)) {
-            return '';
+        return $html . '</select><small class="description">Mehrfachauswahl mit Strg/Cmd oder Doppelklick.</small></label>';
+    }
+
+    private function textareaSetting(string $name, string $label, mixed $value): string
+    {
+        return '<label class="form-group"><span>' . $this->e($label) . '</span><textarea name="' . $this->e($name) . '" class="form-control" rows="9">' . $this->e((string) $value) . '</textarea></label>';
+    }
+
+    /** @param array<int, object> $companies @return array<string, string> */
+    private function companyOptions(array $companies): array
+    {
+        $options = ['' => 'Automatisch erkennen / keine Verknüpfung'];
+        foreach ($companies as $company) {
+            $label = (string) ($company->name ?? 'Firma #' . (int) ($company->id ?? 0));
+            if (!empty($company->location_city)) {
+                $label .= ' · ' . (string) $company->location_city;
+            }
+            $options[(string) (int) ($company->id ?? 0)] = $label;
         }
 
-        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
-        if (!in_array($scheme, ['http', 'https'], true) || ($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
-            return '';
+        return $options;
+    }
+
+    /** @param array<int, object> $experts @return array<string, string> */
+    private function expertOptions(array $experts): array
+    {
+        $options = ['' => 'Automatisch erkennen / keine Verknüpfung'];
+        foreach ($experts as $expert) {
+            $name = trim((string) ($expert->first_name ?? '') . ' ' . (string) ($expert->last_name ?? ''));
+            $label = $name !== '' ? $name : 'Expert #' . (int) ($expert->id ?? 0);
+            if (!empty($expert->company)) {
+                $label .= ' · ' . (string) $expert->company;
+            } elseif (!empty($expert->position)) {
+                $label .= ' · ' . (string) $expert->position;
+            }
+            $options[(string) (int) ($expert->id ?? 0)] = $label;
         }
 
-        $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
-        if ($host === '' || in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.localhost') || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
-            return '';
+        return $options;
+    }
+
+    private function checkbox(string $name, string $label, bool $checked): string
+    {
+        return '<label class="form-group cms365-checkbox"><span>' . $this->e($label) . '</span><input type="hidden" name="' . $this->e($name) . '" value="0"><input type="checkbox" name="' . $this->e($name) . '" value="1"' . ($checked ? ' checked' : '') . '></label>';
+    }
+
+    private function imageField(string $urlName, string $urlLabel, mixed $urlValue, string $altName, mixed $altValue): string
+    {
+        $url = (string) $urlValue;
+        $inputId = 'cms365-media-' . preg_replace('/[^a-z0-9_-]+/i', '-', $urlName);
+        $previewId = $inputId . '-preview';
+        return '<div class="cms365-image-field"><label class="form-group"><span>' . $this->e($urlLabel) . '</span><div class="cms365-media-row"><input id="' . $this->e($inputId) . '" class="form-control" type="text" name="' . $this->e($urlName) . '" value="' . $this->e($url) . '" placeholder="/uploads/bild.webp oder https://…" data-cms365-image-input data-media-target-input><button type="button" class="btn btn-secondary" data-open-media-picker data-target-input="' . $this->e($inputId) . '" data-preview-id="' . $this->e($previewId) . '" data-picker-title="' . $this->e($urlLabel . ' auswählen') . '">🖼️ Mediathek</button><button type="button" class="btn btn-secondary" data-clear-media-input data-target-input="' . $this->e($inputId) . '" data-preview-id="' . $this->e($previewId) . '">Leeren</button></div></label><div id="' . $this->e($previewId) . '" class="cms365-image-preview" data-cms365-image-preview data-media-preview data-preview-variant="image" data-input-id="' . $this->e($inputId) . '">' . ($url !== '' ? '<img src="' . $this->e($url) . '" alt="" loading="lazy">' : '<span>Keine Vorschau</span>') . '</div><label class="form-group"><span>Alt-Text</span><input class="form-control" type="text" name="' . $this->e($altName) . '" value="' . $this->e((string) $altValue) . '"></label></div>';
+    }
+
+    private function mediaUrlField(string $name, string $label, mixed $value): string
+    {
+        $url = (string) $value;
+        $inputId = 'cms365-media-' . preg_replace('/[^a-z0-9_-]+/i', '-', $name);
+        $previewId = $inputId . '-preview';
+
+        return '<label class="form-group cms365-media-field"><span>' . $this->e($label) . '</span><div class="cms365-media-row"><input id="' . $this->e($inputId) . '" class="form-control" type="text" name="' . $this->e($name) . '" value="' . $this->e($url) . '" placeholder="/uploads/bild.webp oder https://…" data-cms365-image-input data-media-target-input><button type="button" class="btn btn-secondary" data-open-media-picker data-target-input="' . $this->e($inputId) . '" data-preview-id="' . $this->e($previewId) . '" data-picker-title="' . $this->e($label . ' auswählen') . '">🖼️ Mediathek</button><button type="button" class="btn btn-secondary" data-clear-media-input data-target-input="' . $this->e($inputId) . '" data-preview-id="' . $this->e($previewId) . '">Leeren</button></div><div id="' . $this->e($previewId) . '" class="cms365-image-preview" data-cms365-image-preview data-media-preview data-preview-variant="image" data-input-id="' . $this->e($inputId) . '">' . ($url !== '' ? '<img src="' . $this->e($url) . '" alt="" loading="lazy">' : '<span>Keine Vorschau</span>') . '</div></label>';
+    }
+
+    private function galleryField(string $name, string $label, mixed $value): string
+    {
+        $inputId = 'cms365-gallery-' . preg_replace('/[^a-z0-9_-]+/i', '-', $name);
+        return '<label class="form-group cms365-gallery-field"><span>' . $this->e($label) . '</span><div class="cms365-media-row cms365-media-row--toolbar"><button type="button" class="btn btn-secondary" data-open-media-picker data-target-input="' . $this->e($inputId) . '" data-gallery-target="1" data-picker-title="Galeriebilder auswählen">🖼️ Bilder aus Mediathek hinzufügen</button><button type="button" class="btn btn-secondary" data-clear-gallery-input data-target-input="' . $this->e($inputId) . '">Galerie leeren</button></div><textarea id="' . $this->e($inputId) . '" name="' . $this->e($name) . '" class="form-control" rows="5" placeholder="/uploads/bild-1.webp&#10;/uploads/bild-2.webp" data-cms365-gallery-input>' . $this->e((string) $value) . '</textarea><small class="description">Ein Klick im Mediathek-Fenster fügt das Bild als neue Zeile hinzu. Mehrere Bilder nacheinander auswählen – fertig ist die Galerie.</small><div class="cms365-gallery-preview" data-cms365-gallery-preview data-input-id="' . $this->e($inputId) . '"></div></label>';
+    }
+
+    private function renderMediaPickerModal(): void
+    {
+        $token = CMS\Security::instance()->generateToken('editorjs_media');
+        echo '<div class="modal modal-blur fade cms365-media-modal" id="settingsMediaPickerModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" data-media-picker-title>Bild auswählen</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen">×</button></div><div class="modal-body"><div data-media-picker-modal data-api-url="/api/media" data-csrf-token="' . $this->e($token) . '"><p class="text-secondary small mb-3">Ein Klick übernimmt das Bild in das gewählte Feld; bei Galerien werden Bilder zeilenweise ergänzt.</p><div class="cms365-media-picker-search"><input type="search" class="form-control" placeholder="Mediathek durchsuchen …" data-media-picker-search><span class="description" data-media-picker-status>Lade Medien …</span></div><div class="cms365-media-picker-grid" data-media-picker-grid></div></div></div></div></div></div>';
+    }
+
+    private function editor(string $name, string $jsonValue, string $fallbackText, string $label): string
+    {
+        $jsonValue = trim($jsonValue);
+        if ($jsonValue !== '') {
+            $decoded = json_decode($jsonValue, true);
+            if (!is_array($decoded) || !isset($decoded['blocks']) || !is_array($decoded['blocks']) || $decoded['blocks'] === []) {
+                $jsonValue = '';
+            }
         }
 
-        if (filter_var($host, FILTER_VALIDATE_IP) && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-            return '';
+        if ($jsonValue === '' && $fallbackText !== '') {
+            $jsonValue = json_encode([
+                'time' => time() * 1000,
+                'blocks' => array_map(static fn(string $part): array => ['type' => 'paragraph', 'data' => ['text' => htmlspecialchars(trim($part), ENT_QUOTES, 'UTF-8')]], array_filter(preg_split('/\n{2,}/', $fallbackText) ?: [])),
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
         }
 
-        return $url;
-    }
-
-    public static function admin_section_for_slug(string $slug): string
-    {
-        $normalized = function_exists('cms_plugin_admin_normalize_slug')
-            ? cms_plugin_admin_normalize_slug($slug)
-            : trim((string) preg_replace('/[^a-z0-9_-]+/', '-', strtolower(trim($slug))), '-');
-
-        return self::MENU_SECTIONS[$normalized] ?? 'overview';
-    }
-
-    public static function render_overview_bridge(): void
-    {
-        self::redirect_to_admin_section('overview');
-    }
-
-    public static function render_categories_bridge(): void
-    {
-        self::redirect_to_admin_section('categories');
-    }
-
-    public static function render_tags_bridge(): void
-    {
-        self::redirect_to_admin_section('tags');
-    }
-
-    public static function render_design_bridge(): void
-    {
-        self::redirect_to_admin_section('design');
-    }
-
-    public static function render_settings_bridge(): void
-    {
-        self::redirect_to_admin_section('settings');
-    }
-
-    private static function redirect_to_admin_section(string $section): void
-    {
-        $url = '/admin/events' . ($section === 'overview' ? '' : '?tab=' . rawurlencode($section));
-
-        if (class_exists('CMS\\Router')) {
-            CMS\Router::instance()->redirect($url);
-            return;
+        if (class_exists('CMS\\Services\\EditorJs\\EditorJsAssetService')) {
+            $service = new CMS\Services\EditorJs\EditorJsAssetService();
+            return $service->render($name, $jsonValue, ['height' => 460, 'context' => '365netevents', 'aria_label' => $label, 'content_width' => 960]);
         }
 
-        $safeTarget = htmlspecialchars((string) SITE_URL . $url, ENT_QUOTES, 'UTF-8');
-        echo '<div class="admin-card"><p>Weiterleitung zur Event-Verwaltung... <a href="' . $safeTarget . '">Falls nichts passiert, hier klicken</a>.</p></div>';
-        echo '<script>window.location.replace(' . json_encode((string) SITE_URL . $url, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');</script>';
+        return '<textarea class="form-control" name="' . $this->e($name) . '" rows="10">' . $this->e($jsonValue) . '</textarea>';
     }
 
-    private static function render_admin_bridge_fallback_notice(): void
+    private function e(mixed $value): string
     {
-        if (function_exists('cms_plugin_admin_layout_start') && function_exists('cms_plugin_admin_emit_notice') && function_exists('cms_plugin_admin_layout_end')) {
-            cms_plugin_admin_layout_start('Events', self::MENU_PARENT_SLUG);
-            cms_plugin_admin_emit_notice(
-                'Die angeforderte Event-Admin-Seite ist derzeit nicht verfuegbar. Bitte Plugin-Setup pruefen.',
-                'error',
-                'cms-events admin bridge fallback without valid callback'
-            );
-            cms_plugin_admin_layout_end();
-            return;
-        }
-
-        echo '<div class="alert alert-error" role="alert">Die angeforderte Event-Admin-Seite ist derzeit nicht verfuegbar.</div>';
-    }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    // render_form – Neu anlegen + Bearbeiten
-    // ══════════════════════════════════════════════════════════════════════════
-
-    public function render_form($event = null): void
-    {
-        $is_edit    = ($event !== null);
-        $page_title = $is_edit ? 'Event bearbeiten' : 'Neues Event anlegen';
-        $csrf_token = CMS\Security::instance()->generateToken('save_event');
-        $formErrorCode = self::query_param_string('error', 40);
-
-        $db = CMS_Events_Database::instance();
-        $categories_db = $db->get_event_categories();
-        $tag_presets   = $db->get_event_tag_presets();
-
-        // Aktuelle Tags des Events (JSON-gespeichert)
-        $current_tags = [];
-        if ($is_edit && !empty($event->tags)) {
-            $decoded = json_decode($event->tags, true);
-            if (is_array($decoded)) $current_tags = $decoded;
-        }
-
-        $this->start_admin_layout($page_title, 'events');
-        $this->outputAdminAssets();
-        ?>
-        <div class="admin-page-header">
-            <div>
-                <h2><?= $is_edit ? '✏️ Event bearbeiten' : '➕ Neues Event anlegen' ?></h2>
-                <p><?= $is_edit
-                    ? 'Event-Daten, Ort, Kapazität und Speaker bearbeiten.'
-                    : 'Neues Event, Workshop oder Webinar anlegen.' ?></p>
-            </div>
-            <div class="header-actions">
-                <?php if ($is_edit): ?>
-                          <a href="<?= function_exists('cms_event_url') ? cms_event_url($event) : SITE_URL . '/event/event-' . (int)$event->id ?>"
-                              target="_blank" rel="noopener noreferrer" class="btn btn-secondary">&#128065; Ansehen</a>
-                <?php endif; ?>
-                <a href="/admin/events" class="btn btn-secondary">← Zurück</a>
-            </div>
-        </div>
-
-        <?php if (isset($_GET['success'])): ?>
-            <div class="alert alert-success">✅ Event erfolgreich gespeichert.</div>
-        <?php endif; ?>
-        <?php if ($formErrorCode !== ''): ?>
-            <div class="alert alert-error">
-                ❌ Fehler beim Speichern
-                <?php match($formErrorCode) {
-                    'csrf'       => print ' – Sicherheitscheck fehlgeschlagen.',
-                    'save'       => print ' – Datenbank-Fehler.',
-                    'save_direct'=> print ' – Direktes Speichern fehlgeschlagen. Bitte Event-ID und Tabellenrechte prüfen.',
-                    'validation' => print ' – Eingaben prüfen.',
-                    default      => print '.',
-                }; ?>
-            </div>
-        <?php endif; ?>
-
-        <div class="ev-content-max">
-        <form method="POST" action="/admin/events/save" id="ev-main-form" class="admin-form" novalidate>
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
-            <input type="hidden" name="event_id"   value="<?= $is_edit ? (int)$event->id : 0 ?>">
-
-            <!-- ── Block 1: Basis-Informationen ─────────────────────── -->
-            <div class="admin-card">
-                <h3>📅 Basis-Informationen</h3>
-
-                <div class="form-group">
-                    <label class="form-label" for="ev_title">
-                        Titel
-                    </label>
-                    <input type="text" id="ev_title" name="title" class="form-control"
-                           value="<?= htmlspecialchars((string)($event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                           placeholder="z.B. Cloud Computing Summit 2026">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="ev_excerpt">Kurzbeschreibung / Teaser</label>
-                    <input type="text" id="ev_excerpt" name="excerpt" class="form-control"
-                           value="<?= htmlspecialchars((string)($event->excerpt ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                           placeholder="Kurze Zusammenfassung (wird auf Übersichtsseite angezeigt)"
-                           maxlength="500">
-                    <small class="form-text">Max. 500 Zeichen – erscheint auf der Event-Karte</small>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="ev_desc">Vollständige Beschreibung</label>
-                    <?php
-                    if (class_exists('CMS\\Services\\EditorService')) {
-                        echo \CMS\Services\EditorService::getInstance()->render(
-                            'description',
-                            $event->description ?? '',
-                            ['height' => 300]
-                        );
-                    } else { ?>
-                        <textarea id="ev_desc" name="description" class="form-control" rows="8"
-                                  placeholder="Detaillierte Beschreibung, Agenda, Highlights…"><?= htmlspecialchars((string)($event->description ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
-                    <?php } ?>
-                </div>
-
-                <div class="ev-grid-two">
-                    <div class="form-group">
-                        <label class="form-label">Kategorie</label>
-                        <?php if (!empty($categories_db)): ?>
-                            <select name="category" class="form-control">
-                                <option value="">-- Keine Kategorie --</option>
-                                <?php foreach ($categories_db as $cat): ?>
-                                    <option value="<?= htmlspecialchars((string)$cat->name, ENT_QUOTES, 'UTF-8') ?>"
-                                            <?= ($event->category ?? '') === $cat->name ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars((string)($cat->icon ?? '📂'), ENT_QUOTES, 'UTF-8') . ' ' . htmlspecialchars((string)$cat->name, ENT_QUOTES, 'UTF-8') ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        <?php else: ?>
-                            <input type="text" name="category" class="form-control"
-                                   value="<?= htmlspecialchars((string)($event->category ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                   placeholder="z.B. Konferenz">
-                        <?php endif; ?>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Status</label>
-                        <select name="status" class="form-control">
-                            <?php foreach ([
-                                'published' => 'Veröffentlicht',
-                                'draft'     => 'Entwurf',
-                                'cancelled' => 'Abgesagt',
-                                'completed' => 'Abgeschlossen',
-                            ] as $v => $l): ?>
-                                <option value="<?= $v ?>" <?= ($event->status ?? 'published') === $v ? 'selected' : '' ?>>
-                                    <?= $l ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="checkbox-label ev-checkbox-inline">
-                        <input type="checkbox" name="is_featured" value="1"
-                               <?= !empty($event->is_featured) ? 'checked' : '' ?>>
-                        ⭐ Als Featured-Event markieren (erscheint prominent)
-                    </label>
-                </div>
-            </div>
-
-            <!-- ── Block 2: Datum & Uhrzeit ───────────────────────────── -->
-            <div class="admin-card">
-                <h3>🕐 Datum &amp; Uhrzeit</h3>
-                <div class="ev-grid-auto-date">
-                    <div class="form-group">
-                        <label class="form-label" for="ev_date">
-                            Startdatum
-                        </label>
-                        <input type="date" id="ev_date" name="event_date" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->event_date ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Startzeit</label>
-                        <input type="time" name="event_time" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->event_time ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Enddatum</label>
-                        <input type="date" name="end_date" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->end_date ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                        <small class="form-text">Leer = eintägig</small>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Endzeit</label>
-                        <input type="time" name="end_time" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->end_time ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Block 3: Veranstaltungsort ─────────────────────────── -->
-            <div class="admin-card">
-                <h3>📍 Veranstaltungsort</h3>
-                <div class="form-group">
-                    <label class="checkbox-label ev-checkbox-inline">
-                        <input type="checkbox" id="ev_is_online" name="is_online" value="1"
-                               <?= !empty($event->is_online) ? 'checked' : '' ?>>
-                        🌐 Online-Event (kein physischer Veranstaltungsort)
-                    </label>
-                </div>
-
-                <div id="ev_online_fields"<?= !empty($event->is_online) ? '' : ' hidden' ?>>
-                    <div class="form-group">
-                        <label class="form-label">Online-URL (Zoom, Teams, etc.)</label>
-                        <input type="url" name="online_url" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->online_url ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                               placeholder="https://zoom.us/j/123456789">
-                    </div>
-                </div>
-
-                <div id="ev_location_fields"<?= !empty($event->is_online) ? ' hidden' : '' ?>>
-                    <div class="form-group">
-                        <label class="form-label">Veranstaltungsort / Location-Name</label>
-                        <input type="text" name="location" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->location ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                               placeholder="z.B. Messe Berlin, Kongresszentrum">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Adresse</label>
-                        <input type="text" name="address" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->address ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                               placeholder="z.B. Messedamm 22">
-                    </div>
-                    <div class="ev-grid-three-location">
-                        <div class="form-group">
-                            <label class="form-label">PLZ</label>
-                            <input type="text" name="zip" class="form-control"
-                                   value="<?= htmlspecialchars((string)($event->zip ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                   placeholder="10557">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Stadt</label>
-                            <input type="text" name="city" class="form-control"
-                                   value="<?= htmlspecialchars((string)($event->city ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                   placeholder="Berlin">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Land</label>
-                            <input type="text" name="country" class="form-control"
-                                   value="<?= htmlspecialchars((string)($event->country ?? 'Deutschland'), ENT_QUOTES, 'UTF-8') ?>"
-                                   placeholder="Deutschland">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Block 4: Kapazität & Anmeldung ────────────────────── -->
-            <div class="admin-card">
-                <h3>🎟 Kapazität &amp; Anmeldung</h3>
-                <div class="ev-grid-auto-capacity">
-                    <div class="form-group">
-                        <label class="form-label">Max. Teilnehmer</label>
-                        <input type="number" name="capacity" class="form-control"
-                               value="<?= (int)($event->capacity ?? 0) ?: '' ?>"
-                               min="0" placeholder="0 = unbegrenzt">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Anmelde-URL</label>
-                        <input type="url" name="registration_url" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->registration_url ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                               placeholder="https://...">
-                    </div>
-                </div>
-
-                <div class="ev-price-grid">
-                    <div class="form-group">
-                        <label class="form-label">Preis-Typ</label>
-                        <select name="price_type" id="ev_price_type" class="form-control">
-                            <?php foreach (['free' => '✅ Kostenlos', 'paid' => '💶 Kostenpflichtig', 'donation' => '💝 Spende'] as $v => $l): ?>
-                                <option value="<?= $v ?>" <?= ($event->price_type ?? 'free') === $v ? 'selected' : '' ?>><?= $l ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group" id="ev_price_field"<?= ($event->price_type ?? 'free') === 'free' ? ' hidden' : '' ?>>
-                        <label class="form-label">Preis</label>
-                        <input type="number" name="price" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->price ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                               min="0" step="0.01" placeholder="0.00">
-                    </div>
-                    <div class="form-group" id="ev_currency_field"<?= ($event->price_type ?? 'free') === 'free' ? ' hidden' : '' ?>>
-                        <label class="form-label">Währung</label>
-                        <select name="price_currency" class="form-control">
-                            <?php foreach (['EUR' => '€ EUR', 'USD' => '$ USD', 'CHF' => 'CHF'] as $v => $l): ?>
-                                <option value="<?= $v ?>" <?= ($event->price_currency ?? 'EUR') === $v ? 'selected' : '' ?>><?= $l ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Block 5: Medien ───────────────────────────────────── -->
-            <div class="admin-card">
-                <h3>🖼️ Medien</h3>
-                <div class="ev-grid-two">
-                    <div class="form-group">
-                        <label class="form-label">Event-Bild (URL)</label>
-                        <input type="url" name="image_url" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->image_url ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                               placeholder="https://...">
-                        <small class="form-text">Vorschaubild auf der Karte</small>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Banner-Bild (URL)</label>
-                        <input type="url" name="banner_url" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->banner_url ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                               placeholder="https://...">
-                        <small class="form-text">Großes Bild auf der Event-Detailseite</small>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Block 6: Veranstalter ───────────────────────────── -->
-            <div class="admin-card">
-                <h3>🏢 Veranstalter</h3>
-                <div class="ev-grid-two">
-                    <div class="form-group">
-                        <label class="form-label">Name / Organisation</label>
-                        <input type="text" name="organizer_name" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->organizer_name ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                               placeholder="z.B. 365 Network GmbH">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Website</label>
-                        <input type="url" name="organizer_website" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->organizer_website ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                               placeholder="https://...">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">E-Mail</label>
-                        <input type="email" name="organizer_email" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->organizer_email ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                               placeholder="info@beispiel.de">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Telefon</label>
-                        <input type="text" name="organizer_phone" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->organizer_phone ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                               placeholder="+49 30 ...">
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Block 7: Tags ─────────────────────────────────────── -->
-            <?php if (!empty($tag_presets)): ?>
-            <div class="admin-card">
-                <h3>🏷️ Tags &amp; Merkmale</h3>
-                <div class="ev-tag-toggle-list">
-                    <?php foreach ($tag_presets as $tg): ?>
-                        <label class="ev-tag-toggle">
-                            <input type="checkbox" name="tags[]" value="<?= htmlspecialchars((string)$tg->tag_name, ENT_QUOTES, 'UTF-8') ?>"
-                                   <?= in_array($tg->tag_name, $current_tags) ? 'checked' : '' ?>
-                                   class="ev-tag-toggle-input">
-                            <span><?= htmlspecialchars((string)$tg->tag_name, ENT_QUOTES, 'UTF-8') ?></span>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-                <small class="form-text ev-form-help">Tags klicken zum Auswählen</small>
-            </div>
-            <?php endif; ?>
-
-            <!-- ── Speichern-Leiste ──────────────────────────────────── -->
-            <div class="admin-card form-actions-card">
-                <div class="ev-form-actions-row">
-                    <div class="ev-form-actions-buttons">
-                        <button type="submit" class="btn btn-primary">
-                            <?= $is_edit ? '💾 Änderungen speichern' : '➕ Event anlegen' ?>
-                        </button>
-                        <a href="/admin/events" class="btn btn-secondary">Abbrechen</a>
-                    </div>
-                    <span class="form-text">Alle Felder sind optional und können später ergänzt werden.</span>
-                </div>
-            </div>
-
-        </form>
-
-        <!-- ── Speaker-Zuordnung (außerhalb des Hauptformulars) ─────── -->
-        <?php if ($is_edit): ?>
-            <?php CMS_Events_Meta_Boxes::instance()->render_speaker_assignment($event); ?>
-        <?php else: ?>
-            <div class="admin-card ev-info-box">
-                <p>
-                    💡 <strong>Speaker-Zuordnung</strong> ist nach dem ersten Speichern verfügbar.
-                </p>
-            </div>
-        <?php endif; ?>
-
-        </div><!-- /max-width -->
-        <?php
-        $this->end_admin_layout();
-    }
-
-    private function event_timestamp(mixed $event): ?int
-    {
-        $date = trim((string) (is_object($event) ? ($event->event_date ?? '') : ''));
-        if ($date === '') {
-            return null;
-        }
-
-        $timestamp = strtotime($date);
-        return $timestamp !== false ? $timestamp : null;
-    }
-
-    private function is_upcoming_event(mixed $event): bool
-    {
-        $timestamp = $this->event_timestamp($event);
-        $today = strtotime('today');
-
-        return $timestamp !== null && $today !== false && $timestamp >= $today;
-    }
-
-    private function is_past_event(mixed $event): bool
-    {
-        $timestamp = $this->event_timestamp($event);
-        $today = strtotime('today');
-
-        return $timestamp !== null && $today !== false && $timestamp < $today;
-    }
-
-    private static function query_param_string(string $key, int $maxLength = 64): string
-    {
-        $value = $_GET[$key] ?? '';
-        if (!is_scalar($value)) {
-            return '';
-        }
-
-        $normalized = trim((string) $value);
-        if ($normalized === '') {
-            return '';
-        }
-
-        if (function_exists('mb_substr')) {
-            return mb_substr($normalized, 0, $maxLength, 'UTF-8');
-        }
-
-        return substr($normalized, 0, $maxLength);
+        return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
     }
 }

@@ -1,9 +1,8 @@
 <?php
 /**
- * Database Manager für CMS Events
+ * Datenbank- und Seed-Manager für 365NET Events & Speaker.
  *
- * @package CMS_Events
- * @since 1.0.0
+ * @package CMS_365NETEvents
  */
 
 declare(strict_types=1);
@@ -12,1273 +11,2576 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-if (class_exists('CMS_Events_Database', false)) {
-    return;
-}
-
-final class CMS_Events_Database
+final class CMS_365NET_Events_Database
 {
     private static ?self $instance = null;
-    private ?array $settingsCache = null;
+    private const SCHEMA_VERSION = '3.0.0';
+    private const MAX_LIST_LIMIT = 300;
+
+    /** @var array<string, bool> */
+    private array $tableExistsCache = [];
+
+    /** @var array<string, array<int, string>> */
+    private array $tableColumnsCache = [];
+
+    /** @var array<string, string>|null */
+    private ?array $dotEnvCache = null;
 
     public static function instance(): self
     {
         if (self::$instance === null) {
             self::$instance = new self();
         }
+
         return self::$instance;
     }
 
-    private function __construct()
-    {
-        // Tables werden bei Plugin-Aktivierung erstellt
-    }
-
-    public function create_tables(): void
-    {
-        try {
-            $db     = CMS\Database::instance();
-            $pdo    = $db->getPdo();
-            $prefix = $db->prefix();
-
-            // ── Main events table ─────────────────────────────────────────
-            $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}events (
-                id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                user_id           INT UNSIGNED DEFAULT NULL,
-                title             VARCHAR(255) NOT NULL,
-                excerpt           VARCHAR(500) DEFAULT NULL,
-                description       TEXT DEFAULT NULL,
-                event_date        DATE NOT NULL,
-                event_time        TIME DEFAULT NULL,
-                end_date          DATE DEFAULT NULL,
-                end_time          TIME DEFAULT NULL,
-                location          VARCHAR(255) DEFAULT NULL,
-                address           TEXT DEFAULT NULL,
-                city              VARCHAR(100) DEFAULT NULL,
-                zip               VARCHAR(20) DEFAULT NULL,
-                country           VARCHAR(100) DEFAULT 'Deutschland',
-                category          VARCHAR(100) DEFAULT NULL,
-                tags              TEXT DEFAULT NULL COMMENT 'JSON array',
-                capacity          INT UNSIGNED DEFAULT NULL,
-                registration_url  VARCHAR(500) DEFAULT NULL,
-                price_type        ENUM('free','paid','donation') DEFAULT 'free',
-                price             DECIMAL(10,2) DEFAULT NULL,
-                price_currency    VARCHAR(10) DEFAULT 'EUR',
-                image_url         VARCHAR(500) DEFAULT NULL,
-                banner_url        VARCHAR(500) DEFAULT NULL,
-                is_online         BOOLEAN DEFAULT FALSE,
-                online_url        VARCHAR(500) DEFAULT NULL,
-                is_featured       BOOLEAN DEFAULT FALSE,
-                organizer_name    VARCHAR(255) DEFAULT NULL,
-                organizer_email   VARCHAR(150) DEFAULT NULL,
-                organizer_phone   VARCHAR(50) DEFAULT NULL,
-                organizer_website VARCHAR(500) DEFAULT NULL,
-                status            VARCHAR(20) NOT NULL DEFAULT 'published',
-                created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                INDEX idx_status   (status),
-                INDEX idx_date     (event_date),
-                INDEX idx_category (category),
-                INDEX idx_city     (city),
-                INDEX idx_featured (is_featured)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-            // ── Event speakers (M2M) ──────────────────────────────────────
-            $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}event_speakers (
-                id                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                event_id           INT UNSIGNED NOT NULL,
-                speaker_id         INT UNSIGNED NOT NULL,
-                speaker_type       ENUM('speaker','expert') DEFAULT 'speaker',
-                role               VARCHAR(100) DEFAULT NULL,
-                presentation_title VARCHAR(255) DEFAULT NULL,
-                session_time       TIME DEFAULT NULL,
-                created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                INDEX idx_event   (event_id),
-                INDEX idx_speaker (speaker_id),
-                INDEX idx_type    (speaker_type)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-            // ── Event meta ────────────────────────────────────────────────
-            $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}event_meta (
-                id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                event_id   INT UNSIGNED NOT NULL,
-                meta_key   VARCHAR(255) NOT NULL,
-                meta_value LONGTEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                INDEX idx_event    (event_id),
-                INDEX idx_meta_key (meta_key)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-            // ── Event categories (Preset-Kategorien) ──────────────────────
-            $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}event_categories (
-                id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                name       VARCHAR(150) NOT NULL,
-                slug       VARCHAR(150) NOT NULL,
-                icon       VARCHAR(10) DEFAULT '📂',
-                sort_order INT DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE KEY unique_slug (slug)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-            // ── Event tag presets ─────────────────────────────────────────
-            $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}event_tag_presets (
-                id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                tag_name   VARCHAR(150) NOT NULL,
-                tag_type   VARCHAR(50) NOT NULL DEFAULT 'general',
-                sort_order INT DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-            $this->create_settings_table($pdo, $prefix);
-
-            // Migrate + seed defaults
-            $this->maybe_add_event_columns($pdo, $prefix);
-            $this->maybe_add_indexes($pdo, $prefix);
-            $this->maybe_add_foreign_keys($pdo, $prefix);
-            $this->maybe_seed_default_data();
-
-        } catch (\Throwable $e) {
-            error_log('CMS Events DB Error: ' . $e->getMessage());
-        }
-    }
-
-    /** Fügt neue Spalten zur bestehenden events-Tabelle hinzu (idempotent). */
-    private function maybe_add_event_columns(\PDO $pdo, string $prefix): void
-    {
-        $existing = $this->event_table_columns($pdo, $prefix);
-        if ($existing === []) {
-            error_log('CMS Events: column detection returned empty result for events table migration.');
-        }
-
-        $alterations = [
-            'user_id'           => 'INT UNSIGNED DEFAULT NULL',
-            'excerpt'           => 'VARCHAR(500) DEFAULT NULL',
-            'description'       => 'TEXT DEFAULT NULL',
-            'event_date'        => 'DATE DEFAULT NULL',
-            'event_time'        => 'TIME DEFAULT NULL',
-            'end_date'          => 'DATE DEFAULT NULL',
-            'end_time'          => 'TIME DEFAULT NULL',
-            'location'          => 'VARCHAR(255) DEFAULT NULL',
-            'address'           => 'TEXT DEFAULT NULL',
-            'city'              => 'VARCHAR(100) DEFAULT NULL',
-            'zip'               => 'VARCHAR(20) DEFAULT NULL',
-            'country'           => "VARCHAR(100) DEFAULT 'Deutschland'",
-            'category'          => 'VARCHAR(100) DEFAULT NULL',
-            'tags'              => 'TEXT DEFAULT NULL',
-            'capacity'          => 'INT UNSIGNED DEFAULT NULL',
-            'registration_url'  => 'VARCHAR(500) DEFAULT NULL',
-            'price_type'        => "ENUM('free','paid','donation') DEFAULT 'free'",
-            'price'             => 'DECIMAL(10,2) DEFAULT NULL',
-            'price_currency'    => "VARCHAR(10) DEFAULT 'EUR'",
-            'image_url'         => 'VARCHAR(500) DEFAULT NULL',
-            'banner_url'        => 'VARCHAR(500) DEFAULT NULL',
-            'is_online'         => 'BOOLEAN DEFAULT FALSE',
-            'online_url'        => 'VARCHAR(500) DEFAULT NULL',
-            'is_featured'       => 'BOOLEAN DEFAULT FALSE',
-            'organizer_name'    => 'VARCHAR(255) DEFAULT NULL',
-            'organizer_email'   => 'VARCHAR(150) DEFAULT NULL',
-            'organizer_phone'   => 'VARCHAR(50) DEFAULT NULL',
-            'organizer_website' => 'VARCHAR(500) DEFAULT NULL',
-            'status'            => "VARCHAR(20) NOT NULL DEFAULT 'published'",
-        ];
-
-        foreach ($alterations as $column => $definition) {
-            if (!isset($existing[$column])) {
-                try {
-                    $pdo->exec('ALTER TABLE ' . $this->quote_identifier($prefix . 'events') . ' ADD COLUMN ' . $this->quote_identifier($column) . ' ' . $definition);
-                } catch (\Throwable $e) {
-                    error_log("CMS Events: ALTER TABLE add {$column} failed – " . $e->getMessage());
-                }
-            }
-        }
-    }
+    private function __construct() {}
 
     /**
-     * @return array<string,bool>
+     * Legt/aktualisiert Tabellen und Seed-Daten idempotent.
      */
-    private function event_table_columns(?\PDO $pdo = null, ?string $prefix = null): array
+    public function ensureSchema(bool $forceSeed = false): void
     {
-        try {
-            $db = CMS\Database::instance();
-            $pdo ??= $db->getPdo();
-            $prefix ??= $db->prefix();
-            $table = $prefix . 'events';
-
-            $columns = [];
-            try {
-                $stmt = $pdo->prepare(
-                    'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
-                );
-                $stmt->execute([$table]);
-                foreach ($stmt->fetchAll(\PDO::FETCH_COLUMN) ?: [] as $columnName) {
-                    $columns[(string) $columnName] = true;
-                }
-            } catch (\Throwable $e) {
-                error_log('CMS Events INFORMATION_SCHEMA column lookup failed: ' . $e->getMessage());
-            }
-
-            if ($columns !== []) {
-                return $columns;
-            }
-
-            try {
-                $stmt = $pdo->query('SHOW COLUMNS FROM ' . $this->quote_identifier($table));
-                foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
-                    $field = (string) ($row['Field'] ?? '');
-                    if ($field !== '') {
-                        $columns[$field] = true;
-                    }
-                }
-            } catch (\Throwable $e) {
-                error_log('CMS Events SHOW COLUMNS fallback failed: ' . $e->getMessage());
-            }
-
-            return $columns;
-        } catch (\Throwable $e) {
-            error_log('CMS Events event_table_columns failed: ' . $e->getMessage());
-            return [];
-        }
+        $this->createTables();
+        $this->seedDefaults($forceSeed);
+        $this->purgeNonPersonSpeakers();
+        $this->autoLinkExistingRecords();
+        $this->saveSetting('schema_version', self::SCHEMA_VERSION);
     }
 
-    private function ensure_event_schema_for_save(): void
+    private function createTables(): void
     {
-        try {
-            $db     = CMS\Database::instance();
-            $pdo    = $db->getPdo();
-            $prefix = $db->prefix();
+        $db = CMS\Database::instance();
+        $pdo = $db->getPdo();
+        $p = $db->prefix();
 
-            if (!$this->table_exists($pdo, $prefix . 'events')) {
-                $this->create_tables();
-                return;
-            }
-
-            $this->maybe_add_event_columns($pdo, $prefix);
-            $this->maybe_add_indexes($pdo, $prefix);
-        } catch (\Throwable $e) {
-            error_log('CMS Events ensure_event_schema_for_save skipped: ' . $e->getMessage());
-        }
-    }
-
-    private function create_settings_table(\PDO $pdo, string $prefix): void
-    {
-        $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}event_settings (
-            id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            setting_key   VARCHAR(100) NOT NULL UNIQUE,
-            setting_value TEXT,
-            updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}365net_events (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            unique_id VARCHAR(80) NOT NULL,
+            source_nr INT UNSIGNED DEFAULT NULL,
+            title VARCHAR(255) NOT NULL,
+            slug VARCHAR(255) NOT NULL,
+            start_date DATE DEFAULT NULL,
+            end_date DATE DEFAULT NULL,
+            date_label VARCHAR(80) DEFAULT NULL,
+            end_date_label VARCHAR(80) DEFAULT NULL,
+            location VARCHAR(255) DEFAULT NULL,
+            organizer VARCHAR(255) DEFAULT NULL,
+            source_column VARCHAR(255) DEFAULT NULL,
+            category VARCHAR(255) DEFAULT NULL,
+            event_type VARCHAR(120) DEFAULT NULL,
+            price VARCHAR(120) DEFAULT NULL,
+            website VARCHAR(600) DEFAULT NULL,
+            description TEXT DEFAULT NULL,
+            description_json LONGTEXT DEFAULT NULL,
+            excerpt TEXT DEFAULT NULL,
+            image_url VARCHAR(600) DEFAULT NULL,
+            image_alt VARCHAR(255) DEFAULT NULL,
+            gallery_json LONGTEXT DEFAULT NULL,
+            categories VARCHAR(500) DEFAULT NULL,
+            tags VARCHAR(700) DEFAULT NULL,
+            target_audience VARCHAR(255) DEFAULT NULL,
+            event_format VARCHAR(80) DEFAULT NULL,
+            attendance_mode VARCHAR(80) DEFAULT NULL,
+            difficulty_level VARCHAR(80) DEFAULT NULL,
+            language VARCHAR(80) DEFAULT NULL,
+            timezone VARCHAR(80) DEFAULT NULL,
+            start_time VARCHAR(20) DEFAULT NULL,
+            end_time VARCHAR(20) DEFAULT NULL,
+            venue_name VARCHAR(255) DEFAULT NULL,
+            street VARCHAR(255) DEFAULT NULL,
+            postal_code VARCHAR(30) DEFAULT NULL,
+            city VARCHAR(120) DEFAULT NULL,
+            country VARCHAR(120) DEFAULT NULL,
+            online_url VARCHAR(600) DEFAULT NULL,
+            registration_url VARCHAR(600) DEFAULT NULL,
+            ticket_url VARCHAR(600) DEFAULT NULL,
+            price_class VARCHAR(80) DEFAULT NULL,
+            price_min DECIMAL(10,2) DEFAULT NULL,
+            price_max DECIMAL(10,2) DEFAULT NULL,
+            currency VARCHAR(10) DEFAULT NULL,
+            early_bird_until DATE DEFAULT NULL,
+            capacity INT UNSIGNED DEFAULT NULL,
+            contact_name VARCHAR(180) DEFAULT NULL,
+            contact_email VARCHAR(180) DEFAULT NULL,
+            contact_phone VARCHAR(80) DEFAULT NULL,
+            linked_company_id INT UNSIGNED DEFAULT NULL,
+            linked_expert_id INT UNSIGNED DEFAULT NULL,
+            sponsors TEXT DEFAULT NULL,
+            accessibility TEXT DEFAULT NULL,
+            seo_title VARCHAR(255) DEFAULT NULL,
+            seo_description VARCHAR(320) DEFAULT NULL,
+            og_image_url VARCHAR(600) DEFAULT NULL,
+            featured TINYINT(1) NOT NULL DEFAULT 0,
+            status ENUM('draft','published') NOT NULL DEFAULT 'published',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_id (unique_id),
+            UNIQUE KEY slug (slug),
+            INDEX idx_status_start (status, start_date),
+            INDEX idx_source_nr (source_nr),
+            INDEX idx_linked_company (linked_company_id),
+            INDEX idx_linked_expert (linked_expert_id),
+            INDEX idx_location (location)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}365net_event_speakers (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            unique_id VARCHAR(100) NOT NULL,
+            first_name VARCHAR(120) DEFAULT NULL,
+            last_name VARCHAR(120) DEFAULT NULL,
+            display_name VARCHAR(255) NOT NULL,
+            slug VARCHAR(255) NOT NULL,
+            company VARCHAR(255) DEFAULT NULL,
+            topic VARCHAR(500) DEFAULT NULL,
+            award VARCHAR(255) DEFAULT NULL,
+            website VARCHAR(600) DEFAULT NULL,
+            bio TEXT DEFAULT NULL,
+            bio_json LONGTEXT DEFAULT NULL,
+            avatar_url VARCHAR(600) DEFAULT NULL,
+            avatar_alt VARCHAR(255) DEFAULT NULL,
+            categories VARCHAR(500) DEFAULT NULL,
+            tags VARCHAR(700) DEFAULT NULL,
+            specializations VARCHAR(700) DEFAULT NULL,
+            languages VARCHAR(255) DEFAULT NULL,
+            speaker_type VARCHAR(80) DEFAULT NULL,
+            price_class VARCHAR(80) DEFAULT NULL,
+            fee_min DECIMAL(10,2) DEFAULT NULL,
+            fee_max DECIMAL(10,2) DEFAULT NULL,
+            currency VARCHAR(10) DEFAULT NULL,
+            speaking_formats VARCHAR(255) DEFAULT NULL,
+            availability VARCHAR(255) DEFAULT NULL,
+            email VARCHAR(180) DEFAULT NULL,
+            phone VARCHAR(80) DEFAULT NULL,
+            location VARCHAR(180) DEFAULT NULL,
+            linked_expert_id INT UNSIGNED DEFAULT NULL,
+            linked_company_id INT UNSIGNED DEFAULT NULL,
+            linkedin_url VARCHAR(600) DEFAULT NULL,
+            x_url VARCHAR(600) DEFAULT NULL,
+            youtube_url VARCHAR(600) DEFAULT NULL,
+            github_url VARCHAR(600) DEFAULT NULL,
+            seo_title VARCHAR(255) DEFAULT NULL,
+            seo_description VARCHAR(320) DEFAULT NULL,
+            og_image_url VARCHAR(600) DEFAULT NULL,
+            featured TINYINT(1) NOT NULL DEFAULT 0,
+            status ENUM('draft','published') NOT NULL DEFAULT 'published',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_id (unique_id),
+            UNIQUE KEY slug (slug),
+            INDEX idx_status_name (status, last_name, first_name),
+            INDEX idx_linked_expert (linked_expert_id),
+            INDEX idx_linked_company (linked_company_id),
+            INDEX idx_company (company)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}365net_event_speaker_rel (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            event_id INT UNSIGNED NOT NULL,
+            speaker_id INT UNSIGNED NOT NULL,
+            speaker_nr INT UNSIGNED DEFAULT NULL,
+            topic VARCHAR(500) DEFAULT NULL,
+            award VARCHAR(255) DEFAULT NULL,
+            website VARCHAR(600) DEFAULT NULL,
+            row_payload LONGTEXT DEFAULT NULL,
+            sort_order INT UNSIGNED NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_relation (event_id, speaker_id, speaker_nr),
+            INDEX idx_event (event_id),
+            INDEX idx_speaker (speaker_id),
+            CONSTRAINT fk_365net_rel_event FOREIGN KEY (event_id) REFERENCES {$p}365net_events(id) ON DELETE CASCADE,
+            CONSTRAINT fk_365net_rel_speaker FOREIGN KEY (speaker_id) REFERENCES {$p}365net_event_speakers(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}365net_event_settings (
+            setting_key VARCHAR(120) NOT NULL PRIMARY KEY,
+            setting_value LONGTEXT DEFAULT NULL,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $this->migrateMetaColumns();
     }
 
-    private function maybe_add_foreign_keys(\PDO $pdo, string $prefix): void
+    private function migrateMetaColumns(): void
     {
-        $relations = [
-            [
-                'table'      => $prefix . 'event_speakers',
-                'column'     => 'event_id',
-                'ref_table'  => $prefix . 'events',
-                'ref_column' => 'id',
-                'name'       => 'fk_events_speakers_event',
-            ],
-            [
-                'table'      => $prefix . 'event_meta',
-                'column'     => 'event_id',
-                'ref_table'  => $prefix . 'events',
-                'ref_column' => 'id',
-                'name'       => 'fk_events_meta_event',
-            ],
+        $eventColumns = [
+            'description_json' => 'description_json LONGTEXT DEFAULT NULL',
+            'excerpt' => 'excerpt TEXT DEFAULT NULL',
+            'image_url' => 'image_url VARCHAR(600) DEFAULT NULL',
+            'image_alt' => 'image_alt VARCHAR(255) DEFAULT NULL',
+            'gallery_json' => 'gallery_json LONGTEXT DEFAULT NULL',
+            'categories' => 'categories VARCHAR(500) DEFAULT NULL',
+            'tags' => 'tags VARCHAR(700) DEFAULT NULL',
+            'target_audience' => 'target_audience VARCHAR(255) DEFAULT NULL',
+            'event_format' => 'event_format VARCHAR(80) DEFAULT NULL',
+            'attendance_mode' => 'attendance_mode VARCHAR(80) DEFAULT NULL',
+            'difficulty_level' => 'difficulty_level VARCHAR(80) DEFAULT NULL',
+            'language' => 'language VARCHAR(80) DEFAULT NULL',
+            'timezone' => 'timezone VARCHAR(80) DEFAULT NULL',
+            'start_time' => 'start_time VARCHAR(20) DEFAULT NULL',
+            'end_time' => 'end_time VARCHAR(20) DEFAULT NULL',
+            'venue_name' => 'venue_name VARCHAR(255) DEFAULT NULL',
+            'street' => 'street VARCHAR(255) DEFAULT NULL',
+            'postal_code' => 'postal_code VARCHAR(30) DEFAULT NULL',
+            'city' => 'city VARCHAR(120) DEFAULT NULL',
+            'country' => 'country VARCHAR(120) DEFAULT NULL',
+            'online_url' => 'online_url VARCHAR(600) DEFAULT NULL',
+            'registration_url' => 'registration_url VARCHAR(600) DEFAULT NULL',
+            'ticket_url' => 'ticket_url VARCHAR(600) DEFAULT NULL',
+            'price_class' => 'price_class VARCHAR(80) DEFAULT NULL',
+            'price_min' => 'price_min DECIMAL(10,2) DEFAULT NULL',
+            'price_max' => 'price_max DECIMAL(10,2) DEFAULT NULL',
+            'currency' => 'currency VARCHAR(10) DEFAULT NULL',
+            'early_bird_until' => 'early_bird_until DATE DEFAULT NULL',
+            'capacity' => 'capacity INT UNSIGNED DEFAULT NULL',
+            'contact_name' => 'contact_name VARCHAR(180) DEFAULT NULL',
+            'contact_email' => 'contact_email VARCHAR(180) DEFAULT NULL',
+            'contact_phone' => 'contact_phone VARCHAR(80) DEFAULT NULL',
+            'linked_company_id' => 'linked_company_id INT UNSIGNED DEFAULT NULL',
+            'linked_expert_id' => 'linked_expert_id INT UNSIGNED DEFAULT NULL',
+            'sponsors' => 'sponsors TEXT DEFAULT NULL',
+            'accessibility' => 'accessibility TEXT DEFAULT NULL',
+            'seo_title' => 'seo_title VARCHAR(255) DEFAULT NULL',
+            'seo_description' => 'seo_description VARCHAR(320) DEFAULT NULL',
+            'og_image_url' => 'og_image_url VARCHAR(600) DEFAULT NULL',
+            'featured' => 'featured TINYINT(1) NOT NULL DEFAULT 0',
         ];
 
-        foreach ($relations as $relation) {
-            $table     = (string) $relation['table'];
-            $column    = (string) $relation['column'];
-            $refTable  = (string) $relation['ref_table'];
-            $refColumn = (string) $relation['ref_column'];
-
-            if (
-                !$this->table_exists($pdo, $table)
-                || !$this->table_exists($pdo, $refTable)
-                || !$this->column_exists($pdo, $table, $column)
-                || !$this->column_exists($pdo, $refTable, $refColumn)
-                || $this->foreign_key_relation_exists($pdo, $table, $column, $refTable, $refColumn)
-            ) {
-                continue;
-            }
-
-            $constraint = $this->foreign_key_name($prefix, (string) $relation['name']);
-            $sql = sprintf(
-                'ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE',
-                $this->quote_identifier($table),
-                $this->quote_identifier($constraint),
-                $this->quote_identifier($column),
-                $this->quote_identifier($refTable),
-                $this->quote_identifier($refColumn)
-            );
-
+        foreach ($eventColumns as $column => $definition) {
             try {
-                $pdo->exec($sql);
-            } catch (\Throwable $e) {
-                error_log('CMS Events foreign key skipped (' . $constraint . '): ' . $e->getMessage());
+                $this->ensureColumn('365net_events', $column, $definition);
+            } catch (Throwable $e) {
+                $this->logDatabaseWarning('migrate_event_column_' . $column, $e);
+            }
+        }
+
+        $this->backfillSeedEventDescriptions();
+
+        $speakerColumns = [
+            'bio_json' => 'bio_json LONGTEXT DEFAULT NULL',
+            'avatar_url' => 'avatar_url VARCHAR(600) DEFAULT NULL',
+            'avatar_alt' => 'avatar_alt VARCHAR(255) DEFAULT NULL',
+            'categories' => 'categories VARCHAR(500) DEFAULT NULL',
+            'tags' => 'tags VARCHAR(700) DEFAULT NULL',
+            'specializations' => 'specializations VARCHAR(700) DEFAULT NULL',
+            'languages' => 'languages VARCHAR(255) DEFAULT NULL',
+            'speaker_type' => 'speaker_type VARCHAR(80) DEFAULT NULL',
+            'price_class' => 'price_class VARCHAR(80) DEFAULT NULL',
+            'fee_min' => 'fee_min DECIMAL(10,2) DEFAULT NULL',
+            'fee_max' => 'fee_max DECIMAL(10,2) DEFAULT NULL',
+            'currency' => 'currency VARCHAR(10) DEFAULT NULL',
+            'speaking_formats' => 'speaking_formats VARCHAR(255) DEFAULT NULL',
+            'availability' => 'availability VARCHAR(255) DEFAULT NULL',
+            'email' => 'email VARCHAR(180) DEFAULT NULL',
+            'phone' => 'phone VARCHAR(80) DEFAULT NULL',
+            'location' => 'location VARCHAR(180) DEFAULT NULL',
+            'linked_expert_id' => 'linked_expert_id INT UNSIGNED DEFAULT NULL',
+            'linked_company_id' => 'linked_company_id INT UNSIGNED DEFAULT NULL',
+            'linkedin_url' => 'linkedin_url VARCHAR(600) DEFAULT NULL',
+            'x_url' => 'x_url VARCHAR(600) DEFAULT NULL',
+            'youtube_url' => 'youtube_url VARCHAR(600) DEFAULT NULL',
+            'github_url' => 'github_url VARCHAR(600) DEFAULT NULL',
+            'seo_title' => 'seo_title VARCHAR(255) DEFAULT NULL',
+            'seo_description' => 'seo_description VARCHAR(320) DEFAULT NULL',
+            'og_image_url' => 'og_image_url VARCHAR(600) DEFAULT NULL',
+            'featured' => 'featured TINYINT(1) NOT NULL DEFAULT 0',
+        ];
+
+        foreach ($speakerColumns as $column => $definition) {
+            try {
+                $this->ensureColumn('365net_event_speakers', $column, $definition);
+            } catch (Throwable $e) {
+                $this->logDatabaseWarning('migrate_speaker_column_' . $column, $e);
             }
         }
     }
 
-    private function table_exists(\PDO $pdo, string $table): bool
+    private function ensureColumn(string $table, string $column, string $definition): void
     {
-        $stmt = $pdo->prepare(
-            'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
-        );
-        $stmt->execute([$table]);
-
-        return $stmt->fetchColumn() !== false;
-    }
-
-    private function column_exists(\PDO $pdo, string $table, string $column): bool
-    {
-        $stmt = $pdo->prepare(
-            'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
-        );
-        $stmt->execute([$table, $column]);
-
-        return $stmt->fetchColumn() !== false;
-    }
-
-    private function foreign_key_relation_exists(\PDO $pdo, string $table, string $column, string $refTable, string $refColumn): bool
-    {
-        $stmt = $pdo->prepare(
-            'SELECT CONSTRAINT_NAME
-             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-             WHERE TABLE_SCHEMA = DATABASE()
-               AND TABLE_NAME = ?
-               AND COLUMN_NAME = ?
-               AND REFERENCED_TABLE_NAME = ?
-               AND REFERENCED_COLUMN_NAME = ?
-             LIMIT 1'
-        );
-        $stmt->execute([$table, $column, $refTable, $refColumn]);
-
-        return $stmt->fetchColumn() !== false;
-    }
-
-    private function foreign_key_name(string $prefix, string $baseName): string
-    {
-        $normalizedPrefix = trim((string) preg_replace('/[^a-zA-Z0-9_]+/', '_', $prefix), '_');
-        $normalizedBase   = trim((string) preg_replace('/[^a-zA-Z0-9_]+/', '_', preg_replace('/^fk_/', '', $baseName)), '_');
-        $name             = 'fk_' . ($normalizedPrefix !== '' ? $normalizedPrefix . '_' : '') . $normalizedBase;
-
-        if (strlen($name) <= 64) {
-            return $name;
-        }
-
-        return substr($name, 0, 53) . '_' . substr(hash('sha256', $name), 0, 10);
-    }
-
-    private function quote_identifier(string $identifier): string
-    {
-        return '`' . str_replace('`', '``', $identifier) . '`';
-    }
-
-    private function maybe_add_indexes(\PDO $pdo, string $prefix): void
-    {
-        $table = $prefix . 'events';
-        if (!$this->table_exists($pdo, $table) || $this->index_exists($pdo, $table, 'idx_event_date_status')) {
+        $db = CMS\Database::instance();
+        $fullTable = $db->prefix() . $table;
+        $stmt = $db->prepare("SHOW COLUMNS FROM `{$fullTable}` LIKE ?");
+        $stmt->execute([$column]);
+        if ($stmt->fetch()) {
             return;
         }
 
-        try {
-            $pdo->exec('ALTER TABLE ' . $this->quote_identifier($table) . ' ADD INDEX idx_event_date_status (event_date, status)');
-        } catch (\Throwable $e) {
-            error_log('CMS Events index idx_event_date_status skipped: ' . $e->getMessage());
+        $db->getPdo()->exec("ALTER TABLE `{$fullTable}` ADD COLUMN {$definition}");
+        unset($this->tableColumnsCache[$table]);
+    }
+
+    /**
+     * Seedet die festen Plugin-Defaultdaten. Keine Upload-/Import-Funktion.
+     */
+    private function seedDefaults(bool $force = false): void
+    {
+        $db = CMS\Database::instance();
+        $p = $db->prefix();
+
+        $countStmt = $db->prepare("SELECT COUNT(*) FROM {$p}365net_events");
+        $countStmt->execute([]);
+        if (!$force && (int) $countStmt->fetchColumn() > 0) {
+            return;
+        }
+
+        $seedFile = CMS_365NET_EVENTS_PLUGIN_DIR . 'defaults/seed-data.php';
+        if (!is_file($seedFile)) {
+            return;
+        }
+
+        /** @var array<int, array<string, string>> $rows */
+        $rows = require $seedFile;
+        if ($rows === []) {
+            return;
+        }
+
+        $eventStmt = $db->prepare("INSERT INTO {$p}365net_events
+            (unique_id, source_nr, title, slug, start_date, end_date, date_label, end_date_label, location, organizer, source_column, category, event_type, price, website, description, excerpt, seo_description, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                title = VALUES(title), start_date = VALUES(start_date), end_date = VALUES(end_date),
+                date_label = VALUES(date_label), end_date_label = VALUES(end_date_label), location = VALUES(location),
+                organizer = VALUES(organizer), source_column = VALUES(source_column), category = VALUES(category),
+                event_type = VALUES(event_type), price = VALUES(price), website = VALUES(website), description = VALUES(description),
+                excerpt = VALUES(excerpt), seo_description = VALUES(seo_description)");
+
+        $eventUpdateStmt = $db->prepare("UPDATE {$p}365net_events
+            SET source_nr = ?, title = ?, start_date = ?, end_date = ?, date_label = ?, end_date_label = ?,
+                location = ?, organizer = ?, source_column = ?, category = ?, event_type = ?, price = ?, website = ?,
+                description = ?, excerpt = ?, seo_description = ?, status = ?
+            WHERE id = ?");
+
+        $speakerStmt = $db->prepare("INSERT INTO {$p}365net_event_speakers
+            (unique_id, first_name, last_name, display_name, slug, company, topic, award, website, bio, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                first_name = VALUES(first_name), last_name = VALUES(last_name), display_name = VALUES(display_name),
+                company = VALUES(company), topic = VALUES(topic), award = VALUES(award), website = VALUES(website), bio = VALUES(bio)");
+
+        $relStmt = $db->prepare("INSERT IGNORE INTO {$p}365net_event_speaker_rel
+            (event_id, speaker_id, speaker_nr, topic, award, website, row_payload, sort_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+
+        $eventsByUnique = [];
+        $speakersByUnique = [];
+        $order = 0;
+
+        foreach ($rows as $row) {
+            $order++;
+            $sourceNr = (int) ($row['nr'] ?? 0);
+            $title = $this->cleanText((string) ($row['event_name'] ?? ''), 255);
+            if ($sourceNr <= 0 || $title === '') {
+                continue;
+            }
+
+            $eventUnique = 'event-' . $sourceNr;
+            $eventSlug = $this->uniqueSlug($title . '-' . $sourceNr);
+            $start = $this->parseGermanDate((string) ($row['wann'] ?? ''));
+            $end = $this->parseGermanDate((string) ($row['bis_wann'] ?? ''));
+            $dateLabel = $this->cleanText((string) ($row['wann'] ?? ''), 80);
+            $endDateLabel = $this->cleanText((string) ($row['bis_wann'] ?? ''), 80);
+            $location = $this->cleanText((string) ($row['ort'] ?? ''), 255);
+            $organizer = $this->cleanText((string) ($row['veranstalter'] ?? ''), 255);
+            $sourceColumn = $this->cleanText((string) ($row['spalte1'] ?? ''), 255);
+            $category = $this->cleanText((string) ($row['thema_kategorie'] ?? ''), 255);
+            $eventType = $this->cleanText((string) ($row['event_art'] ?? ''), 120);
+            $price = $this->cleanText((string) ($row['preis'] ?? ''), 120);
+            $website = $this->cleanUrl((string) ($row['website'] ?? ''));
+            $description = $this->cleanTextarea((string) ($row['description'] ?? ''), 10000);
+            if ($description === '') {
+                $description = $category;
+            }
+            $excerpt = $this->seedExcerpt($description);
+            $seoDescription = $this->seedSeoDescription($description);
+
+            if (!isset($eventsByUnique[$eventUnique])) {
+                $existingEventId = $this->findExistingSeedEventId($sourceNr, $eventUnique, $title, $start, $location);
+                if ($existingEventId > 0) {
+                    $eventUpdateStmt->execute([
+                        $sourceNr,
+                        $title,
+                        $start,
+                        $end,
+                        $dateLabel,
+                        $endDateLabel,
+                        $location,
+                        $organizer,
+                        $sourceColumn,
+                        $category,
+                        $eventType,
+                        $price,
+                        $website,
+                        $description !== '' ? $description : null,
+                        $excerpt,
+                        $seoDescription,
+                        'published',
+                        $existingEventId,
+                    ]);
+                    $eventsByUnique[$eventUnique] = $existingEventId;
+                } else {
+                    $eventStmt->execute([
+                        $eventUnique,
+                        $sourceNr,
+                        $title,
+                        $eventSlug,
+                        $start,
+                        $end,
+                        $dateLabel,
+                        $endDateLabel,
+                        $location,
+                        $organizer,
+                        $sourceColumn,
+                        $category,
+                        $eventType,
+                        $price,
+                        $website,
+                        $description !== '' ? $description : null,
+                        $excerpt,
+                        $seoDescription,
+                        'published',
+                    ]);
+
+                    $eventsByUnique[$eventUnique] = $this->findIdByUnique('365net_events', $eventUnique);
+                }
+            }
+
+            $eventId = (int) ($eventsByUnique[$eventUnique] ?? 0);
+            if ($eventId <= 0) {
+                continue;
+            }
+
+            $firstName = $this->cleanText((string) ($row['vorname'] ?? ''), 120);
+            $lastName = $this->cleanText((string) ($row['nachname'] ?? ''), 120);
+            $company = $this->cleanText((string) ($row['firma'] ?? ''), 255);
+            $topic = $this->cleanText((string) ($row['thema_kategorie'] ?? ''), 500);
+            $award = $this->cleanText((string) ($row['mvp_auszeichnung'] ?? ''), 255);
+            $speakerNr = (int) ($row['speaker_nr'] ?? 0);
+            if (!$this->isRealPersonSpeaker($firstName, $lastName)) {
+                continue;
+            }
+            $displayName = trim($firstName . ' ' . $lastName);
+
+            $speakerUnique = $this->speakerUniqueId($firstName, $lastName, $company, $topic, $sourceNr, $speakerNr);
+            if (!isset($speakersByUnique[$speakerUnique])) {
+                $speakerStmt->execute([
+                    $speakerUnique,
+                    $firstName !== '' ? $firstName : null,
+                    $lastName !== '' ? $lastName : null,
+                    $displayName,
+                    $this->uniqueSlug($displayName . '-' . substr(hash('sha256', $speakerUnique), 0, 8)),
+                    null,
+                    $topic !== '' ? $topic : null,
+                    $award !== '' ? $award : null,
+                    $this->cleanUrl((string) ($row['website'] ?? '')),
+                    $this->seedBio($topic, $award, $company),
+                    'published',
+                ]);
+
+                $speakersByUnique[$speakerUnique] = $this->findIdByUnique('365net_event_speakers', $speakerUnique);
+            }
+
+            $speakerId = (int) ($speakersByUnique[$speakerUnique] ?? 0);
+            if ($speakerId <= 0) {
+                continue;
+            }
+
+            $relStmt->execute([
+                $eventId,
+                $speakerId,
+                $speakerNr > 0 ? $speakerNr : null,
+                $topic !== '' ? $topic : null,
+                $award !== '' ? $award : null,
+                $this->cleanUrl((string) ($row['website'] ?? '')),
+                json_encode($row, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                $order,
+            ]);
         }
     }
 
-    private function index_exists(\PDO $pdo, string $table, string $index): bool
+    private function speakerUniqueId(string $firstName, string $lastName, string $company, string $topic, int $sourceNr, int $speakerNr): string
     {
-        $stmt = $pdo->prepare(
-            'SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ? LIMIT 1'
-        );
-        $stmt->execute([$table, $index]);
+        $base = trim($this->lower($firstName . '|' . $lastName . '|' . $company));
+        if ($base === '||' || $base === '') {
+            $base = 'event|' . $sourceNr . '|' . $speakerNr . '|' . $topic;
+        }
 
-        return $stmt->fetchColumn() !== false;
+        return 'speaker-' . substr(hash('sha256', $base), 0, 24);
     }
 
-    public function get_event(int $id): ?object
+    private function findIdByUnique(string $table, string $uniqueId): int
     {
         $db = CMS\Database::instance();
-        $stmt = $db->prepare("SELECT * FROM {$db->prefix()}events WHERE id = ?");
-        $stmt->execute([$id]);
-        return $stmt->fetch() ?: null;
+        $stmt = $db->prepare('SELECT id FROM ' . $db->prefix() . $table . ' WHERE unique_id = ? LIMIT 1');
+        $stmt->execute([$uniqueId]);
+
+        return (int) ($stmt->fetchColumn() ?: 0);
     }
 
-    public function get_events(array $args = []): array
+    private function findExistingSeedEventId(int $sourceNr, string $eventUnique, string $title, ?string $startDate, string $location): int
     {
         $db = CMS\Database::instance();
-        
-        $where = [];
+        $p = $db->prefix();
+
+        if ($sourceNr > 0) {
+            $stmt = $db->prepare("SELECT id FROM {$p}365net_events WHERE source_nr = ? ORDER BY id ASC LIMIT 1");
+            $stmt->execute([$sourceNr]);
+            $id = (int) ($stmt->fetchColumn() ?: 0);
+            if ($id > 0) {
+                return $id;
+            }
+        }
+
+        if ($eventUnique !== '') {
+            $stmt = $db->prepare("SELECT id FROM {$p}365net_events WHERE unique_id = ? ORDER BY id ASC LIMIT 1");
+            $stmt->execute([$eventUnique]);
+            $id = (int) ($stmt->fetchColumn() ?: 0);
+            if ($id > 0) {
+                return $id;
+            }
+        }
+
+        $titleNeedle = $this->normalizeMatchValue($title);
+        if ($titleNeedle === '') {
+            return 0;
+        }
+
+        if ($startDate !== null && $startDate !== '') {
+            $stmt = $db->prepare("SELECT id FROM {$p}365net_events WHERE LOWER(TRIM(title)) = ? AND start_date = ? ORDER BY id ASC LIMIT 1");
+            $stmt->execute([$titleNeedle, $startDate]);
+            $id = (int) ($stmt->fetchColumn() ?: 0);
+            if ($id > 0) {
+                return $id;
+            }
+        }
+
+        $locationNeedle = $this->normalizeMatchValue($location);
+        if ($locationNeedle !== '') {
+            $stmt = $db->prepare("SELECT id FROM {$p}365net_events WHERE LOWER(TRIM(title)) = ? AND LOWER(TRIM(location)) = ? ORDER BY id ASC LIMIT 1");
+            $stmt->execute([$titleNeedle, $locationNeedle]);
+            $id = (int) ($stmt->fetchColumn() ?: 0);
+            if ($id > 0) {
+                return $id;
+            }
+        }
+
+        $stmt = $db->prepare("SELECT id FROM {$p}365net_events WHERE LOWER(TRIM(title)) = ? ORDER BY id ASC LIMIT 1");
+        $stmt->execute([$titleNeedle]);
+
+        $id = (int) ($stmt->fetchColumn() ?: 0);
+        if ($id > 0) {
+            return $id;
+        }
+
+        $looseTitleNeedle = $this->normalizeLooseMatchValue($title);
+        if ($looseTitleNeedle === '') {
+            return 0;
+        }
+
+        static $seedCandidateCache = null;
+        if ($seedCandidateCache === null) {
+            $seedCandidateCache = [];
+            $candidateStmt = $db->prepare("SELECT id, title, start_date, location FROM {$p}365net_events ORDER BY id ASC");
+            $candidateStmt->execute([]);
+            $candidates = $candidateStmt->fetchAll();
+            if (is_array($candidates)) {
+                foreach ($candidates as $candidate) {
+                    if (!is_object($candidate)) {
+                        continue;
+                    }
+
+                    $seedCandidateCache[] = $candidate;
+                }
+            }
+        }
+
+        $titleMatches = [];
+        foreach ($seedCandidateCache as $candidate) {
+            $candidateTitle = $this->normalizeLooseMatchValue((string) ($candidate->title ?? ''));
+            if ($candidateTitle === '' || !$this->isLooseTitleCandidateMatch($candidateTitle, $looseTitleNeedle)) {
+                continue;
+            }
+
+            $titleMatches[] = $candidate;
+        }
+
+        if ($titleMatches === []) {
+            return 0;
+        }
+
+        $normalizedStartDate = trim((string) $startDate);
+        if ($normalizedStartDate !== '') {
+            foreach ($titleMatches as $candidate) {
+                if ((string) ($candidate->start_date ?? '') === $normalizedStartDate) {
+                    return (int) ($candidate->id ?? 0);
+                }
+            }
+        }
+
+        $looseLocationNeedle = $this->normalizeLooseMatchValue($location);
+        if ($looseLocationNeedle !== '') {
+            foreach ($titleMatches as $candidate) {
+                $candidateLocation = $this->normalizeLooseMatchValue((string) ($candidate->location ?? ''));
+                if ($candidateLocation !== '' && $candidateLocation === $looseLocationNeedle) {
+                    return (int) ($candidate->id ?? 0);
+                }
+            }
+        }
+
+        if (count($titleMatches) === 1) {
+            return (int) ($titleMatches[0]->id ?? 0);
+        }
+
+        $bestId = 0;
+        $bestScore = 0;
+        foreach ($titleMatches as $candidate) {
+            $candidateTitle = $this->normalizeLooseMatchValue((string) ($candidate->title ?? ''));
+            if ($candidateTitle === '') {
+                continue;
+            }
+
+            $score = 0;
+            if ($candidateTitle === $looseTitleNeedle) {
+                $score += 140;
+            } elseif (str_contains($candidateTitle, $looseTitleNeedle) || str_contains($looseTitleNeedle, $candidateTitle)) {
+                $score += 110;
+            }
+
+            $similarity = 0.0;
+            similar_text($candidateTitle, $looseTitleNeedle, $similarity);
+            $score += (int) round($similarity);
+
+            if ($normalizedStartDate !== '' && (string) ($candidate->start_date ?? '') === $normalizedStartDate) {
+                $score += 60;
+            }
+
+            if ($looseLocationNeedle !== '') {
+                $candidateLocation = $this->normalizeLooseMatchValue((string) ($candidate->location ?? ''));
+                if ($candidateLocation !== '' && $candidateLocation === $looseLocationNeedle) {
+                    $score += 30;
+                }
+            }
+
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestId = (int) ($candidate->id ?? 0);
+            }
+        }
+
+        if ($bestScore >= 120 && $bestId > 0) {
+            return $bestId;
+        }
+
+        return 0;
+    }
+
+    /** @return array<int, object> */
+    public function getEvents(array $args = []): array
+    {
+        $db = CMS\Database::instance();
+        $p = $db->prefix();
+        $where = ['1=1'];
         $params = [];
 
-        if (!empty($args['status'])) {
-            $where[] = 'status = ?';
-            $params[] = $args['status'];
+        if (($args['status'] ?? '') !== '') {
+            $where[] = 'e.status = ?';
+            $params[] = (string) $args['status'];
         }
 
-        if (!empty($args['category'])) {
-            $where[] = 'category = ?';
-            $params[] = $args['category'];
+        if (($args['search'] ?? '') !== '') {
+            $term = '%' . $this->cleanText((string) $args['search'], 120) . '%';
+            $where[] = '(e.title LIKE ? OR e.location LIKE ? OR e.organizer LIKE ? OR e.category LIKE ?)';
+            array_push($params, $term, $term, $term, $term);
         }
 
-        if (!empty($args['city'])) {
-            $where[] = 'city = ?';
-            $params[] = $args['city'];
+        if (($args['date_mode'] ?? '') === 'current_month') {
+            $monthStart = (string) ($args['month_start'] ?? date('Y-m-01'));
+            $monthEnd = (string) ($args['month_end'] ?? date('Y-m-t'));
+            $where[] = 'e.start_date IS NOT NULL AND e.start_date BETWEEN ? AND ?';
+            array_push($params, $monthStart, $monthEnd);
+        } elseif (($args['date_mode'] ?? '') === 'future') {
+            $from = (string) ($args['from'] ?? date('Y-m-d'));
+            $where[] = 'e.start_date IS NOT NULL AND e.start_date >= ?';
+            $params[] = $from;
+        } elseif (($args['date_mode'] ?? '') === 'past') {
+            $before = (string) ($args['before'] ?? date('Y-m-d'));
+            $where[] = 'e.start_date IS NOT NULL AND e.start_date < ?';
+            $params[] = $before;
         }
 
-        if (!empty($args['upcoming'])) {
-            $where[] = 'event_date >= CURDATE()';
-        }
+        $limit = $this->limit($args['limit'] ?? 100, 100);
+        $offset = max(0, (int) ($args['offset'] ?? 0));
+        $order = match ((string) ($args['order'] ?? '')) {
+            'updated_desc' => 'e.updated_at DESC',
+            'date_desc' => 'COALESCE(e.start_date, e.created_at) DESC, e.title ASC',
+            default => 'COALESCE(e.start_date, e.created_at) ASC, e.title ASC',
+        };
 
-        if (!empty($args['past'])) {
-            $where[] = 'event_date < CURDATE()';
-        }
-
-        if (!empty($args['search'])) {
-            $where[] = '(title LIKE ? OR description LIKE ? OR organizer_name LIKE ?)';
-            $term = '%' . $args['search'] . '%';
-            $params[] = $term;
-            $params[] = $term;
-            $params[] = $term;
-        }
-
-        if (!empty($args['month'])) {
-            $where[] = 'DATE_FORMAT(event_date, \'%Y-%m\') = ?';
-            $params[] = $args['month'];
-        }
-
-        if (!empty($args['year'])) {
-            $where[] = 'YEAR(event_date) = ?';
-            $params[] = (int) $args['year'];
-        }
-
-        if (!empty($args['month_number'])) {
-            $where[] = 'MONTH(event_date) = ?';
-            $params[] = (int) $args['month_number'];
-        }
-
-        if (!empty($args['from_month'])) {
-            $where[] = 'event_date >= ?';
-            $params[] = $args['from_month'];
-        }
-
-        if (isset($args['is_online'])) {
-            $where[] = 'is_online = ?';
-            $params[] = (int)$args['is_online'];
-        }
-        if (!empty($args['user_id'])) {
-            $where[] = 'user_id = ?';
-            $params[] = (int) $args['user_id'];
-        }
-
-        $where_clause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
-        $order = 'ORDER BY event_date ASC, event_time ASC';
-        $limitValue = isset($args['limit']) ? max(1, min(200, (int) $args['limit'])) : null;
-        $offsetValue = isset($args['offset']) ? max(0, (int) $args['offset']) : null;
-        $limit = $limitValue !== null ? 'LIMIT ' . $limitValue : '';
-        $offset = ($limitValue !== null && $offsetValue !== null) ? 'OFFSET ' . $offsetValue : '';
-
-        $sql = "SELECT * FROM {$db->prefix()}events {$where_clause} {$order} {$limit} {$offset}";
-        $stmt = $db->prepare($sql);
+        $stmt = $db->prepare("SELECT e.*, COUNT(r.id) AS speaker_count
+            FROM {$p}365net_events e
+            LEFT JOIN {$p}365net_event_speaker_rel r ON r.event_id = e.id
+            WHERE " . implode(' AND ', $where) . "
+            GROUP BY e.id
+            ORDER BY {$order}
+            LIMIT {$limit} OFFSET {$offset}");
         $stmt->execute($params);
 
         return $stmt->fetchAll();
     }
 
-    public function save_event(array $data): int
+    public function countEvents(array $args = []): int
     {
-        $this->ensure_event_schema_for_save();
-
         $db = CMS\Database::instance();
-        $event_id = (int)($data['id'] ?? 0);
+        $p = $db->prefix();
+        $where = ['1=1'];
+        $params = [];
 
-        if (trim((string) ($data['title'] ?? '')) === '') {
-            $data['title'] = 'Unbenanntes Event';
-        }
-        if (trim((string) ($data['event_date'] ?? '')) === '') {
-            $data['event_date'] = date('Y-m-d');
-        }
-
-        if ($event_id > 0 && !CMS\Auth::instance()->isAdmin()) {
-            $current_user_id = (int) (CMS\Auth::instance()->currentUser()?->id ?? 0);
-            if ($current_user_id <= 0) {
-                return 0;
-            }
-
-            $owner_stmt = $db->prepare("SELECT user_id FROM {$db->prefix()}events WHERE id = ? LIMIT 1");
-            $owner_stmt->execute([$event_id]);
-            $owner_id = (int) ($owner_stmt->fetchColumn() ?: 0);
-
-            if ($owner_id <= 0 || $owner_id !== $current_user_id) {
-                return 0;
-            }
+        if (($args['status'] ?? '') !== '') {
+            $where[] = 'e.status = ?';
+            $params[] = (string) $args['status'];
         }
 
-        $event_data = [
-            'title'             => $data['title']             ?? '',
-            'excerpt'           => $data['excerpt']           ?? null,
-            'description'       => $data['description']       ?? null,
-            'event_date'        => $data['event_date']        ?? null,
-            'event_time'        => !empty($data['event_time'])  ? $data['event_time']  : null,
-            'end_date'          => !empty($data['end_date'])    ? $data['end_date']    : null,
-            'end_time'          => !empty($data['end_time'])    ? $data['end_time']    : null,
-            'location'          => $data['location']          ?? null,
-            'address'           => $data['address']           ?? null,
-            'city'              => $data['city']              ?? null,
-            'zip'               => $data['zip']               ?? null,
-            'country'           => $data['country']           ?? 'Deutschland',
-            'category'          => $data['category']          ?? null,
-            'tags'              => isset($data['tags']) && is_array($data['tags'])
-                                        ? json_encode(array_values(array_filter($data['tags'])))
-                                        : ($data['tags'] ?? null),
-            'capacity'          => !empty($data['capacity'])  ? (int)$data['capacity'] : null,
-            'registration_url'  => $data['registration_url']  ?? null,
-            'price_type'        => $data['price_type']        ?? 'free',
-            'price'             => !empty($data['price'])     ? (float)$data['price'] : null,
-            'price_currency'    => $data['price_currency']    ?? 'EUR',
-            'image_url'         => $data['image_url']         ?? null,
-            'banner_url'        => $data['banner_url']        ?? null,
-            'is_online'         => !empty($data['is_online'])  ? 1 : 0,
-            'online_url'        => $data['online_url']        ?? null,
-            'is_featured'       => !empty($data['is_featured']) ? 1 : 0,
-            'organizer_name'    => $data['organizer_name']    ?? null,
-            'organizer_email'   => $data['organizer_email']   ?? null,
-            'organizer_phone'   => $data['organizer_phone']   ?? null,
-            'organizer_website' => $data['organizer_website'] ?? null,
-            'status'            => $data['status']            ?? 'published',
-        ];
-
-        $existing_columns = $this->event_table_columns();
-        if ($existing_columns !== []) {
-            $event_data = array_intersect_key($event_data, $existing_columns);
+        if (($args['search'] ?? '') !== '') {
+            $term = '%' . $this->cleanText((string) $args['search'], 120) . '%';
+            $where[] = '(e.title LIKE ? OR e.location LIKE ? OR e.organizer LIKE ? OR e.category LIKE ?)';
+            array_push($params, $term, $term, $term, $term);
         }
 
-        if ($event_data === []) {
-            error_log('CMS Events save_event aborted: no writable event columns detected.');
-            return 0;
+        if (($args['date_mode'] ?? '') === 'current_month') {
+            $monthStart = (string) ($args['month_start'] ?? date('Y-m-01'));
+            $monthEnd = (string) ($args['month_end'] ?? date('Y-m-t'));
+            $where[] = 'e.start_date IS NOT NULL AND e.start_date BETWEEN ? AND ?';
+            array_push($params, $monthStart, $monthEnd);
+        } elseif (($args['date_mode'] ?? '') === 'future') {
+            $from = (string) ($args['from'] ?? date('Y-m-d'));
+            $where[] = 'e.start_date IS NOT NULL AND e.start_date >= ?';
+            $params[] = $from;
+        } elseif (($args['date_mode'] ?? '') === 'past') {
+            $before = (string) ($args['before'] ?? date('Y-m-d'));
+            $where[] = 'e.start_date IS NOT NULL AND e.start_date < ?';
+            $params[] = $before;
         }
 
-        if ($event_id > 0) {
-            try {
-                if (!$db->update('events', $event_data, ['id' => $event_id])) {
-                    error_log('CMS Events save_event update failed: ' . (string) ($db->last_error ?? 'unknown error'));
-                    return $this->save_event_legacy_update($event_id, $event_data) || $this->save_event_columnwise_update($event_id, $event_data) ? $event_id : 0;
-                }
-            } catch (\Throwable $e) {
-                error_log('CMS Events save_event update exception: ' . $e->getMessage());
-                return $this->save_event_legacy_update($event_id, $event_data) || $this->save_event_columnwise_update($event_id, $event_data) ? $event_id : 0;
-            }
-        } else {
-            $event_data['user_id'] = CMS\Auth::instance()->currentUser()?->id ?? null;
-            try {
-                $insert_result = $db->insert('events', $event_data);
-            } catch (\Throwable $e) {
-                error_log('CMS Events save_event insert exception: ' . $e->getMessage());
-                return 0;
-            }
-            if ($insert_result) {
-                $event_id = (int)$insert_result;
-                CMS\Hooks::doAction('event_created', $event_id);
-            } else {
-                error_log('CMS Events save_event insert failed: ' . (string) ($db->last_error ?? 'unknown error'));
-            }
-        }
+        $stmt = $db->prepare("SELECT COUNT(*) FROM {$p}365net_events e WHERE " . implode(' AND ', $where));
+        $stmt->execute($params);
 
-        return $event_id;
+        return max(0, (int) $stmt->fetchColumn());
     }
 
-    /** @param array<string,mixed> $event_data */
-    private function save_event_legacy_update(int $event_id, array $event_data): bool
+    public function getEvent(int $id): ?object
     {
-        if ($event_id <= 0) {
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare("SELECT * FROM {$db->prefix()}365net_events WHERE id = ? LIMIT 1");
+        $stmt->execute([$id]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    public function getEventBySlug(string $slug): ?object
+    {
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare("SELECT * FROM {$db->prefix()}365net_events WHERE slug = ? LIMIT 1");
+        $stmt->execute([$slug]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    public function saveEvent(array $data): int|false
+    {
+        $this->ensureSchemaForSave();
+        $db = CMS\Database::instance();
+        $p = $db->prefix();
+        $id = (int) ($data['id'] ?? 0);
+        $existing = $id > 0 ? $this->getEvent($id) : null;
+        $title = $this->cleanText((string) ($data['title'] ?? ''), 255);
+        if ($title === '' && $existing !== null && (string) ($existing->title ?? '') !== '') {
+            $title = (string) $existing->title;
+        }
+        if ($title === '') {
             return false;
         }
 
-        $legacy_columns = array_flip([
-            'title',
-            'description',
-            'event_date',
-            'event_time',
-            'end_date',
-            'end_time',
-            'location',
-            'address',
-            'city',
-            'zip',
-            'country',
-            'category',
-            'capacity',
-            'registration_url',
-            'image_url',
-            'is_online',
-            'online_url',
-            'status',
-        ]);
+        $payload = [
+            'unique_id' => (string) ($data['unique_id'] ?? ('manual-event-' . substr(hash('sha256', $title . microtime(true)), 0, 12))),
+            'source_nr' => isset($data['source_nr']) && (int) $data['source_nr'] > 0 ? (int) $data['source_nr'] : null,
+            'title' => $title,
+            'slug' => $this->uniqueSlug((string) ($data['slug'] ?? $title), '365net_events', $id),
+            'start_date' => $this->normalizeDate((string) ($data['start_date'] ?? '')),
+            'end_date' => $this->normalizeDate((string) ($data['end_date'] ?? '')),
+            'date_label' => $this->cleanText((string) ($data['date_label'] ?? ''), 80),
+            'end_date_label' => $this->cleanText((string) ($data['end_date_label'] ?? ''), 80),
+            'location' => $this->cleanText((string) ($data['location'] ?? ''), 255),
+            'organizer' => $this->cleanText((string) ($data['organizer'] ?? ''), 255),
+            'source_column' => $this->cleanText((string) ($data['source_column'] ?? ''), 255),
+            'category' => $this->cleanText((string) ($data['category'] ?? ''), 255),
+            'event_type' => $this->cleanText((string) ($data['event_type'] ?? ''), 120),
+            'price' => $this->cleanText((string) ($data['price'] ?? ''), 120),
+            'website' => $this->cleanUrl((string) ($data['website'] ?? '')),
+            'description' => $this->cleanTextarea((string) ($data['description'] ?? ''), 10000),
+            'description_json' => $this->cleanEditorJson((string) ($data['description_json'] ?? '')),
+            'excerpt' => $this->cleanTextarea((string) ($data['excerpt'] ?? ''), 1200),
+            'image_url' => $this->cleanUrl((string) ($data['image_url'] ?? '')),
+            'image_alt' => $this->cleanText((string) ($data['image_alt'] ?? ''), 255),
+            'gallery_json' => $this->cleanJsonList((string) ($data['gallery_json'] ?? '')),
+            'categories' => $this->cleanList($data['categories'] ?? '', 500),
+            'tags' => $this->cleanList($data['tags'] ?? '', 700),
+            'target_audience' => $this->cleanText((string) ($data['target_audience'] ?? ''), 255),
+            'event_format' => $this->cleanText((string) ($data['event_format'] ?? ''), 80),
+            'attendance_mode' => $this->cleanText((string) ($data['attendance_mode'] ?? ''), 80),
+            'difficulty_level' => $this->cleanText((string) ($data['difficulty_level'] ?? ''), 80),
+            'language' => $this->cleanText((string) ($data['language'] ?? ''), 80),
+            'timezone' => $this->cleanText((string) ($data['timezone'] ?? ''), 80),
+            'start_time' => $this->cleanText((string) ($data['start_time'] ?? ''), 20),
+            'end_time' => $this->cleanText((string) ($data['end_time'] ?? ''), 20),
+            'venue_name' => $this->cleanText((string) ($data['venue_name'] ?? ''), 255),
+            'street' => $this->cleanText((string) ($data['street'] ?? ''), 255),
+            'postal_code' => $this->cleanText((string) ($data['postal_code'] ?? ''), 30),
+            'city' => $this->cleanText((string) ($data['city'] ?? ''), 120),
+            'country' => $this->cleanText((string) ($data['country'] ?? ''), 120),
+            'online_url' => $this->cleanUrl((string) ($data['online_url'] ?? '')),
+            'registration_url' => $this->cleanUrl((string) ($data['registration_url'] ?? '')),
+            'ticket_url' => $this->cleanUrl((string) ($data['ticket_url'] ?? '')),
+            'price_class' => $this->cleanText((string) ($data['price_class'] ?? ''), 80),
+            'price_min' => $this->cleanDecimal($data['price_min'] ?? null),
+            'price_max' => $this->cleanDecimal($data['price_max'] ?? null),
+            'currency' => $this->cleanText((string) ($data['currency'] ?? 'EUR'), 10),
+            'early_bird_until' => $this->normalizeDate((string) ($data['early_bird_until'] ?? '')),
+            'capacity' => $this->cleanPositiveInt($data['capacity'] ?? null),
+            'contact_name' => $this->cleanText((string) ($data['contact_name'] ?? ''), 180),
+            'contact_email' => $this->cleanEmail((string) ($data['contact_email'] ?? '')),
+            'contact_phone' => $this->cleanText((string) ($data['contact_phone'] ?? ''), 80),
+            'linked_company_id' => $this->resolveCompanyLink($data, $existing),
+            'linked_expert_id' => $this->resolveExpertLink($data, $existing),
+            'sponsors' => $this->cleanTextarea((string) ($data['sponsors'] ?? ''), 3000),
+            'accessibility' => $this->cleanTextarea((string) ($data['accessibility'] ?? ''), 3000),
+            'seo_title' => $this->cleanText((string) ($data['seo_title'] ?? ''), 255),
+            'seo_description' => $this->cleanText((string) ($data['seo_description'] ?? ''), 320),
+            'og_image_url' => $this->cleanUrl((string) ($data['og_image_url'] ?? '')),
+            'featured' => !empty($data['featured']) ? 1 : 0,
+            'status' => in_array((string) ($data['status'] ?? 'published'), ['draft', 'published'], true) ? (string) $data['status'] : 'published',
+        ];
 
-        $data = array_intersect_key($event_data, $legacy_columns);
-        $existing_columns = $this->event_table_columns();
-        if ($existing_columns !== []) {
-            $data = array_intersect_key($data, $existing_columns);
+        $payload = $this->applyUpdateFallbacks(
+            $payload,
+            $data,
+            $existing,
+            $this->looksLikeSparseUpdate($data, $existing, ['title', 'start_date', 'date_label', 'location', 'organizer', 'category', 'website'])
+        );
+
+        $payload = $this->filterPayloadByExistingColumns('365net_events', $payload);
+
+        if ($id > 0) {
+            $sets = implode(', ', array_map(static fn(string $key): string => "`{$key}` = ?", array_keys($payload)));
+            $stmt = $db->prepare("UPDATE {$p}365net_events SET {$sets} WHERE id = ?");
+            $stmt->execute([...array_values($payload), $id]);
+            CMS\Hooks::doAction('cms_365net_event_updated', $id, $payload);
+            return $id;
         }
 
-        if (($data['status'] ?? '') === 'completed') {
-            unset($data['status']);
+        $keys = implode(', ', array_map(static fn(string $key): string => "`{$key}`", array_keys($payload)));
+        $places = implode(', ', array_fill(0, count($payload), '?'));
+        $stmt = $db->prepare("INSERT INTO {$p}365net_events ({$keys}) VALUES ({$places})");
+        $stmt->execute(array_values($payload));
+        $newId = (int) $db->getPdo()->lastInsertId();
+        CMS\Hooks::doAction('cms_365net_event_created', $newId, $payload);
+        return $newId;
+    }
+
+    public function deleteEvent(int $id): bool
+    {
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare("DELETE FROM {$db->prefix()}365net_events WHERE id = ?");
+        $ok = $stmt->execute([$id]);
+        if ($ok) {
+            CMS\Hooks::doAction('cms_365net_event_deleted', $id);
         }
 
-        if ($data === []) {
+        return $ok;
+    }
+
+    /** @return array<int, object> */
+    public function getSpeakers(array $args = []): array
+    {
+        $db = CMS\Database::instance();
+        $p = $db->prefix();
+        $where = ['1=1'];
+        $params = [];
+
+        if (($args['status'] ?? '') !== '') {
+            $where[] = 's.status = ?';
+            $params[] = (string) $args['status'];
+        }
+
+        if (($args['search'] ?? '') !== '') {
+            $term = '%' . $this->cleanText((string) $args['search'], 120) . '%';
+            $where[] = '(s.display_name LIKE ? OR s.company LIKE ? OR s.topic LIKE ? OR s.award LIKE ?)';
+            array_push($params, $term, $term, $term, $term);
+        }
+
+        $limit = $this->limit($args['limit'] ?? 100, 100);
+        $offset = max(0, (int) ($args['offset'] ?? 0));
+
+        $stmt = $db->prepare("SELECT s.*, COUNT(r.id) AS event_count
+            FROM {$p}365net_event_speakers s
+            LEFT JOIN {$p}365net_event_speaker_rel r ON r.speaker_id = s.id
+            WHERE " . implode(' AND ', $where) . "
+            GROUP BY s.id
+            ORDER BY s.display_name ASC
+            LIMIT {$limit} OFFSET {$offset}");
+        $stmt->execute($params);
+
+        return $stmt->fetchAll();
+    }
+
+    public function countSpeakers(array $args = []): int
+    {
+        $db = CMS\Database::instance();
+        $p = $db->prefix();
+        $where = ['1=1'];
+        $params = [];
+
+        if (($args['status'] ?? '') !== '') {
+            $where[] = 's.status = ?';
+            $params[] = (string) $args['status'];
+        }
+
+        if (($args['search'] ?? '') !== '') {
+            $term = '%' . $this->cleanText((string) $args['search'], 120) . '%';
+            $where[] = '(s.display_name LIKE ? OR s.company LIKE ? OR s.topic LIKE ? OR s.award LIKE ?)';
+            array_push($params, $term, $term, $term, $term);
+        }
+
+        $stmt = $db->prepare("SELECT COUNT(*) FROM {$p}365net_event_speakers s WHERE " . implode(' AND ', $where));
+        $stmt->execute($params);
+
+        return max(0, (int) $stmt->fetchColumn());
+    }
+
+    public function getSpeaker(int $id): ?object
+    {
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare("SELECT * FROM {$db->prefix()}365net_event_speakers WHERE id = ? LIMIT 1");
+        $stmt->execute([$id]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    public function getSpeakerBySlug(string $slug): ?object
+    {
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare("SELECT * FROM {$db->prefix()}365net_event_speakers WHERE slug = ? LIMIT 1");
+        $stmt->execute([$slug]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    public function saveSpeaker(array $data): int|false
+    {
+        $this->ensureSchemaForSave();
+        $db = CMS\Database::instance();
+        $p = $db->prefix();
+        $id = (int) ($data['id'] ?? 0);
+        $existing = $id > 0 ? $this->getSpeaker($id) : null;
+        $firstName = $this->cleanText((string) ($data['first_name'] ?? ''), 120);
+        $lastName = $this->cleanText((string) ($data['last_name'] ?? ''), 120);
+        $displayName = $this->cleanText((string) ($data['display_name'] ?? trim($firstName . ' ' . $lastName)), 255);
+        if ($firstName === '' && $existing !== null && (string) ($existing->first_name ?? '') !== '') {
+            $firstName = (string) $existing->first_name;
+        }
+        if ($lastName === '' && $existing !== null && (string) ($existing->last_name ?? '') !== '') {
+            $lastName = (string) $existing->last_name;
+        }
+        if (!$this->isRealPersonSpeaker($firstName, $lastName)) {
+            return false;
+        }
+        if ($displayName === '' && $existing !== null && (string) ($existing->display_name ?? '') !== '') {
+            $displayName = (string) $existing->display_name;
+        }
+        if ($displayName === '') {
+            $displayName = trim($firstName . ' ' . $lastName);
+        }
+        if ($displayName === '') {
+            return false;
+        }
+
+        $payload = [
+            'unique_id' => (string) ($data['unique_id'] ?? ('manual-speaker-' . substr(hash('sha256', $displayName . microtime(true)), 0, 12))),
+            'first_name' => $firstName !== '' ? $firstName : null,
+            'last_name' => $lastName !== '' ? $lastName : null,
+            'display_name' => $displayName,
+            'slug' => $this->uniqueSlug((string) ($data['slug'] ?? $displayName), '365net_event_speakers', $id),
+            'company' => null,
+            'topic' => $this->cleanText((string) ($data['topic'] ?? ''), 500),
+            'award' => $this->cleanText((string) ($data['award'] ?? ''), 255),
+            'website' => $this->cleanUrl((string) ($data['website'] ?? '')),
+            'bio' => $this->cleanTextarea((string) ($data['bio'] ?? ''), 10000),
+            'bio_json' => $this->cleanEditorJson((string) ($data['bio_json'] ?? '')),
+            'avatar_url' => $this->cleanUrl((string) ($data['avatar_url'] ?? '')),
+            'avatar_alt' => $this->cleanText((string) ($data['avatar_alt'] ?? ''), 255),
+            'categories' => $this->cleanList($data['categories'] ?? '', 500),
+            'tags' => $this->cleanList($data['tags'] ?? '', 700),
+            'specializations' => $this->cleanList($data['specializations'] ?? '', 700),
+            'languages' => $this->cleanList($data['languages'] ?? '', 255),
+            'speaker_type' => $this->cleanText((string) ($data['speaker_type'] ?? ''), 80),
+            'price_class' => $this->cleanText((string) ($data['price_class'] ?? ''), 80),
+            'fee_min' => $this->cleanDecimal($data['fee_min'] ?? null),
+            'fee_max' => $this->cleanDecimal($data['fee_max'] ?? null),
+            'currency' => $this->cleanText((string) ($data['currency'] ?? 'EUR'), 10),
+            'speaking_formats' => $this->cleanList($data['speaking_formats'] ?? '', 255),
+            'availability' => $this->cleanText((string) ($data['availability'] ?? ''), 255),
+            'email' => $this->cleanEmail((string) ($data['email'] ?? '')),
+            'phone' => $this->cleanText((string) ($data['phone'] ?? ''), 80),
+            'location' => $this->cleanText((string) ($data['location'] ?? ''), 180),
+            'linked_expert_id' => $this->resolveExpertLink($data, $existing),
+            'linked_company_id' => $this->resolveCompanyLink($data, $existing),
+            'linkedin_url' => $this->cleanUrl((string) ($data['linkedin_url'] ?? '')),
+            'x_url' => $this->cleanUrl((string) ($data['x_url'] ?? '')),
+            'youtube_url' => $this->cleanUrl((string) ($data['youtube_url'] ?? '')),
+            'github_url' => $this->cleanUrl((string) ($data['github_url'] ?? '')),
+            'seo_title' => $this->cleanText((string) ($data['seo_title'] ?? ''), 255),
+            'seo_description' => $this->cleanText((string) ($data['seo_description'] ?? ''), 320),
+            'og_image_url' => $this->cleanUrl((string) ($data['og_image_url'] ?? '')),
+            'featured' => !empty($data['featured']) ? 1 : 0,
+            'status' => in_array((string) ($data['status'] ?? 'published'), ['draft', 'published'], true) ? (string) $data['status'] : 'published',
+        ];
+
+        $payload = $this->applyUpdateFallbacks(
+            $payload,
+            $data,
+            $existing,
+            $this->looksLikeSparseUpdate($data, $existing, ['display_name', 'first_name', 'last_name', 'company', 'topic', 'award', 'website'])
+        );
+        $payload = $this->filterPayloadByExistingColumns('365net_event_speakers', $payload);
+
+        if ($id > 0) {
+            $sets = implode(', ', array_map(static fn(string $key): string => "`{$key}` = ?", array_keys($payload)));
+            $stmt = $db->prepare("UPDATE {$p}365net_event_speakers SET {$sets} WHERE id = ?");
+            $stmt->execute([...array_values($payload), $id]);
+            CMS\Hooks::doAction('cms_365net_speaker_updated', $id, $payload);
+            return $id;
+        }
+
+        $keys = implode(', ', array_map(static fn(string $key): string => "`{$key}`", array_keys($payload)));
+        $places = implode(', ', array_fill(0, count($payload), '?'));
+        $stmt = $db->prepare("INSERT INTO {$p}365net_event_speakers ({$keys}) VALUES ({$places})");
+        $stmt->execute(array_values($payload));
+        $newId = (int) $db->getPdo()->lastInsertId();
+        CMS\Hooks::doAction('cms_365net_speaker_created', $newId, $payload);
+        return $newId;
+    }
+
+    public function deleteSpeaker(int $id): bool
+    {
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare("DELETE FROM {$db->prefix()}365net_event_speakers WHERE id = ?");
+        $ok = $stmt->execute([$id]);
+        if ($ok) {
+            CMS\Hooks::doAction('cms_365net_speaker_deleted', $id);
+        }
+
+        return $ok;
+    }
+
+    /** @return array<int, object> */
+    public function getSpeakersForEvent(int $eventId): array
+    {
+        $db = CMS\Database::instance();
+        $p = $db->prefix();
+        $stmt = $db->prepare("SELECT s.*, r.speaker_nr, r.topic AS relation_topic, r.award AS relation_award, r.website AS relation_website
+            FROM {$p}365net_event_speaker_rel r
+            INNER JOIN {$p}365net_event_speakers s ON s.id = r.speaker_id
+            WHERE r.event_id = ?
+            ORDER BY COALESCE(r.speaker_nr, r.sort_order), s.display_name");
+        $stmt->execute([$eventId]);
+
+        return $stmt->fetchAll();
+    }
+
+    /** @return array<int, object> */
+    public function getEventsForSpeaker(int $speakerId): array
+    {
+        $db = CMS\Database::instance();
+        $p = $db->prefix();
+        $stmt = $db->prepare("SELECT e.*, r.topic AS relation_topic, r.award AS relation_award
+            FROM {$p}365net_event_speaker_rel r
+            INNER JOIN {$p}365net_events e ON e.id = r.event_id
+            WHERE r.speaker_id = ? AND e.status = 'published'
+            ORDER BY COALESCE(e.start_date, e.created_at) ASC");
+        $stmt->execute([$speakerId]);
+
+        return $stmt->fetchAll();
+    }
+
+    public function saveEventSpeakers(int $eventId, array $speakerIds): void
+    {
+        $db = CMS\Database::instance();
+        $p = $db->prefix();
+        $db->prepare("DELETE FROM {$p}365net_event_speaker_rel WHERE event_id = ?")->execute([$eventId]);
+        $stmt = $db->prepare("INSERT IGNORE INTO {$p}365net_event_speaker_rel (event_id, speaker_id, speaker_nr, sort_order) VALUES (?, ?, ?, ?)");
+        $order = 0;
+        foreach ($speakerIds as $speakerId) {
+            $speakerId = (int) $speakerId;
+            if ($speakerId <= 0) {
+                continue;
+            }
+            $order++;
+            $stmt->execute([$eventId, $speakerId, $order, $order]);
+        }
+    }
+
+    /** @return array<int, object> */
+    public function getAvailableCompanies(int $limit = 300): array
+    {
+        if (!$this->tableExists('companies')) {
+            return [];
+        }
+
+        $db = CMS\Database::instance();
+        $limit = $this->limit($limit, 300);
+        $stmt = $db->prepare("SELECT id, name, website, location_city, status FROM {$db->prefix()}companies WHERE status = ? ORDER BY name ASC LIMIT {$limit}");
+        $stmt->execute(['active']);
+
+        return $stmt->fetchAll();
+    }
+
+    /** @return array<int, object> */
+    public function getAvailableExperts(int $limit = 300): array
+    {
+        if (!$this->tableExists('experts')) {
+            return [];
+        }
+
+        $db = CMS\Database::instance();
+        $limit = $this->limit($limit, 300);
+        $stmt = $db->prepare("SELECT id, first_name, last_name, email, position, company, status FROM {$db->prefix()}experts WHERE status = ? ORDER BY last_name ASC, first_name ASC LIMIT {$limit}");
+        $stmt->execute(['active']);
+
+        return $stmt->fetchAll();
+    }
+
+    public function getLinkedCompany(?int $companyId): ?object
+    {
+        if (!$companyId || !$this->tableExists('companies')) {
+            return null;
+        }
+
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare("SELECT id, name, website, logo_url, location_city, industry, status FROM {$db->prefix()}companies WHERE id = ? LIMIT 1");
+        $stmt->execute([$companyId]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    public function getLinkedExpert(?int $expertId): ?object
+    {
+        if (!$expertId || !$this->tableExists('experts')) {
+            return null;
+        }
+
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare("SELECT id, first_name, last_name, email, position, company, photo_url, location_city, status FROM {$db->prefix()}experts WHERE id = ? LIMIT 1");
+        $stmt->execute([$expertId]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    /** @param array<string, mixed> $data */
+    private function resolveCompanyLink(array $data, ?object $existing): ?int
+    {
+        if (array_key_exists('linked_company_id', $data)) {
+            $manual = $this->cleanPositiveInt($data['linked_company_id']);
+            if ($manual && $this->getLinkedCompany($manual)) {
+                return $manual;
+            }
+
+            return $this->findCompanyIdBySignals($data);
+        }
+
+        if ($existing !== null && !empty($existing->linked_company_id)) {
+            return (int) $existing->linked_company_id;
+        }
+
+        return $this->findCompanyIdBySignals($data);
+    }
+
+    /** @param array<string, mixed> $data */
+    private function resolveExpertLink(array $data, ?object $existing): ?int
+    {
+        if (array_key_exists('linked_expert_id', $data)) {
+            $manual = $this->cleanPositiveInt($data['linked_expert_id']);
+            if ($manual && $this->getLinkedExpert($manual)) {
+                return $manual;
+            }
+
+            return $this->findExpertIdBySignals($data);
+        }
+
+        if ($existing !== null && !empty($existing->linked_expert_id)) {
+            return (int) $existing->linked_expert_id;
+        }
+
+        return $this->findExpertIdBySignals($data);
+    }
+
+    /** @param array<string, mixed> $data */
+    private function findCompanyIdBySignals(array $data): ?int
+    {
+        if (!$this->tableExists('companies')) {
+            return null;
+        }
+
+        $names = array_filter(array_unique(array_map([$this, 'normalizeMatchValue'], [
+            (string) ($data['organizer'] ?? ''),
+            (string) ($data['company'] ?? ''),
+            (string) ($data['contact_name'] ?? ''),
+        ])));
+        $domain = $this->extractDomain((string) (($data['website'] ?? '') ?: ($data['registration_url'] ?? '') ?: ($data['ticket_url'] ?? '')));
+
+        if ($names === [] && $domain === '') {
+            return null;
+        }
+
+        $conditions = [];
+        $params = [];
+        foreach ($names as $name) {
+            $conditions[] = 'LOWER(TRIM(name)) = ?';
+            $params[] = $name;
+        }
+        if ($domain !== '') {
+            $conditions[] = 'website LIKE ?';
+            $params[] = '%' . $domain . '%';
+        }
+
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare("SELECT id FROM {$db->prefix()}companies WHERE status = 'active' AND (" . implode(' OR ', $conditions) . ") ORDER BY is_sponsor DESC, is_top_partner DESC, is_partner DESC, name ASC LIMIT 1");
+        $stmt->execute($params);
+        $id = (int) ($stmt->fetchColumn() ?: 0);
+
+        return $id > 0 ? $id : null;
+    }
+
+    /** @param array<string, mixed> $data */
+    private function findExpertIdBySignals(array $data): ?int
+    {
+        if (!$this->tableExists('experts')) {
+            return null;
+        }
+
+        $display = $this->normalizeMatchValue((string) (($data['display_name'] ?? '') ?: ($data['contact_name'] ?? '')));
+        $first = $this->normalizeMatchValue((string) ($data['first_name'] ?? ''));
+        $last = $this->normalizeMatchValue((string) ($data['last_name'] ?? ''));
+        $email = mb_strtolower(trim((string) ($data['email'] ?? '')));
+        $conditions = [];
+        $params = [];
+
+        if ($email !== '') {
+            $conditions[] = 'LOWER(email) = ?';
+            $params[] = $email;
+        }
+        if ($display !== '') {
+            $conditions[] = "LOWER(TRIM(CONCAT(first_name, ' ', last_name))) = ?";
+            $params[] = $display;
+        }
+        if ($first !== '' && $last !== '') {
+            $conditions[] = '(LOWER(TRIM(first_name)) = ? AND LOWER(TRIM(last_name)) = ?)';
+            $params[] = $first;
+            $params[] = $last;
+        }
+        if ($conditions === []) {
+            return null;
+        }
+
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare("SELECT id FROM {$db->prefix()}experts WHERE status = 'active' AND (" . implode(' OR ', $conditions) . ") ORDER BY updated_at DESC LIMIT 1");
+        $stmt->execute($params);
+        $id = (int) ($stmt->fetchColumn() ?: 0);
+
+        return $id > 0 ? $id : null;
+    }
+
+    private function tableExists(string $table): bool
+    {
+        if (isset($this->tableExistsCache[$table])) {
+            return $this->tableExistsCache[$table];
+        }
+
+        if (!in_array($table, ['companies', 'experts', '365net_events', '365net_event_speakers'], true)) {
             return false;
         }
 
         try {
             $db = CMS\Database::instance();
-            if ($db->update('events', $data, ['id' => $event_id])) {
-                error_log('CMS Events save_event legacy update succeeded for event_id=' . $event_id);
-                return true;
+            $stmt = $db->prepare('SHOW TABLES LIKE ?');
+            $stmt->execute([$db->prefix() . $table]);
+            $this->tableExistsCache[$table] = (bool) $stmt->fetchColumn();
+        } catch (Throwable $e) {
+            $this->logDatabaseWarning('table_exists_' . $table, $e);
+            $this->tableExistsCache[$table] = false;
+        }
+
+        return $this->tableExistsCache[$table];
+    }
+
+    private function normalizeMatchValue(string $value): string
+    {
+        $value = preg_replace('/\s+/u', ' ', trim($value)) ?: '';
+        return mb_strtolower($value);
+    }
+
+    private function normalizeLooseMatchValue(string $value): string
+    {
+        $value = html_entity_decode(trim($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $value = preg_replace('/[\x{2010}-\x{2015}\x{2212}\-]+/u', '-', $value) ?: $value;
+        $value = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $value) ?: $value;
+        $value = preg_replace('/\s+/u', ' ', trim($value)) ?: '';
+        return $this->lower($value);
+    }
+
+    private function extractDomain(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+        $host = parse_url(str_starts_with($url, 'http') ? $url : 'https://' . $url, PHP_URL_HOST);
+        if (!is_string($host) || $host === '') {
+            return '';
+        }
+
+        return preg_replace('/^www\./i', '', mb_strtolower($host)) ?: '';
+    }
+
+    public function autoLinkExistingRecords(): void
+    {
+        try {
+            $db = CMS\Database::instance();
+            $p = $db->prefix();
+
+            if ($this->tableExists('365net_events')) {
+                $events = $db->prepare("SELECT id, organizer, contact_name, website, registration_url, ticket_url FROM {$p}365net_events WHERE linked_company_id IS NULL OR linked_expert_id IS NULL LIMIT 500");
+                $events->execute([]);
+                $updateEvent = $db->prepare("UPDATE {$p}365net_events SET linked_company_id = COALESCE(linked_company_id, ?), linked_expert_id = COALESCE(linked_expert_id, ?) WHERE id = ?");
+                foreach ($events->fetchAll() as $event) {
+                    $signals = [
+                        'organizer' => $event->organizer ?? '',
+                        'contact_name' => $event->contact_name ?? '',
+                        'website' => $event->website ?? '',
+                        'registration_url' => $event->registration_url ?? '',
+                        'ticket_url' => $event->ticket_url ?? '',
+                    ];
+                    $updateEvent->execute([$this->findCompanyIdBySignals($signals), $this->findExpertIdBySignals($signals), (int) $event->id]);
+                }
             }
 
-            error_log('CMS Events save_event legacy update failed: ' . (string) ($db->last_error ?? 'unknown error'));
-        } catch (\Throwable $e) {
-            error_log('CMS Events save_event legacy update exception: ' . $e->getMessage());
+            if ($this->tableExists('365net_event_speakers')) {
+                $speakers = $db->prepare("SELECT id, first_name, last_name, display_name, company, email, website FROM {$p}365net_event_speakers WHERE linked_company_id IS NULL OR linked_expert_id IS NULL LIMIT 500");
+                $speakers->execute([]);
+                $updateSpeaker = $db->prepare("UPDATE {$p}365net_event_speakers SET linked_company_id = COALESCE(linked_company_id, ?), linked_expert_id = COALESCE(linked_expert_id, ?) WHERE id = ?");
+                foreach ($speakers->fetchAll() as $speaker) {
+                    $signals = [
+                        'first_name' => $speaker->first_name ?? '',
+                        'last_name' => $speaker->last_name ?? '',
+                        'display_name' => $speaker->display_name ?? '',
+                        'company' => $speaker->company ?? '',
+                        'email' => $speaker->email ?? '',
+                        'website' => $speaker->website ?? '',
+                    ];
+                    $updateSpeaker->execute([$this->findCompanyIdBySignals($signals), $this->findExpertIdBySignals($signals), (int) $speaker->id]);
+                }
+            }
+        } catch (Throwable $e) {
+            $this->logDatabaseWarning('auto_link_existing_records', $e);
+        }
+    }
+
+    public function purgeNonPersonSpeakers(): void
+    {
+        try {
+            if (!$this->tableExists('365net_event_speakers')) {
+                return;
+            }
+
+            $db = CMS\Database::instance();
+            $p = $db->prefix();
+            $stmt = $db->prepare("SELECT id, first_name, last_name, display_name FROM {$p}365net_event_speakers LIMIT 1000");
+            $stmt->execute([]);
+            $delete = $db->prepare("DELETE FROM {$p}365net_event_speakers WHERE id = ?");
+            foreach ($stmt->fetchAll() as $speaker) {
+                if (!$this->isRealPersonSpeaker((string) ($speaker->first_name ?? ''), (string) ($speaker->last_name ?? ''), (string) ($speaker->display_name ?? ''))) {
+                    $delete->execute([(int) $speaker->id]);
+                }
+            }
+
+            $db->prepare("UPDATE {$p}365net_event_speakers SET company = NULL")->execute([]);
+        } catch (Throwable $e) {
+            $this->logDatabaseWarning('purge_non_person_speakers', $e);
+        }
+    }
+
+    private function isRealPersonSpeaker(string $firstName, string $lastName, string $displayName = ''): bool
+    {
+        $firstName = $this->cleanText($firstName, 120);
+        $lastName = $this->cleanText($lastName, 120);
+        $displayName = $this->cleanText($displayName, 255);
+
+        if ($firstName === '' || $lastName === '') {
+            return false;
+        }
+
+        $combinedRaw = trim($firstName . ' ' . $lastName . ' ' . $displayName);
+        $combined = function_exists('mb_strtolower') ? mb_strtolower($combinedRaw, 'UTF-8') : strtolower($combinedRaw);
+        $companyTerms = ['gmbh', 'ag', 'kg', 'ug', 'inc', 'ltd', 'llc', 'group', 'gruppe', 'media', 'messe', 'community', 'plattform', 'platform', 'verband', 'verein', 'team', 'experten', 'experts', 'champions', 'architekten', 'speaker', 'organisation', 'organizer'];
+        foreach ($companyTerms as $term) {
+            if (preg_match('/\b' . preg_quote($term, '/') . '\b/u', $combined) === 1) {
+                return false;
+            }
+        }
+
+        return preg_match('/^[\p{L}\p{M} .\'\-]+$/u', $firstName . ' ' . $lastName) === 1;
+    }
+
+    private function ensureSchemaForSave(): void
+    {
+        try {
+            $this->createTables();
+        } catch (Throwable $e) {
+            $this->logDatabaseWarning('ensure_schema_for_save', $e);
+        }
+    }
+
+    /** @param array<string, mixed> $payload @param array<string, mixed> $data @return array<string, mixed> */
+    private function applyUpdateFallbacks(array $payload, array $data, ?object $existing, bool $preserveEmptyValues = false): array
+    {
+        if ($existing === null) {
+            return $payload;
+        }
+
+        foreach ($payload as $key => $value) {
+            $hasPostedValue = array_key_exists($key, $data);
+            $existingValue = property_exists($existing, $key) ? $existing->{$key} : null;
+
+            if ($hasPostedValue && (!$preserveEmptyValues || !$this->isEmptySubmittedValue($value) || $this->isEmptySubmittedValue($existingValue))) {
+                continue;
+            }
+
+            if (property_exists($existing, $key)) {
+                $payload[$key] = $existingValue;
+            }
+        }
+
+        return $payload;
+    }
+
+    /** @param array<string, mixed> $data @param array<int, string> $keys */
+    private function looksLikeSparseUpdate(array $data, ?object $existing, array $keys): bool
+    {
+        if ($existing === null) {
+            return false;
+        }
+
+        $existingFilled = 0;
+        $postedFilled = 0;
+        foreach ($keys as $key) {
+            if (property_exists($existing, $key) && !$this->isEmptySubmittedValue($existing->{$key})) {
+                $existingFilled++;
+            }
+            if (array_key_exists($key, $data) && !$this->isEmptySubmittedValue($data[$key])) {
+                $postedFilled++;
+            }
+        }
+
+        return $existingFilled >= 3 && $postedFilled <= 1;
+    }
+
+    private function isEmptySubmittedValue(mixed $value): bool
+    {
+        return $value === null || trim((string) $value) === '';
+    }
+
+    /** @param array<string, mixed> $payload @return array<string, mixed> */
+    private function filterPayloadByExistingColumns(string $table, array $payload): array
+    {
+        $columns = $this->getExistingColumns($table);
+        if ($columns === []) {
+            return $payload;
+        }
+
+        return array_intersect_key($payload, array_flip($columns));
+    }
+
+    /** @return array<int, string> */
+    private function getExistingColumns(string $table): array
+    {
+        if (isset($this->tableColumnsCache[$table])) {
+            return $this->tableColumnsCache[$table];
+        }
+
+        $allowedTables = ['365net_events', '365net_event_speakers'];
+        if (!in_array($table, $allowedTables, true)) {
+            return [];
+        }
+
+        try {
+            $db = CMS\Database::instance();
+            $fullTable = $db->prefix() . $table;
+            $stmt = $db->prepare("SHOW COLUMNS FROM `{$fullTable}`");
+            $stmt->execute([]);
+            $columns = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $field = is_object($row) ? ($row->Field ?? null) : ($row['Field'] ?? null);
+                if (is_string($field) && $field !== '') {
+                    $columns[] = $field;
+                }
+            }
+            $this->tableColumnsCache[$table] = $columns;
+            return $columns;
+        } catch (Throwable $e) {
+            $this->logDatabaseWarning('get_existing_columns_' . $table, $e);
+            return [];
+        }
+    }
+
+    private function logDatabaseWarning(string $context, Throwable $error): void
+    {
+        if (class_exists('CMS_365NET_Events')) {
+            CMS_365NET_Events::instance()->log($context, $error);
+            return;
+        }
+
+        error_log('CMS 365NET Events DB [' . $context . ']: ' . $error->getMessage());
+    }
+
+    /** @return array<string, string> */
+    public function getSettings(): array
+    {
+        $defaults = [
+            'show_nav_link' => '0',
+            'nav_label' => 'Events',
+            'archive_title' => 'Events & Messen 2026',
+            'archive_description' => 'Kuratiertes Event- und Speaker-Verzeichnis für IT, Cloud, Security, AI und digitale Transformation.',
+            'archive_kicker' => '365NET Event Directory',
+            'archive_search_placeholder' => 'Event, Ort, Thema oder Veranstalter suchen …',
+            'archive_search_button' => 'Suchen',
+            'archive_reset_label' => 'Zurücksetzen',
+            'archive_current_month_label' => 'Zukünftige Events',
+            'archive_past_button' => 'Vergangene Events anzeigen',
+            'archive_current_button' => 'Zurück zu zukünftigen Events',
+            'archive_empty_current' => 'Es wurden keine zukünftigen Events gefunden.',
+            'archive_empty_past' => 'Keine vergangenen Events gefunden.',
+            'speaker_archive_title' => 'Event-Speaker',
+            'speaker_archive_kicker' => '365NET Speaker Directory',
+            'speaker_archive_description' => 'Personen, Expertengruppen und Organisationen aus dem Event-Datensatz.',
+            'speaker_search_placeholder' => 'Speaker, Thema oder Tag suchen …',
+            'detail_back_events_label' => 'Events',
+            'detail_speakers_heading' => 'Speaker & Themen',
+            'detail_no_speakers_text' => 'Für dieses Event sind noch keine Speaker verknüpft.',
+            'detail_register_label' => 'Registrieren',
+            'detail_website_label' => 'Website öffnen',
+            'layout_primary_color' => '#1d4ed8',
+            'layout_accent_color' => '#f59e0b',
+            'layout_text_color' => '#0f172a',
+            'layout_card_background' => '#ffffff',
+            'layout_card_border' => '#e2e8f0',
+            'layout_radius' => '24',
+            'layout_card_radius' => '20',
+            'layout_gap' => '18',
+            'layout_top_spacing' => '32',
+            'layout_bottom_spacing' => '56',
+            'layout_container_width' => '1160',
+            'taxonomy_event_categories' => "KI & Copilot\nMicrosoft 365\nAzure\nSecurity\nModern Workplace\nBusiness Applications\nEntwicklung\nCommunity\nMesse\nKonferenz\nWebinar\nWorkshop",
+            'taxonomy_event_types' => "Konferenz\nMesse\nWebinar\nWorkshop\nMeetup\nHackathon\nTraining\nRoundtable\nCommunity Event\nNetworking\nMasterclass",
+            'taxonomy_event_price_classes' => "Kostenlos\nFreemium\nCommunity\nEarly Bird\nStandard\nPremium\nEnterprise\nAuf Anfrage",
+            'taxonomy_event_tags' => "Microsoft 365\nCopilot\nAzure\nSecurity\nAI\nPower Platform\nTeams\nSharePoint\nEntra ID\nIntune\nWindows\nGovernance\nCompliance\nAutomation\nCommunity",
+            'taxonomy_speaker_categories' => "MVP\nCommunity Speaker\nConsultant\nTrainer\nVendor\nModerator\nPanelist\nExpertengruppe\nOrganisation",
+            'taxonomy_speaker_types' => "MVP\nCommunity Speaker\nConsultant\nTrainer\nVendor\nModerator\nPanelist\nKeynote Speaker\nWorkshop Lead\nOrganisation",
+            'taxonomy_speaker_price_classes' => "Kostenlos\nCommunity\nStandard\nPremium\nEnterprise\nAuf Anfrage",
+            'taxonomy_speaker_tags' => "Microsoft 365\nCopilot\nAzure\nSecurity\nAI\nPower Platform\nTeams\nSharePoint\nLeadership\nGovernance\nDeveloper\nAdmin\nConsulting\nTraining",
+        ];
+
+        $db = CMS\Database::instance();
+        try {
+            $stmt = $db->prepare("SELECT setting_key, setting_value FROM {$db->prefix()}365net_event_settings");
+            $stmt->execute([]);
+            foreach ($stmt->fetchAll() as $row) {
+                $defaults[(string) $row->setting_key] = (string) $row->setting_value;
+            }
+        } catch (Throwable) {
+        }
+
+        return $defaults;
+    }
+
+    public function saveSetting(string $key, string $value): void
+    {
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare("INSERT INTO {$db->prefix()}365net_event_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $stmt->execute([$this->cleanText($key, 120), $value]);
+    }
+
+    /** @param array<string, mixed> $data */
+    public function saveSettings(array $data): void
+    {
+        $allowed = array_keys($this->getSettings());
+        foreach ($allowed as $key) {
+            if (str_starts_with($key, 'taxonomy_')) {
+                continue;
+            }
+            $value = (string) ($data[$key] ?? '');
+            if ($key === 'show_nav_link') {
+                $value = !empty($data[$key]) ? '1' : '0';
+            } elseif (str_starts_with($key, 'layout_')) {
+                $value = $this->cleanLayoutSetting($key, $value);
+            } else {
+                $value = $this->cleanTextarea($value, 1000);
+            }
+            $this->saveSetting($key, $value);
+        }
+    }
+
+    /** @return array<string, array<int, string>> */
+    public function getTaxonomyOptions(): array
+    {
+        $settings = $this->getSettings();
+        $keys = [
+            'event_categories' => 'taxonomy_event_categories',
+            'event_types' => 'taxonomy_event_types',
+            'event_price_classes' => 'taxonomy_event_price_classes',
+            'event_tags' => 'taxonomy_event_tags',
+            'speaker_categories' => 'taxonomy_speaker_categories',
+            'speaker_types' => 'taxonomy_speaker_types',
+            'speaker_price_classes' => 'taxonomy_speaker_price_classes',
+            'speaker_tags' => 'taxonomy_speaker_tags',
+        ];
+        $options = [];
+        foreach ($keys as $name => $settingKey) {
+            $options[$name] = $this->splitOptionList((string) ($settings[$settingKey] ?? ''));
+        }
+
+        return $options;
+    }
+
+    /** @param array<string, mixed> $data */
+    public function saveTaxonomyOptions(array $data): void
+    {
+        foreach (array_keys($this->getTaxonomyOptions()) as $name) {
+            $key = 'taxonomy_' . $name;
+            $this->saveSetting($key, implode("\n", $this->splitOptionList((string) ($data[$key] ?? ''))));
+        }
+    }
+
+    /** @return array<int, string> */
+    private function splitOptionList(string $value): array
+    {
+        $items = preg_split('/[,;\n]+/', $value) ?: [];
+        $clean = [];
+        foreach ($items as $item) {
+            $item = $this->cleanText((string) $item, 120);
+            if ($item !== '' && !in_array($item, $clean, true)) {
+                $clean[] = $item;
+            }
+        }
+
+        return $clean;
+    }
+
+    private function cleanLayoutSetting(string $key, string $value): string
+    {
+        $value = trim($value);
+        if (str_contains($key, 'color') || str_contains($key, 'background') || str_contains($key, 'border')) {
+            return preg_match('/^#[0-9a-f]{6}$/i', $value) === 1 ? $value : '#ffffff';
+        }
+
+        $number = (int) $value;
+        return (string) max(0, min(1800, $number));
+    }
+
+    private function uniqueSlug(string $value, string $table = '365net_events', int $ignoreId = 0): string
+    {
+        $base = $this->slugify($value) ?: 'eintrag';
+        $slug = $base;
+        $db = CMS\Database::instance();
+        $i = 2;
+
+        while ($this->slugExists($table, $slug, $ignoreId)) {
+            $slug = $base . '-' . $i;
+            $i++;
+        }
+
+        return $slug;
+    }
+
+    private function slugExists(string $table, string $slug, int $ignoreId): bool
+    {
+        $db = CMS\Database::instance();
+        $sql = "SELECT COUNT(*) FROM {$db->prefix()}{$table} WHERE slug = ?" . ($ignoreId > 0 ? ' AND id <> ?' : '');
+        $params = $ignoreId > 0 ? [$slug, $ignoreId] : [$slug];
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    private function slugify(string $value): string
+    {
+        $value = $this->lower($value);
+        $value = str_replace(['ä','ö','ü','ß','à','á','â','ã','å','è','é','ê','ë','ì','í','î','ï','ò','ó','ô','õ','ø','ù','ú','û','ý','ÿ','ñ','ç'], ['ae','oe','ue','ss','a','a','a','a','a','e','e','e','e','i','i','i','i','o','o','o','o','o','u','u','u','y','y','n','c'], $value);
+        $value = preg_replace('/[^a-z0-9]+/', '-', $value) ?? '';
+
+        return trim($value, '-');
+    }
+
+    private function parseGermanDate(string $value): ?string
+    {
+        $value = trim($value);
+        if (preg_match('/^(\d{2})\.(\d{2})\.(\d{4})$/', $value, $m) === 1) {
+            return checkdate((int) $m[2], (int) $m[1], (int) $m[3]) ? $m[3] . '-' . $m[2] . '-' . $m[1] : null;
+        }
+
+        return null;
+    }
+
+    private function normalizeDate(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1) {
+            [$year, $month, $day] = array_map('intval', explode('-', $value));
+            return checkdate($month, $day, $year) ? sprintf('%04d-%02d-%02d', $year, $month, $day) : null;
+        }
+
+        return $this->parseGermanDate($value);
+    }
+
+    private function backfillSeedEventDescriptions(): void
+    {
+        $this->backfillSeedEventDescriptionsInternal();
+    }
+
+    public function backfillSeedEventDescriptionsFromSeed(): int
+    {
+        return $this->backfillSeedEventDescriptionsInternal();
+    }
+
+    /** @return array{configured:bool,processed:int,updated:int,skipped:int,failed:int} */
+    public function backfillSpeakerProfilesFromGoogle(): array
+    {
+        $result = [
+            'configured' => false,
+            'processed' => 0,
+            'updated' => 0,
+            'skipped' => 0,
+            'failed' => 0,
+        ];
+
+        if (!$this->tableExists('365net_event_speakers')) {
+            return $result;
+        }
+
+        $config = $this->googleSearchConfig();
+        if (!$config['configured']) {
+            return $result;
+        }
+        $result['configured'] = true;
+
+        try {
+            $db = CMS\Database::instance();
+            $p = $db->prefix();
+            $select = $db->prepare("SELECT id, first_name, last_name, display_name, company, topic, website, bio, seo_description, linkedin_url, x_url, youtube_url, github_url
+                FROM {$p}365net_event_speakers
+                WHERE status = ?
+                ORDER BY id ASC
+                LIMIT 500");
+            $select->execute(['published']);
+            $speakers = $select->fetchAll();
+
+            if (!is_array($speakers) || $speakers === []) {
+                return $result;
+            }
+
+            $update = $db->prepare("UPDATE {$p}365net_event_speakers
+                SET website = ?, bio = ?, seo_description = ?, linkedin_url = ?, x_url = ?, youtube_url = ?, github_url = ?
+                WHERE id = ?");
+
+            foreach ($speakers as $speaker) {
+                if (!is_object($speaker)) {
+                    continue;
+                }
+
+                $result['processed']++;
+
+                try {
+                    $query = $this->buildSpeakerGoogleQuery($speaker);
+                    if ($query === '') {
+                        $result['skipped']++;
+                        continue;
+                    }
+
+                    $items = $this->fetchGoogleSearchItems($query, (string) $config['apiKey'], (string) $config['cseId']);
+                    if ($items === []) {
+                        $result['skipped']++;
+                        continue;
+                    }
+
+                    $payload = $this->enrichSpeakerFromSearchResults($speaker, $items);
+                    if ($payload === null) {
+                        $result['skipped']++;
+                        continue;
+                    }
+
+                    $update->execute([
+                        $payload['website'],
+                        $payload['bio'],
+                        $payload['seo_description'],
+                        $payload['linkedin_url'],
+                        $payload['x_url'],
+                        $payload['youtube_url'],
+                        $payload['github_url'],
+                        (int) ($speaker->id ?? 0),
+                    ]);
+
+                    if ($update->rowCount() > 0) {
+                        $result['updated']++;
+                    } else {
+                        $result['skipped']++;
+                    }
+                } catch (Throwable $e) {
+                    $result['failed']++;
+                    $this->logDatabaseWarning('speaker_google_backfill_' . (int) ($speaker->id ?? 0), $e);
+                }
+            }
+        } catch (Throwable $e) {
+            $this->logDatabaseWarning('speaker_google_backfill', $e);
+        }
+
+        return $result;
+    }
+
+    private function backfillSeedEventDescriptionsInternal(): int
+    {
+        $seedFile = CMS_365NET_EVENTS_PLUGIN_DIR . 'defaults/seed-data.php';
+        if (!is_file($seedFile) || !$this->tableExists('365net_events')) {
+            return 0;
+        }
+
+        try {
+            /** @var array<int, array<string, string>> $rows */
+            $rows = require $seedFile;
+            $seedBySourceNr = [];
+            $seedByUniqueId = [];
+            $seedByFingerprint = [];
+            $seedByLooseFingerprint = [];
+            $seedByLooseTitle = [];
+            foreach ($rows as $row) {
+                $sourceNr = (int) ($row['nr'] ?? 0);
+                if ($sourceNr <= 0 || isset($seedBySourceNr[$sourceNr])) {
+                    continue;
+                }
+                $seedBySourceNr[$sourceNr] = $row;
+                $seedByUniqueId['event-' . $sourceNr] = $row;
+
+                $title = $this->cleanText((string) ($row['event_name'] ?? ''), 255);
+                $start = $this->parseGermanDate((string) ($row['wann'] ?? ''));
+                $location = $this->cleanText((string) ($row['ort'] ?? ''), 255);
+                $fingerprint = $this->seedEventFingerprint($title, $start, $location);
+                if ($fingerprint !== '' && !isset($seedByFingerprint[$fingerprint])) {
+                    $seedByFingerprint[$fingerprint] = $row;
+                }
+
+                $looseFingerprint = $this->seedEventLooseFingerprint($title, $start, $location);
+                if ($looseFingerprint !== '' && !isset($seedByLooseFingerprint[$looseFingerprint])) {
+                    $seedByLooseFingerprint[$looseFingerprint] = $row;
+                }
+
+                $looseTitle = $this->normalizeLooseMatchValue($title);
+                if ($looseTitle !== '') {
+                    if (!array_key_exists($looseTitle, $seedByLooseTitle)) {
+                        $seedByLooseTitle[$looseTitle] = $row;
+                    } elseif (is_array($seedByLooseTitle[$looseTitle])) {
+                        $existingNr = (int) (($seedByLooseTitle[$looseTitle]['nr'] ?? 0));
+                        if ($existingNr !== $sourceNr) {
+                            $seedByLooseTitle[$looseTitle] = null;
+                        }
+                    }
+                }
+            }
+
+            $db = CMS\Database::instance();
+            $p = $db->prefix();
+            $eventsStmt = $db->prepare("SELECT * FROM {$p}365net_events ORDER BY id ASC");
+            $eventsStmt->execute([]);
+            $events = $eventsStmt->fetchAll();
+            if (!is_array($events) || $events === []) {
+                return 0;
+            }
+
+            $updateStmt = $db->prepare("UPDATE {$p}365net_events
+                SET description = ?, excerpt = ?, seo_description = ?, source_nr = COALESCE(?, source_nr)
+                WHERE id = ?");
+            $updated = 0;
+
+            foreach ($events as $event) {
+                if (!is_object($event)) {
+                    continue;
+                }
+
+                $sourceNr = (int) ($event->source_nr ?? 0);
+                $seedRow = $seedBySourceNr[$sourceNr] ?? [];
+
+                if ($seedRow === []) {
+                    $uniqueId = trim((string) ($event->unique_id ?? ''));
+                    if ($uniqueId !== '' && isset($seedByUniqueId[$uniqueId])) {
+                        $seedRow = $seedByUniqueId[$uniqueId];
+                    }
+                }
+
+                if ($seedRow === []) {
+                    $fingerprint = $this->seedEventFingerprint(
+                        (string) ($event->title ?? ''),
+                        $this->normalizeDate((string) ($event->start_date ?? '')),
+                        (string) ($event->location ?? '')
+                    );
+                    if ($fingerprint !== '' && isset($seedByFingerprint[$fingerprint])) {
+                        $seedRow = $seedByFingerprint[$fingerprint];
+                    }
+                }
+
+                if ($seedRow === []) {
+                    $looseFingerprint = $this->seedEventLooseFingerprint(
+                        (string) ($event->title ?? ''),
+                        $this->normalizeDate((string) ($event->start_date ?? '')),
+                        (string) ($event->location ?? '')
+                    );
+                    if ($looseFingerprint !== '' && isset($seedByLooseFingerprint[$looseFingerprint])) {
+                        $seedRow = $seedByLooseFingerprint[$looseFingerprint];
+                    }
+                }
+
+                if ($seedRow === []) {
+                    $looseTitle = $this->normalizeLooseMatchValue((string) ($event->title ?? ''));
+                    if ($looseTitle !== '' && isset($seedByLooseTitle[$looseTitle]) && is_array($seedByLooseTitle[$looseTitle])) {
+                        $seedRow = $seedByLooseTitle[$looseTitle];
+                    }
+                }
+
+                if ($seedRow === []) {
+                    $seedRow = $this->findSeedRowByFuzzyMatch($event, $rows);
+                }
+
+                $description = $this->cleanTextarea((string) ($seedRow['description'] ?? ''), 10000);
+                $seedSourceNr = (int) ($seedRow['nr'] ?? 0);
+
+                if ($description === '') {
+                    continue;
+                }
+
+                $updateStmt->execute([
+                    $description,
+                    $this->seedExcerpt($description),
+                    $this->seedSeoDescription($description),
+                    $seedSourceNr > 0 ? $seedSourceNr : null,
+                    (int) ($event->id ?? 0),
+                ]);
+
+                if ($updateStmt->rowCount() > 0) {
+                    $updated++;
+                }
+            }
+
+            return $updated;
+        } catch (Throwable $e) {
+            $this->logDatabaseWarning('backfill_seed_event_descriptions', $e);
+            return 0;
+        }
+    }
+
+    private function seedEventFingerprint(string $title, ?string $startDate, string $location): string
+    {
+        $titlePart = $this->normalizeMatchValue($title);
+        if ($titlePart === '') {
+            return '';
+        }
+
+        $datePart = trim((string) $startDate);
+        $locationPart = $this->normalizeMatchValue($location);
+
+        return $titlePart . '|' . $datePart . '|' . $locationPart;
+    }
+
+    private function seedEventLooseFingerprint(string $title, ?string $startDate, string $location): string
+    {
+        $titlePart = $this->normalizeLooseMatchValue($title);
+        if ($titlePart === '') {
+            return '';
+        }
+
+        $datePart = trim((string) $startDate);
+        $locationPart = $this->normalizeLooseMatchValue($location);
+
+        return $titlePart . '|' . $datePart . '|' . $locationPart;
+    }
+
+    /** @param array<int, array<string, string>> $rows @return array<string, string> */
+    private function findSeedRowByFuzzyMatch(object $event, array $rows): array
+    {
+        $eventLooseTitle = $this->normalizeLooseMatchValue((string) ($event->title ?? ''));
+        if ($eventLooseTitle === '') {
+            return [];
+        }
+
+        $eventStartDate = $this->normalizeDate((string) ($event->start_date ?? ''));
+        $eventLooseLocation = $this->normalizeLooseMatchValue((string) ($event->location ?? ''));
+
+        $bestRow = [];
+        $bestScore = 0;
+
+        foreach ($rows as $row) {
+            $seedTitle = $this->normalizeLooseMatchValue((string) ($row['event_name'] ?? ''));
+            if ($seedTitle === '' || !$this->isLooseTitleCandidateMatch($seedTitle, $eventLooseTitle)) {
+                continue;
+            }
+
+            $score = 0;
+            if ($seedTitle === $eventLooseTitle) {
+                $score += 140;
+            } elseif (str_contains($seedTitle, $eventLooseTitle) || str_contains($eventLooseTitle, $seedTitle)) {
+                $score += 100;
+            }
+
+            $similarity = 0.0;
+            similar_text($seedTitle, $eventLooseTitle, $similarity);
+            $score += (int) round($similarity);
+
+            $seedStartDate = $this->parseGermanDate((string) ($row['wann'] ?? ''));
+            if ($eventStartDate !== null && $eventStartDate !== '' && $seedStartDate !== null && $seedStartDate === $eventStartDate) {
+                $score += 45;
+            }
+
+            $seedLocation = $this->normalizeLooseMatchValue((string) ($row['ort'] ?? ''));
+            if ($eventLooseLocation !== '' && $seedLocation !== '' && $seedLocation === $eventLooseLocation) {
+                $score += 25;
+            }
+
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestRow = $row;
+            }
+        }
+
+        return $bestScore >= 120 ? $bestRow : [];
+    }
+
+    private function isLooseTitleCandidateMatch(string $candidate, string $needle): bool
+    {
+        if ($candidate === '' || $needle === '') {
+            return false;
+        }
+
+        if ($candidate === $needle) {
+            return true;
+        }
+
+        if (str_contains($candidate, $needle) || str_contains($needle, $candidate)) {
+            return true;
+        }
+
+        $similarity = 0.0;
+        similar_text($candidate, $needle, $similarity);
+        return $similarity >= 82.0;
+    }
+
+    /**
+     * @return array{configured:bool,apiKey:string,cseId:string}
+     */
+    private function googleSearchConfig(): array
+    {
+        $apiKey = $this->readEnvValue([
+            'CMS_365NETEVENTS_GOOGLE_API_KEY',
+            'GOOGLE_CSE_API_KEY',
+            'GOOGLE_API_KEY',
+        ]);
+        $cseId = $this->readEnvValue([
+            'CMS_365NETEVENTS_GOOGLE_CSE_ID',
+            'GOOGLE_CSE_ID',
+            'GOOGLE_SEARCH_ENGINE_ID',
+        ]);
+
+        return [
+            'configured' => $apiKey !== '' && $cseId !== '',
+            'apiKey' => $apiKey,
+            'cseId' => $cseId,
+        ];
+    }
+
+    /** @param array<int, string> $keys */
+    private function readEnvValue(array $keys): string
+    {
+        $dotenv = $this->loadDotEnv();
+        foreach ($keys as $key) {
+            $value = getenv($key);
+            if (is_string($value) && trim($value) !== '') {
+                return $this->cleanText($value, 400);
+            }
+            if (isset($_ENV[$key]) && is_string($_ENV[$key]) && trim($_ENV[$key]) !== '') {
+                return $this->cleanText((string) $_ENV[$key], 400);
+            }
+            if (isset($_SERVER[$key]) && is_string($_SERVER[$key]) && trim($_SERVER[$key]) !== '') {
+                return $this->cleanText((string) $_SERVER[$key], 400);
+            }
+            if (isset($dotenv[$key]) && trim((string) $dotenv[$key]) !== '') {
+                return $this->cleanText((string) $dotenv[$key], 400);
+            }
+        }
+
+        return '';
+    }
+
+    /** @return array<string, string> */
+    private function loadDotEnv(): array
+    {
+        if ($this->dotEnvCache !== null) {
+            return $this->dotEnvCache;
+        }
+
+        $this->dotEnvCache = [];
+        $paths = [
+            CMS_365NET_EVENTS_PLUGIN_DIR . '.env',
+            dirname((string) CMS_365NET_EVENTS_PLUGIN_DIR) . DIRECTORY_SEPARATOR . '.env',
+        ];
+
+        foreach ($paths as $path) {
+            if (!is_file($path) || !is_readable($path)) {
+                continue;
+            }
+
+            $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            if (!is_array($lines)) {
+                continue;
+            }
+
+            foreach ($lines as $line) {
+                $line = trim((string) $line);
+                if ($line === '' || str_starts_with($line, '#')) {
+                    continue;
+                }
+                if (str_starts_with($line, 'export ')) {
+                    $line = trim(substr($line, 7));
+                }
+                if (!str_contains($line, '=')) {
+                    continue;
+                }
+                [$k, $v] = explode('=', $line, 2);
+                $k = trim((string) $k);
+                $v = trim((string) $v);
+                if ($k === '') {
+                    continue;
+                }
+                if ((str_starts_with($v, '"') && str_ends_with($v, '"')) || (str_starts_with($v, "'") && str_ends_with($v, "'"))) {
+                    $v = substr($v, 1, -1);
+                }
+
+                $this->dotEnvCache[$k] = $v;
+            }
+        }
+
+        return $this->dotEnvCache;
+    }
+
+    private function buildSpeakerGoogleQuery(object $speaker): string
+    {
+        $displayName = $this->cleanText((string) ($speaker->display_name ?? ''), 255);
+        if ($displayName === '') {
+            $displayName = trim(
+                $this->cleanText((string) ($speaker->first_name ?? ''), 120)
+                . ' '
+                . $this->cleanText((string) ($speaker->last_name ?? ''), 120)
+            );
+        }
+
+        if ($displayName === '') {
+            return '';
+        }
+
+        $parts = [$displayName];
+        $company = $this->cleanText((string) ($speaker->company ?? ''), 120);
+        $topic = $this->cleanText((string) ($speaker->topic ?? ''), 120);
+        if ($company !== '') {
+            $parts[] = $company;
+        }
+        if ($topic !== '') {
+            $parts[] = $topic;
+        }
+        $parts[] = 'Speaker Profil LinkedIn';
+
+        return trim(implode(' ', $parts));
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchGoogleSearchItems(string $query, string $apiKey, string $cseId): array
+    {
+        if (!class_exists('CMS\\Http\\Client')) {
+            return [];
+        }
+
+        $url = 'https://customsearch.googleapis.com/customsearch/v1?' . http_build_query([
+            'key' => $apiKey,
+            'cx' => $cseId,
+            'q' => $query,
+            'num' => 8,
+            'hl' => 'de',
+            'gl' => 'de',
+            'safe' => 'off',
+        ], '', '&', PHP_QUERY_RFC3986);
+
+        $response = \CMS\Http\Client::getInstance()->get($url, [
+            'timeout' => 12,
+            'connectTimeout' => 6,
+            'maxBytes' => 512000,
+            'allowedContentTypes' => ['application/json'],
+        ]);
+
+        if (($response['success'] ?? false) !== true) {
+            return [];
+        }
+
+        $decoded = json_decode((string) ($response['body'] ?? ''), true);
+        if (!is_array($decoded) || !isset($decoded['items']) || !is_array($decoded['items'])) {
+            return [];
+        }
+
+        return array_values(array_filter($decoded['items'], static fn(mixed $item): bool => is_array($item)));
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $items
+     * @return array<string, string|null>|null
+     */
+    private function enrichSpeakerFromSearchResults(object $speaker, array $items): ?array
+    {
+        $displayName = $this->cleanText((string) ($speaker->display_name ?? ''), 255);
+        $company = $this->cleanText((string) ($speaker->company ?? ''), 255);
+        $topic = $this->cleanText((string) ($speaker->topic ?? ''), 255);
+        $nameNeedle = $this->lower($displayName);
+
+        $website = $this->cleanUrl((string) ($speaker->website ?? ''));
+        $linkedin = $this->cleanUrl((string) ($speaker->linkedin_url ?? ''));
+        $x = $this->cleanUrl((string) ($speaker->x_url ?? ''));
+        $youtube = $this->cleanUrl((string) ($speaker->youtube_url ?? ''));
+        $github = $this->cleanUrl((string) ($speaker->github_url ?? ''));
+        $snippets = [];
+
+        foreach ($items as $item) {
+            $link = $this->cleanUrl((string) ($item['link'] ?? ''));
+            $title = $this->cleanText((string) ($item['title'] ?? ''), 220);
+            $snippet = $this->cleanText((string) ($item['snippet'] ?? ''), 420);
+            $haystack = $this->lower(trim($title . ' ' . $snippet));
+
+            if ($snippet !== '' && ($nameNeedle === '' || str_contains($haystack, $nameNeedle))) {
+                $snippets[] = $snippet;
+            }
+
+            if ($link === null) {
+                continue;
+            }
+
+            $socialField = $this->detectSocialPlatform($link);
+            if ($socialField === 'linkedin_url' && $linkedin === null) {
+                $linkedin = $link;
+                continue;
+            }
+            if ($socialField === 'x_url' && $x === null) {
+                $x = $link;
+                continue;
+            }
+            if ($socialField === 'youtube_url' && $youtube === null) {
+                $youtube = $link;
+                continue;
+            }
+            if ($socialField === 'github_url' && $github === null) {
+                $github = $link;
+                continue;
+            }
+
+            if ($socialField === null && $website === null && $this->isLikelySpeakerWebsite($link, $title, $snippet, $displayName, $company)) {
+                $website = $link;
+            }
+        }
+
+        $snippets = array_values(array_unique(array_filter(array_map(static fn(string $s): string => trim($s), $snippets))));
+        if ($snippets === []) {
+            return null;
+        }
+
+        $maxSnippets = array_slice($snippets, 0, 3);
+        $context = $topic !== '' ? $topic : 'IT-, Cloud- und Digitalisierungsthemen';
+        $bioParts = [];
+        $bioParts[] = $displayName !== ''
+            ? $displayName . ' wird in öffentlich auffindbaren Google-Suchergebnissen im Kontext von ' . $context . ' erwähnt.'
+            : 'Die Person wird in öffentlich auffindbaren Google-Suchergebnissen im Kontext von ' . $context . ' erwähnt.';
+        if ($company !== '') {
+            $bioParts[] = 'Häufige Zuordnung: ' . $company . '.';
+        }
+        $bioParts[] = 'Ausgewertete Trefferhinweise: ' . implode(' ', array_map(static fn(string $snippet): string => '„' . $snippet . '“', $maxSnippets));
+        $bio = $this->cleanTextarea(implode("\n\n", $bioParts), 2500);
+        if ($bio === '') {
+            return null;
+        }
+
+        $currentBio = $this->cleanTextarea((string) ($speaker->bio ?? ''), 2500);
+        if ($currentBio === $bio
+            && $website === $this->cleanUrl((string) ($speaker->website ?? ''))
+            && $linkedin === $this->cleanUrl((string) ($speaker->linkedin_url ?? ''))
+            && $x === $this->cleanUrl((string) ($speaker->x_url ?? ''))
+            && $youtube === $this->cleanUrl((string) ($speaker->youtube_url ?? ''))
+            && $github === $this->cleanUrl((string) ($speaker->github_url ?? ''))
+        ) {
+            return null;
+        }
+
+        return [
+            'bio' => $bio,
+            'seo_description' => $this->seedSeoDescription($bio),
+            'website' => $website,
+            'linkedin_url' => $linkedin,
+            'x_url' => $x,
+            'youtube_url' => $youtube,
+            'github_url' => $github,
+        ];
+    }
+
+    private function detectSocialPlatform(string $url): ?string
+    {
+        if (preg_match('#^https?://(?:[a-z]{2,3}\.)?linkedin\.com/(?:in|pub|company)/#i', $url) === 1) {
+            return 'linkedin_url';
+        }
+        if (preg_match('#^https?://(?:www\.)?(?:x\.com|twitter\.com)/[A-Za-z0-9_]+#i', $url) === 1) {
+            return 'x_url';
+        }
+        if (preg_match('#^https?://(?:www\.)?youtube\.com/(?:@|channel/|c/|user/)#i', $url) === 1) {
+            return 'youtube_url';
+        }
+        if (preg_match('#^https?://(?:www\.)?github\.com/[A-Za-z0-9_.\-]+#i', $url) === 1) {
+            return 'github_url';
+        }
+
+        return null;
+    }
+
+    private function isLikelySpeakerWebsite(string $url, string $title, string $snippet, string $displayName, string $company): bool
+    {
+        $host = $this->extractDomain($url);
+        if ($host === '') {
+            return false;
+        }
+
+        $blockedHosts = [
+            'linkedin.com',
+            'x.com',
+            'twitter.com',
+            'youtube.com',
+            'github.com',
+            'facebook.com',
+            'instagram.com',
+            'tiktok.com',
+            'wikipedia.org',
+        ];
+        foreach ($blockedHosts as $blockedHost) {
+            if ($host === $blockedHost || str_ends_with($host, '.' . $blockedHost)) {
+                return false;
+            }
+        }
+
+        $needle = $this->lower(trim($displayName));
+        $companyNeedle = $this->lower(trim($company));
+        $haystack = $this->lower(trim($title . ' ' . $snippet . ' ' . $host));
+
+        if ($needle !== '' && str_contains($haystack, $needle)) {
+            return true;
+        }
+
+        if ($companyNeedle !== '' && str_contains($haystack, $companyNeedle)) {
+            return true;
         }
 
         return false;
     }
 
-    /** @param array<string,mixed> $event_data */
-    private function save_event_columnwise_update(int $event_id, array $event_data): bool
+    private function seedExcerpt(string $description): ?string
     {
-        if ($event_id <= 0 || $event_data === []) {
-            return false;
+        $plain = trim((string) preg_replace('/\s+/u', ' ', strip_tags($description)));
+        if ($plain === '') {
+            return null;
         }
 
-        $existing_columns = $this->event_table_columns();
-        if ($existing_columns !== []) {
-            $event_data = array_intersect_key($event_data, $existing_columns);
+        return $this->cleanText($plain, 420);
+    }
+
+    private function seedSeoDescription(string $description): ?string
+    {
+        $plain = trim((string) preg_replace('/\s+/u', ' ', strip_tags($description)));
+        if ($plain === '') {
+            return null;
         }
 
-        unset($event_data['id'], $event_data['created_at'], $event_data['updated_at']);
+        return $this->cleanText($plain, 300);
+    }
 
-        if ($event_data === []) {
-            return false;
+    private function seedBio(string $topic, string $award, string $company): ?string
+    {
+        $parts = [];
+        if ($company !== '') {
+            $parts[] = 'Organisation/Firma: ' . $company;
+        }
+        if ($topic !== '') {
+            $parts[] = 'Schwerpunkt: ' . $topic;
+        }
+        if ($award !== '') {
+            $parts[] = 'Auszeichnung: ' . $award;
         }
 
-        $savedAny = false;
-        $db = CMS\Database::instance();
-        foreach ($event_data as $column => $value) {
-            try {
-                if ($column === 'status' && !in_array((string) $value, ['published', 'draft', 'cancelled'], true)) {
-                    continue;
-                }
+        return $parts !== [] ? implode("\n", $parts) : null;
+    }
 
-                if ($db->update('events', [$column => $value], ['id' => $event_id])) {
-                    $savedAny = true;
-                } else {
-                    error_log('CMS Events save_event column update failed for ' . $column . ': ' . (string) ($db->last_error ?? 'unknown error'));
-                }
-            } catch (\Throwable $e) {
-                error_log('CMS Events save_event column update exception for ' . $column . ': ' . $e->getMessage());
+    private function cleanText(string $value, int $maxLength): string
+    {
+        $value = trim(strip_tags($value));
+        return function_exists('mb_substr') ? (string) mb_substr($value, 0, $maxLength, 'UTF-8') : substr($value, 0, $maxLength);
+    }
+
+    private function cleanTextarea(string $value, int $maxLength): string
+    {
+        $value = trim(strip_tags($value, '<p><br><strong><b><em><i><ul><ol><li><a>'));
+        return function_exists('mb_substr') ? (string) mb_substr($value, 0, $maxLength, 'UTF-8') : substr($value, 0, $maxLength);
+    }
+
+    private function cleanList(mixed $value, int $maxLength): string
+    {
+        if (is_array($value)) {
+            $value = implode('\n', array_map(static fn(mixed $item): string => (string) $item, $value));
+        }
+        $items = preg_split('/[,;\n]+/', (string) $value) ?: [];
+        $clean = [];
+        foreach ($items as $item) {
+            $item = $this->cleanText((string) $item, 80);
+            if ($item !== '' && !in_array($item, $clean, true)) {
+                $clean[] = $item;
             }
         }
 
-        if ($savedAny) {
-            error_log('CMS Events save_event columnwise update succeeded for event_id=' . $event_id);
-        }
-
-        return $savedAny;
+        return $this->cleanText(implode(', ', $clean), $maxLength);
     }
 
-    public function assign_speaker(int $event_id, int $speaker_id, string $speaker_type = 'speaker', array $data = []): bool
+    private function cleanEditorJson(string $value): ?string
     {
-        if ($event_id <= 0 || $speaker_id <= 0) {
-            return false;
+        $value = trim($value);
+        if ($value === '') {
+            return null;
         }
 
-        $db = CMS\Database::instance();
-
-        $speaker_type = in_array($speaker_type, ['speaker', 'expert'], true) ? $speaker_type : 'speaker';
-
-        $exists = $db->prepare("SELECT id FROM {$db->prefix()}event_speakers WHERE event_id = ? AND speaker_id = ? AND speaker_type = ? LIMIT 1");
-        $exists->execute([$event_id, $speaker_id, $speaker_type]);
-        if ((int) ($exists->fetchColumn() ?: 0) > 0) {
-            return true;
-        }
-
-        $speaker_data = [
-            'event_id' => $event_id,
-            'speaker_id' => $speaker_id,
-            'speaker_type' => $speaker_type,
-            'role' => $data['role'] ?? null,
-            'presentation_title' => $data['presentation_title'] ?? null,
-            'session_time' => $data['session_time'] ?? null,
-        ];
-
-        $result = $db->insert('event_speakers', $speaker_data);
-        
-        if ($result !== false) {
-            CMS\Hooks::doAction('event_speaker_assigned', $event_id, $speaker_id, $speaker_type);
-        }
-
-        return $result !== false;
-    }
-
-    public function get_event_speakers(int $event_id): array
-    {
-        $db = CMS\Database::instance();
-        
-        $sql = "
-            SELECT es.*,
-                   COALESCE(s.first_name,    e.first_name)    AS first_name,
-                   COALESCE(s.last_name,     e.last_name)     AS last_name,
-                   COALESCE(s.photo_url,     e.photo_url)     AS photo_url,
-                   COALESCE(s.position,      e.position)      AS position,
-                   COALESCE(s.short_bio,     e.biography)     AS short_bio,
-                   COALESCE(s.company,       e.company)       AS company,
-                   COALESCE(s.location_city, e.location_city) AS location_city,
-                   CASE
-                       WHEN es.speaker_type = 'speaker' THEN CONCAT(s.first_name, ' ', s.last_name)
-                       WHEN es.speaker_type = 'expert'  THEN CONCAT(e.first_name, ' ', e.last_name)
-                   END AS speaker_name
-            FROM {$db->prefix()}event_speakers es
-            LEFT JOIN {$db->prefix()}speakers s ON es.speaker_id = s.id AND es.speaker_type = 'speaker'
-            LEFT JOIN {$db->prefix()}experts e  ON es.speaker_id = e.id AND es.speaker_type = 'expert'
-            WHERE es.event_id = ?
-            ORDER BY es.session_time ASC, es.id ASC
-        ";
-        
-        try {
-            $stmt = $db->prepare($sql);
-            $stmt->execute([$event_id]);
-
-            return $stmt->fetchAll();
-        } catch (\Throwable $e) {
-            error_log('CMS Events get_event_speakers skipped: ' . $e->getMessage());
-            return [];
-        }
-    }
-
-    public function save_meta(int $event_id, string $meta_key, $meta_value): bool
-    {
-        $db = CMS\Database::instance();
-
-        $stmt = $db->prepare("DELETE FROM {$db->prefix()}event_meta WHERE event_id = ? AND meta_key = ?");
-        $stmt->execute([$event_id, $meta_key]);
-
-        $result = $db->insert('event_meta', [
-            'event_id' => $event_id,
-            'meta_key' => $meta_key,
-            'meta_value' => is_array($meta_value) ? json_encode($meta_value) : $meta_value,
-        ]);
-
-        return $result !== false;
-    }
-
-    public function get_meta(int $event_id, string $meta_key, $default = null)
-    {
-        $db = CMS\Database::instance();
-        $stmt = $db->prepare("SELECT meta_value FROM {$db->prefix()}event_meta WHERE event_id = ? AND meta_key = ?");
-        $stmt->execute([$event_id, $meta_key]);
-        $result = $stmt->fetch();
-
-        if (!$result) {
-            return $default;
-        }
-
-        $value = $result->meta_value;
         $decoded = json_decode($value, true);
-
-        return $decoded !== null ? $decoded : $value;
-    }
-
-    // ── Settings ─────────────────────────────────────────────────────
-
-    public function get_settings(): array
-    {
-        if ($this->settingsCache !== null) {
-            return $this->settingsCache;
-        }
-
-        $settings = $this->default_settings();
-
-        foreach ($this->get_legacy_settings() as $key => $value) {
-            $settings[$key] = $value;
-        }
-
-        $settingsService = $this->settings_service();
-        if ($settingsService !== null) {
-            try {
-                foreach ($settingsService->getGroup('cms-events') as $key => $value) {
-                    $settings[(string) $key] = is_scalar($value) || $value === null
-                        ? (string) $value
-                        : json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                }
-            } catch (\Throwable $e) {
-                error_log('CMS Events SettingsService getGroup failed: ' . $e->getMessage());
-            }
-        }
-
-        return $this->settingsCache = $settings;
-    }
-
-    public function save_settings(array $settings): void
-    {
-        $this->settingsCache = null;
-        $settingsService = $this->settings_service();
-        if ($settingsService !== null) {
-            try {
-                if ($settingsService->setMany('cms-events', $settings, [], 0)) {
-                    return;
-                }
-            } catch (\Throwable $e) {
-                error_log('CMS Events SettingsService save failed: ' . $e->getMessage());
-            }
-        }
-
-        $db = CMS\Database::instance();
-        $this->maybe_create_settings_table();
-
-        foreach ($settings as $key => $value) {
-            $stmt = $db->prepare(
-                "INSERT INTO {$db->prefix()}event_settings (setting_key, setting_value)
-                 VALUES (?, ?)
-                 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
-            );
-            $stmt->execute([$key, (string)$value]);
-        }
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function get_legacy_settings(): array
-    {
-        $db = CMS\Database::instance();
-
-        try {
-            $stmt = $db->prepare("SELECT setting_key, setting_value FROM {$db->prefix()}event_settings");
-            $stmt->execute();
-            $rows = $stmt->fetchAll();
-        } catch (\Throwable) {
-            return [];
-        }
-
-        $settings = [];
-        foreach ($rows as $row) {
-            $key = (string) ($row->setting_key ?? '');
-            if ($key === '') {
-                continue;
-            }
-            $settings[$key] = (string) ($row->setting_value ?? '');
-        }
-
-        return $settings;
-    }
-
-    private function settings_service(): ?\CMS\Services\SettingsService
-    {
-        if (!class_exists('CMS\\Services\\SettingsService')) {
+        if (!is_array($decoded)) {
             return null;
         }
 
-        try {
-            return \CMS\Services\SettingsService::getInstance();
-        } catch (\Throwable $e) {
-            error_log('CMS Events SettingsService unavailable: ' . $e->getMessage());
+        if (!isset($decoded['blocks']) || !is_array($decoded['blocks'])) {
+            $decoded = ['time' => time() * 1000, 'blocks' => []];
+        }
+
+        return json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE) ?: null;
+    }
+
+    private function cleanJsonList(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
             return null;
         }
-    }
 
-    private function maybe_create_settings_table(): void
-    {
-        $db = CMS\Database::instance();
-        $this->create_settings_table($db->getPdo(), $db->prefix());
-    }
-
-    public function drop_tables(): void
-    {
-        error_log('CMS Events drop_tables skipped: plugin data is retained on uninstall/deactivation.');
-    }
-
-    public function delete_event(int $id): bool
-    {
-        $db = CMS\Database::instance();
-        try {
-            $stmt = $db->prepare("DELETE FROM {$db->prefix()}events WHERE id = ?");
-            $stmt->execute([$id]);
-            // Cascade-Delete Speaker- und Meta-Einträge
-            $db->prepare("DELETE FROM {$db->prefix()}event_speakers WHERE event_id = ?")->execute([$id]);
-            $db->prepare("DELETE FROM {$db->prefix()}event_meta WHERE event_id = ?")->execute([$id]);
-            return $stmt->rowCount() > 0;
-        } catch (\Throwable $e) {
-            error_log('CMS Events delete_event: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Setzt den Status eines Events.
-     *
-     * @param int    $id     Event-ID
-     * @param string $status Erlaubte Werte: published, draft, cancelled, completed
-     */
-    public function set_event_status(int $id, string $status): bool
-    {
-        $allowed = ['published', 'draft', 'cancelled', 'completed'];
-        if (!in_array($status, $allowed, true)) {
-            return false;
+        $decoded = json_decode($value, true);
+        if (!is_array($decoded)) {
+            $decoded = preg_split('/[,;\n]+/', $value) ?: [];
         }
 
-        $db = CMS\Database::instance();
-        return $db->update('events', ['status' => $status], ['id' => $id]) !== false;
-    }
-
-    // ── Event Categories ─────────────────────────────────────────────
-
-    public function get_event_categories(): array
-    {
-        $db = CMS\Database::instance();
-        try {
-            $stmt = $db->prepare(
-                "SELECT * FROM {$db->prefix()}event_categories ORDER BY sort_order ASC, name ASC"
-            );
-            $stmt->execute();
-            return $stmt->fetchAll();
-        } catch (\Throwable) {
-            return [];
-        }
-    }
-
-    public function add_event_category(string $name, string $icon = '📂'): bool
-    {
-        $db   = CMS\Database::instance();
-        $map  = ['ä'=>'ae','ö'=>'oe','ü'=>'ue','ß'=>'ss','Ä'=>'ae','Ö'=>'oe','Ü'=>'ue'];
-        $slug = strtolower(preg_replace('/[^a-z0-9]+/', '-', str_replace(array_keys($map), array_values($map), $name)));
-        $slug = trim($slug, '-') ?: 'kategorie';
-        try {
-            $result = $db->insert('event_categories', [
-                'name' => $name,
-                'slug' => $slug,
-                'icon' => $icon ?: '📂',
-            ]);
-            return $result !== false;
-        } catch (\Throwable $e) {
-            error_log('CMS Events add_event_category: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    public function delete_event_category(int $id): bool
-    {
-        $db = CMS\Database::instance();
-        try {
-            $stmt = $db->prepare("DELETE FROM {$db->prefix()}event_categories WHERE id = ? AND id > 0");
-            $stmt->execute([$id]);
-            return $stmt->rowCount() > 0;
-        } catch (\Throwable $e) {
-            error_log('CMS Events delete_event_category: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    // ── Event Tag Presets ────────────────────────────────────────────
-
-    public function get_event_tag_presets(string $type = ''): array
-    {
-        $db = CMS\Database::instance();
-        try {
-            if ($type) {
-                $stmt = $db->prepare(
-                    "SELECT * FROM {$db->prefix()}event_tag_presets WHERE tag_type = ? ORDER BY sort_order ASC, tag_name ASC"
-                );
-                $stmt->execute([$type]);
-            } else {
-                $stmt = $db->prepare(
-                    "SELECT * FROM {$db->prefix()}event_tag_presets ORDER BY tag_type ASC, sort_order ASC, tag_name ASC"
-                );
-                $stmt->execute();
+        $items = [];
+        foreach ($decoded as $item) {
+            $url = is_array($item) ? (string) ($item['url'] ?? $item['file']['url'] ?? '') : (string) $item;
+            $url = $this->cleanUrl($url);
+            if ($url !== null) {
+                $items[] = ['url' => $url];
             }
-            return $stmt->fetchAll();
-        } catch (\Throwable) {
-            return [];
         }
+
+        return $items !== [] ? json_encode($items, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null;
     }
 
-    public function get_event_tag_presets_grouped(): array
+    private function cleanDecimal(mixed $value): ?string
     {
-        $all    = $this->get_event_tag_presets();
-        $groups = ['general' => [], 'special' => [], 'format' => []];
-        foreach ($all as $tag) {
-            $t = $tag->tag_type ?? 'general';
-            if (!isset($groups[$t])) $groups[$t] = [];
-            $groups[$t][] = $tag;
+        $raw = str_replace(',', '.', trim((string) $value));
+        if ($raw === '' || !is_numeric($raw)) {
+            return null;
         }
-        return $groups;
+
+        return number_format(max(0.0, (float) $raw), 2, '.', '');
     }
 
-    public function add_event_tag_preset(string $name, string $type = 'general'): bool
+    private function cleanPositiveInt(mixed $value): ?int
     {
-        $db = CMS\Database::instance();
-        try {
-            $result = $db->insert('event_tag_presets', [
-                'tag_name' => $name,
-                'tag_type' => $type,
-            ]);
-            return $result !== false;
-        } catch (\Throwable $e) {
-            error_log('CMS Events add_event_tag_preset: ' . $e->getMessage());
-            return false;
-        }
+        $int = (int) $value;
+        return $int > 0 ? $int : null;
     }
 
-    public function delete_event_tag_preset(int $id): bool
+    private function cleanEmail(string $value): ?string
     {
-        $db = CMS\Database::instance();
-        try {
-            $stmt = $db->prepare("DELETE FROM {$db->prefix()}event_tag_presets WHERE id = ?");
-            $stmt->execute([$id]);
-            return $stmt->rowCount() > 0;
-        } catch (\Throwable $e) {
-            error_log('CMS Events delete_event_tag_preset: ' . $e->getMessage());
-            return false;
-        }
+        $email = trim($value);
+        return filter_var($email, FILTER_VALIDATE_EMAIL) ? substr($email, 0, 180) : null;
     }
 
-    private function default_settings(): array
+    private function cleanUrl(string $value): ?string
     {
-        return [
-            // Archiv
-            'archive_title'           => 'Veranstaltungen',
-            'archive_description'     => 'Aktuelle Veranstaltungen entdecken',
-            'archive_slug'            => 'events',
-            'show_nav_link'           => '0',
-            'nav_label'               => 'Veranstaltungen',
-            'per_page'                => '12',
-            'grid_columns'            => '3',
-            // Header
-            'archive_header_icon'     => '📅',
-            // Farben
-            'color_primary'           => '#3b82f6',
-            'color_accent'            => '#60a5fa',
-            'color_hdr_from'          => '#1d4ed8',
-            'color_hdr_to'            => '#3b82f6',
-            'color_hdr_title'         => '#ffffff',
-            'color_card_bg'           => '#f0f7ff',
-            'color_card_border'       => '#bfdbfe',
-            'color_cta'               => '#1e40af',
-            'color_detail_hdr_bg'     => '#0f172a',
-            'color_detail_hdr_text'   => '#ffffff',
-            'color_detail_accent'     => '#3b82f6',
-            'color_featured_border'   => '#f59e0b',
-            'color_cancelled_bg'      => '#fee2e2',
-            'color_online_badge'      => '#059669',
-            'color_badge_published_bg'    => '#d1fae5',
-            'color_badge_published_color' => '#065f46',
-            'color_badge_draft_bg'        => '#fef3c7',
-            'color_badge_draft_color'     => '#92400e',
-            'color_badge_cancelled_bg'    => '#fee2e2',
-            'color_badge_cancelled_color' => '#991b1b',
-            'color_badge_completed_bg'    => '#dbeafe',
-            'color_badge_completed_color' => '#1e40af',
-            'color_badge_featured_bg'     => '#fef3c7',
-            'color_badge_featured_color'  => '#92400e',
-            'color_badge_online_bg'       => '#d1fae5',
-            'color_badge_online_color'    => '#065f46',
-            // Layout
-            'border_radius'           => '12',
-            // Anzeige-Schalter
-            'show_category'           => '1',
-            'show_city'               => '1',
-            'show_capacity'           => '1',
-            'show_speakers'           => '1',
-            'show_price'              => '1',
-            'show_organizer'          => '1',
-            'show_tags'               => '1',
-            'show_status_badge'       => '1',
-            'show_featured_badge'     => '1',
-            'show_online_badge'       => '1',
-            'show_date_pill'          => '1',
-            'show_time_pill'          => '1',
-        ];
+        $url = trim($value);
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]<>"\']/', $url) === 1) {
+            return null;
+        }
+
+        if (preg_match('#^(?:/|\./|\.\./)[^\s]*$#', $url) === 1 && !str_starts_with($url, '//')) {
+            return $url;
+        }
+
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return null;
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || ($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+            return null;
+        }
+
+        return $url;
     }
 
-    public function remove_event_speaker(int $id): bool
+    private function lower(string $value): string
     {
-        $db = CMS\Database::instance();
-        try {
-            $stmt = $db->prepare("DELETE FROM {$db->prefix()}event_speakers WHERE id = ?");
-            $stmt->execute([$id]);
-            return $stmt->rowCount() > 0;
-        } catch (\Throwable $e) {
-            error_log('CMS Events remove_event_speaker: ' . $e->getMessage());
-            return false;
-        }
+        return function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
     }
 
-    public function get_available_speakers(): array
+    private function limit(mixed $value, int $default): int
     {
-        $db  = CMS\Database::instance();
-        $out = ['speakers' => [], 'experts' => []];
-        try {
-            $stmt = $db->prepare("SELECT id, first_name, last_name FROM {$db->prefix()}speakers WHERE status = 'active' ORDER BY last_name, first_name");
-            $stmt->execute();
-            $out['speakers'] = $stmt->fetchAll();
-        } catch (\Throwable) {}
-        try {
-            $stmt = $db->prepare("SELECT id, first_name, last_name FROM {$db->prefix()}experts WHERE status = 'active' ORDER BY last_name, first_name");
-            $stmt->execute();
-            $out['experts'] = $stmt->fetchAll();
-        } catch (\Throwable) {}
-        return $out;
-    }
-
-    private function maybe_seed_default_data(): void
-    {
-        $db = CMS\Database::instance();
-        // Kategorien nur seeden wenn Tabelle leer
-        try {
-            $count = $db->prepare("SELECT COUNT(*) as c FROM {$db->prefix()}event_categories");
-            $count->execute();
-            if ((int)($count->fetch()->c ?? 0) === 0) {
-                $cats = [
-                    ['Konferenz',   '🏛️'], ['Workshop',   '🛠️'], ['Webinar',    '💻'],
-                    ['Meetup',      '🤝'], ['Training',   '📚'], ['Hackathon',  '💡'],
-                    ['Networking',  '🌐'], ['Messe',      '🏪'], ['Seminar',    '📖'],
-                    ['Podiumsdisk.','🎙️'],
-                ];
-                foreach ($cats as $i => [$name, $icon]) {
-                    $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
-                    try {
-                        $db->insert('event_categories', ['name' => $name, 'slug' => $slug, 'icon' => $icon, 'sort_order' => $i]);
-                    } catch (\Throwable) {}
-                }
-            }
-        } catch (\Throwable) {}
-        // Tag-Presets nur seeden wenn leer
-        try {
-            $count = $db->prepare("SELECT COUNT(*) as c FROM {$db->prefix()}event_tag_presets");
-            $count->execute();
-            if ((int)($count->fetch()->c ?? 0) === 0) {
-                $tags = [
-                    ['Online',       'general'], ['Hybrid',       'general'], ['Präsenz',      'general'],
-                    ['Kostenlos',    'general'], ['Business',     'general'], ['Startup',      'general'],
-                    ['KI / AI',      'general'], ['Sustainability','general'],
-                    ['Featured',     'special'], ['VIP',          'special'], ['Ausgebucht',   'special'],
-                    ['Neue Termine', 'special'], ['Zertifikat',   'special'],
-                    ['Keynote',      'format'],  ['Panel',        'format'],  ['Q&A',          'format'],
-                    ['Demo',         'format'],  ['Pitch',        'format'],  ['Deep-Dive',    'format'],
-                ];
-                foreach ($tags as $i => [$name, $type]) {
-                    try {
-                        $db->insert('event_tag_presets', ['tag_name' => $name, 'tag_type' => $type, 'sort_order' => $i]);
-                    } catch (\Throwable) {}
-                }
-            }
-        } catch (\Throwable) {}
-    }
-
-    // ── Count / Distinct ─────────────────────────────────────────────
-
-    public function count_events(array $args = []): int
-    {
-        $db   = CMS\Database::instance();
-        $sql  = "SELECT COUNT(*) as cnt FROM {$db->prefix()}events WHERE 1=1";
-        $bind = [];
-
-        if (!empty($args['status'])) {
-            $sql   .= ' AND status = ?';
-            $bind[] = $args['status'];
-        }
-        if (!empty($args['city'])) {
-            $sql   .= ' AND city = ?';
-            $bind[] = $args['city'];
-        }
-        if (!empty($args['category'])) {
-            $sql   .= ' AND category = ?';
-            $bind[] = $args['category'];
-        }
-        if (!empty($args['search'])) {
-            $sql   .= ' AND (title LIKE ? OR description LIKE ? OR organizer_name LIKE ?)';
-            $bind[] = '%' . $args['search'] . '%';
-            $bind[] = '%' . $args['search'] . '%';
-            $bind[] = '%' . $args['search'] . '%';
-        }
-        if (!empty($args['month'])) {
-            $sql   .= ' AND DATE_FORMAT(event_date, \'%Y-%m\') = ?';
-            $bind[] = $args['month'];
-        }
-        if (!empty($args['year'])) {
-            $sql   .= ' AND YEAR(event_date) = ?';
-            $bind[] = (int) $args['year'];
-        }
-        if (!empty($args['month_number'])) {
-            $sql   .= ' AND MONTH(event_date) = ?';
-            $bind[] = (int) $args['month_number'];
-        }
-        if (!empty($args['from_month'])) {
-            $sql   .= ' AND event_date >= ?';
-            $bind[] = $args['from_month'];
-        }
-        if (!empty($args['upcoming'])) {
-            $sql   .= ' AND event_date >= CURDATE()';
-        }
-        if (!empty($args['past'])) {
-            $sql   .= ' AND event_date < CURDATE()';
-        }
-        if (isset($args['is_online'])) {
-            $sql   .= ' AND is_online = ?';
-            $bind[] = (int)$args['is_online'];
-        }
-        if (!empty($args['user_id'])) {
-            $sql   .= ' AND user_id = ?';
-            $bind[] = (int) $args['user_id'];
-        }
-
-        $stmt = $db->prepare($sql);
-        $stmt->execute($bind);
-        $row = $stmt->fetch();
-
-        return (int)($row->cnt ?? 0);
-    }
-
-    public function get_distinct_cities(): array
-    {
-        $db = CMS\Database::instance();
-        $stmt = $db->prepare(
-            "SELECT DISTINCT city FROM {$db->prefix()}events
-             WHERE city IS NOT NULL AND city != '' AND status = 'published'
-             ORDER BY city"
-        );
-        $stmt->execute();
-        return array_values(array_filter(array_map('strval', $stmt->fetchAll(\PDO::FETCH_COLUMN) ?: [])));
-    }
-
-    public function get_distinct_categories(): array
-    {
-        $db = CMS\Database::instance();
-        $stmt = $db->prepare(
-            "SELECT DISTINCT category FROM {$db->prefix()}events
-             WHERE category IS NOT NULL AND category != '' AND status = 'published'
-             ORDER BY category"
-        );
-        $stmt->execute();
-        return array_values(array_filter(array_map('strval', $stmt->fetchAll(\PDO::FETCH_COLUMN) ?: [])));
-    }
-
-    public function get_speaker_events(int $speaker_id): array
-    {
-        $db = CMS\Database::instance();
-        $stmt = $db->prepare(
-            "SELECT e.*, es.role, es.presentation_title, es.session_time
-             FROM {$db->prefix()}events e
-             JOIN {$db->prefix()}event_speakers es ON e.id = es.event_id
-             WHERE es.speaker_id = ? AND es.speaker_type = 'speaker'
-             ORDER BY e.event_date DESC"
-        );
-        $stmt->execute([$speaker_id]);
-        return $stmt->fetchAll();
+        $limit = (int) $value;
+        return $limit > 0 ? min($limit, self::MAX_LIST_LIMIT) : $default;
     }
 }

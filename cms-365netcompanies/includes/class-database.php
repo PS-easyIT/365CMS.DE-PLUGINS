@@ -194,9 +194,187 @@ final class CMS_Companies_Database
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
             $pdo->exec($sql);
 
+            $this->seed_default_companies();
+
         } catch (\PDOException $e) {
             $this->log_error('create_tables', $e);
         }
+    }
+
+    private function seed_default_companies(): void
+    {
+        $db = CMS\Database::instance();
+
+        try {
+            $stmt = $db->prepare("SELECT COUNT(*) FROM {$db->prefix()}companies");
+            $stmt->execute([]);
+            if ((int) $stmt->fetchColumn() > 0) {
+                return;
+            }
+
+            $rows = $this->read_default_companies_rows();
+            if ($rows === []) {
+                $rows = $this->default_companies();
+            }
+
+            $index = 0;
+            foreach ($rows as $company) {
+                $index++;
+                $name = trim((string) ($company['name'] ?? ''));
+                if ($name === '') {
+                    continue;
+                }
+
+                $email = trim((string) ($company['email'] ?? ''));
+                if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $email = 'company+' . $index . '@seed.local';
+                }
+
+                $db->insert('companies', [
+                    'user_id' => null,
+                    'name' => mb_substr($name, 0, 255),
+                    'email' => $email,
+                    'phone' => trim((string) ($company['phone'] ?? '')) ?: null,
+                    'industry' => trim((string) ($company['industry'] ?? '')) ?: null,
+                    'company_size' => $this->normalize_seed_company_size((string) ($company['company_size'] ?? '')),
+                    'description' => trim((string) ($company['description'] ?? '')) ?: null,
+                    'logo_url' => null,
+                    'website' => trim((string) ($company['website'] ?? '')) ?: null,
+                    'location_city' => trim((string) ($company['city'] ?? '')) ?: null,
+                    'location_zip' => trim((string) ($company['zip'] ?? '')) ?: null,
+                    'location_country' => trim((string) ($company['country'] ?? '')) ?: 'Deutschland',
+                    'founded_year' => is_numeric($company['founded_year'] ?? null) ? (int) $company['founded_year'] : null,
+                    'employee_count' => is_numeric($company['employee_count'] ?? null) ? (int) $company['employee_count'] : null,
+                    'is_partner' => !empty($company['is_partner']) ? 1 : 0,
+                    'is_top_partner' => !empty($company['is_top_partner']) ? 1 : 0,
+                    'is_sponsor' => !empty($company['is_sponsor']) ? 1 : 0,
+                    'status' => $this->normalize_company_status((string) ($company['status'] ?? 'active')),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            $this->log_error('seed_default_companies', $e);
+        }
+    }
+
+    /**
+     * @return array<int, array<string, string>>
+     */
+    private function read_default_companies_rows(): array
+    {
+        $candidates = [
+            dirname(__DIR__) . '/defaults/companies.csv',
+        ];
+
+        $file = '';
+        foreach ($candidates as $candidate) {
+            if (is_file($candidate)) {
+                $file = $candidate;
+                break;
+            }
+        }
+
+        if ($file === '') {
+            return [];
+        }
+
+        $content = @file_get_contents($file);
+        if (!is_string($content) || trim($content) === '') {
+            return [];
+        }
+
+        $lines = preg_split('/\r\n|\n|\r/', $content) ?: [];
+        if ($lines === []) {
+            return [];
+        }
+
+        $headerLine = trim((string) array_shift($lines));
+        if ($headerLine === '') {
+            return [];
+        }
+
+        $headersRaw = str_getcsv($headerLine, ';') ?: [];
+        $headers = array_map(fn(string $value): string => $this->normalize_seed_header($value), $headersRaw);
+        if ($headers === []) {
+            return [];
+        }
+
+        $rows = [];
+        foreach ($lines as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+
+            $values = str_getcsv($line, ';') ?: [];
+            if ($values === []) {
+                continue;
+            }
+
+            $row = [];
+            foreach ($headers as $idx => $key) {
+                if ($key === '') {
+                    continue;
+                }
+
+                $row[$key] = trim((string) ($values[$idx] ?? ''));
+            }
+
+            if (($row['name'] ?? '') === '') {
+                continue;
+            }
+
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    private function normalize_seed_header(string $header): string
+    {
+        $header = trim($header);
+        if ($header === '') {
+            return '';
+        }
+
+        $header = function_exists('mb_strtolower')
+            ? mb_strtolower($header, 'UTF-8')
+            : strtolower($header);
+        $header = str_replace(['ä', 'ö', 'ü', 'ß', '/'], ['ae', 'oe', 'ue', 'ss', '_'], $header);
+        $header = preg_replace('/[^a-z0-9]+/', '_', $header) ?? '';
+
+        return trim($header, '_');
+    }
+
+    private function normalize_seed_company_size(string $size): ?string
+    {
+        $size = strtolower(trim($size));
+        if ($size === '') {
+            return null;
+        }
+
+        return match ($size) {
+            'enterprise' => '1000+',
+            'mid-market' => '201-500',
+            'small' => '11-50',
+            default => in_array($size, ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+', '1001-5000', '5001+'], true) ? $size : null,
+        };
+    }
+
+    private function default_companies(): array
+    {
+        return [
+            ['name' => 'ALSO Deutschland GmbH', 'industry' => 'IT-Distribution / Channel', 'company_size' => 'enterprise', 'description' => 'IT-Channel- und Distributionsunternehmen mit starkem Microsoft- und Infrastruktur-Fokus.', 'website' => 'https://www.also.de/', 'city' => '', 'zip' => '', 'country' => 'Deutschland', 'is_partner' => 1, 'is_top_partner' => 0, 'is_sponsor' => 0, 'status' => 'active'],
+            ['name' => 'T-Systems International GmbH', 'industry' => 'Cloud / Enterprise IT', 'company_size' => 'enterprise', 'description' => 'Unternehmens- und Public-Sector-IT mit Schwerpunkten auf Cloud, AI und Infrastruktur.', 'website' => 'https://www.t-systems.com/', 'city' => '', 'zip' => '', 'country' => 'Deutschland', 'is_partner' => 1, 'is_top_partner' => 1, 'is_sponsor' => 0, 'status' => 'active'],
+            ['name' => 'Governikus GmbH & Co. KG', 'industry' => 'Digital Identity / eGovernment', 'company_size' => 'mid-market', 'description' => 'Spezialist für digitale Identitäten, eID und sichere Verwaltungsprozesse.', 'website' => 'https://www.governikus.de/', 'city' => '', 'zip' => '', 'country' => 'Deutschland', 'is_partner' => 1, 'is_top_partner' => 0, 'is_sponsor' => 0, 'status' => 'active'],
+            ['name' => 'BMW Group', 'industry' => 'Automotive / Digital Transformation', 'company_size' => 'enterprise', 'description' => 'Automobilkonzern mit CIO- und Digital-Transformation-Themen aus dem Event-Datensatz.', 'website' => 'https://www.bmwgroup.com/', 'city' => '', 'zip' => '', 'country' => 'Deutschland', 'is_partner' => 0, 'is_top_partner' => 0, 'is_sponsor' => 1, 'status' => 'active'],
+            ['name' => 'Siemens AG', 'industry' => 'Industrial Technology / Software', 'company_size' => 'enterprise', 'description' => 'Industrie- und Technologiekonzern mit Architektur-, Automatisierungs- und AI-Bezug.', 'website' => 'https://www.siemens.com/', 'city' => '', 'zip' => '', 'country' => 'Deutschland', 'is_partner' => 1, 'is_top_partner' => 0, 'is_sponsor' => 0, 'status' => 'active'],
+            ['name' => 'Bosch Sensortec GmbH', 'industry' => 'Sensor Technology / IoT', 'company_size' => 'mid-market', 'description' => 'IoT- und Sensortechnologie-Unternehmen aus dem Embedded- und Industrie-Kontext.', 'website' => 'https://www.bosch-sensortec.com/', 'city' => '', 'zip' => '', 'country' => 'Deutschland', 'is_partner' => 0, 'is_top_partner' => 0, 'is_sponsor' => 0, 'status' => 'active'],
+            ['name' => 'SoftwareOne Deutschland GmbH', 'industry' => 'Cloud / Licensing / Security', 'company_size' => 'enterprise', 'description' => 'Cloud-, Security- und Lizenzberatung mit Azure- und Governance-Schwerpunkt.', 'website' => 'https://www.softwareone.com/', 'city' => '', 'zip' => '', 'country' => 'Deutschland', 'is_partner' => 1, 'is_top_partner' => 0, 'is_sponsor' => 0, 'status' => 'active'],
+            ['name' => 'adesso SE', 'industry' => 'IT-Consulting / Software', 'company_size' => 'enterprise', 'description' => 'IT-Beratung und Software-Engineering mit Cloud-, Security- und Migrations-Know-how.', 'website' => 'https://www.adesso.de/', 'city' => '', 'zip' => '', 'country' => 'Deutschland', 'is_partner' => 1, 'is_top_partner' => 0, 'is_sponsor' => 0, 'status' => 'active'],
+            ['name' => 'SAP SE', 'industry' => 'ERP / Enterprise Software', 'company_size' => 'enterprise', 'description' => 'Enterprise-Software-Anbieter mit Fokus auf Business- und Cloud-Plattformen.', 'website' => 'https://www.sap.com/', 'city' => '', 'zip' => '', 'country' => 'Deutschland', 'is_partner' => 0, 'is_top_partner' => 0, 'is_sponsor' => 0, 'status' => 'active'],
+            ['name' => 'Net at Work GmbH', 'industry' => 'Messaging / Collaboration / Security', 'company_size' => 'mid-market', 'description' => 'Spezialist für Exchange, Collaboration, Unified Communications und Security.', 'website' => 'https://www.netatwork.de/', 'city' => '', 'zip' => '', 'country' => 'Deutschland', 'is_partner' => 1, 'is_top_partner' => 0, 'is_sponsor' => 0, 'status' => 'active'],
+            ['name' => 'Fortinet GmbH', 'industry' => 'Cybersecurity', 'company_size' => 'enterprise', 'description' => 'Security-Anbieter für Network Security, Firewalling und Security-Plattformen.', 'website' => 'https://www.fortinet.com/', 'city' => '', 'zip' => '', 'country' => 'Deutschland', 'is_partner' => 0, 'is_top_partner' => 0, 'is_sponsor' => 1, 'status' => 'active'],
+            ['name' => 'Ceyoniq Technology GmbH', 'industry' => 'DMS / Digital Transformation', 'company_size' => 'mid-market', 'description' => 'Software-Anbieter für Dokumentenmanagement und digitale Geschäftsprozesse.', 'website' => 'https://www.ceyoniq.com/', 'city' => '', 'zip' => '', 'country' => 'Deutschland', 'is_partner' => 1, 'is_top_partner' => 0, 'is_sponsor' => 0, 'status' => 'active'],
+        ];
     }
 
     /**

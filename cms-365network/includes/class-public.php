@@ -392,23 +392,23 @@ final class CMS_365NETWORK_Public
         return [
             [
                 'key' => 'events',
-                'plugin_slug' => 'cms-events',
+                'plugin_slug' => 'cms-365NETevents',
                 'icon' => 'calendar-event',
                 'label' => (string) ($settings['events_card_title'] ?? 'Events'),
                 'text' => (string) ($settings['events_card_text'] ?? ''),
                 'url' => $this->safe_url((string) ($settings['events_card_url'] ?? '/events')),
                 'stat' => 'events',
-                'integration_active' => $this->is_area_integration_active('cms-events', 'CMS_Events', 'events'),
+                'integration_active' => $this->is_area_integration_active('cms-365NETevents', 'CMS_365NET_Events', 'events'),
             ],
             [
                 'key' => 'speakers',
-                'plugin_slug' => 'cms-speakers',
+                'plugin_slug' => 'cms-365NETevents',
                 'icon' => 'microphone-2',
                 'label' => (string) ($settings['speakers_card_title'] ?? 'Speaker'),
                 'text' => (string) ($settings['speakers_card_text'] ?? ''),
-                'url' => $this->safe_url((string) ($settings['speakers_card_url'] ?? '/speakers')),
+                'url' => $this->safe_url((string) ($settings['speakers_card_url'] ?? '/event-speakers')),
                 'stat' => 'speakers',
-                'integration_active' => $this->is_area_integration_active('cms-speakers', 'CMS_Speakers', 'speakers'),
+                'integration_active' => $this->is_area_integration_active('cms-365NETevents', 'CMS_365NET_Events', 'speakers'),
             ],
             [
                 'key' => 'companies',
@@ -469,7 +469,7 @@ final class CMS_365NETWORK_Public
     private function fetch_upcoming_events(int $limit): array
     {
         $limit = $this->clamp_int($limit, 0, 8);
-        if ($limit === 0 || !$this->is_integration_available('cms-events', 'CMS_Events', 'events')) {
+        if ($limit === 0 || !$this->is_integration_available('cms-365NETevents', 'CMS_365NET_Events', 'events')) {
             return [];
         }
 
@@ -483,9 +483,11 @@ final class CMS_365NETWORK_Public
             $params = [];
             $statusWhere = $this->status_filter_sql('events', ['published', 'active'], $params);
             $params[] = $limit;
-            $sql = "SELECT id, title, event_date, end_date, event_time, city, location, image_url, category
+            $dateColumn = $this->column_exists('events', 'start_date') ? 'start_date' : 'event_date';
+            $timeColumn = $this->column_exists('events', 'start_time') ? 'start_time' : 'event_time';
+            $sql = "SELECT id, title, slug, {$dateColumn} AS event_date, end_date, {$timeColumn} AS event_time, city, location, image_url, category, categories, tags, price_class
                 FROM `{$eventsTable}`
-                WHERE {$statusWhere} AND (event_date >= CURDATE() OR (end_date IS NOT NULL AND end_date >= CURDATE()))
+                WHERE {$statusWhere} AND ({$dateColumn} >= CURDATE() OR (end_date IS NOT NULL AND end_date >= CURDATE()))
                 ORDER BY event_date ASC, event_time ASC
                 LIMIT ?";
             $stmt = $db->prepare($sql);
@@ -500,7 +502,7 @@ final class CMS_365NETWORK_Public
     private function fetch_random_speakers(int $limit): array
     {
         $limit = $this->clamp_int($limit, 0, 4);
-        if ($limit === 0 || !$this->is_integration_available('cms-speakers', 'CMS_Speakers', 'speakers')) {
+        if ($limit === 0 || !$this->is_integration_available('cms-365NETevents', 'CMS_365NET_Events', 'speakers')) {
             return [];
         }
 
@@ -511,14 +513,14 @@ final class CMS_365NETWORK_Public
 
         try {
             $db = CMS\Database::instance();
-            $offset = $this->random_offset('speakers', ['active'], $limit);
+            $offset = $this->random_offset('speakers', ['published', 'active'], $limit);
             $params = [];
-            $statusWhere = $this->status_filter_sql('speakers', ['active'], $params);
+            $statusWhere = $this->status_filter_sql('speakers', ['published', 'active'], $params);
             $params[] = $limit;
             $params[] = $offset;
-            $sql = "SELECT id, first_name, last_name, position, company, photo_url, location_city
+            $sql = "SELECT id, first_name, last_name, display_name, slug, topic AS position, '' AS company, avatar_url AS photo_url, location AS location_city, categories, tags, price_class
                 FROM `{$speakersTable}`
-                WHERE {$statusWhere}
+                WHERE {$statusWhere} AND first_name IS NOT NULL AND first_name <> '' AND last_name IS NOT NULL AND last_name <> ''
                 ORDER BY id ASC
                 LIMIT ? OFFSET ?";
             $stmt = $db->prepare($sql);
@@ -965,14 +967,14 @@ final class CMS_365NETWORK_Public
 
     private function count_events_stat(): int
     {
-        $count = $this->count_via_plugin_api('cms-events', 'CMS_Events_Database', 'count_events', [['status' => 'published'], ['status' => 'active'], []]);
+        $count = $this->count_public_rows('events', ['published', 'active', 'completed']);
         return $count > 0 ? $count : $this->count_public_rows('events', ['published', 'active', 'completed']);
     }
 
     private function count_speakers_stat(): int
     {
-        $count = $this->count_via_plugin_api('cms-speakers', 'CMS_Speakers_Database', 'count_speakers', [['status' => 'active'], ['status' => null]]);
-        return $count > 0 ? $count : $this->count_public_rows('speakers', ['active']);
+        $count = $this->count_public_rows('speakers', ['published', 'active']);
+        return $count > 0 ? $count : 0;
     }
 
     private function count_companies_stat(): int
@@ -1066,8 +1068,8 @@ final class CMS_365NETWORK_Public
         $rows = $this->search_table(
             'events',
             ['published', 'active'],
-            ['id', 'title', 'excerpt', 'description', 'event_date', 'event_time', 'city', 'location', 'category', 'organizer_name'],
-            ['title', 'excerpt', 'description', 'category', 'city', 'location', 'organizer_name', 'tags'],
+            ['id', 'title', 'slug', 'excerpt', 'description', 'start_date', 'event_date', 'start_time', 'event_time', 'city', 'location', 'category', 'categories', 'organizer', 'organizer_name'],
+            ['title', 'excerpt', 'description', 'category', 'categories', 'city', 'location', 'organizer', 'organizer_name', 'tags'],
             $query,
             $limit,
             $this->column_exists('events', 'event_date') ? 'event_date ASC, id DESC' : 'id DESC'
@@ -1076,7 +1078,7 @@ final class CMS_365NETWORK_Public
         $items = [];
         foreach ($rows as $row) {
             $title = trim((string) ($row['title'] ?? '')) ?: $this->tr('entity.event', $this->public_language(), 'Event', 'Event');
-            $date = $this->format_search_date((string) ($row['event_date'] ?? ''), (string) ($row['event_time'] ?? ''));
+            $date = $this->format_search_date((string) (($row['start_date'] ?? '') ?: ($row['event_date'] ?? '')), (string) (($row['start_time'] ?? '') ?: ($row['event_time'] ?? '')));
             $location = trim((string) (($row['city'] ?? '') ?: ($row['location'] ?? '')));
             $meta = implode(' · ', array_filter([$date, $location, trim((string) ($row['category'] ?? ''))]));
 
@@ -1085,7 +1087,7 @@ final class CMS_365NETWORK_Public
                 'type_label' => $this->tr('entity.event', $this->public_language(), 'Event', 'Event'),
                 'icon' => 'ti-calendar-event',
                 'title' => $title,
-                'excerpt' => $this->search_excerpt([(string) ($row['excerpt'] ?? ''), (string) ($row['description'] ?? ''), (string) ($row['organizer_name'] ?? '')]),
+                'excerpt' => $this->search_excerpt([(string) ($row['excerpt'] ?? ''), (string) ($row['description'] ?? ''), (string) (($row['organizer'] ?? '') ?: ($row['organizer_name'] ?? ''))]),
                 'meta' => $meta,
                 'url' => $this->entity_url('event', $row),
             ];
@@ -1135,9 +1137,9 @@ final class CMS_365NETWORK_Public
     {
         $rows = $this->search_table(
             $table,
-            ['active'],
-            ['id', 'first_name', 'last_name', 'position', 'company', 'location_city', 'short_bio', 'bio', 'biography', 'target_audience'],
-            ['first_name', 'last_name', 'position', 'company', 'location_city', 'short_bio', 'bio', 'biography', 'target_audience'],
+            ['published', 'active'],
+            ['id', 'first_name', 'last_name', 'display_name', 'slug', 'position', 'topic', 'company', 'location_city', 'location', 'short_bio', 'bio', 'biography', 'target_audience', 'categories', 'tags'],
+            ['first_name', 'last_name', 'display_name', 'position', 'topic', 'company', 'location_city', 'location', 'short_bio', 'bio', 'biography', 'target_audience', 'categories', 'tags'],
             $query,
             $limit,
             'last_name ASC, first_name ASC, id DESC'
@@ -1148,9 +1150,9 @@ final class CMS_365NETWORK_Public
             $name = trim((string) (($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')));
             $title = $name !== '' ? $name : $label;
             $meta = implode(' · ', array_filter([
-                trim((string) ($row['position'] ?? '')),
-                trim((string) ($row['company'] ?? '')),
-                trim((string) ($row['location_city'] ?? '')),
+                trim((string) (($row['position'] ?? '') ?: ($row['topic'] ?? ''))),
+                $type === 'speaker' ? '' : trim((string) ($row['company'] ?? '')),
+                trim((string) (($row['location_city'] ?? '') ?: ($row['location'] ?? ''))),
             ]));
 
             $items[] = [
@@ -1335,7 +1337,10 @@ final class CMS_365NETWORK_Public
             $db = CMS\Database::instance();
             $params = [];
             $where = $this->status_filter_sql($table, $preferredStatuses, $params);
-            $stmt = $db->prepare("SELECT COUNT(*) FROM `{$resolvedTable}` WHERE {$where}");
+            $personWhere = $table === 'speakers' && $this->column_exists($table, 'first_name') && $this->column_exists($table, 'last_name')
+                ? " AND first_name IS NOT NULL AND first_name <> '' AND last_name IS NOT NULL AND last_name <> ''"
+                : '';
+            $stmt = $db->prepare("SELECT COUNT(*) FROM `{$resolvedTable}` WHERE {$where}{$personWhere}");
             $stmt->execute($params);
             $count = max(0, (int) $stmt->fetchColumn());
             if ($count > 0 || !$this->column_exists($table, 'status')) {
@@ -1362,7 +1367,10 @@ final class CMS_365NETWORK_Public
             $db = CMS\Database::instance();
             $params = [];
             $where = $this->status_filter_sql($table, $statuses, $params);
-            $stmt = $db->prepare("SELECT COUNT(*) FROM `{$resolvedTable}` WHERE {$where}");
+            $personWhere = $table === 'speakers' && $this->column_exists($table, 'first_name') && $this->column_exists($table, 'last_name')
+                ? " AND first_name IS NOT NULL AND first_name <> '' AND last_name IS NOT NULL AND last_name <> ''"
+                : '';
+            $stmt = $db->prepare("SELECT COUNT(*) FROM `{$resolvedTable}` WHERE {$where}{$personWhere}");
             $stmt->execute($params);
             $count = max(0, (int) $stmt->fetchColumn());
             if ($count <= $limit) {
@@ -1416,7 +1424,7 @@ final class CMS_365NETWORK_Public
         if ($id <= 0) {
             return match ($type) {
                 'event' => '/events',
-                'speaker' => '/speakers',
+                'speaker' => '/event-speakers',
                 'company' => '/companies',
                 'expert' => '/experts',
                 default => '#',
@@ -1430,16 +1438,16 @@ final class CMS_365NETWORK_Public
         if ($type === 'company' && function_exists('cms_company_url')) {
             return cms_company_url($object);
         }
-        if ($type === 'speaker' && class_exists('CMS_Speakers_Database') && method_exists('CMS_Speakers_Database', 'generate_slug')) {
-            return $this->base_url() . '/speakers/' . CMS_Speakers_Database::generate_slug($object);
+        if ($type === 'speaker' && !empty($row['slug'])) {
+            return $this->base_url() . '/event-speakers/' . rawurlencode((string) $row['slug']);
         }
         if ($type === 'expert' && class_exists('CMS_Experts_Database') && method_exists('CMS_Experts_Database', 'generate_slug')) {
             return $this->base_url() . '/experts/' . CMS_Experts_Database::generate_slug($object);
         }
 
         return match ($type) {
-            'event' => $this->base_url() . '/event/' . $this->slug_from_parts([(string) ($row['title'] ?? 'event')], 'event') . '-' . $id,
-            'speaker' => $this->base_url() . '/speakers/' . $this->slug_from_parts([(string) ($row['first_name'] ?? ''), (string) ($row['last_name'] ?? '')], 'speaker') . '-' . $id,
+            'event' => !empty($row['slug']) ? $this->base_url() . '/events/' . rawurlencode((string) $row['slug']) : $this->base_url() . '/events',
+            'speaker' => !empty($row['slug']) ? $this->base_url() . '/event-speakers/' . rawurlencode((string) $row['slug']) : $this->base_url() . '/event-speakers',
             'company' => $this->base_url() . '/company/' . $this->slug_from_parts([(string) ($row['name'] ?? 'company')], 'company') . '-' . $id,
             'expert' => $this->base_url() . '/experts/' . $this->slug_from_parts([(string) ($row['first_name'] ?? ''), (string) ($row['last_name'] ?? '')], 'expert') . '-' . $id,
             default => '#',
@@ -1516,7 +1524,17 @@ final class CMS_365NETWORK_Public
         try {
             $db = CMS\Database::instance();
             $prefix = $db->prefix();
-            $candidates = array_values(array_unique([$prefix . $table, $table]));
+            $aliases = [
+                'events' => ['365net_events', 'events'],
+                'speakers' => ['365net_event_speakers', 'speakers'],
+            ];
+            $baseCandidates = $aliases[$table] ?? [$table];
+            $candidates = [];
+            foreach ($baseCandidates as $baseCandidate) {
+                $candidates[] = $prefix . $baseCandidate;
+                $candidates[] = $baseCandidate;
+            }
+            $candidates = array_values(array_unique($candidates));
             foreach ($candidates as $candidate) {
                 if (preg_match('/^[a-zA-Z0-9_]+$/', $candidate) !== 1) {
                     continue;

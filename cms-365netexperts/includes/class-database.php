@@ -186,9 +186,203 @@ final class CMS_Experts_Database
                 // Spalte existiert bereits – ignorieren
             }
 
+            $this->seed_default_experts();
+
         } catch (\PDOException $e) {
             $this->logError('create_tables', $e);
         }
+    }
+
+    private function seed_default_experts(): void
+    {
+        $db = CMS\Database::instance();
+
+        try {
+            $countStmt = $db->prepare("SELECT COUNT(*) FROM {$db->prefix()}experts");
+            $countStmt->execute([]);
+            if ((int) $countStmt->fetchColumn() > 0) {
+                return;
+            }
+
+            $rows = $this->read_default_experts_rows();
+            if ($rows === []) {
+                $rows = $this->default_experts();
+            }
+
+            $seedIndex = 0;
+            foreach ($rows as $row) {
+                $seedIndex++;
+                $firstName = trim((string) ($row['first_name'] ?? ''));
+                $lastName = trim((string) ($row['last_name'] ?? ''));
+                if ($firstName === '' || $lastName === '') {
+                    continue;
+                }
+
+                $email = trim((string) ($row['email'] ?? ''));
+                if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $email = 'expert+' . $seedIndex . '@seed.local';
+                }
+
+                $expertId = $this->insert_expert([
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'email' => $email,
+                    'position' => trim((string) ($row['position'] ?? '')) ?: null,
+                    'company' => trim((string) ($row['company'] ?? '')) ?: null,
+                    'biography' => trim((string) ($row['biography'] ?? '')) ?: null,
+                    'location_city' => trim((string) ($row['city'] ?? '')) ?: null,
+                    'location_country' => trim((string) ($row['country'] ?? '')) ?: 'Deutschland',
+                    'hourly_rate' => is_numeric($row['hourly_rate'] ?? null) ? (float) $row['hourly_rate'] : null,
+                    'daily_rate' => is_numeric($row['daily_rate'] ?? null) ? (float) $row['daily_rate'] : null,
+                    'availability' => in_array((string) ($row['availability'] ?? 'available'), ['available', 'limited', 'booked'], true)
+                        ? (string) $row['availability']
+                        : 'available',
+                    'experience_years' => max(0, (int) ($row['experience_years'] ?? 0)),
+                    'status' => in_array((string) ($row['status'] ?? 'active'), ['active', 'inactive', 'pending', 'deleted'], true)
+                        ? (string) $row['status']
+                        : 'active',
+                ]);
+
+                if ($expertId <= 0) {
+                    continue;
+                }
+
+                $this->save_expert_skills($expertId, [
+                    'general' => $this->csv_list_to_array((string) ($row['skills_general'] ?? '')),
+                    'tech' => $this->csv_list_to_array((string) ($row['skills_tech'] ?? '')),
+                    'soft' => $this->csv_list_to_array((string) ($row['skills_soft'] ?? '')),
+                ]);
+
+                $website = trim((string) ($row['website'] ?? ''));
+                if ($website !== '') {
+                    $this->save_meta($expertId, 'website', $website);
+                }
+
+                $awards = trim((string) ($row['awards'] ?? ''));
+                if ($awards !== '') {
+                    $this->save_meta($expertId, 'awards', $awards);
+                }
+
+                $certifications = trim((string) ($row['certifications'] ?? ''));
+                if ($certifications !== '') {
+                    $this->save_meta($expertId, 'certifications', $certifications);
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->logError('seed_default_experts', $e);
+        }
+    }
+
+    /**
+     * @return array<int, array<string, string>>
+     */
+    private function read_default_experts_rows(): array
+    {
+        $candidates = [
+            dirname(__DIR__) . '/defaults/experts.csv',
+        ];
+
+        $file = '';
+        foreach ($candidates as $candidate) {
+            if (is_file($candidate)) {
+                $file = $candidate;
+                break;
+            }
+        }
+
+        if ($file === '') {
+            return [];
+        }
+
+        $content = @file_get_contents($file);
+        if (!is_string($content) || trim($content) === '') {
+            return [];
+        }
+
+        $lines = preg_split('/\r\n|\n|\r/', $content) ?: [];
+        if ($lines === []) {
+            return [];
+        }
+
+        $headerLine = trim((string) array_shift($lines));
+        if ($headerLine === '') {
+            return [];
+        }
+
+        $headersRaw = str_getcsv($headerLine, ';') ?: [];
+        $headers = array_map(fn(string $value): string => $this->normalize_seed_header($value), $headersRaw);
+        if ($headers === []) {
+            return [];
+        }
+
+        $rows = [];
+        foreach ($lines as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+
+            $values = str_getcsv($line, ';') ?: [];
+            if ($values === []) {
+                continue;
+            }
+
+            $row = [];
+            foreach ($headers as $idx => $key) {
+                if ($key === '') {
+                    continue;
+                }
+
+                $row[$key] = trim((string) ($values[$idx] ?? ''));
+            }
+
+            if (($row['first_name'] ?? '') === '' || ($row['last_name'] ?? '') === '') {
+                continue;
+            }
+
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    private function normalize_seed_header(string $header): string
+    {
+        $header = trim($header);
+        if ($header === '') {
+            return '';
+        }
+
+        $header = function_exists('mb_strtolower')
+            ? mb_strtolower($header, 'UTF-8')
+            : strtolower($header);
+        $header = str_replace(['ä', 'ö', 'ü', 'ß', '/'], ['ae', 'oe', 'ue', 'ss', '_'], $header);
+        $header = preg_replace('/[^a-z0-9]+/', '_', $header) ?? '';
+
+        return trim($header, '_');
+    }
+
+    private function csv_list_to_array(string $value): array
+    {
+        $parts = array_map(
+            static fn(string $item): string => trim($item),
+            explode(',', $value)
+        );
+
+        return array_values(array_filter($parts, static fn(string $item): bool => $item !== ''));
+    }
+
+    private function default_experts(): array
+    {
+        return [
+            ['first_name' => 'Adam', 'last_name' => 'Bien', 'company' => 'adam-bien.com', 'position' => 'Java / Cloud Native Consultant', 'biography' => 'Konferenzsprecher mit Fokus auf Java, Cloud Native und moderne Software-Architekturen.', 'website' => 'https://adam-bien.com/', 'city' => '', 'country' => 'Deutschland', 'availability' => 'available', 'experience_years' => 0, 'hourly_rate' => '', 'daily_rate' => '', 'skills_general' => 'Java, Cloud Native, Software Architecture', 'skills_tech' => 'Java, Jakarta EE, Microservices, REST API', 'skills_soft' => 'Kommunikation, Präsentation', 'awards' => 'Java Champion', 'certifications' => '', 'status' => 'active'],
+            ['first_name' => 'Heike', 'last_name' => 'Hagemeier', 'company' => 'BMI', 'position' => 'Cybersecurity Research', 'biography' => 'Speakerin aus dem OmniSecure-Kontext mit Schwerpunkt auf Cybersecurity Research und Public-Sector-Sicherheit.', 'website' => 'https://www.omnisecure.berlin/', 'city' => '', 'country' => 'Deutschland', 'availability' => 'available', 'experience_years' => 0, 'hourly_rate' => '', 'daily_rate' => '', 'skills_general' => 'Cybersecurity, Research', 'skills_tech' => 'Security, Digital Identity', 'skills_soft' => 'Analytisches Denken', 'awards' => 'Research Speaker', 'certifications' => '', 'status' => 'active'],
+            ['first_name' => 'Hartje', 'last_name' => 'Bruns', 'company' => 'Governikus', 'position' => 'Digital Identity Specialist', 'biography' => 'Experte für digitale Identitäten, eID und vertrauenswürdige Verwaltungsprozesse.', 'website' => 'https://www.governikus.de/', 'city' => '', 'country' => 'Deutschland', 'availability' => 'available', 'experience_years' => 0, 'hourly_rate' => '', 'daily_rate' => '', 'skills_general' => 'Digital Identity, eID, Public Sector IT', 'skills_tech' => 'Security, eID', 'skills_soft' => 'Kommunikation', 'awards' => 'Digital Identity Speaker', 'certifications' => '', 'status' => 'active'],
+            ['first_name' => 'Tobias', 'last_name' => 'Fehenberger', 'company' => 'Adva Network Security', 'position' => 'Quantum-Safe Cryptography', 'biography' => 'Spezialist für quantum-safe Kryptographie und sichere Netzwerkinfrastrukturen.', 'website' => 'https://www.omnisecure.berlin/', 'city' => '', 'country' => 'Deutschland', 'availability' => 'available', 'experience_years' => 0, 'hourly_rate' => '', 'daily_rate' => '', 'skills_general' => 'Cryptography, Security', 'skills_tech' => 'Security, Networking, Quantum', 'skills_soft' => 'Analytisches Denken', 'awards' => 'Security Speaker', 'certifications' => '', 'status' => 'active'],
+            ['first_name' => 'Stefan', 'last_name' => 'Finkbeiner', 'company' => 'Bosch Sensortec', 'position' => 'Sensor Technology / IoT', 'biography' => 'Speaker aus dem Embedded- und IoT-Umfeld mit Fokus auf Sensorik und vernetzte Systeme.', 'website' => 'https://www.embedded-world.de/', 'city' => '', 'country' => 'Deutschland', 'availability' => 'available', 'experience_years' => 0, 'hourly_rate' => '', 'daily_rate' => '', 'skills_general' => 'IoT, Embedded Systems', 'skills_tech' => 'IoT, Embedded Systems, Sensors', 'skills_soft' => 'Präsentation', 'awards' => 'Embedded Speaker', 'certifications' => '', 'status' => 'active'],
+            ['first_name' => 'Matthias', 'last_name' => 'Blatz', 'company' => 'Heidelberg iT Management', 'position' => 'AI / Data Center', 'biography' => 'Verbindet AI- und Rechenzentrums-Themen in Business- und Infrastruktur-Kontexten.', 'website' => 'https://www.ai-conference.de/', 'city' => '', 'country' => 'Deutschland', 'availability' => 'available', 'experience_years' => 0, 'hourly_rate' => '', 'daily_rate' => '', 'skills_general' => 'AI, Data Center', 'skills_tech' => 'AI, Infrastructure, Cloud', 'skills_soft' => 'Beratung', 'awards' => 'AI Conference Speaker', 'certifications' => '', 'status' => 'active'],
+            ['first_name' => 'Moritz', 'last_name' => 'Mayer', 'company' => 'A1 Digital', 'position' => 'IT Security Solutions', 'biography' => 'Security-Praktiker mit Fokus auf IT-Sicherheitslösungen und Enterprise Security.', 'website' => 'https://www.heise.de/secit', 'city' => '', 'country' => 'Deutschland', 'availability' => 'available', 'experience_years' => 0, 'hourly_rate' => '', 'daily_rate' => '', 'skills_general' => 'Cybersecurity, IT Security', 'skills_tech' => 'Security, Cloud', 'skills_soft' => 'Kommunikation', 'awards' => 'secIT Speaker', 'certifications' => '', 'status' => 'active'],
+            ['first_name' => 'Detlef', 'last_name' => 'Bäumer', 'company' => 'PICTURE GmbH', 'position' => 'Prozessmanagement / Change', 'biography' => 'Experte für digitale Verwaltung, Prozessmanagement und organisatorische Transformation.', 'website' => 'https://kommdigitale.de/', 'city' => '', 'country' => 'Deutschland', 'availability' => 'available', 'experience_years' => 0, 'hourly_rate' => '', 'daily_rate' => '', 'skills_general' => 'Digital Transformation, Change', 'skills_tech' => 'Process Management, eGovernment', 'skills_soft' => 'Change Management', 'awards' => 'Public Sector Speaker', 'certifications' => '', 'status' => 'active'],
+        ];
     }
 
     /**

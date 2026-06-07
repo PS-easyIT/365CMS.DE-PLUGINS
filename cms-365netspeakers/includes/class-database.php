@@ -199,10 +199,193 @@ final class CMS_Speakers_Database
 
             // ── ALTER bestehende Tabellen (Spalten ergänzen, falls nötig) ──
             $this->maybe_alter_tables($pdo, $p);
+            $this->seed_default_speakers();
 
         } catch (\PDOException $e) {
             error_log('CMS_Speakers DB Error: ' . $e->getMessage());
         }
+    }
+
+    private function seed_default_speakers(): void
+    {
+        $db = CMS\Database::instance();
+
+        try {
+            $stmt = $db->prepare("SELECT COUNT(*) FROM {$db->prefix()}speakers");
+            $stmt->execute([]);
+            if ((int) $stmt->fetchColumn() > 0) {
+                return;
+            }
+
+            $rows = array_merge(
+                $this->read_default_speaker_rows('speakers.csv'),
+                $this->read_default_speaker_rows('mvps.csv')
+            );
+            if ($rows === []) {
+                return;
+            }
+
+            $seen = [];
+            foreach ($rows as $row) {
+                $firstName = trim((string) ($row['vorname'] ?? ''));
+                $lastName = trim((string) ($row['nachname'] ?? ''));
+                if ($firstName === '' || $lastName === '') {
+                    continue;
+                }
+
+                $company = trim((string) ($row['firma'] ?? ''));
+                $dedupeKey = $this->seed_lower($firstName . '|' . $lastName . '|' . $company);
+                if (isset($seen[$dedupeKey])) {
+                    continue;
+                }
+                $seen[$dedupeKey] = true;
+
+                $topic = trim((string) ($row['top_in_was'] ?? ''));
+                if ($topic === '') {
+                    $topic = trim((string) ($row['kategorie'] ?? ''));
+                }
+                $award = trim((string) ($row['mvp_auszeichnung'] ?? ''));
+                if ($award === '') {
+                    $award = trim((string) ($row['award_typ'] ?? ''));
+                }
+                $certificates = trim((string) ($row['zertifikate'] ?? ''));
+                $events = trim((string) ($row['event_s'] ?? ''));
+                if ($events === '') {
+                    $events = trim((string) ($row['typische_events'] ?? ''));
+                }
+
+                $speakerId = $this->save_speaker([
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'company' => $company !== '' ? $company : null,
+                    'position' => $topic !== '' ? $topic : null,
+                    'email' => 'speaker+' . preg_replace('/[^a-z0-9]+/', '-', $this->seed_lower($firstName . '-' . $lastName)) . '@seed.local',
+                    'bio' => $this->seed_speaker_bio($topic, $award, $certificates),
+                    'short_bio' => $topic !== '' ? $this->seed_substr($topic, 0, 580) : null,
+                    'website' => $this->seed_url((string) ($row['website'] ?? '')),
+                    'awards' => $award !== '' ? $award : null,
+                    'recognitions' => $award !== '' ? json_encode([$award], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null,
+                    'skills' => $topic !== '' ? json_encode($this->seed_list($topic), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null,
+                    'formats' => json_encode(['keynote', 'panel', 'conference'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'travel_radius' => 'national',
+                    'availability' => 'available',
+                    'status' => 'active',
+                    'is_featured' => $award !== '' ? 1 : 0,
+                    'is_verified' => 1,
+                ]);
+
+                if (!is_int($speakerId) || $speakerId <= 0) {
+                    continue;
+                }
+
+                foreach ($this->seed_list($events) as $eventTitle) {
+                    $this->save_event($speakerId, [
+                        'event_title' => $eventTitle,
+                        'event_type' => 'conference',
+                        'presence_type' => 'presence',
+                        'organizer_type' => 'manual',
+                        'organizer_name' => '365 Network Default-Datensatz',
+                        'topic' => $topic !== '' ? $topic : null,
+                        'is_public' => 1,
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS_Speakers seed_default_speakers: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * @return array<int, array<string, string>>
+     */
+    private function read_default_speaker_rows(string $filename): array
+    {
+        $file = dirname(__DIR__) . '/defaults/' . $filename;
+        if (!is_file($file)) {
+            return [];
+        }
+
+        $content = @file_get_contents($file);
+        if (!is_string($content) || trim($content) === '') {
+            return [];
+        }
+
+        $lines = preg_split('/\r\n|\n|\r/', $content) ?: [];
+        $headerLine = trim((string) array_shift($lines));
+        if ($headerLine === '') {
+            return [];
+        }
+
+        $headers = array_map(fn(string $header): string => $this->seed_header($header), str_getcsv($headerLine, ';') ?: []);
+        $rows = [];
+        foreach ($lines as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+
+            $values = str_getcsv($line, ';') ?: [];
+            $row = [];
+            foreach ($headers as $idx => $key) {
+                if ($key !== '') {
+                    $row[$key] = trim((string) ($values[$idx] ?? ''));
+                }
+            }
+
+            if (($row['vorname'] ?? '') !== '' && ($row['nachname'] ?? '') !== '') {
+                $rows[] = $row;
+            }
+        }
+
+        return $rows;
+    }
+
+    private function seed_header(string $header): string
+    {
+        $header = $this->seed_lower(trim($header));
+        $header = str_replace(['ä', 'ö', 'ü', 'ß', '/', '-'], ['ae', 'oe', 'ue', 'ss', '_', '_'], $header);
+        $header = preg_replace('/[^a-z0-9]+/', '_', $header) ?? '';
+        return trim($header, '_');
+    }
+
+    private function seed_speaker_bio(string $topic, string $award, string $certificates): ?string
+    {
+        $parts = [];
+        if ($topic !== '') {
+            $parts[] = 'Schwerpunkte: ' . $topic;
+        }
+        if ($award !== '') {
+            $parts[] = 'Auszeichnung: ' . $award;
+        }
+        if ($certificates !== '') {
+            $parts[] = 'Zertifikate: ' . $certificates;
+        }
+
+        return $parts !== [] ? implode("\n", $parts) : null;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function seed_list(string $value): array
+    {
+        $items = preg_split('/\s*[|,]\s*/', trim($value)) ?: [];
+        return array_values(array_unique(array_filter(array_map(static fn(string $item): string => trim($item), $items))));
+    }
+
+    private function seed_url(string $url): ?string
+    {
+        $url = trim($url);
+        return $url !== '' && filter_var($url, FILTER_VALIDATE_URL) ? $url : null;
+    }
+
+    private function seed_lower(string $value): string
+    {
+        return function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
+    }
+
+    private function seed_substr(string $value, int $start, int $length): string
+    {
+        return function_exists('mb_substr') ? (string) mb_substr($value, $start, $length, 'UTF-8') : (string) substr($value, $start, $length);
     }
 
     private function maybe_alter_tables(\PDO $pdo, string $p): void

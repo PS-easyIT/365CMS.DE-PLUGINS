@@ -31,7 +31,7 @@ $renderEmpty = static function (string $label) use ($esc): void {
                 $event = is_array($event) ? $event : [];
                 $eventId = (int) ($event['id'] ?? 0);
                 $eventTitle = trim((string) ($event['title'] ?? 'Event')) ?: 'Event';
-                $eventUrl = $safeUrl($event['url'] ?? ($eventId > 0 ? '/events/' . $eventId : '/events'));
+                $eventUrl = $safeUrl($event['url'] ?? (!empty($event['slug']) ? '/events/' . rawurlencode((string) $event['slug']) : '/events'));
                 $eventPlace = trim((string) ($event['city'] ?? ($event['location'] ?? '')));
                 ?>
                 <li>
@@ -61,9 +61,9 @@ $renderEmpty = static function (string $label) use ($esc): void {
                 $speaker = is_array($speaker) ? $speaker : [];
                 $speakerId = (int) ($speaker['id'] ?? 0);
                 $speakerName = $previewName($speaker, 'speaker');
-                $speakerUrl = $safeUrl($speaker['url'] ?? ($speakerId > 0 ? '/speakers/' . $speakerId : '/speakers'));
-                $speakerImage = $safeImage($speaker['photo_url'] ?? '');
-                $speakerMeta = trim((string) ($speaker['position'] ?? ($speaker['company'] ?? '')));
+                $speakerUrl = $safeUrl($speaker['url'] ?? (!empty($speaker['slug']) ? '/event-speakers/' . rawurlencode((string) $speaker['slug']) : '/event-speakers'));
+                $speakerImage = $safeImage(($speaker['avatar_url'] ?? '') ?: ($speaker['photo_url'] ?? ''));
+                $speakerMeta = trim((string) (($speaker['topic'] ?? '') ?: ($speaker['position'] ?? '')));
                 ?>
                 <a class="n365-person-card" href="<?php echo $esc($speakerUrl); ?>">
                     <?php if ($speakerImage !== ''): ?>

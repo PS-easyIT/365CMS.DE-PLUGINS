@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: 365NET | Companies
- * Plugin URI: https://365network.de/cms-365NETcompanies
+ * Plugin URI: https://365network.de/cms-365netcompanies
  * Description: Verwaltung von Firmen-Profilen mit Experten-Zuordnung, Partner-Status und Unternehmens-Informationen
  * Version: 3.0.12
  * Author: 365 Network
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
 // Plugin Constants
 define('CMS_COMPANIES_VERSION', '3.0.12');
 define('CMS_COMPANIES_PLUGIN_DIR', dirname(__FILE__) . '/');
-define('CMS_COMPANIES_PLUGIN_URL', '/plugins/cms-365NETcompanies/');
+define('CMS_COMPANIES_PLUGIN_URL', '/plugins/cms-365netcompanies/');
 define('CMS_COMPANIES_TEXT_DOMAIN', 'cms-companies');
 
 /**
@@ -112,7 +112,7 @@ final class CMS_Companies
 
     public function on_activation(string $plugin): void
     {
-        if ($plugin !== 'cms-365NETcompanies') {
+        if ($plugin !== 'cms-365netcompanies') {
             return;
         }
 
