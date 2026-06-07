@@ -16,7 +16,6 @@
 - [ ] cms-companies
 - [ ] cms-events
 - [ ] cms-experts
-- [ ] cms-importer
 - [ ] cms-jobprofile-generator
 - [ ] cms-organigramm
 - [ ] cms-speakers

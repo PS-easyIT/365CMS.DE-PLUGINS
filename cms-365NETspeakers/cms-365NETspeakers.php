@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: CMS Speakers
- * Plugin URI: https://365network.de/cms-speakers
+ * Plugin Name: 365NET | Speakers
+ * Plugin URI: https://365network.de/cms-365NETspeakers
  * Description: Verwaltung von Speaker-Profilen mit Card-Ansicht, Detailseiten, Topics und Presentations
  * Version: 3.0.20
  * Author: 365 Network
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
 // Plugin Constants
 defined('CMS_SPEAKERS_VERSION') || define('CMS_SPEAKERS_VERSION', '3.0.20');
 defined('CMS_SPEAKERS_PLUGIN_DIR') || define('CMS_SPEAKERS_PLUGIN_DIR', dirname(__FILE__) . '/');
-defined('CMS_SPEAKERS_PLUGIN_URL') || define('CMS_SPEAKERS_PLUGIN_URL', '/plugins/cms-speakers/');
+defined('CMS_SPEAKERS_PLUGIN_URL') || define('CMS_SPEAKERS_PLUGIN_URL', '/plugins/cms-365NETspeakers/');
 defined('CMS_SPEAKERS_TEXT_DOMAIN') || define('CMS_SPEAKERS_TEXT_DOMAIN', 'cms-speakers');
 
 /**
@@ -133,7 +133,7 @@ final class CMS_Speakers
 
     public function on_activation(string $plugin): void
     {
-        if ($plugin !== 'cms-speakers') {
+        if ($plugin !== 'cms-365NETspeakers') {
             return;
         }
 
@@ -152,7 +152,7 @@ final class CMS_Speakers
 
     public function on_deactivation(string $plugin): void
     {
-        if ($plugin !== 'cms-speakers') {
+        if ($plugin !== 'cms-365NETspeakers') {
             return;
         }
 
@@ -163,7 +163,7 @@ final class CMS_Speakers
 
     public function on_uninstall(string $plugin): void
     {
-        if ($plugin !== 'cms-speakers' || !class_exists('CMS_Speakers_Database')) {
+        if ($plugin !== 'cms-365NETspeakers' || !class_exists('CMS_Speakers_Database')) {
             return;
         }
 

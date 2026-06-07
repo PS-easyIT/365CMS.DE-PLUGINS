@@ -8,24 +8,24 @@
       "manifest": "PLUGINS/cms-365network/update.json"
     },
     {
-      "slug": "cms-companies",
-      "name": "CMS Companies",
-      "manifest": "PLUGINS/cms-companies/update.json"
+      "slug": "cms-365NETcompanies",
+      "name": "365NET | Companies",
+      "manifest": "PLUGINS/cms-365NETcompanies/update.json"
     },
     {
-      "slug": "cms-events",
-      "name": "CMS Events",
-      "manifest": "PLUGINS/cms-events/update.json"
+      "slug": "cms-365NETevents",
+      "name": "365NET | Events",
+      "manifest": "PLUGINS/cms-365NETevents/update.json"
     },
     {
-      "slug": "cms-experts",
-      "name": "CMS Experts",
-      "manifest": "PLUGINS/cms-experts/update.json"
+      "slug": "cms-365NETexperts",
+      "name": "365NET | Experts",
+      "manifest": "PLUGINS/cms-365NETexperts/update.json"
     },
     {
-      "slug": "cms-speakers",
-      "name": "CMS Speakers",
-      "manifest": "PLUGINS/cms-speakers/update.json"
+      "slug": "cms-365NETspeakers",
+      "name": "365NET | Speakers",
+      "manifest": "PLUGINS/cms-365NETspeakers/update.json"
     },
     {
       "slug": "cms-jobprofile-generator",
@@ -126,11 +126,6 @@
       "slug": "cms-knowledgebase",
       "name": "CMS Knowledgebase",
       "manifest": "PLUGINS/cms-knowledgebase/update.json"
-    },
-    {
-      "slug": "cms-netimport",
-      "name": "CMS NetImport",
-      "manifest": "PLUGINS/cms-netimport/update.json"
     }
   ]
 }

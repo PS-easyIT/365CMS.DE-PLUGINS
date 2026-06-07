@@ -68,7 +68,7 @@ class CMS_Speakers_Member_Dashboard
     public function register(\CMS\Member\PluginDashboardRegistry $registry): void
     {
         $registry->register([
-            'plugin'    => 'cms-speakers',
+            'plugin'    => 'cms-365NETspeakers',
             'slug'      => 'speakers',
             'label'     => 'SPEAKER',
             'icon'      => '🎤',

@@ -67,7 +67,7 @@ final class CMS_Events_Member_Dashboard
     public function register(\CMS\Member\PluginDashboardRegistry $registry): void
     {
         $registry->register([
-            'plugin'    => 'cms-events',
+            'plugin'    => 'cms-365NETevents',
             'slug'      => 'events',
             'label'     => 'EVENTS',
             'icon'      => '📅',

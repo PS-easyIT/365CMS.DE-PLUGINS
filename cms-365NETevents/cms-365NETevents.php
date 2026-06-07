@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: CMS Events
- * Plugin URI: https://365network.de/cms-events
+ * Plugin Name: 365NET | Events
+ * Plugin URI: https://365network.de/cms-365NETevents
  * Description: Verwaltung von Events mit Speakeranbindung, Veranstaltern aus cms-companies und voller Metaverwaltung
  * Version: 3.0.38
  * Author: 365 Network
@@ -13,8 +13,8 @@ declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
 defined('CMS_EVENTS_VERSION') || define('CMS_EVENTS_VERSION', '3.0.38');
-defined('CMS_EVENTS_PLUGIN_DIR') || define('CMS_EVENTS_PLUGIN_DIR', function_exists('cms_plugin_path') ? rtrim((string) cms_plugin_path('cms-events'), '/\\') . DIRECTORY_SEPARATOR : dirname(__FILE__) . '/');
-defined('CMS_EVENTS_PLUGIN_URL') || define('CMS_EVENTS_PLUGIN_URL', function_exists('cms_plugin_url') ? rtrim((string) cms_plugin_url('cms-events'), '/') . '/' : '/plugins/cms-events/');
+defined('CMS_EVENTS_PLUGIN_DIR') || define('CMS_EVENTS_PLUGIN_DIR', function_exists('cms_plugin_path') ? rtrim((string) cms_plugin_path('cms-365NETevents'), '/\\') . DIRECTORY_SEPARATOR : dirname(__FILE__) . '/');
+defined('CMS_EVENTS_PLUGIN_URL') || define('CMS_EVENTS_PLUGIN_URL', function_exists('cms_plugin_url') ? rtrim((string) cms_plugin_url('cms-365NETevents'), '/') . '/' : '/plugins/cms-365NETevents/');
 
 if (!class_exists('CMS_Events', false)) {
 final class CMS_Events {
@@ -104,7 +104,7 @@ final class CMS_Events {
     }
 
     public function on_activation(string $plugin): void {
-        if ($plugin === 'cms-events' && class_exists('CMS\\Database') && class_exists('CMS_Events_Database')) {
+        if ($plugin === 'cms-365NETevents' && class_exists('CMS\\Database') && class_exists('CMS_Events_Database')) {
             try {
                 CMS_Events_Database::instance()->create_tables();
                 if (class_exists('CMS\Hooks')) CMS\Hooks::doAction('cms_events_activated');
@@ -115,7 +115,7 @@ final class CMS_Events {
     }
 
     public function on_deactivation(string $plugin): void {
-        if ($plugin !== 'cms-events') {
+        if ($plugin !== 'cms-365NETevents') {
             return;
         }
 
@@ -125,7 +125,7 @@ final class CMS_Events {
     }
 
     public function on_uninstall(string $plugin): void {
-        if ($plugin !== 'cms-events') {
+        if ($plugin !== 'cms-365NETevents') {
             return;
         }
 
