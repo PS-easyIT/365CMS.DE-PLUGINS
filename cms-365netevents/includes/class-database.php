@@ -2643,7 +2643,13 @@ final class CMS_365NET_Events_Database
 
     private function cleanUrl(string $value): ?string
     {
-        $url = trim($value);
+        $url = html_entity_decode(trim($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $url = str_replace('\\', '/', $url);
+
+        if (preg_match('#^(?:media-file\?|uploads/)#i', $url) === 1) {
+            $url = '/' . ltrim($url, '/');
+        }
+
         if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]<>"\']/', $url) === 1) {
             return null;
         }

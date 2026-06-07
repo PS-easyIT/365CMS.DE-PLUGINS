@@ -43,7 +43,7 @@ $tags = array_filter(array_map('trim', explode(',', (string) ($event->tags ?? ''
                     <?php else: ?>
                         <div class="cms-speaker-list">
                             <?php foreach ($speakers as $speaker): ?>
-                                <a class="cms-speaker-row" href="<?= htmlspecialchars($base . '/event-speakers/' . rawurlencode((string) $speaker->slug), ENT_QUOTES, 'UTF-8') ?>">
+                                <a class="cms-speaker-row" href="<?= htmlspecialchars($base . '/speakers/' . rawurlencode((string) $speaker->slug), ENT_QUOTES, 'UTF-8') ?>">
                                     <span class="cms-speaker-avatar"><?= htmlspecialchars(strtoupper(substr((string) ($speaker->display_name ?? 'S'), 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
                                     <span><strong><?= htmlspecialchars((string) $speaker->display_name, ENT_QUOTES, 'UTF-8') ?></strong><?php if (!empty($speaker->relation_topic) || !empty($speaker->topic)): ?><small><?= htmlspecialchars((string) ($speaker->relation_topic ?: $speaker->topic), ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?></span>
                                 </a>

@@ -37,6 +37,8 @@ final class CMS_365NET_Events_Post_Type
     {
         $router->addRoute('GET', '/events', [$this, 'archiveEvents']);
         $router->addRoute('GET', '/events/:slug', [$this, 'singleEvent']);
+        $router->addRoute('GET', '/speakers', [$this, 'archiveSpeakers']);
+        $router->addRoute('GET', '/speakers/:slug', [$this, 'singleSpeaker']);
         $router->addRoute('GET', '/event-speakers', [$this, 'archiveSpeakers']);
         $router->addRoute('GET', '/event-speakers/:slug', [$this, 'singleSpeaker']);
 
@@ -150,7 +152,7 @@ final class CMS_365NET_Events_Post_Type
         $db = CMS_365NET_Events_Database::instance();
         $speaker = $db->getSpeakerBySlug($this->cleanSlug($slug));
         if (!$speaker || (string) $speaker->status !== 'published') {
-            $this->render404('Speaker nicht gefunden.', '/event-speakers');
+            $this->render404('Speaker nicht gefunden.', '/speakers');
             return;
         }
 

@@ -25,7 +25,7 @@ $tags = array_filter(array_map('trim', explode(',', (string) ($speaker->tags ?? 
 ?>
 <main class="cms-events-public cms-speaker-detail">
     <div class="cms-events-container">
-        <nav class="cms-events-breadcrumb"><a href="<?= htmlspecialchars($base . '/event-speakers', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($settings['speaker_archive_title'] ?? 'Speaker'), ENT_QUOTES, 'UTF-8') ?></a><span>/</span><span><?= htmlspecialchars((string) ($speaker->display_name ?? ''), ENT_QUOTES, 'UTF-8') ?></span></nav>
+        <nav class="cms-events-breadcrumb"><a href="<?= htmlspecialchars($base . '/speakers', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($settings['speaker_archive_title'] ?? 'Speaker'), ENT_QUOTES, 'UTF-8') ?></a><span>/</span><span><?= htmlspecialchars((string) ($speaker->display_name ?? ''), ENT_QUOTES, 'UTF-8') ?></span></nav>
         <article class="cms-events-detail-layout">
             <section class="cms-events-detail-main">
                 <?php if (!empty($speaker->avatar_url)): ?><img class="cms-speaker-photo" src="<?= htmlspecialchars((string) $speaker->avatar_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($speaker->avatar_alt ?? $speaker->display_name ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="eager"><?php else: ?><span class="cms-speaker-avatar cms-speaker-avatar--large"><?= htmlspecialchars(strtoupper(substr((string) ($speaker->display_name ?? 'S'), 0, 1)), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>

@@ -268,6 +268,8 @@ if (!class_exists('CMS_365NET_Events', false)) {
             $path = $this->requestPath();
             return $path === '/events'
                 || str_starts_with($path, '/events/')
+                || $path === '/speakers'
+                || str_starts_with($path, '/speakers/')
                 || $path === '/event-speakers'
                 || str_starts_with($path, '/event-speakers/');
         }

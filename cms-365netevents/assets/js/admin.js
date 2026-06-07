@@ -89,6 +89,7 @@
 	}
 
 	function selectMediaUrl(url) {
+		url = normalizeMediaUrl(url);
 		if (!activeMediaTarget || !url) {
 			return;
 		}
@@ -105,7 +106,34 @@
 	}
 
 	function itemUrl(item) {
-		return String((item && (item.url || item.fileUrl || item.file_url || item.path)) || '').trim();
+		var directUrl = String((item && (item.url || item.fileUrl || item.file_url)) || '').trim();
+		if (directUrl) {
+			return normalizeMediaUrl(directUrl);
+		}
+
+		var path = String((item && item.path) || '').trim().replace(/^\/+/, '');
+		if (!path) {
+			return '';
+		}
+
+		return normalizeMediaUrl('/uploads/' + path);
+	}
+
+	function normalizeMediaUrl(url) {
+		var normalized = String(url || '').trim();
+		if (!normalized) {
+			return '';
+		}
+
+		if (/^media-file\?/i.test(normalized) || /^uploads\//i.test(normalized)) {
+			normalized = '/' + normalized.replace(/^\/+/, '');
+		}
+
+		if (!/^https?:\/\//i.test(normalized) && normalized.charAt(0) !== '/') {
+			normalized = '/' + normalized.replace(/^\/+/, '');
+		}
+
+		return normalized;
 	}
 
 	function renderMediaGrid(modal, items) {
