@@ -231,6 +231,18 @@ final class CMS_365NET_Events_Post_Type
         }
 
         try {
+            $expectedKeys = ['id', 'title', 'slug', 'description_json', 'image_url', 'location', 'organizer', 'category', 'website', 'status'];
+            $missingKeys = array_values(array_filter($expectedKeys, static fn(string $key): bool => !array_key_exists($key, $_POST)));
+            if ($missingKeys !== []) {
+                CMS_365NET_Events::instance()->log(
+                    'adminEventSaveMissingPostKeys',
+                    new RuntimeException(
+                        'Missing POST keys: ' . implode(', ', $missingKeys)
+                        . ' | posted keys count=' . count($_POST)
+                    )
+                );
+            }
+
             $id = CMS_365NET_Events_Database::instance()->saveEvent($_POST);
             if ($id === false) {
                 CMS_365NET_Events::instance()->log('adminEventSaveValidation', new RuntimeException('Event save returned false. Posted title length: ' . strlen((string) ($_POST['title'] ?? ''))));
@@ -435,6 +447,18 @@ final class CMS_365NET_Events_Post_Type
         }
 
         try {
+            $expectedKeys = ['id', 'display_name', 'slug', 'bio_json', 'avatar_url', 'topic', 'website', 'status'];
+            $missingKeys = array_values(array_filter($expectedKeys, static fn(string $key): bool => !array_key_exists($key, $_POST)));
+            if ($missingKeys !== []) {
+                CMS_365NET_Events::instance()->log(
+                    'adminSpeakerSaveMissingPostKeys',
+                    new RuntimeException(
+                        'Missing POST keys: ' . implode(', ', $missingKeys)
+                        . ' | posted keys count=' . count($_POST)
+                    )
+                );
+            }
+
             $id = CMS_365NET_Events_Database::instance()->saveSpeaker($_POST);
             if ($id === false) {
                 CMS_365NET_Events::instance()->log('adminSpeakerSaveValidation', new RuntimeException('Speaker save returned false. Posted display_name length: ' . strlen((string) ($_POST['display_name'] ?? ''))));

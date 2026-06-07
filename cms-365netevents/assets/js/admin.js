@@ -136,6 +136,19 @@
 		return normalized;
 	}
 
+	function normalizeMediaInputsBeforeSubmit(form) {
+		if (!form) {
+			return;
+		}
+
+		form.querySelectorAll('[data-cms365-image-input]').forEach(function (input) {
+			var normalized = normalizeMediaUrl(input.value || '');
+			if (normalized !== String(input.value || '')) {
+				input.value = normalized;
+			}
+		});
+	}
+
 	function renderMediaGrid(modal, items) {
 		var grid = modal.querySelector('[data-media-picker-grid]');
 		var status = modal.querySelector('[data-media-picker-status]');
@@ -368,6 +381,15 @@
 	}
 
 	document.addEventListener('DOMContentLoaded', function () {
+		document.querySelectorAll('form').forEach(function (form) {
+			if (!form.querySelector('[data-cms365-image-input]')) {
+				return;
+			}
+			form.addEventListener('submit', function () {
+				normalizeMediaInputsBeforeSubmit(form);
+			});
+		});
+
 		document.querySelectorAll('form[data-confirm]').forEach(function (form) {
 			form.addEventListener('submit', function (event) {
 				var message = form.getAttribute('data-confirm') || 'Diese Aktion ausführen?';

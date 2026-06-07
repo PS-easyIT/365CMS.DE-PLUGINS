@@ -73,20 +73,19 @@ $eventCardExcerpt = static function (object $event): string {
                 <?php foreach ($events as $event): ?>
                     <?php $eventUrl = $base . '/events/' . rawurlencode((string) $event->slug); ?>
                     <?php $cardExcerpt = $eventCardExcerpt($event); ?>
-                    <article class="cms-events-card<?= !empty($event->image_url) ? ' cms-events-card--has-image' : '' ?>">
-                        <?php if (!empty($event->image_url)): ?><a class="cms-events-card__image" href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>"><img src="<?= htmlspecialchars((string) $event->image_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($event->image_alt ?? $event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="lazy"></a><?php endif; ?>
+                    <article class="cms-events-card">
+                        <h2><a href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $event->title, ENT_QUOTES, 'UTF-8') ?></a></h2>
                         <div class="cms-events-card__meta">
                             <span><?= htmlspecialchars((string) ($event->date_label ?? 'Termin offen'), ENT_QUOTES, 'UTF-8') ?></span>
                             <?php if (!empty($event->location)): ?><span><?= htmlspecialchars((string) $event->location, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                             <?php if (!empty($event->price_class)): ?><span><?= htmlspecialchars((string) $event->price_class, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                             <span class="cms-events-card__speaker-count"><?= (int) ($event->speaker_count ?? 0) ?> Speaker</span>
                         </div>
-                        <h2><a href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $event->title, ENT_QUOTES, 'UTF-8') ?></a></h2>
                         <?php if ($cardExcerpt !== ''): ?><p class="cms-events-card__excerpt"><?= htmlspecialchars($cardExcerpt, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
                         <?php $cardTags = array_filter(array_map('trim', explode(',', (string) (($event->tags ?? '') ?: ($event->categories ?? ''))))); if ($cardTags !== []): ?><div class="cms-events-mini-tags"><?php foreach (array_slice($cardTags, 0, 4) as $tag): ?><span><?= htmlspecialchars($tag, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?></div><?php endif; ?>
                         <footer>
                             <?php if (!empty($event->event_format)): ?><span><?= htmlspecialchars((string) $event->event_format, ENT_QUOTES, 'UTF-8') ?></span><?php elseif (!empty($event->organizer)): ?><span><?= htmlspecialchars((string) $event->organizer, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
-                            <a class="cms-events-card__more" href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>">Weiteres zum Event …</a>
+                            <a class="cms-events-card__more" href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>">Mehr Infos …</a>
                         </footer>
                     </article>
                 <?php endforeach; ?>

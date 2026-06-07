@@ -26,7 +26,6 @@ $tags = array_filter(array_map('trim', explode(',', (string) ($event->tags ?? ''
 <main class="cms-events-public cms-events-detail">
     <div class="cms-events-container">
         <nav class="cms-events-breadcrumb"><a href="<?= htmlspecialchars($base . '/events', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($settings['detail_back_events_label'] ?? 'Events'), ENT_QUOTES, 'UTF-8') ?></a><span>/</span><span><?= htmlspecialchars((string) ($event->title ?? ''), ENT_QUOTES, 'UTF-8') ?></span></nav>
-        <?php if (!empty($event->image_url)): ?><figure class="cms-events-hero-image"><img src="<?= htmlspecialchars((string) $event->image_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($event->image_alt ?? $event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="eager"></figure><?php endif; ?>
         <article class="cms-events-detail-layout">
             <section class="cms-events-detail-main">
                 <span class="cms-events-kicker"><?= htmlspecialchars((string) ($event->date_label ?? ''), ENT_QUOTES, 'UTF-8') ?><?= !empty($event->end_date_label) ? ' – ' . htmlspecialchars((string) $event->end_date_label, ENT_QUOTES, 'UTF-8') : '' ?></span>
@@ -34,7 +33,6 @@ $tags = array_filter(array_map('trim', explode(',', (string) ($event->tags ?? ''
                 <?php if (!empty($event->excerpt)): ?><p class="cms-events-lead"><?= htmlspecialchars((string) $event->excerpt, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
                 <?php if ($badges !== [] || $tags !== []): ?><div class="cms-events-badges"><?php foreach (array_slice(array_merge($badges, $tags), 0, 12) as $badge): ?><span><?= htmlspecialchars($badge, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?></div><?php endif; ?>
                 <?= $renderEditor($event->description_json ?? '', $event->description ?? '') ?>
-                <?php if (!empty($event->category)): ?><p class="cms-events-lead"><?= htmlspecialchars((string) $event->category, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
 
                 <section class="cms-events-section">
                     <h2><?= htmlspecialchars((string) ($settings['detail_speakers_heading'] ?? 'Speaker & Themen'), ENT_QUOTES, 'UTF-8') ?></h2>
@@ -53,6 +51,7 @@ $tags = array_filter(array_map('trim', explode(',', (string) ($event->tags ?? ''
                 </section>
             </section>
             <aside class="cms-events-sidebar">
+                <?php if (!empty($event->image_url)): ?><figure class="cms-events-hero-image"><img src="<?= htmlspecialchars((string) $event->image_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($event->image_alt ?? $event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="eager"></figure><?php endif; ?>
                 <div class="cms-events-sidecard"><h2>Details</h2><dl>
                     <?php if (!empty($event->location)): ?><dt>Ort</dt><dd><?= htmlspecialchars((string) $event->location, ENT_QUOTES, 'UTF-8') ?></dd><?php endif; ?>
                     <?php if (!empty($event->venue_name)): ?><dt>Venue</dt><dd><?= htmlspecialchars((string) $event->venue_name, ENT_QUOTES, 'UTF-8') ?></dd><?php endif; ?>

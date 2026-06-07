@@ -204,7 +204,31 @@ final class CMS_365NET_Events_Database
 
     private function migrateMetaColumns(): void
     {
-        $eventColumns = [
+        $eventColumns = $this->eventMetaColumnDefinitions();
+
+        foreach ($eventColumns as $column => $definition) {
+            try {
+                $this->ensureColumn('365net_events', $column, $definition);
+            } catch (Throwable $e) {
+                $this->logDatabaseWarning('migrate_event_column_' . $column, $e);
+            }
+        }
+
+        $speakerColumns = $this->speakerMetaColumnDefinitions();
+
+        foreach ($speakerColumns as $column => $definition) {
+            try {
+                $this->ensureColumn('365net_event_speakers', $column, $definition);
+            } catch (Throwable $e) {
+                $this->logDatabaseWarning('migrate_speaker_column_' . $column, $e);
+            }
+        }
+    }
+
+    /** @return array<string, string> */
+    private function eventMetaColumnDefinitions(): array
+    {
+        return [
             'description_json' => 'description_json LONGTEXT DEFAULT NULL',
             'excerpt' => 'excerpt TEXT DEFAULT NULL',
             'image_url' => 'image_url VARCHAR(600) DEFAULT NULL',
@@ -246,16 +270,12 @@ final class CMS_365NET_Events_Database
             'og_image_url' => 'og_image_url VARCHAR(600) DEFAULT NULL',
             'featured' => 'featured TINYINT(1) NOT NULL DEFAULT 0',
         ];
+    }
 
-        foreach ($eventColumns as $column => $definition) {
-            try {
-                $this->ensureColumn('365net_events', $column, $definition);
-            } catch (Throwable $e) {
-                $this->logDatabaseWarning('migrate_event_column_' . $column, $e);
-            }
-        }
-
-        $speakerColumns = [
+    /** @return array<string, string> */
+    private function speakerMetaColumnDefinitions(): array
+    {
+        return [
             'bio_json' => 'bio_json LONGTEXT DEFAULT NULL',
             'avatar_url' => 'avatar_url VARCHAR(600) DEFAULT NULL',
             'avatar_alt' => 'avatar_alt VARCHAR(255) DEFAULT NULL',
@@ -284,23 +304,14 @@ final class CMS_365NET_Events_Database
             'og_image_url' => 'og_image_url VARCHAR(600) DEFAULT NULL',
             'featured' => 'featured TINYINT(1) NOT NULL DEFAULT 0',
         ];
-
-        foreach ($speakerColumns as $column => $definition) {
-            try {
-                $this->ensureColumn('365net_event_speakers', $column, $definition);
-            } catch (Throwable $e) {
-                $this->logDatabaseWarning('migrate_speaker_column_' . $column, $e);
-            }
-        }
     }
 
     private function ensureColumn(string $table, string $column, string $definition): void
     {
         $db = CMS\Database::instance();
         $fullTable = $db->prefix() . $table;
-        $stmt = $db->prepare("SHOW COLUMNS FROM `{$fullTable}` LIKE ?");
-        $stmt->execute([$column]);
-        if ($stmt->fetch()) {
+        $columns = $this->getExistingColumns($table);
+        if ($columns !== [] && in_array($column, $columns, true)) {
             return;
         }
 
@@ -829,7 +840,10 @@ final class CMS_365NET_Events_Database
             'description' => $description,
             'description_json' => $descriptionJson,
             'excerpt' => $this->cleanTextarea((string) ($data['excerpt'] ?? ''), 1200),
-            'image_url' => $this->cleanUrl((string) ($data['image_url'] ?? '')),
+            'image_url' => $this->cleanMediaUrl(
+                (string) ($data['image_url'] ?? ''),
+                $existing !== null ? (string) ($existing->image_url ?? '') : null
+            ),
             'image_alt' => $this->cleanText((string) ($data['image_alt'] ?? ''), 255),
             'gallery_json' => $this->cleanJsonList((string) ($data['gallery_json'] ?? '')),
             'categories' => $this->cleanList($data['categories'] ?? '', 500),
@@ -865,7 +879,10 @@ final class CMS_365NET_Events_Database
             'accessibility' => $this->cleanTextarea((string) ($data['accessibility'] ?? ''), 3000),
             'seo_title' => $this->cleanText((string) ($data['seo_title'] ?? ''), 255),
             'seo_description' => $this->cleanText((string) ($data['seo_description'] ?? ''), 320),
-            'og_image_url' => $this->cleanUrl((string) ($data['og_image_url'] ?? '')),
+            'og_image_url' => $this->cleanMediaUrl(
+                (string) ($data['og_image_url'] ?? ''),
+                $existing !== null ? (string) ($existing->og_image_url ?? '') : null
+            ),
             'featured' => !empty($data['featured']) ? 1 : 0,
             'status' => in_array((string) ($data['status'] ?? 'published'), ['draft', 'published'], true) ? (string) $data['status'] : 'published',
         ];
@@ -881,7 +898,9 @@ final class CMS_365NET_Events_Database
             $payload['description'] = $descriptionFromEditorJson;
         }
 
+        $payloadKeysBeforeFilter = array_keys($payload);
         $payload = $this->filterPayloadByExistingColumns('365net_events', $payload);
+        $this->logDroppedPayloadKeys('365net_events', $payloadKeysBeforeFilter, $payload, $data);
 
         if ($id > 0) {
             $sets = implode(', ', array_map(static fn(string $key): string => "`{$key}` = ?", array_keys($payload)));
@@ -1041,7 +1060,10 @@ final class CMS_365NET_Events_Database
             'website' => $this->cleanUrl((string) ($data['website'] ?? '')),
             'bio' => $bio,
             'bio_json' => $bioJson,
-            'avatar_url' => $this->cleanUrl((string) ($data['avatar_url'] ?? '')),
+            'avatar_url' => $this->cleanMediaUrl(
+                (string) ($data['avatar_url'] ?? ''),
+                $existing !== null ? (string) ($existing->avatar_url ?? '') : null
+            ),
             'avatar_alt' => $this->cleanText((string) ($data['avatar_alt'] ?? ''), 255),
             'categories' => $this->cleanList($data['categories'] ?? '', 500),
             'tags' => $this->cleanList($data['tags'] ?? '', 700),
@@ -1065,7 +1087,10 @@ final class CMS_365NET_Events_Database
             'github_url' => $this->cleanUrl((string) ($data['github_url'] ?? '')),
             'seo_title' => $this->cleanText((string) ($data['seo_title'] ?? ''), 255),
             'seo_description' => $this->cleanText((string) ($data['seo_description'] ?? ''), 320),
-            'og_image_url' => $this->cleanUrl((string) ($data['og_image_url'] ?? '')),
+            'og_image_url' => $this->cleanMediaUrl(
+                (string) ($data['og_image_url'] ?? ''),
+                $existing !== null ? (string) ($existing->og_image_url ?? '') : null
+            ),
             'featured' => !empty($data['featured']) ? 1 : 0,
             'status' => in_array((string) ($data['status'] ?? 'published'), ['draft', 'published'], true) ? (string) $data['status'] : 'published',
         ];
@@ -1080,7 +1105,9 @@ final class CMS_365NET_Events_Database
         if ($bioFromEditorJson !== '') {
             $payload['bio'] = $bioFromEditorJson;
         }
+        $payloadKeysBeforeFilter = array_keys($payload);
         $payload = $this->filterPayloadByExistingColumns('365net_event_speakers', $payload);
+        $this->logDroppedPayloadKeys('365net_event_speakers', $payloadKeysBeforeFilter, $payload, $data);
 
         if ($id > 0) {
             $sets = implode(', ', array_map(static fn(string $key): string => "`{$key}` = ?", array_keys($payload)));
@@ -1537,7 +1564,71 @@ final class CMS_365NET_Events_Database
             return $payload;
         }
 
+        $missingColumns = array_values(array_diff(array_keys($payload), $columns));
+        if ($missingColumns !== []) {
+            $definitions = $table === '365net_events'
+                ? $this->eventMetaColumnDefinitions()
+                : ($table === '365net_event_speakers' ? $this->speakerMetaColumnDefinitions() : []);
+
+            foreach ($missingColumns as $column) {
+                if (!isset($definitions[$column])) {
+                    continue;
+                }
+
+                try {
+                    $this->ensureColumn($table, $column, $definitions[$column]);
+                } catch (Throwable $e) {
+                    $this->logDatabaseWarning('ensure_payload_column_' . $table . '_' . $column, $e);
+                }
+            }
+
+            $columns = $this->getExistingColumns($table);
+        }
+
         return array_intersect_key($payload, array_flip($columns));
+    }
+
+    /**
+     * @param array<int, string> $payloadKeysBeforeFilter
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $submittedData
+     */
+    private function logDroppedPayloadKeys(string $table, array $payloadKeysBeforeFilter, array $payload, array $submittedData): void
+    {
+        $payloadKeysAfterFilter = array_keys($payload);
+        $dropped = array_values(array_diff($payloadKeysBeforeFilter, $payloadKeysAfterFilter));
+        if ($dropped === []) {
+            return;
+        }
+
+        $criticalDropped = [];
+        foreach ($dropped as $key) {
+            if (!array_key_exists($key, $submittedData)) {
+                continue;
+            }
+
+            $raw = $submittedData[$key];
+            if (is_array($raw)) {
+                $nonEmptyItems = array_filter(
+                    array_map(static fn(mixed $item): string => trim((string) $item), $raw),
+                    static fn(string $item): bool => $item !== ''
+                );
+                if ($nonEmptyItems === []) {
+                    continue;
+                }
+            } elseif (trim((string) $raw) === '') {
+                continue;
+            }
+
+            $criticalDropped[] = $key;
+        }
+
+        $message = 'Dropped payload columns in ' . $table . ': ' . implode(', ', $dropped);
+        if ($criticalDropped !== []) {
+            $message .= ' | non-empty submitted: ' . implode(', ', $criticalDropped);
+        }
+
+        $this->logDatabaseWarning('payload_columns_dropped_' . $table, new RuntimeException($message));
     }
 
     /** @return array<int, string> */
@@ -2492,7 +2583,7 @@ final class CMS_365NET_Events_Database
     private function cleanList(mixed $value, int $maxLength): string
     {
         if (is_array($value)) {
-            $value = implode('\n', array_map(static fn(mixed $item): string => (string) $item, $value));
+            $value = implode("\n", array_map(static fn(mixed $item): string => (string) $item, $value));
         }
         $items = preg_split('/[,;\n]+/', (string) $value) ?: [];
         $clean = [];
@@ -2673,6 +2764,80 @@ final class CMS_365NET_Events_Database
         }
 
         return $url;
+    }
+
+    private function cleanMediaUrl(string $value, ?string $existingValue = null): ?string
+    {
+        $raw = html_entity_decode(trim($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        if ($raw === '') {
+            return null;
+        }
+
+        $normalized = $this->normalizeMediaInputUrl($raw);
+        $clean = $this->cleanUrl($normalized);
+        if ($clean !== null) {
+            return $clean;
+        }
+
+        $noSpaces = preg_replace('/\s+/u', '%20', $normalized) ?? $normalized;
+        $clean = $this->cleanUrl($noSpaces);
+        if ($clean !== null) {
+            return $clean;
+        }
+
+        $fallback = $existingValue !== null ? $this->cleanUrl((string) $existingValue) : null;
+        return $fallback;
+    }
+
+    private function normalizeMediaInputUrl(string $value): string
+    {
+        $url = html_entity_decode(trim($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $url = str_replace('\\', '/', $url);
+        if ($url === '') {
+            return '';
+        }
+
+        if (preg_match('#^https?://#i', $url) === 1) {
+            $parts = parse_url($url);
+            if (is_array($parts)) {
+                $path = (string) ($parts['path'] ?? '');
+                $query = (string) ($parts['query'] ?? '');
+                if (str_starts_with($path, '/uploads/')) {
+                    return $path . ($query !== '' ? '?' . $query : '');
+                }
+
+                if ($path === '/media-file') {
+                    parse_str($query, $params);
+                    $mediaPath = trim(str_replace('\\', '/', (string) ($params['path'] ?? '')), '/');
+                    if ($mediaPath !== '') {
+                        return '/uploads/' . $mediaPath;
+                    }
+                }
+            }
+        }
+
+        if (preg_match('#^media-file(?:\?|$)#i', $url) === 1 || preg_match('#^(?:uploads|media)(?:/|$)#i', $url) === 1) {
+            $url = '/' . ltrim($url, '/');
+        }
+
+        if (preg_match('#^/media-file(?:\?|$)#i', $url) === 1) {
+            $query = (string) (parse_url($url, PHP_URL_QUERY) ?? '');
+            parse_str($query, $params);
+            $mediaPath = trim(str_replace('\\', '/', (string) ($params['path'] ?? '')), '/');
+            if ($mediaPath !== '') {
+                return '/uploads/' . $mediaPath;
+            }
+        }
+
+        if (str_starts_with($url, './')) {
+            $url = '/' . ltrim(substr($url, 2), '/');
+        }
+
+        if (!str_starts_with($url, 'http://') && !str_starts_with($url, 'https://') && $url !== '' && $url[0] !== '/') {
+            $url = '/' . ltrim($url, '/');
+        }
+
+        return preg_replace('/\s+/u', '%20', $url) ?? $url;
     }
 
     private function lower(string $value): string
