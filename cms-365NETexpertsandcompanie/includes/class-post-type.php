@@ -35,7 +35,9 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
     public function registerRoutes($router): void
     {
         $router->addRoute('GET', '/experts', [$this, 'expertsPage']);
+        $router->addRoute('GET', '/experts/:id', [$this, 'singleExpert']);
         $router->addRoute('GET', '/companies', [$this, 'companiesPage']);
+        $router->addRoute('GET', '/companies/:id', [$this, 'singleCompany']);
         $router->addRoute('GET', '/experts-companie', [$this, 'archivePage']);
         $router->addRoute('GET', '/experts-and-companie', [$this, 'archivePage']);
         $router->addRoute('GET', '/experts-companies', [$this, 'archivePage']);
@@ -93,6 +95,85 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
         $this->renderPublicByType('all', 'archive-experts-companie');
     }
 
+    public function singleExpert(string $id = ''): void
+    {
+        $expertId = $this->parsePositiveId($id);
+        if ($expertId <= 0) {
+            $this->renderSimpleError('Expert nicht gefunden.');
+            return;
+        }
+
+        $db = CMS_365NET_Experts_And_Companie_Database::instance();
+        $expert = $db->getExpertPublicById($expertId);
+        if ($expert === null) {
+            $this->renderSimpleError('Expert nicht gefunden.');
+            return;
+        }
+
+        $linkedCompany = null;
+        $linkedCompanyId = (int) ($expert->linked_company_id ?? 0);
+        if ($linkedCompanyId > 0) {
+            $linkedCompany = $db->getCompanyPublicById($linkedCompanyId);
+        }
+
+        $linkedSpeaker = null;
+        $linkedSpeakerId = (int) ($expert->linked_speaker_id ?? 0);
+        if ($linkedSpeakerId > 0) {
+            $linkedSpeaker = $db->getLinkedSpeaker($linkedSpeakerId);
+        }
+        if ($linkedSpeaker === null) {
+            $linkedSpeaker = $db->getSpeakerByLinkedExpert($expertId);
+        }
+
+        $theme = CMS\ThemeManager::instance();
+        $theme->getHeader();
+        CMS_365NET_Experts_And_Companie_Template_Loader::instance()->render('single-expert', [
+            'expert' => $expert,
+            'linkedCompany' => $linkedCompany,
+            'linkedSpeaker' => $linkedSpeaker,
+        ]);
+        $theme->getFooter();
+    }
+
+    public function singleCompany(string $id = ''): void
+    {
+        $companyId = $this->parsePositiveId($id);
+        if ($companyId <= 0) {
+            $this->renderSimpleError('Company nicht gefunden.');
+            return;
+        }
+
+        $db = CMS_365NET_Experts_And_Companie_Database::instance();
+        $company = $db->getCompanyPublicById($companyId);
+        if ($company === null) {
+            $this->renderSimpleError('Company nicht gefunden.');
+            return;
+        }
+
+        $linkedExpert = null;
+        $linkedExpertId = (int) ($company->linked_expert_id ?? 0);
+        if ($linkedExpertId > 0) {
+            $linkedExpert = $db->getExpertPublicById($linkedExpertId);
+        }
+
+        $linkedSpeaker = null;
+        $linkedSpeakerId = (int) ($company->linked_speaker_id ?? 0);
+        if ($linkedSpeakerId > 0) {
+            $linkedSpeaker = $db->getLinkedSpeaker($linkedSpeakerId);
+        }
+
+        $theme = CMS\ThemeManager::instance();
+        $theme->getHeader();
+        CMS_365NET_Experts_And_Companie_Template_Loader::instance()->render('single-company', [
+            'company' => $company,
+            'linkedExpert' => $linkedExpert,
+            'linkedSpeaker' => $linkedSpeaker,
+            'linkedExperts' => $db->getExpertsByLinkedCompany($companyId, 8),
+            'linkedSpeakers' => $db->getSpeakersByLinkedCompany($companyId, 8),
+        ]);
+        $theme->getFooter();
+    }
+
     private function renderPublicByType(string $routeType, string $template): void
     {
         if (!class_exists('CMS_365NET_Experts_And_Companie_Database')) {
@@ -115,7 +196,7 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
         if ($type === 'all' || $type === 'experts') {
             $experts = $db->getExpertsPublic($search, $city, 30, 0);
             foreach ($experts as $expert) {
-                $expert->detail_url = trim((string) ($expert->website ?? ''));
+                $expert->detail_url = rtrim((string) SITE_URL, '/') . '/experts/' . (int) ($expert->id ?? 0);
 
                 $linkedCompanyId = (int) ($expert->linked_company_id ?? 0);
                 $linkedSpeakerId = (int) ($expert->linked_speaker_id ?? 0);
@@ -132,7 +213,20 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
         if ($type === 'all' || $type === 'companies') {
             $companies = $db->getCompaniesPublic($search, $city, 30, 0);
             foreach ($companies as $company) {
-                $company->detail_url = trim((string) ($company->website ?? ''));
+                $company->detail_url = rtrim((string) SITE_URL, '/') . '/companies/' . (int) ($company->id ?? 0);
+                $company->linked_expert = null;
+                $company->linked_speaker = null;
+
+                $linkedExpertId = (int) ($company->linked_expert_id ?? 0);
+                if ($linkedExpertId > 0) {
+                    $company->linked_expert = $db->getExpertById($linkedExpertId);
+                }
+
+                $linkedSpeakerId = (int) ($company->linked_speaker_id ?? 0);
+                if ($linkedSpeakerId > 0) {
+                    $company->linked_speaker = $db->getLinkedSpeaker($linkedSpeakerId);
+                }
+
                 $company->linked_experts = $db->getExpertsByLinkedCompany((int) ($company->id ?? 0), 3);
                 $company->linked_speakers = $db->getSpeakersByLinkedCompany((int) ($company->id ?? 0), 3);
             }
@@ -298,7 +392,8 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
             'skills_soft' => $this->cleanText((string) ($_POST['skills_soft'] ?? ''), 2000),
             'awards' => $this->cleanText((string) ($_POST['awards'] ?? ''), 2000),
             'certifications' => $this->cleanText((string) ($_POST['certifications'] ?? ''), 2000),
-            'biography' => $this->cleanText((string) ($_POST['biography'] ?? ''), 18000),
+            'biography_json' => (string) ($_POST['biography_json'] ?? ''),
+            'biography' => $this->cleanText((string) ($_POST['biography'] ?? ($_POST['biography_json'] ?? '')), 18000),
             'linked_company_id' => max(0, (int) ($_POST['linked_company_id'] ?? 0)),
             'linked_speaker_id' => max(0, (int) ($_POST['linked_speaker_id'] ?? 0)),
             'status' => $this->allowValue((string) ($_POST['status'] ?? 'active'), ['active', 'inactive']) ?? 'active',
@@ -336,10 +431,14 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
             return;
         }
 
+        $db = CMS_365NET_Experts_And_Companie_Database::instance();
+
         CMS_365NET_Experts_And_Companie_Admin::instance()->renderCompanyForm([
             'mode' => 'new',
             'item' => null,
             'csrf' => $this->csrfToken('excomp_company_form'),
+            'experts' => $db->getExpertsAdmin('', 300),
+            'speakers' => $db->getAvailableSpeakers(300),
         ]);
     }
 
@@ -355,10 +454,14 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
             return;
         }
 
+        $db = CMS_365NET_Experts_And_Companie_Database::instance();
+
         CMS_365NET_Experts_And_Companie_Admin::instance()->renderCompanyForm([
             'mode' => 'edit',
             'item' => $company,
             'csrf' => $this->csrfToken('excomp_company_form'),
+            'experts' => $db->getExpertsAdmin('', 300),
+            'speakers' => $db->getAvailableSpeakers(300),
         ]);
     }
 
@@ -387,7 +490,10 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
             'country' => $this->cleanText((string) ($_POST['country'] ?? ''), 120),
             'founded_year' => $this->cleanText((string) ($_POST['founded_year'] ?? ''), 10),
             'employee_count' => $this->cleanText((string) ($_POST['employee_count'] ?? ''), 20),
-            'description' => $this->cleanText((string) ($_POST['description'] ?? ''), 20000),
+            'linked_expert_id' => max(0, (int) ($_POST['linked_expert_id'] ?? 0)),
+            'linked_speaker_id' => max(0, (int) ($_POST['linked_speaker_id'] ?? 0)),
+            'description_json' => (string) ($_POST['description_json'] ?? ''),
+            'description' => $this->cleanText((string) ($_POST['description'] ?? ($_POST['description_json'] ?? '')), 20000),
             'is_partner' => isset($_POST['is_partner']) ? 1 : 0,
             'is_top_partner' => isset($_POST['is_top_partner']) ? 1 : 0,
             'is_sponsor' => isset($_POST['is_sponsor']) ? 1 : 0,
@@ -442,6 +548,16 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
     {
         $value = trim($value);
         return in_array($value, $allowed, true) ? $value : null;
+    }
+
+    private function parsePositiveId(string $value): int
+    {
+        $value = trim($value);
+        if ($value === '' || preg_match('/^\d+$/', $value) !== 1) {
+            return 0;
+        }
+
+        return max(0, (int) $value);
     }
 
     private function renderSimpleError(string $message): void

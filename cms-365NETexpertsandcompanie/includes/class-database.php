@@ -15,7 +15,7 @@ final class CMS_365NET_Experts_And_Companie_Database
 {
     private static ?self $instance = null;
 
-    private const SCHEMA_VERSION = '1.2.0';
+    private const SCHEMA_VERSION = '1.4.0';
     private const TABLE_EXPERTS = '365net_excomp_experts';
     private const TABLE_COMPANIES = '365net_excomp_companies';
     private const TABLE_SETTINGS = '365net_excomp_settings';
@@ -174,6 +174,34 @@ final class CMS_365NET_Experts_And_Companie_Database
         return $row ?: null;
     }
 
+    public function getExpertPublicById(int $id): ?object
+    {
+        $expert = $this->getExpertById($id);
+        if ($expert === null) {
+            return null;
+        }
+
+        if (isset($expert->status) && (string) $expert->status !== 'active') {
+            return null;
+        }
+
+        return $expert;
+    }
+
+    public function getCompanyPublicById(int $id): ?object
+    {
+        $company = $this->getCompanyById($id);
+        if ($company === null) {
+            return null;
+        }
+
+        if (isset($company->status) && (string) $company->status !== 'active') {
+            return null;
+        }
+
+        return $company;
+    }
+
     /** @return array<int, object> */
     public function getAvailableSpeakers(int $limit = 300): array
     {
@@ -320,12 +348,22 @@ final class CMS_365NET_Experts_And_Companie_Database
             $linkedSpeakerId = null;
         }
 
+        $biographyJson = $this->cleanEditorJson((string) ($data['biography_json'] ?? ''));
+        $biography = $this->cleanTextarea((string) ($data['biography'] ?? ''), 10000);
+        if ($biographyJson !== null) {
+            $biographyFromEditorJson = $this->editorJsonToFallbackText($biographyJson, 10000);
+            if ($biographyFromEditorJson !== '') {
+                $biography = $biographyFromEditorJson;
+            }
+        }
+
         $payload = [
             'first_name' => $firstName,
             'last_name' => $lastName,
             'company' => $this->cleanText((string) ($data['company'] ?? ''), 255),
             'position' => $this->cleanText((string) ($data['position'] ?? ''), 255),
-            'biography' => $this->cleanTextarea((string) ($data['biography'] ?? ''), 10000),
+            'biography' => $biography,
+            'biography_json' => $biographyJson,
             'website' => $this->cleanUrl((string) ($data['website'] ?? '')),
             'city' => $this->cleanText((string) ($data['city'] ?? ''), 120),
             'location_city' => $this->cleanText((string) ($data['city'] ?? ''), 120),
@@ -394,9 +432,29 @@ final class CMS_365NET_Experts_And_Companie_Database
         }
 
         $id = max(0, (int) ($data['id'] ?? 0));
+        $existing = $id > 0 ? $this->getCompanyById($id) : null;
         $name = $this->cleanText((string) ($data['name'] ?? ''), 255);
         if ($name === '') {
             return false;
+        }
+
+        $linkedExpertId = $this->cleanPositiveInt($data['linked_expert_id'] ?? null);
+        if ($linkedExpertId !== null && $this->getExpertById($linkedExpertId) === null) {
+            $linkedExpertId = null;
+        }
+
+        $linkedSpeakerId = $this->cleanPositiveInt($data['linked_speaker_id'] ?? null);
+        if ($linkedSpeakerId !== null && $this->getLinkedSpeaker($linkedSpeakerId) === null) {
+            $linkedSpeakerId = null;
+        }
+
+        $descriptionJson = $this->cleanEditorJson((string) ($data['description_json'] ?? ''));
+        $description = $this->cleanTextarea((string) ($data['description'] ?? ''), 12000);
+        if ($descriptionJson !== null) {
+            $descriptionFromEditorJson = $this->editorJsonToFallbackText($descriptionJson, 12000);
+            if ($descriptionFromEditorJson !== '') {
+                $description = $descriptionFromEditorJson;
+            }
         }
 
         $payload = [
@@ -405,7 +463,8 @@ final class CMS_365NET_Experts_And_Companie_Database
             'phone' => $this->cleanText((string) ($data['phone'] ?? ''), 80),
             'industry' => $this->cleanText((string) ($data['industry'] ?? ''), 255),
             'company_size' => $this->cleanText((string) ($data['company_size'] ?? ''), 120),
-            'description' => $this->cleanTextarea((string) ($data['description'] ?? ''), 12000),
+            'description' => $description,
+            'description_json' => $descriptionJson,
             'website' => $this->cleanUrl((string) ($data['website'] ?? '')),
             'city' => $this->cleanText((string) ($data['city'] ?? ''), 120),
             'location_city' => $this->cleanText((string) ($data['city'] ?? ''), 120),
@@ -413,6 +472,8 @@ final class CMS_365NET_Experts_And_Companie_Database
             'country' => $this->cleanText((string) ($data['country'] ?? ''), 120),
             'founded_year' => $this->cleanInt($data['founded_year'] ?? null),
             'employee_count' => $this->cleanInt($data['employee_count'] ?? null),
+            'linked_expert_id' => $linkedExpertId,
+            'linked_speaker_id' => $linkedSpeakerId,
             'is_partner' => !empty($data['is_partner']) ? 1 : 0,
             'is_top_partner' => !empty($data['is_top_partner']) ? 1 : 0,
             'is_sponsor' => !empty($data['is_sponsor']) ? 1 : 0,
@@ -438,7 +499,17 @@ final class CMS_365NET_Experts_And_Companie_Database
             return false;
         }
 
-        return $this->saveRecord($table, $payload, $id);
+        $savedId = $this->saveRecord($table, $payload, $id);
+        if ($savedId === false) {
+            return false;
+        }
+
+        $previousLinkedExpertId = $existing !== null ? $this->cleanPositiveInt($existing->linked_expert_id ?? null) : null;
+        $previousLinkedSpeakerId = $existing !== null ? $this->cleanPositiveInt($existing->linked_speaker_id ?? null) : null;
+        $this->syncExpertLinkForCompany((int) $savedId, $linkedExpertId, $previousLinkedExpertId);
+        $this->syncSpeakerLinkForCompany((int) $savedId, $linkedSpeakerId, $linkedExpertId, $previousLinkedSpeakerId);
+
+        return $savedId;
     }
 
     private function createFallbackTables(): void
@@ -455,6 +526,7 @@ final class CMS_365NET_Experts_And_Companie_Database
             company VARCHAR(255) DEFAULT NULL,
             position VARCHAR(255) DEFAULT NULL,
             biography TEXT DEFAULT NULL,
+            biography_json LONGTEXT DEFAULT NULL,
             website VARCHAR(600) DEFAULT NULL,
             city VARCHAR(120) DEFAULT NULL,
             location_city VARCHAR(120) DEFAULT NULL,
@@ -489,6 +561,7 @@ final class CMS_365NET_Experts_And_Companie_Database
             industry VARCHAR(255) DEFAULT NULL,
             company_size VARCHAR(120) DEFAULT NULL,
             description LONGTEXT DEFAULT NULL,
+            description_json LONGTEXT DEFAULT NULL,
             website VARCHAR(600) DEFAULT NULL,
             city VARCHAR(120) DEFAULT NULL,
             location_city VARCHAR(120) DEFAULT NULL,
@@ -496,6 +569,8 @@ final class CMS_365NET_Experts_And_Companie_Database
             country VARCHAR(120) DEFAULT NULL,
             founded_year INT DEFAULT NULL,
             employee_count INT DEFAULT NULL,
+            linked_expert_id INT UNSIGNED DEFAULT NULL,
+            linked_speaker_id INT UNSIGNED DEFAULT NULL,
             is_partner TINYINT(1) NOT NULL DEFAULT 0,
             is_top_partner TINYINT(1) NOT NULL DEFAULT 0,
             is_sponsor TINYINT(1) NOT NULL DEFAULT 0,
@@ -504,7 +579,9 @@ final class CMS_365NET_Experts_And_Companie_Database
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             UNIQUE KEY uniq_seed_key (seed_key),
             INDEX idx_status (status),
-            INDEX idx_name (name)
+            INDEX idx_name (name),
+            INDEX idx_linked_expert (linked_expert_id),
+            INDEX idx_linked_speaker (linked_speaker_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}" . self::TABLE_SETTINGS . " (
@@ -515,6 +592,10 @@ final class CMS_365NET_Experts_And_Companie_Database
 
         $this->ensureColumn(self::TABLE_EXPERTS, 'linked_company_id', 'linked_company_id INT UNSIGNED DEFAULT NULL');
         $this->ensureColumn(self::TABLE_EXPERTS, 'linked_speaker_id', 'linked_speaker_id INT UNSIGNED DEFAULT NULL');
+        $this->ensureColumn(self::TABLE_EXPERTS, 'biography_json', 'biography_json LONGTEXT DEFAULT NULL');
+        $this->ensureColumn(self::TABLE_COMPANIES, 'linked_expert_id', 'linked_expert_id INT UNSIGNED DEFAULT NULL');
+        $this->ensureColumn(self::TABLE_COMPANIES, 'linked_speaker_id', 'linked_speaker_id INT UNSIGNED DEFAULT NULL');
+        $this->ensureColumn(self::TABLE_COMPANIES, 'description_json', 'description_json LONGTEXT DEFAULT NULL');
     }
 
     private function seedDefaults(bool $force): void
@@ -767,6 +848,8 @@ final class CMS_365NET_Experts_And_Companie_Database
             'country',
             'founded_year',
             'employee_count',
+            'linked_expert_id',
+            'linked_speaker_id',
             'is_partner',
             'is_top_partner',
             'is_sponsor',
@@ -1233,6 +1316,102 @@ final class CMS_365NET_Experts_And_Companie_Database
         return function_exists('mb_substr') ? (string) mb_substr($value, 0, $maxLen, 'UTF-8') : substr($value, 0, $maxLen);
     }
 
+    private function cleanEditorJson(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        $decoded = json_decode($value, true);
+        if (!is_array($decoded)) {
+            return null;
+        }
+
+        if (!isset($decoded['blocks']) || !is_array($decoded['blocks'])) {
+            $decoded = ['time' => time() * 1000, 'blocks' => []];
+        }
+
+        return json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE) ?: null;
+    }
+
+    private function editorJsonToFallbackText(string $json, int $maxLength): string
+    {
+        $decoded = json_decode($json, true);
+        if (!is_array($decoded) || !isset($decoded['blocks']) || !is_array($decoded['blocks'])) {
+            return '';
+        }
+
+        $allowedTextKeys = ['text', 'content', 'caption', 'title', 'message', 'quote', 'code', 'html', 'description'];
+        $ignoredExactValues = ['left', 'right', 'center', 'justify', 'normal', 'small', 'medium', 'large', 'ordered', 'unordered', 'checklist', 'info', 'success', 'warning', 'danger'];
+        $chunks = [];
+
+        $appendChunk = static function (string $value) use (&$chunks, $ignoredExactValues): void {
+            $value = trim(html_entity_decode(strip_tags($value), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            if ($value === '') {
+                return;
+            }
+
+            $normalized = function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
+            if (in_array($normalized, $ignoredExactValues, true)) {
+                return;
+            }
+
+            if (preg_match('/^(left|right|center|justify)(\s+(normal|small|medium|large))*$/iu', $normalized) === 1) {
+                return;
+            }
+
+            $chunks[] = $value;
+        };
+
+        $collect = null;
+        $collect = static function (mixed $value, ?string $currentKey = null) use (&$collect, $appendChunk, $allowedTextKeys): void {
+            if (is_string($value)) {
+                if ($currentKey !== null && in_array($currentKey, $allowedTextKeys, true)) {
+                    $appendChunk($value);
+                }
+                return;
+            }
+
+            if (!is_array($value)) {
+                return;
+            }
+
+            foreach ($value as $key => $item) {
+                $nextKey = is_string($key) ? strtolower(trim($key)) : null;
+                if (is_string($item) || is_array($item)) {
+                    $collect($item, $nextKey);
+                }
+            }
+        };
+
+        foreach ($decoded['blocks'] as $block) {
+            if (!is_array($block)) {
+                continue;
+            }
+
+            $data = $block['data'] ?? null;
+            if (!is_array($data)) {
+                continue;
+            }
+
+            $collect($data, null);
+        }
+
+        if ($chunks === []) {
+            return '';
+        }
+
+        $deduplicated = [];
+        foreach ($chunks as $chunk) {
+            if ($deduplicated === [] || end($deduplicated) !== $chunk) {
+                $deduplicated[] = $chunk;
+            }
+        }
+
+        return $this->cleanTextarea(implode("\n\n", $deduplicated), $maxLength);
+    }
+
     private function cleanUrl(string $value): string
     {
         $value = trim($value);
@@ -1320,6 +1499,106 @@ final class CMS_365NET_Experts_And_Companie_Database
             } else {
                 $linkStmt = $db->prepare('UPDATE ' . $table . ' SET linked_expert_id = ? WHERE id = ?');
                 $linkStmt->execute([$expertId, $speakerId]);
+            }
+        } catch (Throwable) {
+        }
+    }
+
+    private function syncExpertLinkForCompany(int $companyId, ?int $expertId, ?int $previousExpertId = null): void
+    {
+        if ($companyId <= 0) {
+            return;
+        }
+
+        $expertColumns = $this->getExistingColumns(self::TABLE_EXPERTS);
+        if (!in_array('linked_company_id', $expertColumns, true)) {
+            return;
+        }
+
+        $db = CMS\Database::instance();
+        $expertsTable = $db->prefix() . self::TABLE_EXPERTS;
+        $companiesColumns = $this->getExistingColumns(self::TABLE_COMPANIES);
+        $companiesTable = $db->prefix() . self::TABLE_COMPANIES;
+
+        try {
+            if ($previousExpertId !== null && $previousExpertId > 0 && $previousExpertId !== $expertId) {
+                $clearPrevious = $db->prepare('UPDATE ' . $expertsTable . ' SET linked_company_id = NULL WHERE id = ? AND linked_company_id = ?');
+                $clearPrevious->execute([$previousExpertId, $companyId]);
+            }
+
+            if ($expertId === null || $expertId <= 0) {
+                return;
+            }
+
+            $currentExpert = $this->getExpertById($expertId);
+            if ($currentExpert !== null) {
+                $otherCompanyId = $this->cleanPositiveInt($currentExpert->linked_company_id ?? null);
+                if (
+                    $otherCompanyId !== null
+                    && $otherCompanyId !== $companyId
+                    && in_array('linked_expert_id', $companiesColumns, true)
+                ) {
+                    $clearOther = $db->prepare('UPDATE ' . $companiesTable . ' SET linked_expert_id = NULL WHERE id = ? AND linked_expert_id = ?');
+                    $clearOther->execute([$otherCompanyId, $expertId]);
+                }
+            }
+
+            $linkStmt = $db->prepare('UPDATE ' . $expertsTable . ' SET linked_company_id = ? WHERE id = ?');
+            $linkStmt->execute([$companyId, $expertId]);
+        } catch (Throwable) {
+        }
+    }
+
+    private function syncSpeakerLinkForCompany(int $companyId, ?int $speakerId, ?int $expertId = null, ?int $previousSpeakerId = null): void
+    {
+        if ($companyId <= 0 || !$this->tableExists('365net_event_speakers')) {
+            return;
+        }
+
+        $speakerColumns = $this->getExistingColumns('365net_event_speakers');
+        if (!in_array('linked_company_id', $speakerColumns, true)) {
+            return;
+        }
+
+        $db = CMS\Database::instance();
+        $speakersTable = $db->prefix() . '365net_event_speakers';
+        $companiesColumns = $this->getExistingColumns(self::TABLE_COMPANIES);
+        $companiesTable = $db->prefix() . self::TABLE_COMPANIES;
+
+        try {
+            if ($previousSpeakerId !== null && $previousSpeakerId > 0 && $previousSpeakerId !== $speakerId) {
+                if (in_array('linked_expert_id', $speakerColumns, true)) {
+                    $clearPrevious = $db->prepare('UPDATE ' . $speakersTable . ' SET linked_company_id = NULL, linked_expert_id = NULL WHERE id = ? AND linked_company_id = ?');
+                    $clearPrevious->execute([$previousSpeakerId, $companyId]);
+                } else {
+                    $clearPrevious = $db->prepare('UPDATE ' . $speakersTable . ' SET linked_company_id = NULL WHERE id = ? AND linked_company_id = ?');
+                    $clearPrevious->execute([$previousSpeakerId, $companyId]);
+                }
+            }
+
+            if ($speakerId === null || $speakerId <= 0) {
+                return;
+            }
+
+            $currentSpeaker = $this->getLinkedSpeaker($speakerId);
+            if ($currentSpeaker !== null) {
+                $otherCompanyId = $this->cleanPositiveInt($currentSpeaker->linked_company_id ?? null);
+                if (
+                    $otherCompanyId !== null
+                    && $otherCompanyId !== $companyId
+                    && in_array('linked_speaker_id', $companiesColumns, true)
+                ) {
+                    $clearOther = $db->prepare('UPDATE ' . $companiesTable . ' SET linked_speaker_id = NULL WHERE id = ? AND linked_speaker_id = ?');
+                    $clearOther->execute([$otherCompanyId, $speakerId]);
+                }
+            }
+
+            if (in_array('linked_expert_id', $speakerColumns, true)) {
+                $linkStmt = $db->prepare('UPDATE ' . $speakersTable . ' SET linked_company_id = ?, linked_expert_id = ? WHERE id = ?');
+                $linkStmt->execute([$companyId, $expertId, $speakerId]);
+            } else {
+                $linkStmt = $db->prepare('UPDATE ' . $speakersTable . ' SET linked_company_id = ? WHERE id = ?');
+                $linkStmt->execute([$companyId, $speakerId]);
             }
         } catch (Throwable) {
         }

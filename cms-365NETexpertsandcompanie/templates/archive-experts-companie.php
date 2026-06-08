@@ -131,6 +131,7 @@ $companyPartnerLabel = static function (object $company): string {
                             <?php
                             $name = $expertName($expert);
                             $detailUrl = trim((string) ($expert->detail_url ?? ''));
+                            $websiteUrl = trim((string) ($expert->website ?? ''));
                             $availability = trim((string) ($expert->availability ?? ''));
                             $position = trim((string) ($expert->position ?? ''));
                             $company = trim((string) ($expert->company ?? ''));
@@ -167,15 +168,20 @@ $companyPartnerLabel = static function (object $company): string {
                                             <a class="cms-excomp-linked-item" href="<?= $e($speakerSlug !== '' ? (rtrim((string) SITE_URL, '/') . '/speakers/' . rawurlencode($speakerSlug)) : (rtrim((string) SITE_URL, '/') . '/speakers')) ?>">🎤 <?= $e($speakerName !== '' ? $speakerName : 'Speaker') ?></a>
                                         <?php endif; ?>
                                         <?php if ($linkedCompany !== null): ?>
-                                            <a class="cms-excomp-linked-item" href="<?= $e(rtrim((string) SITE_URL, '/') . '/companies?q=' . rawurlencode($linkedCompanyName)) ?>">🏢 <?= $e($linkedCompanyName !== '' ? $linkedCompanyName : 'Company') ?></a>
+                                            <?php $linkedCompanyId = (int) ($linkedCompany->id ?? 0); ?>
+                                            <a class="cms-excomp-linked-item" href="<?= $e($linkedCompanyId > 0 ? (rtrim((string) SITE_URL, '/') . '/companies/' . $linkedCompanyId) : (rtrim((string) SITE_URL, '/') . '/companies')) ?>">🏢 <?= $e($linkedCompanyName !== '' ? $linkedCompanyName : 'Company') ?></a>
                                         <?php endif; ?>
                                     </div>
                                 <?php endif; ?>
 
                                 <?php if ($detailUrl !== ''): ?>
-                                    <a class="cms-excomp-card-link" href="<?= $e($detailUrl) ?>" target="_blank" rel="noopener noreferrer">Website öffnen</a>
+                                    <a class="cms-excomp-card-link" href="<?= $e($detailUrl) ?>">Profil öffnen</a>
                                 <?php else: ?>
-                                    <span class="cms-excomp-card-link is-disabled">Keine Website hinterlegt</span>
+                                    <span class="cms-excomp-card-link is-disabled">Kein Profil verfügbar</span>
+                                <?php endif; ?>
+
+                                <?php if ($websiteUrl !== ''): ?>
+                                    <a class="cms-excomp-card-link cms-excomp-card-link--ghost" href="<?= $e($websiteUrl) ?>" target="_blank" rel="noopener noreferrer">Website öffnen</a>
                                 <?php endif; ?>
                             </article>
                         <?php endforeach; ?>
@@ -202,6 +208,7 @@ $companyPartnerLabel = static function (object $company): string {
                             $name = trim((string) ($company->name ?? ''));
                             $name = $name !== '' ? $name : 'Company #' . (int) ($company->id ?? 0);
                             $detailUrl = trim((string) ($company->detail_url ?? ''));
+                            $websiteUrl = trim((string) ($company->website ?? ''));
                             $industry = trim((string) ($company->industry ?? ''));
                             $location = trim((string) ($company->location_city ?? ''));
                             $website = trim((string) ($company->website ?? ''));
@@ -239,8 +246,9 @@ $companyPartnerLabel = static function (object $company): string {
                                             if ($linkedExpertName === '') {
                                                 $linkedExpertName = 'Expert #' . (int) ($linkedExpert->id ?? 0);
                                             }
+                                            $linkedExpertId = (int) ($linkedExpert->id ?? 0);
                                             ?>
-                                            <a class="cms-excomp-linked-item" href="<?= $e(rtrim((string) SITE_URL, '/') . '/experts?q=' . rawurlencode($linkedExpertName)) ?>">👤 <?= $e($linkedExpertName) ?></a>
+                                            <a class="cms-excomp-linked-item" href="<?= $e($linkedExpertId > 0 ? (rtrim((string) SITE_URL, '/') . '/experts/' . $linkedExpertId) : (rtrim((string) SITE_URL, '/') . '/experts')) ?>">👤 <?= $e($linkedExpertName) ?></a>
                                         <?php endforeach; ?>
 
                                         <?php foreach (array_slice($linkedSpeakers, 0, 2) as $linkedSpeaker): ?>
@@ -263,9 +271,13 @@ $companyPartnerLabel = static function (object $company): string {
                                 <?php endif; ?>
 
                                 <?php if ($detailUrl !== ''): ?>
-                                    <a class="cms-excomp-card-link" href="<?= $e($detailUrl) ?>" target="_blank" rel="noopener noreferrer">Website öffnen</a>
+                                    <a class="cms-excomp-card-link" href="<?= $e($detailUrl) ?>">Company öffnen</a>
                                 <?php else: ?>
-                                    <span class="cms-excomp-card-link is-disabled">Keine Website hinterlegt</span>
+                                    <span class="cms-excomp-card-link is-disabled">Kein Profil verfügbar</span>
+                                <?php endif; ?>
+
+                                <?php if ($websiteUrl !== ''): ?>
+                                    <a class="cms-excomp-card-link cms-excomp-card-link--ghost" href="<?= $e($websiteUrl) ?>" target="_blank" rel="noopener noreferrer">Website öffnen</a>
                                 <?php endif; ?>
                             </article>
                         <?php endforeach; ?>

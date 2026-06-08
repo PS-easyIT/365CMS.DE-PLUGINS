@@ -77,6 +77,7 @@ $expertName = static function (object $expert): string {
                         <?php
                         $name = $expertName($expert);
                         $detailUrl = trim((string) ($expert->detail_url ?? ''));
+                        $websiteUrl = trim((string) ($expert->website ?? ''));
                         $position = trim((string) ($expert->position ?? ''));
                         $company = trim((string) ($expert->company ?? ''));
                         $location = trim((string) ($expert->location_city ?? $expert->city ?? ''));
@@ -114,7 +115,8 @@ $expertName = static function (object $expert): string {
                                         <a class="cms-excomp-linked-item" href="<?= $e($speakerSlug !== '' ? (rtrim((string) SITE_URL, '/') . '/speakers/' . rawurlencode($speakerSlug)) : (rtrim((string) SITE_URL, '/') . '/speakers')) ?>">🎤 <?= $e($speakerName !== '' ? $speakerName : 'Speaker') ?></a>
                                     <?php endif; ?>
                                     <?php if ($linkedCompany !== null): ?>
-                                        <a class="cms-excomp-linked-item" href="<?= $e(rtrim((string) SITE_URL, '/') . '/companies?q=' . rawurlencode($companyName)) ?>">🏢 <?= $e($companyName !== '' ? $companyName : 'Company') ?></a>
+                                        <?php $linkedCompanyId = (int) ($linkedCompany->id ?? 0); ?>
+                                        <a class="cms-excomp-linked-item" href="<?= $e($linkedCompanyId > 0 ? (rtrim((string) SITE_URL, '/') . '/companies/' . $linkedCompanyId) : (rtrim((string) SITE_URL, '/') . '/companies')) ?>">🏢 <?= $e($companyName !== '' ? $companyName : 'Company') ?></a>
                                     <?php endif; ?>
                                 </div>
                             <?php endif; ?>
@@ -122,9 +124,13 @@ $expertName = static function (object $expert): string {
                             <?php if ($bio !== ''): ?><p class="cms-excomp-card-excerpt"><?= $e($bio) ?></p><?php endif; ?>
 
                             <?php if ($detailUrl !== ''): ?>
-                                <a class="cms-excomp-card-link" href="<?= $e($detailUrl) ?>" target="_blank" rel="noopener noreferrer">Website öffnen</a>
+                                <a class="cms-excomp-card-link" href="<?= $e($detailUrl) ?>">Profil öffnen</a>
                             <?php else: ?>
-                                <span class="cms-excomp-card-link is-disabled">Keine Website hinterlegt</span>
+                                <span class="cms-excomp-card-link is-disabled">Kein Profil verfügbar</span>
+                            <?php endif; ?>
+
+                            <?php if ($websiteUrl !== ''): ?>
+                                <a class="cms-excomp-card-link cms-excomp-card-link--ghost" href="<?= $e($websiteUrl) ?>" target="_blank" rel="noopener noreferrer">Website öffnen</a>
                             <?php endif; ?>
                         </article>
                     <?php endforeach; ?>

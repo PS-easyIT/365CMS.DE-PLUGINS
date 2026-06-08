@@ -441,7 +441,7 @@ final class CMS_365NET_Experts_And_Companie_Admin
             <?php $this->textAreaField('skills_soft', 'Skills (Soft)', (string) ($item->skills_soft ?? ''), 3); ?>
             <?php $this->textAreaField('awards', 'Awards', (string) ($item->awards ?? ''), 2); ?>
             <?php $this->textAreaField('certifications', 'Zertifikate', (string) ($item->certifications ?? ''), 2); ?>
-            <?php $this->textAreaField('biography', 'Biografie', (string) ($item->biography ?? ''), 12); ?>
+            <?= $this->editor('biography_json', (string) ($item->biography_json ?? ''), (string) ($item->biography ?? ''), 'Biografie') ?>
 
             <div class="cms-excomp-form-actions">
                 <button type="submit" class="btn btn-primary">💾 Speichern</button>
@@ -456,7 +456,11 @@ final class CMS_365NET_Experts_And_Companie_Admin
         $mode = (string) ($data['mode'] ?? 'new');
         $item = is_object($data['item'] ?? null) ? $data['item'] : null;
         $csrf = trim((string) ($data['csrf'] ?? ''));
+        $experts = is_array($data['experts'] ?? null) ? $data['experts'] : [];
+        $speakers = is_array($data['speakers'] ?? null) ? $data['speakers'] : [];
         $isEdit = $mode === 'edit' && $item !== null;
+        $selectedLinkedExpertId = (int) ($item->linked_expert_id ?? 0);
+        $selectedLinkedSpeakerId = (int) ($item->linked_speaker_id ?? 0);
 
         $this->start($isEdit ? 'Company bearbeiten' : 'Company anlegen', 'experts-companie');
         ?>
@@ -489,13 +493,65 @@ final class CMS_365NET_Experts_And_Companie_Admin
                 <?php $this->textField('status', 'Status (active/inactive)', (string) ($item->status ?? 'active')); ?>
             </div>
 
+            <div class="cms-excomp-form-grid">
+                <label class="cms-excomp-form-field">
+                    <span>Verknüpfter Expert</span>
+                    <select name="linked_expert_id">
+                        <option value="">— keine —</option>
+                        <?php foreach ($experts as $expert): ?>
+                            <?php
+                            if (!is_object($expert)) {
+                                continue;
+                            }
+                            $expertId = (int) ($expert->id ?? 0);
+                            if ($expertId <= 0) {
+                                continue;
+                            }
+                            $expertName = trim((string) (($expert->first_name ?? '') . ' ' . ($expert->last_name ?? '')));
+                            if ($expertName === '') {
+                                $expertName = 'Expert #' . $expertId;
+                            }
+                            $expertCompany = trim((string) ($expert->company ?? ''));
+                            $expertLabel = $expertCompany !== '' ? ($expertName . ' — ' . $expertCompany) : $expertName;
+                            ?>
+                            <option value="<?= $expertId ?>"<?= $selectedLinkedExpertId === $expertId ? ' selected' : '' ?>><?= htmlspecialchars($expertLabel, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+
+                <label class="cms-excomp-form-field">
+                    <span>Verknüpfter Speaker</span>
+                    <select name="linked_speaker_id">
+                        <option value="">— keine —</option>
+                        <?php foreach ($speakers as $speaker): ?>
+                            <?php
+                            if (!is_object($speaker)) {
+                                continue;
+                            }
+                            $speakerId = (int) ($speaker->id ?? 0);
+                            if ($speakerId <= 0) {
+                                continue;
+                            }
+                            $speakerName = trim((string) ($speaker->display_name ?? ''));
+                            if ($speakerName === '') {
+                                $speakerName = 'Speaker #' . $speakerId;
+                            }
+                            $speakerTopic = trim((string) ($speaker->topic ?? ''));
+                            $speakerLabel = $speakerTopic !== '' ? ($speakerName . ' — ' . $speakerTopic) : $speakerName;
+                            ?>
+                            <option value="<?= $speakerId ?>"<?= $selectedLinkedSpeakerId === $speakerId ? ' selected' : '' ?>><?= htmlspecialchars($speakerLabel, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+            </div>
+
             <div class="cms-excomp-form-checks">
                 <?php $this->checkField('is_partner', 'Partner', (int) ($item->is_partner ?? 0) === 1); ?>
                 <?php $this->checkField('is_top_partner', 'Top-Partner', (int) ($item->is_top_partner ?? 0) === 1); ?>
                 <?php $this->checkField('is_sponsor', 'Sponsor', (int) ($item->is_sponsor ?? 0) === 1); ?>
             </div>
 
-            <?php $this->textAreaField('description', 'Beschreibung', (string) ($item->description ?? ''), 14); ?>
+            <?= $this->editor('description_json', (string) ($item->description_json ?? ''), (string) ($item->description ?? ''), 'Beschreibung') ?>
 
             <div class="cms-excomp-form-actions">
                 <button type="submit" class="btn btn-primary">💾 Speichern</button>
@@ -513,6 +569,42 @@ final class CMS_365NET_Experts_And_Companie_Admin
     private function textAreaField(string $name, string $label, string $value, int $rows = 4): void
     {
         echo '<label class="cms-excomp-form-field"><span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span><textarea name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" rows="' . max(2, $rows) . '">' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '</textarea></label>';
+    }
+
+    private function editor(string $name, string $jsonValue, string $fallbackText, string $label): string
+    {
+        $jsonValue = trim($jsonValue);
+        if ($jsonValue !== '') {
+            $decoded = json_decode($jsonValue, true);
+            if (!is_array($decoded) || !isset($decoded['blocks']) || !is_array($decoded['blocks']) || $decoded['blocks'] === []) {
+                $jsonValue = '';
+            }
+        }
+
+        if ($jsonValue === '' && $fallbackText !== '') {
+            $jsonValue = json_encode([
+                'time' => time() * 1000,
+                'blocks' => array_map(
+                    static fn(string $part): array => [
+                        'type' => 'paragraph',
+                        'data' => ['text' => htmlspecialchars(trim($part), ENT_QUOTES, 'UTF-8')],
+                    ],
+                    array_filter(preg_split('/\n{2,}/', $fallbackText) ?: [])
+                ),
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
+        }
+
+        if (class_exists('CMS\\Services\\EditorJs\\EditorJsAssetService')) {
+            $service = new CMS\Services\EditorJs\EditorJsAssetService();
+            return $service->render($name, $jsonValue, [
+                'height' => 460,
+                'context' => '365netexpertsandcompanie',
+                'aria_label' => $label,
+                'content_width' => 960,
+            ]);
+        }
+
+        return '<label class="cms-excomp-form-field"><span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span><textarea class="form-control" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" rows="12">' . htmlspecialchars($jsonValue, ENT_QUOTES, 'UTF-8') . '</textarea></label>';
     }
 
     private function checkField(string $name, string $label, bool $checked): void
