@@ -23,10 +23,56 @@ $companies = array_values(array_filter(array_map(
 $filters = is_array($filters ?? null) ? $filters : [];
 $q = trim((string) ($filters['q'] ?? ''));
 $city = trim((string) ($filters['city'] ?? ''));
+$settings = is_array($settings ?? null) ? $settings : [];
 
 $base = rtrim((string) SITE_URL, '/');
 $baseUrl = $base . '/companies';
 $e = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+
+$setting = static function (string $key, string $default) use ($settings): string {
+    $value = trim((string) ($settings[$key] ?? ''));
+    return $value !== '' ? $value : $default;
+};
+
+$designVars = [
+    '--cms-excomp-page-pt' => $setting('layout_page_padding_top', '24px'),
+    '--cms-excomp-page-pb' => $setting('layout_page_padding_bottom', '40px'),
+    '--cms-excomp-content-max' => $setting('layout_content_max_width', '1160px'),
+    '--cms-excomp-grid-gap' => $setting('layout_grid_gap', '18px'),
+    '--cms-excomp-section-gap' => $setting('layout_section_gap', '20px'),
+    '--cms-excomp-radius-card' => $setting('style_radius_card', '2px'),
+    '--cms-excomp-radius-btn' => $setting('style_radius_button', '2px'),
+    '--cms-excomp-radius-surface' => $setting('style_radius_surface', '4px'),
+    '--cms-excomp-radius-hero' => $setting('style_radius_hero', '4px'),
+    '--cms-excomp-color-bg' => $setting('color_bg', '#f8fafc'),
+    '--cms-excomp-color-text' => $setting('color_text', '#0f172a'),
+    '--cms-excomp-color-primary' => $setting('color_primary', '#1d4ed8'),
+    '--cms-excomp-color-hero-start' => $setting('color_hero_start', '#172554'),
+    '--cms-excomp-color-hero-end' => $setting('color_hero_end', '#1e40af'),
+    '--cms-excomp-color-expert-accent' => $setting('color_expert_accent', '#f97316'),
+    '--cms-excomp-color-company-accent' => $setting('color_company_accent', '#16a34a'),
+    '--cms-excomp-color-card-bg' => $setting('color_card_bg', '#ffffff'),
+    '--cms-excomp-color-border' => $setting('color_border', '#e2e8f0'),
+];
+
+$renderDesignVars = static function (array $vars): string {
+    $parts = [];
+    foreach ($vars as $name => $value) {
+        $name = trim((string) $name);
+        $value = trim((string) $value);
+        if ($name === '' || $value === '') {
+            continue;
+        }
+
+        $parts[] = htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ':' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    }
+
+    if ($parts === []) {
+        return '';
+    }
+
+    return '<style id="cms-excomp-design-vars">:root{' . implode(';', $parts) . ';}</style>';
+};
 
 $companyCardExcerpt = static function (object $company): string {
     $raw = trim((string) ($company->description ?? ''));
@@ -77,24 +123,26 @@ $partnerLabel = static function (object $company): string {
 };
 ?>
 
+<?= $renderDesignVars($designVars) ?>
+
 <main class="cms-excomp-public cms-excomp-archive cms-excomp-archive--companies">
     <div class="cms-excomp-container">
         <section class="cms-excomp-hero cms-excomp-hero--compact cms-excomp-hero--companies" aria-label="Companies">
-            <span class="cms-excomp-kicker">365 Network · Company Directory</span>
-            <h1>Companies</h1>
-            <p class="cms-excomp-hero__description">Partner, Organisationen und Unternehmen mit direkten Verknüpfungen zu Experts und Speakern.</p>
+            <span class="cms-excomp-kicker"><?= $e($setting('companies_archive_kicker', '365 Network · Company Directory')) ?></span>
+            <h1><?= $e($setting('companies_archive_title', 'Companies')) ?></h1>
+            <p class="cms-excomp-hero__description"><?= $e($setting('companies_archive_description', 'Partner, Organisationen und Unternehmen mit direkten Verknüpfungen zu Experts und Speakern.')) ?></p>
         </section>
 
         <form method="GET" action="<?= $e($baseUrl) ?>" class="cms-excomp-search cms-excomp-search--header-card" role="search" aria-label="Companies Suche">
             <div class="cms-excomp-search__field">
-                <input type="search" name="q" value="<?= $e($q) ?>" placeholder="Name, Branche, Beschreibung …" aria-label="Companies suchen">
+                <input type="search" name="q" value="<?= $e($q) ?>" placeholder="<?= $e($setting('companies_search_placeholder', 'Name, Branche, Beschreibung …')) ?>" aria-label="Companies suchen">
             </div>
             <div class="cms-excomp-search__field">
                 <input type="text" name="city" value="<?= $e($city) ?>" placeholder="Stadt …" aria-label="Stadt">
             </div>
             <div class="cms-excomp-search__actions">
-                <button type="submit">Suchen</button>
-                <?php if ($q !== '' || $city !== ''): ?><a href="<?= $e($baseUrl) ?>">Zurücksetzen</a><?php endif; ?>
+                <button type="submit"><?= $e($setting('search_button_label', 'Suchen')) ?></button>
+                <?php if ($q !== '' || $city !== ''): ?><a href="<?= $e($baseUrl) ?>"><?= $e($setting('reset_button_label', 'Zurücksetzen')) ?></a><?php endif; ?>
             </div>
         </form>
 
@@ -113,7 +161,6 @@ $partnerLabel = static function (object $company): string {
                         $detailUrl = $companyId > 0 ? ($base . '/companies/' . $companyId) : $baseUrl;
                     }
 
-                    $websiteUrl = trim((string) ($company->website ?? ''));
                     $industry = trim((string) ($company->industry ?? ''));
                     $location = trim((string) ($company->location_city ?? $company->city ?? ''));
                     $logo = trim((string) ($company->logo_url ?? ''));
@@ -185,8 +232,6 @@ $partnerLabel = static function (object $company): string {
                             <span class="cms-excomp-card__badge"><?= $industry !== '' ? $e($industry) : 'Company' ?></span>
                             <a class="cms-excomp-card__more" href="<?= $e($detailUrl) ?>">Mehr Infos …</a>
                         </footer>
-
-                        <?php if ($websiteUrl !== ''): ?><a class="cms-excomp-card__ghost-link" href="<?= $e($websiteUrl) ?>" target="_blank" rel="noopener noreferrer">Website öffnen</a><?php endif; ?>
                     </article>
                 <?php endforeach; ?>
             </div>

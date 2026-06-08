@@ -187,12 +187,47 @@ final class CMS_365NET_Experts_And_Companie_Admin
         $showNav = ($settings['show_nav_link'] ?? '0') === '1';
         $navLabel = trim((string) ($settings['nav_label'] ?? 'Experts & Companies'));
 
+        $expertsArchiveKicker = trim((string) ($settings['experts_archive_kicker'] ?? '365 Network · Expert Directory'));
+        $expertsArchiveTitle = trim((string) ($settings['experts_archive_title'] ?? 'Experts'));
+        $expertsArchiveDescription = trim((string) ($settings['experts_archive_description'] ?? ''));
+        $expertsSearchPlaceholder = trim((string) ($settings['experts_search_placeholder'] ?? 'Name, Firma, Position, Skills …'));
+
+        $companiesArchiveKicker = trim((string) ($settings['companies_archive_kicker'] ?? '365 Network · Company Directory'));
+        $companiesArchiveTitle = trim((string) ($settings['companies_archive_title'] ?? 'Companies'));
+        $companiesArchiveDescription = trim((string) ($settings['companies_archive_description'] ?? ''));
+        $companiesSearchPlaceholder = trim((string) ($settings['companies_search_placeholder'] ?? 'Name, Branche, Beschreibung …'));
+
+        $searchButtonLabel = trim((string) ($settings['search_button_label'] ?? 'Suchen'));
+        $resetButtonLabel = trim((string) ($settings['reset_button_label'] ?? 'Zurücksetzen'));
+        $websiteButtonLabel = trim((string) ($settings['website_button_label'] ?? 'Website'));
+
+        $layoutContentMaxWidth = trim((string) ($settings['layout_content_max_width'] ?? '1160px'));
+        $layoutPagePaddingTop = trim((string) ($settings['layout_page_padding_top'] ?? '24px'));
+        $layoutPagePaddingBottom = trim((string) ($settings['layout_page_padding_bottom'] ?? '40px'));
+        $layoutGridGap = trim((string) ($settings['layout_grid_gap'] ?? '18px'));
+        $layoutSectionGap = trim((string) ($settings['layout_section_gap'] ?? '20px'));
+
+        $styleRadiusCard = trim((string) ($settings['style_radius_card'] ?? '2px'));
+        $styleRadiusButton = trim((string) ($settings['style_radius_button'] ?? '2px'));
+        $styleRadiusSurface = trim((string) ($settings['style_radius_surface'] ?? '4px'));
+        $styleRadiusHero = trim((string) ($settings['style_radius_hero'] ?? '4px'));
+
+        $colorBg = trim((string) ($settings['color_bg'] ?? '#f8fafc'));
+        $colorText = trim((string) ($settings['color_text'] ?? '#0f172a'));
+        $colorPrimary = trim((string) ($settings['color_primary'] ?? '#1d4ed8'));
+        $colorHeroStart = trim((string) ($settings['color_hero_start'] ?? '#172554'));
+        $colorHeroEnd = trim((string) ($settings['color_hero_end'] ?? '#1e40af'));
+        $colorExpertAccent = trim((string) ($settings['color_expert_accent'] ?? '#f97316'));
+        $colorCompanyAccent = trim((string) ($settings['color_company_accent'] ?? '#16a34a'));
+        $colorCardBg = trim((string) ($settings['color_card_bg'] ?? '#ffffff'));
+        $colorBorder = trim((string) ($settings['color_border'] ?? '#e2e8f0'));
+
         $this->start('Experts & Companie Einstellungen', 'experts-companie');
         ?>
         <div class="cms-excomp-admin-header">
             <div>
                 <h2>⚙️ Einstellungen</h2>
-                <p>Steuere, ob ein Eintrag im Hauptmenü sichtbar ist und wie dieser benannt wird.</p>
+                <p>Steuere Navigation, Texte, Layout-Abstände, Rundungen und Farben für die Publicseiten zentral im Adminbereich.</p>
             </div>
             <div class="cms-excomp-admin-actions">
                 <a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/experts-companie', ENT_QUOTES, 'UTF-8') ?>">Zur Übersicht</a>
@@ -208,12 +243,66 @@ final class CMS_365NET_Experts_And_Companie_Admin
         <form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/experts-companie/settings/save', ENT_QUOTES, 'UTF-8') ?>" class="admin-card cms-excomp-form">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
 
+            <h3>Navigation</h3>
             <div class="cms-excomp-form-checks">
                 <?php $this->checkField('show_nav_link', 'Im Hauptmenü anzeigen', $showNav); ?>
             </div>
 
             <div class="cms-excomp-form-grid">
                 <?php $this->textField('nav_label', 'Navigationslabel', $navLabel); ?>
+            </div>
+
+            <h3>Texte – Experts Archiv</h3>
+            <div class="cms-excomp-form-grid">
+                <?php $this->textField('experts_archive_kicker', 'Experts Kicker', $expertsArchiveKicker); ?>
+                <?php $this->textField('experts_archive_title', 'Experts Titel', $expertsArchiveTitle); ?>
+                <?php $this->textField('experts_search_placeholder', 'Experts Such-Placeholder', $expertsSearchPlaceholder); ?>
+            </div>
+            <?php $this->textAreaField('experts_archive_description', 'Experts Beschreibung', $expertsArchiveDescription, 2); ?>
+
+            <h3>Texte – Companies Archiv</h3>
+            <div class="cms-excomp-form-grid">
+                <?php $this->textField('companies_archive_kicker', 'Companies Kicker', $companiesArchiveKicker); ?>
+                <?php $this->textField('companies_archive_title', 'Companies Titel', $companiesArchiveTitle); ?>
+                <?php $this->textField('companies_search_placeholder', 'Companies Such-Placeholder', $companiesSearchPlaceholder); ?>
+            </div>
+            <?php $this->textAreaField('companies_archive_description', 'Companies Beschreibung', $companiesArchiveDescription, 2); ?>
+
+            <h3>Texte – Buttons</h3>
+            <div class="cms-excomp-form-grid">
+                <?php $this->textField('search_button_label', 'Such-Button', $searchButtonLabel); ?>
+                <?php $this->textField('reset_button_label', 'Reset-Button', $resetButtonLabel); ?>
+                <?php $this->textField('website_button_label', 'Website-Button (Single)', $websiteButtonLabel); ?>
+            </div>
+
+            <h3>Layout & Abstände</h3>
+            <div class="cms-excomp-form-grid">
+                <?php $this->textField('layout_content_max_width', 'Content-Breite (z. B. 1160px)', $layoutContentMaxWidth); ?>
+                <?php $this->textField('layout_page_padding_top', 'Abstand Header → Content', $layoutPagePaddingTop); ?>
+                <?php $this->textField('layout_page_padding_bottom', 'Abstand Content → Footer', $layoutPagePaddingBottom); ?>
+                <?php $this->textField('layout_grid_gap', 'Grid-Abstand', $layoutGridGap); ?>
+                <?php $this->textField('layout_section_gap', 'Abschnitt-Abstand', $layoutSectionGap); ?>
+            </div>
+
+            <h3>Rundungen (2px / max 4px empfohlen)</h3>
+            <div class="cms-excomp-form-grid">
+                <?php $this->textField('style_radius_card', 'Cards', $styleRadiusCard); ?>
+                <?php $this->textField('style_radius_button', 'Buttons', $styleRadiusButton); ?>
+                <?php $this->textField('style_radius_surface', 'Container/Flächen', $styleRadiusSurface); ?>
+                <?php $this->textField('style_radius_hero', 'Hero', $styleRadiusHero); ?>
+            </div>
+
+            <h3>Farben</h3>
+            <div class="cms-excomp-form-grid">
+                <?php $this->textField('color_bg', 'Hintergrund', $colorBg); ?>
+                <?php $this->textField('color_text', 'Text', $colorText); ?>
+                <?php $this->textField('color_primary', 'Primärfarbe', $colorPrimary); ?>
+                <?php $this->textField('color_hero_start', 'Hero Start', $colorHeroStart); ?>
+                <?php $this->textField('color_hero_end', 'Hero Ende', $colorHeroEnd); ?>
+                <?php $this->textField('color_expert_accent', 'Expert Akzent', $colorExpertAccent); ?>
+                <?php $this->textField('color_company_accent', 'Company Akzent', $colorCompanyAccent); ?>
+                <?php $this->textField('color_card_bg', 'Card Hintergrund', $colorCardBg); ?>
+                <?php $this->textField('color_border', 'Border', $colorBorder); ?>
             </div>
 
             <div class="cms-excomp-form-actions">

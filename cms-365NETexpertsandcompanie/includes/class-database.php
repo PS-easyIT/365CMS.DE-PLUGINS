@@ -69,6 +69,35 @@ final class CMS_365NET_Experts_And_Companie_Database
         $defaults = [
             'show_nav_link' => '0',
             'nav_label' => 'Experts & Companies',
+            'experts_archive_kicker' => '365 Network · Expert Directory',
+            'experts_archive_title' => 'Experts',
+            'experts_archive_description' => 'Echte Profile mit Skills, Verfügbarkeit und direkten Verknüpfungen zu Company & Speaker.',
+            'experts_search_placeholder' => 'Name, Firma, Position, Skills …',
+            'companies_archive_kicker' => '365 Network · Company Directory',
+            'companies_archive_title' => 'Companies',
+            'companies_archive_description' => 'Partner, Organisationen und Unternehmen mit direkten Verknüpfungen zu Experts und Speakern.',
+            'companies_search_placeholder' => 'Name, Branche, Beschreibung …',
+            'search_button_label' => 'Suchen',
+            'reset_button_label' => 'Zurücksetzen',
+            'website_button_label' => 'Website',
+            'layout_content_max_width' => '1160px',
+            'layout_page_padding_top' => '24px',
+            'layout_page_padding_bottom' => '40px',
+            'layout_grid_gap' => '18px',
+            'layout_section_gap' => '20px',
+            'style_radius_card' => '2px',
+            'style_radius_button' => '2px',
+            'style_radius_surface' => '4px',
+            'style_radius_hero' => '4px',
+            'color_bg' => '#f8fafc',
+            'color_text' => '#0f172a',
+            'color_primary' => '#1d4ed8',
+            'color_hero_start' => '#172554',
+            'color_hero_end' => '#1e40af',
+            'color_expert_accent' => '#f97316',
+            'color_company_accent' => '#16a34a',
+            'color_card_bg' => '#ffffff',
+            'color_border' => '#e2e8f0',
         ];
 
         $db = CMS\Database::instance();
@@ -107,7 +136,7 @@ final class CMS_365NET_Experts_And_Companie_Database
                 continue;
             }
 
-            $this->saveSetting($key, $this->cleanTextarea($raw, 120));
+            $this->saveSetting($key, $this->cleanTextarea($raw, 255));
         }
     }
 

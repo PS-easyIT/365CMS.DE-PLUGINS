@@ -143,6 +143,7 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
             'expert' => $expert,
             'linkedCompany' => $linkedCompany,
             'linkedSpeaker' => $linkedSpeaker,
+            'settings' => $db->getSettings(),
         ]);
         $theme->getFooter();
     }
@@ -214,6 +215,7 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
             'linkedSpeaker' => $linkedSpeaker,
             'linkedExperts' => $linkedExperts,
             'linkedSpeakers' => $linkedSpeakers,
+            'settings' => $db->getSettings(),
         ]);
         $theme->getFooter();
     }
@@ -233,6 +235,7 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
         }
 
         $db = CMS_365NET_Experts_And_Companie_Database::instance();
+        $settings = $db->getSettings();
 
         $experts = [];
         $companies = [];
@@ -310,6 +313,7 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
         CMS_365NET_Experts_And_Companie_Template_Loader::instance()->render($template, [
             'experts' => $experts,
             'companies' => $companies,
+            'settings' => $settings,
             'filters' => [
                 'q' => $search,
                 'city' => $city,
