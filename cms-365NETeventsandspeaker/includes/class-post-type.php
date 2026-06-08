@@ -95,6 +95,26 @@ final class CMS_365NET_Events_Post_Type
         $eventArgs['limit'] = self::PUBLIC_PER_PAGE;
         $eventArgs['offset'] = ((int) $pagination['current'] - 1) * self::PUBLIC_PER_PAGE;
         $events = $db->getEvents($eventArgs);
+        foreach ($events as $event) {
+            if (!is_object($event)) {
+                continue;
+            }
+
+            $linkedCompany = $db->getLinkedCompany(isset($event->linked_company_id) ? (int) $event->linked_company_id : null);
+            if ($linkedCompany === null) {
+                $eventSignals = [
+                    'organizer' => (string) ($event->organizer ?? ''),
+                    'company' => (string) ($event->organizer ?? ''),
+                    'contact_name' => (string) ($event->contact_name ?? ''),
+                    'website' => (string) ($event->website ?? ''),
+                    'registration_url' => (string) ($event->registration_url ?? ''),
+                    'ticket_url' => (string) ($event->ticket_url ?? ''),
+                ];
+                $linkedCompany = $db->detectLinkedCompanyBySignals($eventSignals);
+            }
+
+            $event->linked_company_is_top_partner = ($linkedCompany !== null && (int) ($linkedCompany->is_top_partner ?? 0) === 1) ? 1 : 0;
+        }
 
         $this->renderWithTheme('archive-events', [
             'events' => $events,

@@ -2153,6 +2153,10 @@ final class CMS_365NET_Events_Database
             'show_nav_link' => '0',
             'nav_label' => 'Events',
             'events_header_text_enabled' => '1',
+            'events_header_kicker_enabled' => '1',
+            'events_header_title_enabled' => '1',
+            'events_header_description_enabled' => '1',
+            'events_search_placeholder_enabled' => '1',
             'archive_title' => 'Events & Messen 2026',
             'archive_description' => 'Kuratiertes Event- und Speaker-Verzeichnis für IT, Cloud, Security, AI und digitale Transformation.',
             'archive_kicker' => '365NET Event Directory',
@@ -2171,6 +2175,10 @@ final class CMS_365NET_Events_Database
             'archive_empty_current' => 'Es wurden keine zukünftigen Events gefunden.',
             'archive_empty_past' => 'Keine vergangenen Events gefunden.',
             'speakers_header_text_enabled' => '1',
+            'speakers_header_kicker_enabled' => '1',
+            'speakers_header_title_enabled' => '1',
+            'speakers_header_description_enabled' => '1',
+            'speakers_search_placeholder_enabled' => '1',
             'speaker_archive_title' => 'Event-Speaker',
             'speaker_archive_kicker' => '365NET Speaker Directory',
             'speaker_archive_description' => 'Personen, Expertengruppen und Organisationen aus dem Event-Datensatz.',
@@ -2239,7 +2247,19 @@ final class CMS_365NET_Events_Database
     public function saveSettings(array $data): void
     {
         $allowed = array_keys($this->getSettings());
-        $booleanKeys = ['show_nav_link', 'events_header_text_enabled', 'speakers_header_text_enabled'];
+        $booleanKeys = [
+            'show_nav_link',
+            'events_header_text_enabled',
+            'events_header_kicker_enabled',
+            'events_header_title_enabled',
+            'events_header_description_enabled',
+            'events_search_placeholder_enabled',
+            'speakers_header_text_enabled',
+            'speakers_header_kicker_enabled',
+            'speakers_header_title_enabled',
+            'speakers_header_description_enabled',
+            'speakers_search_placeholder_enabled',
+        ];
         foreach ($allowed as $key) {
             if (str_starts_with($key, 'taxonomy_')) {
                 continue;

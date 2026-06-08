@@ -187,15 +187,48 @@ final class CMS_365NET_Experts_And_Companie_Admin
         $showNav = ($settings['show_nav_link'] ?? '0') === '1';
         $navLabel = trim((string) ($settings['nav_label'] ?? 'Experts & Companies'));
 
+        $expertsHeaderTextEnabled = ($settings['experts_header_text_enabled'] ?? '1') === '1';
+        $expertsHeaderKickerEnabled = ($settings['experts_header_kicker_enabled'] ?? '1') === '1';
+        $expertsHeaderTitleEnabled = ($settings['experts_header_title_enabled'] ?? '1') === '1';
+        $expertsHeaderDescriptionEnabled = ($settings['experts_header_description_enabled'] ?? '1') === '1';
+        $expertsSearchPlaceholderEnabled = ($settings['experts_search_placeholder_enabled'] ?? '1') === '1';
         $expertsArchiveKicker = trim((string) ($settings['experts_archive_kicker'] ?? '365 Network · Expert Directory'));
         $expertsArchiveTitle = trim((string) ($settings['experts_archive_title'] ?? 'Experts'));
         $expertsArchiveDescription = trim((string) ($settings['experts_archive_description'] ?? ''));
+        $expertsHeaderBtn1Text = trim((string) ($settings['experts_header_btn_1_text'] ?? ''));
+        $expertsHeaderBtn1Url = trim((string) ($settings['experts_header_btn_1_url'] ?? ''));
+        $expertsHeaderBtn2Text = trim((string) ($settings['experts_header_btn_2_text'] ?? ''));
+        $expertsHeaderBtn2Url = trim((string) ($settings['experts_header_btn_2_url'] ?? ''));
+        $expertsHeaderBtn3Text = trim((string) ($settings['experts_header_btn_3_text'] ?? ''));
+        $expertsHeaderBtn3Url = trim((string) ($settings['experts_header_btn_3_url'] ?? ''));
         $expertsSearchPlaceholder = trim((string) ($settings['experts_search_placeholder'] ?? 'Name, Firma, Position, Skills …'));
 
+        $companiesHeaderTextEnabled = ($settings['companies_header_text_enabled'] ?? '1') === '1';
+        $companiesHeaderKickerEnabled = ($settings['companies_header_kicker_enabled'] ?? '1') === '1';
+        $companiesHeaderTitleEnabled = ($settings['companies_header_title_enabled'] ?? '1') === '1';
+        $companiesHeaderDescriptionEnabled = ($settings['companies_header_description_enabled'] ?? '1') === '1';
+        $companiesSearchPlaceholderEnabled = ($settings['companies_search_placeholder_enabled'] ?? '1') === '1';
         $companiesArchiveKicker = trim((string) ($settings['companies_archive_kicker'] ?? '365 Network · Company Directory'));
         $companiesArchiveTitle = trim((string) ($settings['companies_archive_title'] ?? 'Companies'));
         $companiesArchiveDescription = trim((string) ($settings['companies_archive_description'] ?? ''));
+        $companiesHeaderBtn1Text = trim((string) ($settings['companies_header_btn_1_text'] ?? ''));
+        $companiesHeaderBtn1Url = trim((string) ($settings['companies_header_btn_1_url'] ?? ''));
+        $companiesHeaderBtn2Text = trim((string) ($settings['companies_header_btn_2_text'] ?? ''));
+        $companiesHeaderBtn2Url = trim((string) ($settings['companies_header_btn_2_url'] ?? ''));
+        $companiesHeaderBtn3Text = trim((string) ($settings['companies_header_btn_3_text'] ?? ''));
+        $companiesHeaderBtn3Url = trim((string) ($settings['companies_header_btn_3_url'] ?? ''));
         $companiesSearchPlaceholder = trim((string) ($settings['companies_search_placeholder'] ?? 'Name, Branche, Beschreibung …'));
+
+        $hubHeaderTextEnabled = ($settings['hub_header_text_enabled'] ?? '1') === '1';
+        $hubArchiveKicker = trim((string) ($settings['hub_archive_kicker'] ?? '365 Network Hub'));
+        $hubArchiveTitle = trim((string) ($settings['hub_archive_title'] ?? 'Experts & Companie'));
+        $hubArchiveDescription = trim((string) ($settings['hub_archive_description'] ?? ''));
+        $hubHeaderBtn1Text = trim((string) ($settings['hub_header_btn_1_text'] ?? ''));
+        $hubHeaderBtn1Url = trim((string) ($settings['hub_header_btn_1_url'] ?? ''));
+        $hubHeaderBtn2Text = trim((string) ($settings['hub_header_btn_2_text'] ?? ''));
+        $hubHeaderBtn2Url = trim((string) ($settings['hub_header_btn_2_url'] ?? ''));
+        $hubHeaderBtn3Text = trim((string) ($settings['hub_header_btn_3_text'] ?? ''));
+        $hubHeaderBtn3Url = trim((string) ($settings['hub_header_btn_3_url'] ?? ''));
 
         $searchButtonLabel = trim((string) ($settings['search_button_label'] ?? 'Suchen'));
         $resetButtonLabel = trim((string) ($settings['reset_button_label'] ?? 'Zurücksetzen'));
@@ -255,20 +288,68 @@ final class CMS_365NET_Experts_And_Companie_Admin
             </div>
 
             <h3>Texte – Experts Archiv</h3>
+            <div class="cms-excomp-form-checks">
+                <?php $this->checkField('experts_header_text_enabled', 'Experts-Headertexte anzeigen', $expertsHeaderTextEnabled); ?>
+                <?php $this->checkField('experts_header_kicker_enabled', 'Experts Kicker anzeigen', $expertsHeaderKickerEnabled); ?>
+                <?php $this->checkField('experts_header_title_enabled', 'Experts Titel anzeigen', $expertsHeaderTitleEnabled); ?>
+                <?php $this->checkField('experts_header_description_enabled', 'Experts Beschreibung anzeigen', $expertsHeaderDescriptionEnabled); ?>
+                <?php $this->checkField('experts_search_placeholder_enabled', 'Experts Such-Placeholder anzeigen', $expertsSearchPlaceholderEnabled); ?>
+            </div>
             <div class="cms-excomp-form-grid">
                 <?php $this->textField('experts_archive_kicker', 'Experts Kicker', $expertsArchiveKicker); ?>
                 <?php $this->textField('experts_archive_title', 'Experts Titel', $expertsArchiveTitle); ?>
                 <?php $this->textField('experts_search_placeholder', 'Experts Such-Placeholder', $expertsSearchPlaceholder); ?>
             </div>
             <?php $this->textAreaField('experts_archive_description', 'Experts Beschreibung', $expertsArchiveDescription, 2); ?>
+            <div class="cms-excomp-form-grid">
+                <?php $this->textField('experts_header_btn_1_text', 'Experts Header-Button 1 Text', $expertsHeaderBtn1Text); ?>
+                <?php $this->textField('experts_header_btn_1_url', 'Experts Header-Button 1 URL', $expertsHeaderBtn1Url); ?>
+                <?php $this->textField('experts_header_btn_2_text', 'Experts Header-Button 2 Text', $expertsHeaderBtn2Text); ?>
+                <?php $this->textField('experts_header_btn_2_url', 'Experts Header-Button 2 URL', $expertsHeaderBtn2Url); ?>
+                <?php $this->textField('experts_header_btn_3_text', 'Experts Header-Button 3 Text', $expertsHeaderBtn3Text); ?>
+                <?php $this->textField('experts_header_btn_3_url', 'Experts Header-Button 3 URL', $expertsHeaderBtn3Url); ?>
+            </div>
 
             <h3>Texte – Companies Archiv</h3>
+            <div class="cms-excomp-form-checks">
+                <?php $this->checkField('companies_header_text_enabled', 'Companies-Headertexte anzeigen', $companiesHeaderTextEnabled); ?>
+                <?php $this->checkField('companies_header_kicker_enabled', 'Companies Kicker anzeigen', $companiesHeaderKickerEnabled); ?>
+                <?php $this->checkField('companies_header_title_enabled', 'Companies Titel anzeigen', $companiesHeaderTitleEnabled); ?>
+                <?php $this->checkField('companies_header_description_enabled', 'Companies Beschreibung anzeigen', $companiesHeaderDescriptionEnabled); ?>
+                <?php $this->checkField('companies_search_placeholder_enabled', 'Companies Such-Placeholder anzeigen', $companiesSearchPlaceholderEnabled); ?>
+            </div>
             <div class="cms-excomp-form-grid">
                 <?php $this->textField('companies_archive_kicker', 'Companies Kicker', $companiesArchiveKicker); ?>
                 <?php $this->textField('companies_archive_title', 'Companies Titel', $companiesArchiveTitle); ?>
                 <?php $this->textField('companies_search_placeholder', 'Companies Such-Placeholder', $companiesSearchPlaceholder); ?>
             </div>
             <?php $this->textAreaField('companies_archive_description', 'Companies Beschreibung', $companiesArchiveDescription, 2); ?>
+            <div class="cms-excomp-form-grid">
+                <?php $this->textField('companies_header_btn_1_text', 'Companies Header-Button 1 Text', $companiesHeaderBtn1Text); ?>
+                <?php $this->textField('companies_header_btn_1_url', 'Companies Header-Button 1 URL', $companiesHeaderBtn1Url); ?>
+                <?php $this->textField('companies_header_btn_2_text', 'Companies Header-Button 2 Text', $companiesHeaderBtn2Text); ?>
+                <?php $this->textField('companies_header_btn_2_url', 'Companies Header-Button 2 URL', $companiesHeaderBtn2Url); ?>
+                <?php $this->textField('companies_header_btn_3_text', 'Companies Header-Button 3 Text', $companiesHeaderBtn3Text); ?>
+                <?php $this->textField('companies_header_btn_3_url', 'Companies Header-Button 3 URL', $companiesHeaderBtn3Url); ?>
+            </div>
+
+            <h3>Texte – Hub Archiv (Experts & Companie)</h3>
+            <div class="cms-excomp-form-checks">
+                <?php $this->checkField('hub_header_text_enabled', 'Hub-Headertexte anzeigen', $hubHeaderTextEnabled); ?>
+            </div>
+            <div class="cms-excomp-form-grid">
+                <?php $this->textField('hub_archive_kicker', 'Hub Kicker', $hubArchiveKicker); ?>
+                <?php $this->textField('hub_archive_title', 'Hub Titel', $hubArchiveTitle); ?>
+            </div>
+            <?php $this->textAreaField('hub_archive_description', 'Hub Beschreibung', $hubArchiveDescription, 2); ?>
+            <div class="cms-excomp-form-grid">
+                <?php $this->textField('hub_header_btn_1_text', 'Hub Header-Button 1 Text', $hubHeaderBtn1Text); ?>
+                <?php $this->textField('hub_header_btn_1_url', 'Hub Header-Button 1 URL', $hubHeaderBtn1Url); ?>
+                <?php $this->textField('hub_header_btn_2_text', 'Hub Header-Button 2 Text', $hubHeaderBtn2Text); ?>
+                <?php $this->textField('hub_header_btn_2_url', 'Hub Header-Button 2 URL', $hubHeaderBtn2Url); ?>
+                <?php $this->textField('hub_header_btn_3_text', 'Hub Header-Button 3 Text', $hubHeaderBtn3Text); ?>
+                <?php $this->textField('hub_header_btn_3_url', 'Hub Header-Button 3 URL', $hubHeaderBtn3Url); ?>
+            </div>
 
             <h3>Texte – Buttons</h3>
             <div class="cms-excomp-form-grid">

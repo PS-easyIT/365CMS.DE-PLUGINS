@@ -3,6 +3,9 @@
 
 main.cms-events-public.cms-events-archive .cms-events-card{border-top:3px solid var(--cms-events-event-card-top-border,var(--cms-events-accent,#f59e0b))!important}
 main.cms-events-public.cms-speakers-archive .cms-events-card.cms-speaker-card{border-top:3px solid var(--cms-events-speaker-card-top-border,#8b5cf6)!important}
+main.cms-events-public.cms-events-archive .cms-events-hero,main.cms-events-public.cms-events-archive .cms-events-hero.cms-events-hero--compact{border-left:4px solid var(--cms-events-event-card-top-border,var(--cms-events-accent,#f59e0b))!important;border-right:0!important}
+main.cms-events-public.cms-speakers-archive .cms-events-hero,main.cms-events-public.cms-speakers-archive .cms-events-hero.cms-events-hero--compact{border-left:4px solid var(--cms-events-speaker-card-top-border,#8b5cf6)!important;border-right:0!important}
+main.cms-events-public.cms-events-archive .cms-events-card.cms-events-card--top-partner{border-left:1px solid rgba(217,170,44,.65)!important;border-right:1px solid rgba(217,170,44,.65)!important;border-bottom:1px solid rgba(217,170,44,.78)!important;box-shadow:0 12px 28px rgba(15,23,42,.10),0 0 0 1px rgba(217,170,44,.16)!important}
 
 .cms-events-detail .cms-events-detail-layout{display:block!important}
 .cms-events-detail .cms-events-detail-layout__body{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,calc(33% + 2px));column-gap:25px;row-gap:0;align-items:stretch}
@@ -69,10 +72,11 @@ main.cms-events-public.cms-speakers-archive .cms-events-card.cms-speaker-card{bo
 .cms-events-public.cms-speaker-detail .cms-events-btn:hover{background:#e2d6ff!important;color:#432a72!important}
 .cms-events-public.cms-speakers-archive .cms-events-card.cms-speaker-card{border:1px solid #e8defc!important;background:linear-gradient(180deg,#ffffff 0%,#faf7ff 100%)!important;box-shadow:0 16px 38px rgba(103,76,154,.10)!important}
 .cms-events-public.cms-speakers-archive .cms-speaker-card__head{margin:-14px -14px 10px -14px!important;padding:12px 14px 10px!important;background:#f8f3ff!important;border-bottom:1px solid #e8defc!important;border-radius:var(--cms-events-card-radius,20px) var(--cms-events-card-radius,20px) 0 0!important;box-sizing:border-box}
-.cms-events-public.cms-speakers-archive .cms-events-hero,.cms-events-public.cms-speakers-archive .cms-events-hero.cms-events-hero--compact{background:linear-gradient(135deg,#faf6ff 0%,#efe6ff 100%)!important;color:#4f3b76!important;box-shadow:0 16px 42px rgba(103,76,154,.10)!important}
-.cms-events-public.cms-speakers-archive .cms-events-kicker{color:#7453ab!important;background:#fbf8ff!important;border:1px solid #e7dbff!important;border-radius:999px;padding:4px 10px}
-.cms-events-public.cms-speakers-archive .cms-events-hero h1{color:#4b356f!important}
-.cms-events-public.cms-speakers-archive .cms-events-hero p,.cms-events-public.cms-speakers-archive .cms-events-hero__description{color:#6a6386!important;opacity:1!important}
+.cms-events-public.cms-events-archive .cms-events-hero,.cms-events-public.cms-events-archive .cms-events-hero.cms-events-hero--compact{background:linear-gradient(135deg,#1e3a8a 0%,#172554 100%)!important;color:#fff!important;box-shadow:0 16px 42px rgba(15,23,42,.20)!important}
+.cms-events-public.cms-speakers-archive .cms-events-hero,.cms-events-public.cms-speakers-archive .cms-events-hero.cms-events-hero--compact{background:linear-gradient(135deg,#4a2d73 0%,#2a1745 100%)!important;color:#fff!important;box-shadow:0 16px 42px rgba(32,18,53,.24)!important}
+.cms-events-public.cms-speakers-archive .cms-events-kicker{color:var(--cms-events-accent,#f59e0b)!important;background:transparent!important;border:0!important;border-radius:0!important;padding:0!important}
+.cms-events-public.cms-speakers-archive .cms-events-hero h1{color:#fff!important}
+.cms-events-public.cms-speakers-archive .cms-events-hero p,.cms-events-public.cms-speakers-archive .cms-events-hero__description{color:rgba(255,255,255,.92)!important;opacity:1!important}
 .cms-events-public.cms-speakers-archive .cms-speaker-card__name a{color:#4f357f!important}
 .cms-events-public.cms-speakers-archive .cms-speaker-card__name a:hover{color:#6b42b5!important}
 .cms-events-public.cms-speakers-archive .cms-speaker-card__excerpt{color:#5f5a79!important}

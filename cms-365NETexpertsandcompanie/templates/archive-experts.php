@@ -54,6 +54,32 @@ $setting = static function (string $key, string $default) use ($settings): strin
     return $value !== '' ? $value : $default;
 };
 
+$expertsHeaderTextEnabled = $setting('experts_header_text_enabled', '1') !== '0';
+$expertsHeaderKickerEnabled = $setting('experts_header_kicker_enabled', '1') !== '0';
+$expertsHeaderTitleEnabled = $setting('experts_header_title_enabled', '1') !== '0';
+$expertsHeaderDescriptionEnabled = $setting('experts_header_description_enabled', '1') !== '0';
+$expertsSearchPlaceholderEnabled = $setting('experts_search_placeholder_enabled', '1') !== '0';
+$expertsHeaderHasTextContent = $expertsHeaderTextEnabled && ($expertsHeaderKickerEnabled || $expertsHeaderTitleEnabled || $expertsHeaderDescriptionEnabled);
+$expertsHeaderKickerOnly = $expertsHeaderTextEnabled && $expertsHeaderKickerEnabled && !$expertsHeaderTitleEnabled && !$expertsHeaderDescriptionEnabled;
+$isAllowedHeaderUrl = static function (string $url): bool {
+    $url = trim($url);
+    if ($url === '') {
+        return false;
+    }
+
+    return str_starts_with($url, '/') || preg_match('#^https?://#i', $url) === 1;
+};
+$expertsHeaderButtons = [];
+for ($buttonIndex = 1; $buttonIndex <= 3; $buttonIndex++) {
+    $text = trim($setting('experts_header_btn_' . $buttonIndex . '_text', ''));
+    $url = trim($setting('experts_header_btn_' . $buttonIndex . '_url', ''));
+    if ($text === '' || !$isAllowedHeaderUrl($url)) {
+        continue;
+    }
+
+    $expertsHeaderButtons[] = ['text' => $text, 'url' => $url];
+}
+
 $designVars = [
     '--cms-excomp-page-pt' => $setting('layout_page_padding_top', '24px'),
     '--cms-excomp-page-pb' => $setting('layout_page_padding_bottom', '40px'),
@@ -131,15 +157,24 @@ $expertCardExcerpt = static function (object $expert): string {
 
 <main class="cms-excomp-public cms-excomp-archive cms-excomp-archive--experts">
     <div class="cms-excomp-container">
-        <section class="cms-excomp-hero cms-excomp-hero--compact cms-excomp-hero--experts" aria-label="Experts">
-            <span class="cms-excomp-kicker"><?= $e($setting('experts_archive_kicker', '365 Network · Expert Directory')) ?></span>
-            <h1><?= $e($setting('experts_archive_title', 'Experts')) ?></h1>
-            <p class="cms-excomp-hero__description"><?= $e($setting('experts_archive_description', 'Echte Profile mit Skills, Verfügbarkeit und direkten Verknüpfungen zu Company & Speaker.')) ?></p>
+        <section class="cms-excomp-hero cms-excomp-hero--compact cms-excomp-hero--experts<?= $expertsHeaderButtons !== [] ? ' cms-excomp-hero--has-actions' : '' ?><?= !$expertsHeaderHasTextContent ? ' cms-excomp-hero--no-text' : '' ?><?= $expertsHeaderKickerOnly ? ' cms-excomp-hero--kicker-only' : '' ?>" aria-label="Experts">
+            <?php if ($expertsHeaderTextEnabled): ?>
+                <?php if ($expertsHeaderKickerEnabled): ?><span class="cms-excomp-kicker"><?= $e($setting('experts_archive_kicker', '365 Network · Expert Directory')) ?></span><?php endif; ?>
+                <?php if ($expertsHeaderTitleEnabled): ?><h1><?= $e($setting('experts_archive_title', 'Experts')) ?></h1><?php endif; ?>
+                <?php if ($expertsHeaderDescriptionEnabled): ?><p class="cms-excomp-hero__description"><?= $e($setting('experts_archive_description', 'Echte Profile mit Skills, Verfügbarkeit und direkten Verknüpfungen zu Company & Speaker.')) ?></p><?php endif; ?>
+            <?php endif; ?>
+            <?php if ($expertsHeaderButtons !== []): ?>
+                <div class="cms-excomp-hero__actions" aria-label="Header-Aktionen">
+                    <?php foreach ($expertsHeaderButtons as $button): ?>
+                        <a class="cms-excomp-hero__action" href="<?= $e((string) $button['url']) ?>"><?= $e((string) $button['text']) ?></a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </section>
 
         <form method="GET" action="<?= $e($baseUrl) ?>" class="cms-excomp-search cms-excomp-search--header-card" role="search" aria-label="Experts Suche">
             <div class="cms-excomp-search__field">
-                <input type="search" name="q" value="<?= $e($q) ?>" placeholder="<?= $e($setting('experts_search_placeholder', 'Name, Firma, Position, Skills …')) ?>" aria-label="Experts suchen">
+                <input type="search" name="q" value="<?= $e($q) ?>" placeholder="<?= $expertsSearchPlaceholderEnabled ? $e($setting('experts_search_placeholder', 'Name, Firma, Position, Skills …')) : '' ?>" aria-label="Experts suchen">
             </div>
             <div class="cms-excomp-search__field">
                 <input type="text" name="city" value="<?= $e($city) ?>" placeholder="Stadt …" aria-label="Stadt">
@@ -191,6 +226,7 @@ $expertCardExcerpt = static function (object $expert): string {
                             </div>
                             <div class="cms-excomp-card__titleblock">
                                 <h2 class="cms-excomp-card__name"><a href="<?= $e($detailUrl) ?>"><?= $e($name) ?></a></h2>
+                                <?php if ($company !== ''): ?><p class="cms-excomp-card__meta-line"><?= $e($company) ?></p><?php endif; ?>
                             </div>
                         </div>
 
@@ -223,7 +259,6 @@ $expertCardExcerpt = static function (object $expert): string {
                         <?php if ($bio !== ''): ?><p class="cms-excomp-card__excerpt"><?= $e($bio) ?></p><?php endif; ?>
 
                         <footer class="cms-excomp-card__footer">
-                            <span class="cms-excomp-card__badge"><?= $company !== '' ? $e($company) : 'Firma nicht hinterlegt' ?></span>
                             <a class="cms-excomp-card__more" href="<?= $e($detailUrl) ?>">Mehr Infos …</a>
                         </footer>
                     </article>

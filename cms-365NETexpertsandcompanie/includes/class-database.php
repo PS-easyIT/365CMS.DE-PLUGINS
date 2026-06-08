@@ -69,13 +69,45 @@ final class CMS_365NET_Experts_And_Companie_Database
         $defaults = [
             'show_nav_link' => '0',
             'nav_label' => 'Experts & Companies',
+            'experts_header_text_enabled' => '1',
+            'experts_header_kicker_enabled' => '1',
+            'experts_header_title_enabled' => '1',
+            'experts_header_description_enabled' => '1',
+            'experts_search_placeholder_enabled' => '1',
             'experts_archive_kicker' => '365 Network · Expert Directory',
             'experts_archive_title' => 'Experts',
             'experts_archive_description' => 'Echte Profile mit Skills, Verfügbarkeit und direkten Verknüpfungen zu Company & Speaker.',
+            'experts_header_btn_1_text' => '',
+            'experts_header_btn_1_url' => '',
+            'experts_header_btn_2_text' => '',
+            'experts_header_btn_2_url' => '',
+            'experts_header_btn_3_text' => '',
+            'experts_header_btn_3_url' => '',
             'experts_search_placeholder' => 'Name, Firma, Position, Skills …',
+            'companies_header_text_enabled' => '1',
+            'companies_header_kicker_enabled' => '1',
+            'companies_header_title_enabled' => '1',
+            'companies_header_description_enabled' => '1',
+            'companies_search_placeholder_enabled' => '1',
             'companies_archive_kicker' => '365 Network · Company Directory',
             'companies_archive_title' => 'Companies',
             'companies_archive_description' => 'Partner, Organisationen und Unternehmen mit direkten Verknüpfungen zu Experts und Speakern.',
+            'companies_header_btn_1_text' => '',
+            'companies_header_btn_1_url' => '',
+            'companies_header_btn_2_text' => '',
+            'companies_header_btn_2_url' => '',
+            'companies_header_btn_3_text' => '',
+            'companies_header_btn_3_url' => '',
+            'hub_header_text_enabled' => '1',
+            'hub_archive_kicker' => '365 Network Hub',
+            'hub_archive_title' => 'Experts & Companie',
+            'hub_archive_description' => 'Gemeinsame Übersicht im Event-&-Speaker-Stil: Experten in Orange, Firmen in Grün. Datenquelle ist vollständig die integrierte Plugin-Datenbank.',
+            'hub_header_btn_1_text' => '',
+            'hub_header_btn_1_url' => '',
+            'hub_header_btn_2_text' => '',
+            'hub_header_btn_2_url' => '',
+            'hub_header_btn_3_text' => '',
+            'hub_header_btn_3_url' => '',
             'companies_search_placeholder' => 'Name, Branche, Beschreibung …',
             'search_button_label' => 'Suchen',
             'reset_button_label' => 'Zurücksetzen',
@@ -129,11 +161,25 @@ final class CMS_365NET_Experts_And_Companie_Database
     {
         $settings = $this->getSettings();
         $allowed = array_keys($settings);
+        $booleanKeys = [
+            'show_nav_link',
+            'experts_header_text_enabled',
+            'experts_header_kicker_enabled',
+            'experts_header_title_enabled',
+            'experts_header_description_enabled',
+            'experts_search_placeholder_enabled',
+            'companies_header_text_enabled',
+            'companies_header_kicker_enabled',
+            'companies_header_title_enabled',
+            'companies_header_description_enabled',
+            'companies_search_placeholder_enabled',
+            'hub_header_text_enabled',
+        ];
 
         foreach ($allowed as $key) {
             $raw = (string) ($data[$key] ?? '');
 
-            if ($key === 'show_nav_link') {
+            if (in_array($key, $booleanKeys, true)) {
                 $this->saveSetting($key, !empty($data[$key]) ? '1' : '0');
                 continue;
             }

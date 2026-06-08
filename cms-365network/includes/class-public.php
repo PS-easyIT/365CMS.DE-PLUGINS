@@ -562,7 +562,8 @@ final class CMS_365NETWORK_Public
                 LIMIT ? OFFSET ?";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
-            return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'speaker');
+            $rows = $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'speaker');
+            return $this->shuffle_rows($rows);
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch speakers failed: ' . $e->getMessage());
             return [];
@@ -595,7 +596,9 @@ final class CMS_365NETWORK_Public
                 LIMIT ? OFFSET ?";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
-            return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'company');
+            $rows = $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'company');
+            $rows = $this->shuffle_rows($rows);
+            return $this->move_random_top_partner_to_front($rows);
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch companies failed: ' . $e->getMessage());
             return [];
@@ -628,7 +631,8 @@ final class CMS_365NETWORK_Public
                 LIMIT ? OFFSET ?";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
-            return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'expert');
+            $rows = $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'expert');
+            return $this->shuffle_rows($rows);
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch experts failed: ' . $e->getMessage());
             return [];
@@ -660,7 +664,9 @@ final class CMS_365NETWORK_Public
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             $rows = array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []);
-            return $this->with_entity_urls($rows, 'company');
+            $rows = $this->with_entity_urls($rows, 'company');
+            $rows = $this->shuffle_rows($rows);
+            return $this->move_random_top_partner_to_front($rows);
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch partner companies failed: ' . $e->getMessage());
             return [];
@@ -692,7 +698,8 @@ final class CMS_365NETWORK_Public
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             $rows = array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []);
-            return $this->with_entity_urls($rows, 'expert');
+            $rows = $this->with_entity_urls($rows, 'expert');
+            return $this->shuffle_rows($rows);
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch partner experts failed: ' . $e->getMessage());
             return [];
@@ -1418,6 +1425,44 @@ final class CMS_365NETWORK_Public
         } catch (\Throwable $e) {
             return 0;
         }
+    }
+
+    private function shuffle_rows(array $rows): array
+    {
+        if (count($rows) > 1) {
+            shuffle($rows);
+        }
+
+        return array_values($rows);
+    }
+
+    private function move_random_top_partner_to_front(array $rows): array
+    {
+        $topPartnerIndexes = [];
+        foreach ($rows as $index => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            if ((int) ($row['is_top_partner'] ?? 0) === 1) {
+                $topPartnerIndexes[] = $index;
+            }
+        }
+
+        if ($topPartnerIndexes === []) {
+            return $rows;
+        }
+
+        $selectedIndex = $topPartnerIndexes[array_rand($topPartnerIndexes)];
+        $selected = $rows[$selectedIndex] ?? null;
+        if (!is_array($selected)) {
+            return $rows;
+        }
+
+        unset($rows[$selectedIndex]);
+        array_unshift($rows, $selected);
+
+        return array_values($rows);
     }
 
     private function status_filter_sql(string $table, array $statuses, array &$params): string

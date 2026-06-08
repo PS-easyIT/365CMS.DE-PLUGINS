@@ -54,6 +54,32 @@ $setting = static function (string $key, string $default) use ($settings): strin
     return $value !== '' ? $value : $default;
 };
 
+$companiesHeaderTextEnabled = $setting('companies_header_text_enabled', '1') !== '0';
+$companiesHeaderKickerEnabled = $setting('companies_header_kicker_enabled', '1') !== '0';
+$companiesHeaderTitleEnabled = $setting('companies_header_title_enabled', '1') !== '0';
+$companiesHeaderDescriptionEnabled = $setting('companies_header_description_enabled', '1') !== '0';
+$companiesSearchPlaceholderEnabled = $setting('companies_search_placeholder_enabled', '1') !== '0';
+$companiesHeaderHasTextContent = $companiesHeaderTextEnabled && ($companiesHeaderKickerEnabled || $companiesHeaderTitleEnabled || $companiesHeaderDescriptionEnabled);
+$companiesHeaderKickerOnly = $companiesHeaderTextEnabled && $companiesHeaderKickerEnabled && !$companiesHeaderTitleEnabled && !$companiesHeaderDescriptionEnabled;
+$isAllowedHeaderUrl = static function (string $url): bool {
+    $url = trim($url);
+    if ($url === '') {
+        return false;
+    }
+
+    return str_starts_with($url, '/') || preg_match('#^https?://#i', $url) === 1;
+};
+$companiesHeaderButtons = [];
+for ($buttonIndex = 1; $buttonIndex <= 3; $buttonIndex++) {
+    $text = trim($setting('companies_header_btn_' . $buttonIndex . '_text', ''));
+    $url = trim($setting('companies_header_btn_' . $buttonIndex . '_url', ''));
+    if ($text === '' || !$isAllowedHeaderUrl($url)) {
+        continue;
+    }
+
+    $companiesHeaderButtons[] = ['text' => $text, 'url' => $url];
+}
+
 $designVars = [
     '--cms-excomp-page-pt' => $setting('layout_page_padding_top', '24px'),
     '--cms-excomp-page-pb' => $setting('layout_page_padding_bottom', '40px'),
@@ -149,15 +175,24 @@ $partnerLabel = static function (object $company): string {
 
 <main class="cms-excomp-public cms-excomp-archive cms-excomp-archive--companies">
     <div class="cms-excomp-container">
-        <section class="cms-excomp-hero cms-excomp-hero--compact cms-excomp-hero--companies" aria-label="Companies">
-            <span class="cms-excomp-kicker"><?= $e($setting('companies_archive_kicker', '365 Network · Company Directory')) ?></span>
-            <h1><?= $e($setting('companies_archive_title', 'Companies')) ?></h1>
-            <p class="cms-excomp-hero__description"><?= $e($setting('companies_archive_description', 'Partner, Organisationen und Unternehmen mit direkten Verknüpfungen zu Experts und Speakern.')) ?></p>
+        <section class="cms-excomp-hero cms-excomp-hero--compact cms-excomp-hero--companies<?= $companiesHeaderButtons !== [] ? ' cms-excomp-hero--has-actions' : '' ?><?= !$companiesHeaderHasTextContent ? ' cms-excomp-hero--no-text' : '' ?><?= $companiesHeaderKickerOnly ? ' cms-excomp-hero--kicker-only' : '' ?>" aria-label="Companies">
+            <?php if ($companiesHeaderTextEnabled): ?>
+                <?php if ($companiesHeaderKickerEnabled): ?><span class="cms-excomp-kicker"><?= $e($setting('companies_archive_kicker', '365 Network · Company Directory')) ?></span><?php endif; ?>
+                <?php if ($companiesHeaderTitleEnabled): ?><h1><?= $e($setting('companies_archive_title', 'Companies')) ?></h1><?php endif; ?>
+                <?php if ($companiesHeaderDescriptionEnabled): ?><p class="cms-excomp-hero__description"><?= $e($setting('companies_archive_description', 'Partner, Organisationen und Unternehmen mit direkten Verknüpfungen zu Experts und Speakern.')) ?></p><?php endif; ?>
+            <?php endif; ?>
+            <?php if ($companiesHeaderButtons !== []): ?>
+                <div class="cms-excomp-hero__actions" aria-label="Header-Aktionen">
+                    <?php foreach ($companiesHeaderButtons as $button): ?>
+                        <a class="cms-excomp-hero__action" href="<?= $e((string) $button['url']) ?>"><?= $e((string) $button['text']) ?></a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </section>
 
         <form method="GET" action="<?= $e($baseUrl) ?>" class="cms-excomp-search cms-excomp-search--header-card" role="search" aria-label="Companies Suche">
             <div class="cms-excomp-search__field">
-                <input type="search" name="q" value="<?= $e($q) ?>" placeholder="<?= $e($setting('companies_search_placeholder', 'Name, Branche, Beschreibung …')) ?>" aria-label="Companies suchen">
+                <input type="search" name="q" value="<?= $e($q) ?>" placeholder="<?= $companiesSearchPlaceholderEnabled ? $e($setting('companies_search_placeholder', 'Name, Branche, Beschreibung …')) : '' ?>" aria-label="Companies suchen">
             </div>
             <div class="cms-excomp-search__field">
                 <input type="text" name="city" value="<?= $e($city) ?>" placeholder="Stadt …" aria-label="Stadt">
@@ -189,6 +224,7 @@ $partnerLabel = static function (object $company): string {
                     $description = $companyCardExcerpt($company);
                     $partnerStatus = $partnerLabel($company);
                     $hasPartnerCornerBadge = $partnerStatus !== 'Unternehmen';
+                    $topPartnerCardClass = $partnerStatus === 'Top-Partner' ? ' cms-excomp-card--top-partner' : '';
                     $partnerCornerClass = match ($partnerStatus) {
                         'Sponsor' => 'is-sponsor',
                         'Top-Partner' => 'is-top-partner',
@@ -200,7 +236,7 @@ $partnerLabel = static function (object $company): string {
                     $relationsCount = count($linkedExperts) + count($linkedSpeakers);
                     $hasMetaRow = $location !== '' || $relationsCount > 0;
                     ?>
-                    <article class="cms-excomp-card cms-excomp-card--company">
+                    <article class="cms-excomp-card cms-excomp-card--company<?= $topPartnerCardClass ?>">
                         <?php if ($hasPartnerCornerBadge): ?>
                             <span class="cms-excomp-card__corner-badge cms-excomp-card__corner-badge--company <?= $e($partnerCornerClass) ?>" title="<?= $e($partnerStatus) ?>">
                                 <?= $e($partnerStatus) ?>

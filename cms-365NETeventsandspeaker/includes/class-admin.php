@@ -290,6 +290,10 @@ final class CMS_365NET_Events_Admin
             <div class="admin-card cms365-admin-card cms365-section"><h3>1. Navigation & Archivtexte</h3><div class="cms365-form-grid">
                 <?= $this->checkbox('show_nav_link', 'Im Hauptmenü anzeigen', ($settings['show_nav_link'] ?? '0') === '1') ?>
                 <?= $this->checkbox('events_header_text_enabled', 'Event-Headertexte anzeigen', ($settings['events_header_text_enabled'] ?? '1') === '1') ?>
+                <?= $this->checkbox('events_header_kicker_enabled', 'Event Kicker anzeigen', ($settings['events_header_kicker_enabled'] ?? '1') === '1') ?>
+                <?= $this->checkbox('events_header_title_enabled', 'Event Titel anzeigen', ($settings['events_header_title_enabled'] ?? '1') === '1') ?>
+                <?= $this->checkbox('events_header_description_enabled', 'Event Beschreibung anzeigen', ($settings['events_header_description_enabled'] ?? '1') === '1') ?>
+                <?= $this->checkbox('events_search_placeholder_enabled', 'Event Such-Placeholder anzeigen', ($settings['events_search_placeholder_enabled'] ?? '1') === '1') ?>
                 <?= $this->field('nav_label', 'Navigationslabel', $settings['nav_label'] ?? 'Events') ?>
                 <?= $this->field('archive_kicker', 'Event-Archiv Kicker', $settings['archive_kicker'] ?? '') ?>
                 <?= $this->field('archive_title', 'Event-Archiv Titel', $settings['archive_title'] ?? '') ?>
@@ -315,6 +319,10 @@ final class CMS_365NET_Events_Admin
             </div></div>
             <div class="admin-card cms365-admin-card cms365-section"><h3>4. Speaker- und Detailtexte</h3><div class="cms365-form-grid">
                 <?= $this->checkbox('speakers_header_text_enabled', 'Speaker-Headertexte anzeigen', ($settings['speakers_header_text_enabled'] ?? '1') === '1') ?>
+                <?= $this->checkbox('speakers_header_kicker_enabled', 'Speaker Kicker anzeigen', ($settings['speakers_header_kicker_enabled'] ?? '1') === '1') ?>
+                <?= $this->checkbox('speakers_header_title_enabled', 'Speaker Titel anzeigen', ($settings['speakers_header_title_enabled'] ?? '1') === '1') ?>
+                <?= $this->checkbox('speakers_header_description_enabled', 'Speaker Beschreibung anzeigen', ($settings['speakers_header_description_enabled'] ?? '1') === '1') ?>
+                <?= $this->checkbox('speakers_search_placeholder_enabled', 'Speaker Such-Placeholder anzeigen', ($settings['speakers_search_placeholder_enabled'] ?? '1') === '1') ?>
                 <?= $this->field('speaker_archive_kicker', 'Speaker Kicker', $settings['speaker_archive_kicker'] ?? '') ?>
                 <?= $this->field('speaker_archive_title', 'Speaker Titel', $settings['speaker_archive_title'] ?? '') ?>
                 <?= $this->field('speaker_archive_description', 'Speaker Beschreibung', $settings['speaker_archive_description'] ?? '') ?>

@@ -32,6 +32,11 @@ $paginationUrl = static function (int $page) use ($base, $filters): string {
 };
 
 $eventsHeaderTextEnabled = (string) ($settings['events_header_text_enabled'] ?? '1') !== '0';
+$eventsHeaderKickerEnabled = (string) ($settings['events_header_kicker_enabled'] ?? '1') !== '0';
+$eventsHeaderTitleEnabled = (string) ($settings['events_header_title_enabled'] ?? '1') !== '0';
+$eventsHeaderDescriptionEnabled = (string) ($settings['events_header_description_enabled'] ?? '1') !== '0';
+$eventsSearchPlaceholderEnabled = (string) ($settings['events_search_placeholder_enabled'] ?? '1') !== '0';
+$eventsHeaderHasTextContent = $eventsHeaderTextEnabled && ($eventsHeaderKickerEnabled || $eventsHeaderTitleEnabled || $eventsHeaderDescriptionEnabled);
 $normalizeHeaderCta = static function (string $text, string $url): ?array {
     $label = trim($text);
     $href = trim($url);
@@ -76,11 +81,11 @@ $eventCardExcerpt = static function (object $event): string {
 ?>
 <main class="cms-events-public cms-events-archive">
     <div class="cms-events-container">
-        <section class="cms-events-hero cms-events-hero--compact<?= $eventsHeaderButtons !== [] ? ' cms-events-hero--has-actions' : '' ?>">
+        <section class="cms-events-hero cms-events-hero--compact<?= $eventsHeaderButtons !== [] ? ' cms-events-hero--has-actions' : '' ?><?= !$eventsHeaderHasTextContent ? ' cms-events-hero--no-text' : '' ?>">
             <?php if ($eventsHeaderTextEnabled): ?>
-                <span class="cms-events-kicker"><?= htmlspecialchars((string) ($settings['archive_kicker'] ?? '365NET Event Directory'), ENT_QUOTES, 'UTF-8') ?></span>
-                <h1><?= htmlspecialchars((string) ($settings['archive_title'] ?? 'Events & Messen'), ENT_QUOTES, 'UTF-8') ?></h1>
-                <p class="cms-events-hero__description"><?= htmlspecialchars((string) ($settings['archive_description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                <?php if ($eventsHeaderKickerEnabled): ?><span class="cms-events-kicker"><?= htmlspecialchars((string) ($settings['archive_kicker'] ?? '365NET Event Directory'), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                <?php if ($eventsHeaderTitleEnabled): ?><h1><?= htmlspecialchars((string) ($settings['archive_title'] ?? 'Events & Messen'), ENT_QUOTES, 'UTF-8') ?></h1><?php endif; ?>
+                <?php if ($eventsHeaderDescriptionEnabled): ?><p class="cms-events-hero__description"><?= htmlspecialchars((string) ($settings['archive_description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
             <?php endif; ?>
             <?php if ($eventsHeaderButtons !== []): ?>
                 <div class="cms-events-hero__actions" aria-label="Header-Aktionen">
@@ -94,7 +99,7 @@ $eventCardExcerpt = static function (object $event): string {
         <form method="GET" class="cms-events-search cms-events-search--header-card" role="search">
             <?php if ($showPast): ?><input type="hidden" name="past" value="1"><?php endif; ?>
             <div class="cms-events-search__field">
-                <input type="search" name="q" value="<?= $q ?>" placeholder="<?= htmlspecialchars((string) ($settings['archive_search_placeholder'] ?? 'Event, Ort, Thema oder Veranstalter suchen …'), ENT_QUOTES, 'UTF-8') ?>" aria-label="Events suchen">
+                <input type="search" name="q" value="<?= $q ?>" placeholder="<?= $eventsSearchPlaceholderEnabled ? htmlspecialchars((string) ($settings['archive_search_placeholder'] ?? 'Event, Ort, Thema oder Veranstalter suchen …'), ENT_QUOTES, 'UTF-8') : '' ?>" aria-label="Events suchen">
             </div>
             <div class="cms-events-search__actions">
                 <button type="submit"><?= htmlspecialchars((string) ($settings['archive_search_button'] ?? 'Suchen'), ENT_QUOTES, 'UTF-8') ?></button>
@@ -111,6 +116,7 @@ $eventCardExcerpt = static function (object $event): string {
                     <?php $eventUrl = $base . '/events/' . rawurlencode((string) $event->slug); ?>
                     <?php $cardExcerpt = $eventCardExcerpt($event); ?>
                     <?php
+                    $isTopPartnerEvent = (int) ($event->linked_company_is_top_partner ?? 0) === 1;
                     $cardImageBgColor = '';
                     $rawCardImageBgColor = trim((string) ($event->image_bg_color ?? ''));
                     if (preg_match('/^#[0-9a-fA-F]{6}$/', $rawCardImageBgColor) === 1) {
@@ -120,7 +126,7 @@ $eventCardExcerpt = static function (object $event): string {
                         ? ' style="--cms-events-card-image-bg:' . htmlspecialchars($cardImageBgColor, ENT_QUOTES, 'UTF-8') . '"'
                         : '';
                     ?>
-                    <article class="cms-events-card">
+                    <article class="cms-events-card<?= $isTopPartnerEvent ? ' cms-events-card--top-partner' : '' ?>">
                         <h2>
                             <a class="cms-events-card__title-link" href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $event->title, ENT_QUOTES, 'UTF-8') ?></a>
                             <?php if (!empty($event->image_url)): ?><a class="cms-events-card__title-image-link" href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>" aria-label="<?= htmlspecialchars('Event öffnen: ' . (string) ($event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>"><span class="cms-events-card__title-image"<?= $cardImageStyle ?>><img src="<?= htmlspecialchars((string) $event->image_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($event->image_alt ?? $event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="lazy"></span></a><?php endif; ?>

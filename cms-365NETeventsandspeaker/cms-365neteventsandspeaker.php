@@ -3,7 +3,7 @@
  * Plugin Name: 365 | Events & Speaker
  * Plugin URI: https://365network.de/cms-365neteventsandspeaker
  * Description: Modulares Event- und Speaker-Verzeichnis für 365CMS mit Seed-Daten, Admin-CRUD und Public-Views.
- * Version: 3.0.3
+ * Version: 3.0.11
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
 $pluginDirPath = str_replace('\\', '/', dirname(__FILE__));
 $pluginFolderName = basename($pluginDirPath);
 
-defined('CMS_365NET_EVENTS_VERSION') || define('CMS_365NET_EVENTS_VERSION', '3.0.3');
+defined('CMS_365NET_EVENTS_VERSION') || define('CMS_365NET_EVENTS_VERSION', '3.0.11');
 defined('CMS_365NET_EVENTS_PLUGIN_DIR') || define('CMS_365NET_EVENTS_PLUGIN_DIR', rtrim($pluginDirPath, '/') . '/');
 defined('CMS_365NET_EVENTS_PLUGIN_URL') || define('CMS_365NET_EVENTS_PLUGIN_URL', '/plugins/' . $pluginFolderName . '/');
 defined('CMS_365NET_EVENTS_TEXT_DOMAIN') || define('CMS_365NET_EVENTS_TEXT_DOMAIN', 'cms-365neteventsandspeaker');
@@ -287,7 +287,15 @@ if (!class_exists('CMS_365NET_Events', false)) {
                 . '.cms-events-grid{column-gap:var(--cms-events-gap)!important;row-gap:var(--cms-events-gap-y,var(--cms-events-gap))!important}'
                 . '.cms-events-search button,.cms-events-btn{background:var(--cms-events-primary)!important}'
                 . '.cms-events-kicker{color:var(--cms-events-accent)!important}'
-                . '.cms-events-card__more{color:var(--cms-events-primary)!important}';
+                . '.cms-events-card__more{color:var(--cms-events-primary)!important}'
+                . '.cms-events-hero--has-actions{position:relative!important;padding-bottom:72px!important}'
+                . '.cms-events-hero__actions{position:absolute;right:16px;bottom:14px;display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;max-width:calc(100% - 24px)}'
+                . '.cms-events-hero__action{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border-radius:10px;background:rgba(255,255,255,.96);border:1px solid rgba(203,213,225,.95);color:#0f172a;text-decoration:none;font-size:.82rem;font-weight:800;white-space:nowrap}'
+                . '.cms-events-hero__action:hover{background:#fff;border-color:#fff;color:var(--cms-events-primary)!important}'
+                . '.cms-events-hero--compact.cms-events-hero--no-text{min-height:0!important;padding-top:12px!important;padding-bottom:12px!important}'
+                . '.cms-events-hero--compact.cms-events-hero--no-text.cms-events-hero--has-actions{padding-bottom:12px!important}'
+                . '.cms-events-hero--compact.cms-events-hero--no-text .cms-events-hero__actions{position:static;right:auto;bottom:auto;max-width:none;justify-content:flex-start}'
+                . '@media (max-width:760px){.cms-events-hero--has-actions{padding-bottom:86px!important}.cms-events-hero__actions{left:16px;right:16px;justify-content:flex-start}.cms-events-hero__action{flex:1 1 auto;justify-content:center}.cms-events-hero--compact.cms-events-hero--no-text.cms-events-hero--has-actions{padding-bottom:12px!important}.cms-events-hero--compact.cms-events-hero--no-text .cms-events-hero__actions{left:auto;right:auto}}';
 
             echo '<style id="cms-365neteventsandspeaker-settings">' . $css . '</style>' . "\n";
         }

@@ -45,6 +45,27 @@ $setting = static function (string $key, string $default) use ($settings): strin
     return $value !== '' ? $value : $default;
 };
 
+$hubHeaderTextEnabled = $setting('hub_header_text_enabled', '1') !== '0';
+$hubHeaderHasTextContent = $hubHeaderTextEnabled;
+$isAllowedHeaderUrl = static function (string $url): bool {
+    $url = trim($url);
+    if ($url === '') {
+        return false;
+    }
+
+    return str_starts_with($url, '/') || preg_match('#^https?://#i', $url) === 1;
+};
+$hubHeaderButtons = [];
+for ($buttonIndex = 1; $buttonIndex <= 3; $buttonIndex++) {
+    $text = trim($setting('hub_header_btn_' . $buttonIndex . '_text', ''));
+    $url = trim($setting('hub_header_btn_' . $buttonIndex . '_url', ''));
+    if ($text === '' || !$isAllowedHeaderUrl($url)) {
+        continue;
+    }
+
+    $hubHeaderButtons[] = ['text' => $text, 'url' => $url];
+}
+
 $designVars = [
     '--cms-excomp-page-pt' => $setting('layout_page_padding_top', '24px'),
     '--cms-excomp-page-pb' => $setting('layout_page_padding_bottom', '40px'),
@@ -138,14 +159,23 @@ $companyPartnerLabel = static function (object $company): string {
 
 <main class="cms-excomp-public">
     <div class="cms-excomp-container">
-        <section class="cms-excomp-hero" aria-label="Experts and Companies Hub">
-            <p class="cms-excomp-kicker">365 Network Hub</p>
-            <h1>Experts &amp; Companie</h1>
-            <p>Gemeinsame Übersicht im Event-&amp;-Speaker-Stil: Experten in Orange, Firmen in Grün. Datenquelle ist vollständig die integrierte Plugin-Datenbank.</p>
-            <div class="cms-excomp-system-state">
-                <span class="cms-excomp-pill is-on">Standalone aktiv</span>
-                <span class="cms-excomp-pill is-on">Seed integriert</span>
-            </div>
+        <section class="cms-excomp-hero cms-excomp-hero--compact<?= $hubHeaderButtons !== [] ? ' cms-excomp-hero--has-actions' : '' ?><?= !$hubHeaderHasTextContent ? ' cms-excomp-hero--no-text' : '' ?>" aria-label="Experts and Companies Hub">
+            <?php if ($hubHeaderTextEnabled): ?>
+                <span class="cms-excomp-kicker"><?= $e($setting('hub_archive_kicker', '365 Network Hub')) ?></span>
+                <h1><?= $e($setting('hub_archive_title', 'Experts & Companie')) ?></h1>
+                <p class="cms-excomp-hero__description"><?= $e($setting('hub_archive_description', 'Gemeinsame Übersicht im Event-&-Speaker-Stil: Experten in Orange, Firmen in Grün. Datenquelle ist vollständig die integrierte Plugin-Datenbank.')) ?></p>
+                <div class="cms-excomp-system-state">
+                    <span class="cms-excomp-pill is-on">Standalone aktiv</span>
+                    <span class="cms-excomp-pill is-on">Seed integriert</span>
+                </div>
+            <?php endif; ?>
+            <?php if ($hubHeaderButtons !== []): ?>
+                <div class="cms-excomp-hero__actions" aria-label="Header-Aktionen">
+                    <?php foreach ($hubHeaderButtons as $button): ?>
+                        <a class="cms-excomp-hero__action" href="<?= $e((string) $button['url']) ?>"><?= $e((string) $button['text']) ?></a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </section>
 
         <form method="GET" action="<?= $e($hubUrl) ?>" class="cms-excomp-search" role="search" aria-label="Experts and Companies Suche">
