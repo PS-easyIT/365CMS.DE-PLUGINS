@@ -490,8 +490,9 @@
 
 .cms-excomp-card__meta-line {
     margin: 3px 0 0;
-    color: #64748b;
-    font-size: 0.8rem;
+    color: #7b8798;
+    font-size: 0.76rem;
+    font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

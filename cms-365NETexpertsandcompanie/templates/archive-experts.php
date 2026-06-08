@@ -226,14 +226,15 @@ $expertCardExcerpt = static function (object $expert): string {
                             </div>
                             <div class="cms-excomp-card__titleblock">
                                 <h2 class="cms-excomp-card__name"><a href="<?= $e($detailUrl) ?>"><?= $e($name) ?></a></h2>
-                                <?php if ($company !== ''): ?><p class="cms-excomp-card__meta-line"><?= $e($company) ?></p><?php endif; ?>
+                                <?php if ($position !== ''): ?><p class="cms-excomp-card__meta-line"><?= $e($position) ?></p><?php endif; ?>
                             </div>
                         </div>
 
-                        <div class="cms-excomp-card__meta">
-                            <?php if ($location !== ''): ?><span><?= $e($location) ?></span><?php endif; ?>
-                            <?php if ($position !== ''): ?><span><?= $e($position) ?></span><?php endif; ?>
-                        </div>
+                        <?php if ($location !== ''): ?>
+                            <div class="cms-excomp-card__meta">
+                                <span><?= $e($location) ?></span>
+                            </div>
+                        <?php endif; ?>
 
                         <?php if ($linkedSpeaker !== null || $linkedCompany !== null): ?>
                             <div class="cms-excomp-linked">
@@ -259,6 +260,7 @@ $expertCardExcerpt = static function (object $expert): string {
                         <?php if ($bio !== ''): ?><p class="cms-excomp-card__excerpt"><?= $e($bio) ?></p><?php endif; ?>
 
                         <footer class="cms-excomp-card__footer">
+                            <span class="cms-excomp-card__badge"><?= $company !== '' ? $e($company) : 'Firma nicht hinterlegt' ?></span>
                             <a class="cms-excomp-card__more" href="<?= $e($detailUrl) ?>">Mehr Infos …</a>
                         </footer>
                     </article>
