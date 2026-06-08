@@ -14,6 +14,7 @@ if (!defined('ABSPATH')) {
 final class CMS_365NET_Events_Admin
 {
     private static ?self $instance = null;
+    private static bool $fallbackAssetsPrinted = false;
 
     public static function instance(): self
     {
@@ -288,13 +289,22 @@ final class CMS_365NET_Events_Admin
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
             <div class="admin-card cms365-admin-card cms365-section"><h3>1. Navigation & Archivtexte</h3><div class="cms365-form-grid">
                 <?= $this->checkbox('show_nav_link', 'Im Hauptmenü anzeigen', ($settings['show_nav_link'] ?? '0') === '1') ?>
+                <?= $this->checkbox('events_header_text_enabled', 'Event-Headertexte anzeigen', ($settings['events_header_text_enabled'] ?? '1') === '1') ?>
                 <?= $this->field('nav_label', 'Navigationslabel', $settings['nav_label'] ?? 'Events') ?>
                 <?= $this->field('archive_kicker', 'Event-Archiv Kicker', $settings['archive_kicker'] ?? '') ?>
                 <?= $this->field('archive_title', 'Event-Archiv Titel', $settings['archive_title'] ?? '') ?>
                 <?= $this->field('archive_description', 'Event-Archiv Beschreibung', $settings['archive_description'] ?? '') ?>
                 <?= $this->field('archive_current_month_label', 'Label zukünftige Events', $settings['archive_current_month_label'] ?? '') ?>
             </div></div>
-            <div class="admin-card cms365-admin-card cms365-section"><h3>2. Suche, Buttons & Leerzustände</h3><div class="cms365-form-grid">
+            <div class="admin-card cms365-admin-card cms365-section"><h3>2. Event-Header-Buttons (unten rechts)</h3><div class="cms365-form-grid">
+                <?= $this->field('events_header_btn_1_text', 'Button 1 Text', $settings['events_header_btn_1_text'] ?? '') ?>
+                <?= $this->field('events_header_btn_1_url', 'Button 1 URL', $settings['events_header_btn_1_url'] ?? '') ?>
+                <?= $this->field('events_header_btn_2_text', 'Button 2 Text', $settings['events_header_btn_2_text'] ?? '') ?>
+                <?= $this->field('events_header_btn_2_url', 'Button 2 URL', $settings['events_header_btn_2_url'] ?? '') ?>
+                <?= $this->field('events_header_btn_3_text', 'Button 3 Text', $settings['events_header_btn_3_text'] ?? '') ?>
+                <?= $this->field('events_header_btn_3_url', 'Button 3 URL', $settings['events_header_btn_3_url'] ?? '') ?>
+            </div></div>
+            <div class="admin-card cms365-admin-card cms365-section"><h3>3. Suche, Buttons & Leerzustände</h3><div class="cms365-form-grid">
                 <?= $this->field('archive_search_placeholder', 'Suchfeld Placeholder', $settings['archive_search_placeholder'] ?? '') ?>
                 <?= $this->field('archive_search_button', 'Suchbutton', $settings['archive_search_button'] ?? '') ?>
                 <?= $this->field('archive_reset_label', 'Reset-Text', $settings['archive_reset_label'] ?? '') ?>
@@ -303,10 +313,17 @@ final class CMS_365NET_Events_Admin
                 <?= $this->field('archive_empty_current', 'Leertext zukünftige Events', $settings['archive_empty_current'] ?? '') ?>
                 <?= $this->field('archive_empty_past', 'Leertext vergangene Events', $settings['archive_empty_past'] ?? '') ?>
             </div></div>
-            <div class="admin-card cms365-admin-card cms365-section"><h3>3. Speaker- und Detailtexte</h3><div class="cms365-form-grid">
+            <div class="admin-card cms365-admin-card cms365-section"><h3>4. Speaker- und Detailtexte</h3><div class="cms365-form-grid">
+                <?= $this->checkbox('speakers_header_text_enabled', 'Speaker-Headertexte anzeigen', ($settings['speakers_header_text_enabled'] ?? '1') === '1') ?>
                 <?= $this->field('speaker_archive_kicker', 'Speaker Kicker', $settings['speaker_archive_kicker'] ?? '') ?>
                 <?= $this->field('speaker_archive_title', 'Speaker Titel', $settings['speaker_archive_title'] ?? '') ?>
                 <?= $this->field('speaker_archive_description', 'Speaker Beschreibung', $settings['speaker_archive_description'] ?? '') ?>
+                <?= $this->field('speakers_header_btn_1_text', 'Speaker Button 1 Text', $settings['speakers_header_btn_1_text'] ?? '') ?>
+                <?= $this->field('speakers_header_btn_1_url', 'Speaker Button 1 URL', $settings['speakers_header_btn_1_url'] ?? '') ?>
+                <?= $this->field('speakers_header_btn_2_text', 'Speaker Button 2 Text', $settings['speakers_header_btn_2_text'] ?? '') ?>
+                <?= $this->field('speakers_header_btn_2_url', 'Speaker Button 2 URL', $settings['speakers_header_btn_2_url'] ?? '') ?>
+                <?= $this->field('speakers_header_btn_3_text', 'Speaker Button 3 Text', $settings['speakers_header_btn_3_text'] ?? '') ?>
+                <?= $this->field('speakers_header_btn_3_url', 'Speaker Button 3 URL', $settings['speakers_header_btn_3_url'] ?? '') ?>
                 <?= $this->field('speaker_search_placeholder', 'Speaker Suche Placeholder', $settings['speaker_search_placeholder'] ?? '') ?>
                 <?= $this->field('detail_back_events_label', 'Breadcrumb Events', $settings['detail_back_events_label'] ?? '') ?>
                 <?= $this->field('detail_speakers_heading', 'Detail Überschrift Speaker', $settings['detail_speakers_heading'] ?? '') ?>
@@ -314,15 +331,18 @@ final class CMS_365NET_Events_Admin
                 <?= $this->field('detail_register_label', 'Registrierungsbutton', $settings['detail_register_label'] ?? '') ?>
                 <?= $this->field('detail_website_label', 'Websitebutton', $settings['detail_website_label'] ?? '') ?>
             </div></div>
-            <div class="admin-card cms365-admin-card cms365-section"><h3>4. Layout, Farben & Abstände</h3><p class="description">Der öffentliche Bereich hat keinen eigenen Seitenhintergrund; diese Werte steuern nur Karten, Buttons, Rundungen und Innenabstände.</p><div class="cms365-form-grid">
+            <div class="admin-card cms365-admin-card cms365-section"><h3>5. Layout, Farben & Abstände</h3><p class="description">Der öffentliche Bereich hat keinen eigenen Seitenhintergrund; diese Werte steuern nur Karten, Buttons, Rundungen und Innenabstände.</p><div class="cms365-form-grid">
                 <?= $this->field('layout_primary_color', 'Primärfarbe', $settings['layout_primary_color'] ?? '#1d4ed8', false, 'color') ?>
                 <?= $this->field('layout_accent_color', 'Akzentfarbe', $settings['layout_accent_color'] ?? '#f59e0b', false, 'color') ?>
+                <?= $this->field('layout_event_card_top_border_color', 'Event-Card oberer Rand', $settings['layout_event_card_top_border_color'] ?? ($settings['layout_accent_color'] ?? '#f59e0b'), false, 'color') ?>
+                <?= $this->field('layout_speaker_card_top_border_color', 'Speaker-Card oberer Rand', $settings['layout_speaker_card_top_border_color'] ?? '#8b5cf6', false, 'color') ?>
                 <?= $this->field('layout_text_color', 'Textfarbe', $settings['layout_text_color'] ?? '#0f172a', false, 'color') ?>
                 <?= $this->field('layout_card_background', 'Kartenhintergrund', $settings['layout_card_background'] ?? '#ffffff', false, 'color') ?>
                 <?= $this->field('layout_card_border', 'Kartenrahmen', $settings['layout_card_border'] ?? '#e2e8f0', false, 'color') ?>
                 <?= $this->field('layout_radius', 'Hero-/Box-Rundung px', $settings['layout_radius'] ?? '24', false, 'number') ?>
                 <?= $this->field('layout_card_radius', 'Karten-Rundung px', $settings['layout_card_radius'] ?? '20', false, 'number') ?>
-                <?= $this->field('layout_gap', 'Grid-Abstand px', $settings['layout_gap'] ?? '18', false, 'number') ?>
+                <?= $this->field('layout_gap', 'Grid-Abstand horizontal (Karten nebeneinander) px', $settings['layout_gap'] ?? '18', false, 'number') ?>
+                <?= $this->field('layout_gap_y', 'Grid-Abstand vertikal (Karten untereinander) px', $settings['layout_gap_y'] ?? ($settings['layout_gap'] ?? '18'), false, 'number') ?>
                 <?= $this->field('layout_top_spacing', 'Abstand zum Header px', $settings['layout_top_spacing'] ?? '32', false, 'number') ?>
                 <?= $this->field('layout_bottom_spacing', 'Abstand zum Footer px', $settings['layout_bottom_spacing'] ?? '56', false, 'number') ?>
                 <?= $this->field('layout_container_width', 'Containerbreite px', $settings['layout_container_width'] ?? '1160', false, 'number') ?>
@@ -332,7 +352,7 @@ final class CMS_365NET_Events_Admin
         <form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/settings/backfill-descriptions', ENT_QUOTES, 'UTF-8') ?>" class="cms365-form" novalidate>
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($backfillCsrf, ENT_QUOTES, 'UTF-8') ?>">
             <div class="admin-card cms365-admin-card cms365-section">
-                <h3>5. Seed-Beschreibungen auf bestehende Events anwenden</h3>
+                <h3>6. Seed-Beschreibungen auf bestehende Events anwenden</h3>
                 <p class="description">Übernimmt die statischen Beschreibungen aus der Seed-Map anhand <code>NR/source_nr</code> in vorhandene Events (inkl. Excerpt und SEO-Beschreibung).</p>
                 <button type="submit" class="btn btn-secondary">🧠 Beschreibungen jetzt einspielen</button>
             </div>
@@ -437,6 +457,8 @@ final class CMS_365NET_Events_Admin
 
     private function start(string $title, string $activePage): void
     {
+        $this->printFallbackAssetsIfNeeded();
+
         if (function_exists('cms_plugin_admin_layout_start')) {
             cms_plugin_admin_layout_start($title, $activePage);
             return;
@@ -449,6 +471,36 @@ final class CMS_365NET_Events_Admin
         $pageTitle = $title;
         require_once ABSPATH . 'admin/partials/header.php';
         require_once ABSPATH . 'admin/partials/sidebar.php';
+    }
+
+    private function printFallbackAssetsIfNeeded(): void
+    {
+        if (self::$fallbackAssetsPrinted) {
+            return;
+        }
+
+        if (!defined('CMS_365NET_EVENTS_PLUGIN_DIR') || !defined('CMS_365NET_EVENTS_PLUGIN_URL')) {
+            return;
+        }
+
+        $styles = ['admin.css', 'admin-enhancements.css', 'admin-excomp-forms.css'];
+        foreach ($styles as $file) {
+            $path = CMS_365NET_EVENTS_PLUGIN_DIR . 'assets/css/' . $file;
+            if (!is_file($path)) {
+                continue;
+            }
+
+            $href = CMS_365NET_EVENTS_PLUGIN_URL . 'assets/css/' . $file . '?v=' . (string) filemtime($path);
+            echo '<link rel="stylesheet" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '">' . "\n";
+        }
+
+        $scriptPath = CMS_365NET_EVENTS_PLUGIN_DIR . 'assets/js/admin.js';
+        if (is_file($scriptPath)) {
+            $src = CMS_365NET_EVENTS_PLUGIN_URL . 'assets/js/admin.js?v=' . (string) filemtime($scriptPath);
+            echo '<script src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
+        }
+
+        self::$fallbackAssetsPrinted = true;
     }
 
     private function end(): void

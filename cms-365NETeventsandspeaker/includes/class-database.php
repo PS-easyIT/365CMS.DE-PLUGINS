@@ -1240,25 +1240,52 @@ final class CMS_365NET_Events_Database
             return [];
         }
 
-        $selectColumns = [];
-        foreach (['id', 'name', 'website', 'location_city', 'status'] as $column) {
-            if (in_array($column, $columns, true)) {
-                $selectColumns[] = $column;
-            }
+        $nameColumn = $this->firstExistingColumn($columns, ['name', 'company_name', 'title']);
+        $websiteColumn = $this->firstExistingColumn($columns, ['website', 'url', 'homepage']);
+        $cityColumn = $this->firstExistingColumn($columns, ['location_city', 'city', 'location']);
+        $statusColumn = $this->firstExistingColumn($columns, ['status']);
+
+        $selectParts = ['id'];
+        if ($nameColumn !== null) {
+            $selectParts[] = $nameColumn . ' AS name';
+        } else {
+            $selectParts[] = "CONCAT('Company #', id) AS name";
         }
-        if ($selectColumns === []) {
+        if ($websiteColumn !== null) {
+            $selectParts[] = $websiteColumn . ' AS website';
+        }
+        if ($cityColumn !== null) {
+            $selectParts[] = $cityColumn . ' AS location_city';
+        }
+        if ($statusColumn !== null) {
+            $selectParts[] = $statusColumn . ' AS status';
+        }
+
+        if ($selectParts === []) {
             return [];
         }
 
-        $whereStatus = in_array('status', $columns, true) ? ' WHERE status = ?' : '';
-        $params = $whereStatus !== '' ? ['active'] : [];
-
         $db = CMS\Database::instance();
         $limit = $this->limit($limit, 300);
-        $stmt = $db->prepare('SELECT ' . implode(', ', $selectColumns) . " FROM {$db->prefix()}{$sourceTable}" . $whereStatus . " ORDER BY name ASC LIMIT {$limit}");
-        $stmt->execute($params);
 
-        return $stmt->fetchAll();
+        $orderParts = [];
+        if ($statusColumn !== null) {
+            $orderParts[] = "CASE WHEN LOWER({$statusColumn}) IN ('active','published') THEN 0 WHEN LOWER({$statusColumn}) = 'draft' THEN 1 ELSE 2 END";
+        }
+        if ($nameColumn !== null) {
+            $orderParts[] = $nameColumn . ' ASC';
+        } else {
+            $orderParts[] = 'id ASC';
+        }
+
+        try {
+            $stmt = $db->prepare('SELECT ' . implode(', ', $selectParts) . " FROM {$db->prefix()}{$sourceTable} ORDER BY " . implode(', ', $orderParts) . " LIMIT {$limit}");
+            $stmt->execute([]);
+            return $stmt->fetchAll();
+        } catch (Throwable $e) {
+            $this->logDatabaseWarning('get_available_companies', $e);
+            return [];
+        }
     }
 
     /** @return array<int, object> */
@@ -1275,25 +1302,70 @@ final class CMS_365NET_Events_Database
             return [];
         }
 
-        $selectColumns = [];
-        foreach (['id', 'first_name', 'last_name', 'email', 'position', 'company', 'status'] as $column) {
-            if (in_array($column, $columns, true)) {
-                $selectColumns[] = $column;
-            }
+        $firstNameColumn = $this->firstExistingColumn($columns, ['first_name', 'firstname', 'given_name']);
+        $lastNameColumn = $this->firstExistingColumn($columns, ['last_name', 'lastname', 'family_name']);
+        $displayNameColumn = $this->firstExistingColumn($columns, ['display_name', 'name', 'full_name']);
+        $emailColumn = $this->firstExistingColumn($columns, ['email', 'mail']);
+        $positionColumn = $this->firstExistingColumn($columns, ['position', 'title', 'role', 'topic']);
+        $companyColumn = $this->firstExistingColumn($columns, ['company', 'company_name', 'organisation']);
+        $statusColumn = $this->firstExistingColumn($columns, ['status']);
+
+        $selectParts = ['id'];
+        if ($firstNameColumn !== null) {
+            $selectParts[] = $firstNameColumn . ' AS first_name';
+        } elseif ($displayNameColumn !== null) {
+            $selectParts[] = $displayNameColumn . ' AS first_name';
+        } else {
+            $selectParts[] = "CONCAT('Expert #', id) AS first_name";
         }
-        if ($selectColumns === []) {
+        if ($lastNameColumn !== null) {
+            $selectParts[] = $lastNameColumn . ' AS last_name';
+        } else {
+            $selectParts[] = "'' AS last_name";
+        }
+        if ($emailColumn !== null) {
+            $selectParts[] = $emailColumn . ' AS email';
+        }
+        if ($positionColumn !== null) {
+            $selectParts[] = $positionColumn . ' AS position';
+        }
+        if ($companyColumn !== null) {
+            $selectParts[] = $companyColumn . ' AS company';
+        }
+        if ($statusColumn !== null) {
+            $selectParts[] = $statusColumn . ' AS status';
+        }
+
+        if ($selectParts === []) {
             return [];
         }
 
-        $whereStatus = in_array('status', $columns, true) ? ' WHERE status = ?' : '';
-        $params = $whereStatus !== '' ? ['active'] : [];
-
         $db = CMS\Database::instance();
         $limit = $this->limit($limit, 300);
-        $stmt = $db->prepare('SELECT ' . implode(', ', $selectColumns) . " FROM {$db->prefix()}{$sourceTable}" . $whereStatus . " ORDER BY last_name ASC, first_name ASC LIMIT {$limit}");
-        $stmt->execute($params);
 
-        return $stmt->fetchAll();
+        $orderParts = [];
+        if ($statusColumn !== null) {
+            $orderParts[] = "CASE WHEN LOWER({$statusColumn}) IN ('active','published') THEN 0 WHEN LOWER({$statusColumn}) = 'draft' THEN 1 ELSE 2 END";
+        }
+        if ($lastNameColumn !== null) {
+            $orderParts[] = $lastNameColumn . ' ASC';
+        }
+        if ($firstNameColumn !== null) {
+            $orderParts[] = $firstNameColumn . ' ASC';
+        } elseif ($displayNameColumn !== null) {
+            $orderParts[] = $displayNameColumn . ' ASC';
+        } else {
+            $orderParts[] = 'id ASC';
+        }
+
+        try {
+            $stmt = $db->prepare('SELECT ' . implode(', ', $selectParts) . " FROM {$db->prefix()}{$sourceTable} ORDER BY " . implode(', ', $orderParts) . " LIMIT {$limit}");
+            $stmt->execute([]);
+            return $stmt->fetchAll();
+        } catch (Throwable $e) {
+            $this->logDatabaseWarning('get_available_experts', $e);
+            return [];
+        }
     }
 
     public function getLinkedCompany(?int $companyId): ?object
@@ -1404,16 +1476,59 @@ final class CMS_365NET_Events_Database
 
     private function resolveCompanySourceTable(): string
     {
-        return $this->tableExists('companies')
-            ? 'companies'
-            : ($this->tableExists('365net_excomp_companies') ? '365net_excomp_companies' : '');
+        return $this->resolvePreferredSourceTable(['365net_excomp_companies', 'companies']);
     }
 
     private function resolveExpertSourceTable(): string
     {
-        return $this->tableExists('experts')
-            ? 'experts'
-            : ($this->tableExists('365net_excomp_experts') ? '365net_excomp_experts' : '');
+        return $this->resolvePreferredSourceTable(['365net_excomp_experts', 'experts']);
+    }
+
+    /** @param array<int, string> $candidates */
+    private function resolvePreferredSourceTable(array $candidates): string
+    {
+        $available = [];
+        foreach ($candidates as $candidate) {
+            if ($this->tableExists($candidate)) {
+                $available[] = $candidate;
+            }
+        }
+
+        if ($available === []) {
+            return '';
+        }
+
+        foreach ($available as $candidate) {
+            if ($this->tableRowCount($candidate) > 0) {
+                return $candidate;
+            }
+        }
+
+        return $available[0];
+    }
+
+    private function tableRowCount(string $table): int
+    {
+        try {
+            $db = CMS\Database::instance();
+            $stmt = $db->prepare('SELECT COUNT(*) FROM ' . $db->prefix() . $table);
+            $stmt->execute([]);
+            return max(0, (int) ($stmt->fetchColumn() ?: 0));
+        } catch (Throwable) {
+            return 0;
+        }
+    }
+
+    /** @param array<int, string> $columns @param array<int, string> $candidates */
+    private function firstExistingColumn(array $columns, array $candidates): ?string
+    {
+        foreach ($candidates as $candidate) {
+            if (in_array($candidate, $columns, true)) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     /** @param array<string, mixed> $signals */
@@ -1449,8 +1564,9 @@ final class CMS_365NET_Events_Database
         $where = ['linked_speaker_id = ?'];
         $params = [$speakerId];
         if (in_array('status', $columns, true)) {
-            $where[] = 'status = ?';
+            $where[] = 'LOWER(status) IN (?, ?)';
             $params[] = 'active';
+            $params[] = 'published';
         }
 
         $orderParts = [];
@@ -1490,8 +1606,9 @@ final class CMS_365NET_Events_Database
         $where = ['linked_speaker_id = ?'];
         $params = [$speakerId];
         if (in_array('status', $columns, true)) {
-            $where[] = 'status = ?';
+            $where[] = 'LOWER(status) IN (?, ?)';
             $params[] = 'active';
+            $params[] = 'published';
         }
 
         $orderBy = in_array('updated_at', $columns, true) ? 'updated_at DESC' : 'id DESC';
@@ -1518,6 +1635,9 @@ final class CMS_365NET_Events_Database
             return null;
         }
 
+        $nameColumn = $this->firstExistingColumn($columns, ['name', 'company_name', 'title']);
+        $websiteColumn = $this->firstExistingColumn($columns, ['website', 'url', 'homepage']);
+
         $names = array_filter(array_unique(array_map([$this, 'normalizeMatchValue'], [
             (string) ($data['organizer'] ?? ''),
             (string) ($data['company'] ?? ''),
@@ -1531,14 +1651,14 @@ final class CMS_365NET_Events_Database
 
         $conditions = [];
         $params = [];
-        if (in_array('name', $columns, true)) {
+        if ($nameColumn !== null) {
             foreach ($names as $name) {
-                $conditions[] = 'LOWER(TRIM(name)) = ?';
+                $conditions[] = 'LOWER(TRIM(' . $nameColumn . ')) = ?';
                 $params[] = $name;
             }
         }
-        if ($domain !== '' && in_array('website', $columns, true)) {
-            $conditions[] = 'website LIKE ?';
+        if ($domain !== '' && $websiteColumn !== null) {
+            $conditions[] = $websiteColumn . ' LIKE ?';
             $params[] = '%' . $domain . '%';
         }
 
@@ -1546,12 +1666,7 @@ final class CMS_365NET_Events_Database
             return null;
         }
 
-        $where = [];
-        if (in_array('status', $columns, true)) {
-            $where[] = 'status = ?';
-            $params = array_merge(['active'], $params);
-        }
-        $where[] = '(' . implode(' OR ', $conditions) . ')';
+        $where = ['(' . implode(' OR ', $conditions) . ')'];
 
         $orderParts = [];
         foreach (['is_sponsor', 'is_top_partner', 'is_partner'] as $partnerColumn) {
@@ -1559,8 +1674,8 @@ final class CMS_365NET_Events_Database
                 $orderParts[] = $partnerColumn . ' DESC';
             }
         }
-        if (in_array('name', $columns, true)) {
-            $orderParts[] = 'name ASC';
+        if ($nameColumn !== null) {
+            $orderParts[] = $nameColumn . ' ASC';
         } else {
             $orderParts[] = 'id ASC';
         }
@@ -1588,6 +1703,10 @@ final class CMS_365NET_Events_Database
             return null;
         }
 
+        $emailColumn = $this->firstExistingColumn($columns, ['email', 'mail']);
+        $firstNameColumn = $this->firstExistingColumn($columns, ['first_name', 'firstname', 'given_name']);
+        $lastNameColumn = $this->firstExistingColumn($columns, ['last_name', 'lastname', 'family_name']);
+
         $display = $this->normalizeMatchValue((string) (($data['display_name'] ?? '') ?: ($data['contact_name'] ?? '')));
         $first = $this->normalizeMatchValue((string) ($data['first_name'] ?? ''));
         $last = $this->normalizeMatchValue((string) ($data['last_name'] ?? ''));
@@ -1595,16 +1714,16 @@ final class CMS_365NET_Events_Database
         $conditions = [];
         $params = [];
 
-        if ($email !== '' && in_array('email', $columns, true)) {
-            $conditions[] = 'LOWER(email) = ?';
+        if ($email !== '' && $emailColumn !== null) {
+            $conditions[] = 'LOWER(' . $emailColumn . ') = ?';
             $params[] = $email;
         }
-        if ($display !== '' && in_array('first_name', $columns, true) && in_array('last_name', $columns, true)) {
-            $conditions[] = "LOWER(TRIM(CONCAT(first_name, ' ', last_name))) = ?";
+        if ($display !== '' && $firstNameColumn !== null && $lastNameColumn !== null) {
+            $conditions[] = "LOWER(TRIM(CONCAT({$firstNameColumn}, ' ', {$lastNameColumn}))) = ?";
             $params[] = $display;
         }
-        if ($first !== '' && $last !== '' && in_array('first_name', $columns, true) && in_array('last_name', $columns, true)) {
-            $conditions[] = '(LOWER(TRIM(first_name)) = ? AND LOWER(TRIM(last_name)) = ?)';
+        if ($first !== '' && $last !== '' && $firstNameColumn !== null && $lastNameColumn !== null) {
+            $conditions[] = '(LOWER(TRIM(' . $firstNameColumn . ')) = ? AND LOWER(TRIM(' . $lastNameColumn . ')) = ?)';
             $params[] = $first;
             $params[] = $last;
         }
@@ -1612,12 +1731,7 @@ final class CMS_365NET_Events_Database
             return null;
         }
 
-        $where = [];
-        if (in_array('status', $columns, true)) {
-            $where[] = 'status = ?';
-            $params = array_merge(['active'], $params);
-        }
-        $where[] = '(' . implode(' OR ', $conditions) . ')';
+        $where = ['(' . implode(' OR ', $conditions) . ')'];
 
         $orderBy = in_array('updated_at', $columns, true) ? 'updated_at DESC' : 'id DESC';
 
@@ -2038,9 +2152,16 @@ final class CMS_365NET_Events_Database
         $defaults = [
             'show_nav_link' => '0',
             'nav_label' => 'Events',
+            'events_header_text_enabled' => '1',
             'archive_title' => 'Events & Messen 2026',
             'archive_description' => 'Kuratiertes Event- und Speaker-Verzeichnis für IT, Cloud, Security, AI und digitale Transformation.',
             'archive_kicker' => '365NET Event Directory',
+            'events_header_btn_1_text' => '',
+            'events_header_btn_1_url' => '',
+            'events_header_btn_2_text' => '',
+            'events_header_btn_2_url' => '',
+            'events_header_btn_3_text' => '',
+            'events_header_btn_3_url' => '',
             'archive_search_placeholder' => 'Event, Ort, Thema oder Veranstalter suchen …',
             'archive_search_button' => 'Suchen',
             'archive_reset_label' => 'Zurücksetzen',
@@ -2049,9 +2170,16 @@ final class CMS_365NET_Events_Database
             'archive_current_button' => 'Zurück zu zukünftigen Events',
             'archive_empty_current' => 'Es wurden keine zukünftigen Events gefunden.',
             'archive_empty_past' => 'Keine vergangenen Events gefunden.',
+            'speakers_header_text_enabled' => '1',
             'speaker_archive_title' => 'Event-Speaker',
             'speaker_archive_kicker' => '365NET Speaker Directory',
             'speaker_archive_description' => 'Personen, Expertengruppen und Organisationen aus dem Event-Datensatz.',
+            'speakers_header_btn_1_text' => '',
+            'speakers_header_btn_1_url' => '',
+            'speakers_header_btn_2_text' => '',
+            'speakers_header_btn_2_url' => '',
+            'speakers_header_btn_3_text' => '',
+            'speakers_header_btn_3_url' => '',
             'speaker_search_placeholder' => 'Speaker, Thema oder Tag suchen …',
             'detail_back_events_label' => 'Events',
             'detail_speakers_heading' => 'Speaker & Themen',
@@ -2060,12 +2188,15 @@ final class CMS_365NET_Events_Database
             'detail_website_label' => 'Website öffnen',
             'layout_primary_color' => '#1d4ed8',
             'layout_accent_color' => '#f59e0b',
+            'layout_event_card_top_border_color' => '#f59e0b',
+            'layout_speaker_card_top_border_color' => '#8b5cf6',
             'layout_text_color' => '#0f172a',
             'layout_card_background' => '#ffffff',
             'layout_card_border' => '#e2e8f0',
             'layout_radius' => '24',
             'layout_card_radius' => '20',
             'layout_gap' => '18',
+            'layout_gap_y' => '18',
             'layout_top_spacing' => '32',
             'layout_bottom_spacing' => '56',
             'layout_container_width' => '1160',
@@ -2108,12 +2239,13 @@ final class CMS_365NET_Events_Database
     public function saveSettings(array $data): void
     {
         $allowed = array_keys($this->getSettings());
+        $booleanKeys = ['show_nav_link', 'events_header_text_enabled', 'speakers_header_text_enabled'];
         foreach ($allowed as $key) {
             if (str_starts_with($key, 'taxonomy_')) {
                 continue;
             }
             $value = (string) ($data[$key] ?? '');
-            if ($key === 'show_nav_link') {
+            if (in_array($key, $booleanKeys, true)) {
                 $value = !empty($data[$key]) ? '1' : '0';
             } elseif (str_starts_with($key, 'layout_')) {
                 $value = $this->cleanLayoutSetting($key, $value);

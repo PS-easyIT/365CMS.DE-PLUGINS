@@ -3,7 +3,7 @@
  * Plugin Name: 365 | Events & Speaker
  * Plugin URI: https://365network.de/cms-365neteventsandspeaker
  * Description: Modulares Event- und Speaker-Verzeichnis für 365CMS mit Seed-Daten, Admin-CRUD und Public-Views.
- * Version: 3.0.0
+ * Version: 3.0.3
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
 $pluginDirPath = str_replace('\\', '/', dirname(__FILE__));
 $pluginFolderName = basename($pluginDirPath);
 
-defined('CMS_365NET_EVENTS_VERSION') || define('CMS_365NET_EVENTS_VERSION', '3.0.0');
+defined('CMS_365NET_EVENTS_VERSION') || define('CMS_365NET_EVENTS_VERSION', '3.0.3');
 defined('CMS_365NET_EVENTS_PLUGIN_DIR') || define('CMS_365NET_EVENTS_PLUGIN_DIR', rtrim($pluginDirPath, '/') . '/');
 defined('CMS_365NET_EVENTS_PLUGIN_URL') || define('CMS_365NET_EVENTS_PLUGIN_URL', '/plugins/' . $pluginFolderName . '/');
 defined('CMS_365NET_EVENTS_TEXT_DOMAIN') || define('CMS_365NET_EVENTS_TEXT_DOMAIN', 'cms-365neteventsandspeaker');
@@ -249,7 +249,47 @@ if (!class_exists('CMS_365NET_Events', false)) {
             $settings = CMS_365NET_Events_Database::instance()->getSettings();
             $color = static fn(string $key, string $fallback): string => preg_match('/^#[0-9a-f]{6}$/i', (string) ($settings[$key] ?? '')) === 1 ? (string) $settings[$key] : $fallback;
             $number = static fn(string $key, int $fallback, int $min = 0, int $max = 1800): int => max($min, min($max, (int) ($settings[$key] ?? $fallback)));
-            echo '<style id="cms-365neteventsandspeaker-settings">.cms-events-public{--cms-events-primary:' . htmlspecialchars($color('layout_primary_color', '#1d4ed8'), ENT_QUOTES, 'UTF-8') . ';--cms-events-accent:' . htmlspecialchars($color('layout_accent_color', '#f59e0b'), ENT_QUOTES, 'UTF-8') . ';--cms-events-text:' . htmlspecialchars($color('layout_text_color', '#0f172a'), ENT_QUOTES, 'UTF-8') . ';--cms-events-card-bg:' . htmlspecialchars($color('layout_card_background', '#ffffff'), ENT_QUOTES, 'UTF-8') . ';--cms-events-card-border:' . htmlspecialchars($color('layout_card_border', '#e2e8f0'), ENT_QUOTES, 'UTF-8') . ';--cms-events-radius:' . $number('layout_radius', 24, 0, 96) . 'px;--cms-events-card-radius:' . $number('layout_card_radius', 20, 0, 96) . 'px;--cms-events-gap:' . $number('layout_gap', 18, 0, 120) . 'px;--cms-events-top:' . $number('layout_top_spacing', 32, 0, 240) . 'px;--cms-events-bottom:' . $number('layout_bottom_spacing', 56, 0, 240) . 'px;--cms-events-width:' . $number('layout_container_width', 1160, 320, 1800) . 'px;background:transparent!important;padding-top:var(--cms-events-top)!important;padding-bottom:var(--cms-events-bottom)!important;color:var(--cms-events-text)!important}.cms-events-container{max-width:var(--cms-events-width)!important}.cms-events-hero{border-radius:var(--cms-events-radius)!important;background:linear-gradient(135deg,var(--cms-events-primary),#172554)!important}.cms-events-card,.cms-events-detail-main,.cms-events-sidecard,.cms-events-search{background:var(--cms-events-card-bg)!important;border-color:var(--cms-events-card-border)!important;border-radius:var(--cms-events-card-radius)!important}.cms-events-grid{gap:var(--cms-events-gap)!important}.cms-events-search button,.cms-events-btn{background:var(--cms-events-primary)!important}.cms-events-kicker{color:var(--cms-events-accent)!important}.cms-events-card__more{color:var(--cms-events-primary)!important}</style>' . "\n";
+
+            $primary = htmlspecialchars($color('layout_primary_color', '#1d4ed8'), ENT_QUOTES, 'UTF-8');
+            $accent = htmlspecialchars($color('layout_accent_color', '#f59e0b'), ENT_QUOTES, 'UTF-8');
+            $eventCardTopBorder = htmlspecialchars($color('layout_event_card_top_border_color', (string) ($settings['layout_accent_color'] ?? '#f59e0b')), ENT_QUOTES, 'UTF-8');
+            $speakerCardTopBorder = htmlspecialchars($color('layout_speaker_card_top_border_color', '#8b5cf6'), ENT_QUOTES, 'UTF-8');
+            $text = htmlspecialchars($color('layout_text_color', '#0f172a'), ENT_QUOTES, 'UTF-8');
+            $cardBg = htmlspecialchars($color('layout_card_background', '#ffffff'), ENT_QUOTES, 'UTF-8');
+            $cardBorder = htmlspecialchars($color('layout_card_border', '#e2e8f0'), ENT_QUOTES, 'UTF-8');
+
+            $gapX = $number('layout_gap', 18, 0, 120);
+            $gapY = max(0, min(120, (int) ($settings['layout_gap_y'] ?? $gapX)));
+
+            $css = '.cms-events-public{'
+                . '--cms-events-primary:' . $primary . ';'
+                . '--cms-events-accent:' . $accent . ';'
+                . '--cms-events-event-card-top-border:' . $eventCardTopBorder . ';'
+                . '--cms-events-speaker-card-top-border:' . $speakerCardTopBorder . ';'
+                . '--cms-events-text:' . $text . ';'
+                . '--cms-events-card-bg:' . $cardBg . ';'
+                . '--cms-events-card-border:' . $cardBorder . ';'
+                . '--cms-events-radius:' . $number('layout_radius', 24, 0, 96) . 'px;'
+                . '--cms-events-card-radius:' . $number('layout_card_radius', 20, 0, 96) . 'px;'
+                . '--cms-events-gap:' . $gapX . 'px;'
+                . '--cms-events-gap-y:' . $gapY . 'px;'
+                . '--cms-events-top:' . $number('layout_top_spacing', 32, 0, 240) . 'px;'
+                . '--cms-events-bottom:' . $number('layout_bottom_spacing', 56, 0, 240) . 'px;'
+                . '--cms-events-width:' . $number('layout_container_width', 1160, 320, 1800) . 'px;'
+                . 'background:transparent!important;'
+                . 'padding-top:var(--cms-events-top)!important;'
+                . 'padding-bottom:var(--cms-events-bottom)!important;'
+                . 'color:var(--cms-events-text)!important'
+                . '}'
+                . '.cms-events-container{max-width:var(--cms-events-width)!important}'
+                . '.cms-events-hero{border-radius:var(--cms-events-radius)!important;background:linear-gradient(135deg,var(--cms-events-primary),#172554)!important}'
+                . '.cms-events-card,.cms-events-detail-main,.cms-events-sidecard,.cms-events-search{background:var(--cms-events-card-bg)!important;border-color:var(--cms-events-card-border)!important;border-radius:var(--cms-events-card-radius)!important}'
+                . '.cms-events-grid{column-gap:var(--cms-events-gap)!important;row-gap:var(--cms-events-gap-y,var(--cms-events-gap))!important}'
+                . '.cms-events-search button,.cms-events-btn{background:var(--cms-events-primary)!important}'
+                . '.cms-events-kicker{color:var(--cms-events-accent)!important}'
+                . '.cms-events-card__more{color:var(--cms-events-primary)!important}';
+
+            echo '<style id="cms-365neteventsandspeaker-settings">' . $css . '</style>' . "\n";
         }
 
         private function enqueueScriptFile(string $file): void
@@ -281,7 +321,17 @@ if (!class_exists('CMS_365NET_Events', false)) {
 
         private function isAdminRoute(): bool
         {
-            return str_starts_with($this->requestPath(), '/admin/365netevents');
+            $path = $this->requestPath();
+            if (str_starts_with($path, '/admin/365netevents') || str_starts_with($path, '/admin/365neteventsandspeaker')) {
+                return true;
+            }
+
+            $page = strtolower(trim((string) ($_GET['page'] ?? '')));
+            if ($page !== '' && str_starts_with($page, '365netevents')) {
+                return true;
+            }
+
+            return false;
         }
 
         private function requestPath(): string

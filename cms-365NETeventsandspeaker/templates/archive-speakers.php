@@ -22,6 +22,33 @@ $paginationUrl = static function (int $page) use ($base, $filters): string {
     return $base . '/speakers' . ($query !== [] ? '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986) : '');
 };
 
+$speakersHeaderTextEnabled = (string) ($settings['speakers_header_text_enabled'] ?? '1') !== '0';
+$normalizeHeaderCta = static function (string $text, string $url): ?array {
+    $label = trim($text);
+    $href = trim($url);
+    if ($label === '' || $href === '') {
+        return null;
+    }
+
+    if (preg_match('#^https?://#i', $href) !== 1 && !str_starts_with($href, '/')) {
+        return null;
+    }
+
+    return ['text' => $label, 'url' => $href];
+};
+
+$speakersHeaderButtons = [];
+for ($buttonIndex = 1; $buttonIndex <= 3; $buttonIndex++) {
+    $button = $normalizeHeaderCta(
+        (string) ($settings['speakers_header_btn_' . $buttonIndex . '_text'] ?? ''),
+        (string) ($settings['speakers_header_btn_' . $buttonIndex . '_url'] ?? '')
+    );
+
+    if ($button !== null) {
+        $speakersHeaderButtons[] = $button;
+    }
+}
+
 $speakerCardExcerpt = static function (object $speaker): string {
     $raw = trim((string) ($speaker->bio ?? ''));
     if ($raw === '') {
@@ -43,10 +70,19 @@ $speakerCardExcerpt = static function (object $speaker): string {
 ?>
 <main class="cms-events-public cms-speakers-archive">
     <div class="cms-events-container">
-        <section class="cms-events-hero cms-events-hero--compact">
-            <span class="cms-events-kicker"><?= htmlspecialchars((string) ($settings['speaker_archive_kicker'] ?? '365NET Speaker Directory'), ENT_QUOTES, 'UTF-8') ?></span>
-            <h1><?= htmlspecialchars((string) ($settings['speaker_archive_title'] ?? 'Event-Speaker'), ENT_QUOTES, 'UTF-8') ?></h1>
-            <p class="cms-events-hero__description"><?= htmlspecialchars((string) ($settings['speaker_archive_description'] ?? 'Echte Personen mit Bühne, Erfahrung und starken Themen aus dem Event-Datensatz.'), ENT_QUOTES, 'UTF-8') ?></p>
+        <section class="cms-events-hero cms-events-hero--compact<?= $speakersHeaderButtons !== [] ? ' cms-events-hero--has-actions' : '' ?>">
+            <?php if ($speakersHeaderTextEnabled): ?>
+                <span class="cms-events-kicker"><?= htmlspecialchars((string) ($settings['speaker_archive_kicker'] ?? '365NET Speaker Directory'), ENT_QUOTES, 'UTF-8') ?></span>
+                <h1><?= htmlspecialchars((string) ($settings['speaker_archive_title'] ?? 'Event-Speaker'), ENT_QUOTES, 'UTF-8') ?></h1>
+                <p class="cms-events-hero__description"><?= htmlspecialchars((string) ($settings['speaker_archive_description'] ?? 'Echte Personen mit Bühne, Erfahrung und starken Themen aus dem Event-Datensatz.'), ENT_QUOTES, 'UTF-8') ?></p>
+            <?php endif; ?>
+            <?php if ($speakersHeaderButtons !== []): ?>
+                <div class="cms-events-hero__actions" aria-label="Header-Aktionen">
+                    <?php foreach ($speakersHeaderButtons as $button): ?>
+                        <a class="cms-events-hero__action" href="<?= htmlspecialchars((string) $button['url'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $button['text'], ENT_QUOTES, 'UTF-8') ?></a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </section>
         <form method="GET" class="cms-events-search cms-events-search--header-card" role="search">
             <div class="cms-events-search__field">

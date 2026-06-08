@@ -3,13 +3,16 @@
   "name": "365NET | Experts & Companie",
   "type": "plugin",
   "license": "free",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "min_cms_version": "3.0.0",
   "min_php": "8.1",
   "released": "2026-06-08",
   "download_url": "",
   "checksum_sha256": "",
   "changelog": {
+    "1.0.3": "UI-Feinschliff Expert-Detailseite: Icon/Bild im Header auf +25% skaliert, links mit 50px Abstand zum Contentheader-Rand ausgerichtet und Header-Inhalt vertikal zentriert (Icon links, Name + Metainfos rechts darunter).",
+    "1.0.2": "UX-Update: In den Übersichtsseiten können Grid-Abstände jetzt getrennt eingestellt werden: horizontaler Abstand zwischen Karten in derselben Reihe und vertikaler Abstand zwischen Kartenzeilen. Beide Werte werden zentral in den Plugin-Einstellungen gepflegt.",
+    "1.0.1": "UI-Update: Single-Detailseiten für Experts und Companies nutzen jetzt einen 180px hohen Content-Header. Auf Company-Detailseiten liegt das Firmenlogo nahtlos rechts im Header auf 33% Breite (gleich zur Sidebar), und der darunterliegende Beschreibungs-/Sidebar-Bereich schließt ohne Abstand direkt an den Header an.",
     "1.0.0": "Neu: Standalone-Kombi-Plugin für Experts & Companies mit eigenem Admin-Hub (365 | Experts & Companie), gemeinsamer Public-Übersicht plus dedizierten /experts- und /companies-Seiten im Events/Speakers-Stil, plugin-eigenem Seed/CRUD sowie getrenntem Orange-/Grün-Farbsystem."
   }
 }

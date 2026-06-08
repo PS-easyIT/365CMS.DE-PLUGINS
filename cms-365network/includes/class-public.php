@@ -398,7 +398,11 @@ final class CMS_365NETWORK_Public
                 'text' => (string) ($settings['events_card_text'] ?? ''),
                 'url' => $this->safe_url((string) ($settings['events_card_url'] ?? '/events')),
                 'stat' => 'events',
-                'integration_active' => $this->is_area_integration_active('cms-365neteventsandspeaker', 'CMS_365NET_Events', 'events'),
+                'integration_active' => $this->is_area_integration_active_multi(
+                    ['cms-365NETeventsandspeaker', 'cms-365neteventsandspeaker', 'cms-365NETevents', 'cms-365netevents'],
+                    ['CMS_365NET_Events'],
+                    ['events', '365net_events', 'event_events']
+                ),
             ],
             [
                 'key' => 'speakers',
@@ -406,64 +410,97 @@ final class CMS_365NETWORK_Public
                 'icon' => 'microphone-2',
                 'label' => (string) ($settings['speakers_card_title'] ?? 'Speaker'),
                 'text' => (string) ($settings['speakers_card_text'] ?? ''),
-                'url' => $this->safe_url((string) ($settings['speakers_card_url'] ?? '/event-speakers')),
+                'url' => $this->safe_url((string) ($settings['speakers_card_url'] ?? '/speakers')),
                 'stat' => 'speakers',
-                'integration_active' => $this->is_area_integration_active('cms-365neteventsandspeaker', 'CMS_365NET_Events', 'speakers'),
+                'integration_active' => $this->is_area_integration_active_multi(
+                    ['cms-365NETeventsandspeaker', 'cms-365neteventsandspeaker', 'cms-365NETevents', 'cms-365netevents'],
+                    ['CMS_365NET_Events'],
+                    ['speakers', '365net_event_speakers', 'event_speakers']
+                ),
             ],
             [
                 'key' => 'companies',
-                'plugin_slug' => 'cms-companies',
+                'plugin_slug' => 'cms-365netexpertsandcompanie',
                 'icon' => 'building-community',
                 'label' => (string) ($settings['companies_card_title'] ?? 'Firmen'),
                 'text' => (string) ($settings['companies_card_text'] ?? ''),
                 'url' => $this->safe_url((string) ($settings['companies_card_url'] ?? '/companies')),
                 'stat' => 'companies',
-                'integration_active' => $this->is_area_integration_active('cms-companies', 'CMS_Companies', 'companies'),
+                'integration_active' => $this->is_area_integration_active_multi(
+                    ['cms-365NETexpertsandcompanie', 'cms-365netexpertsandcompanie', 'cms-companies'],
+                    ['CMS_365NET_Experts_And_Companie', 'CMS_Companies'],
+                    ['companies', '365net_excomp_companies', 'company']
+                ),
             ],
             [
                 'key' => 'experts',
-                'plugin_slug' => 'cms-experts',
+                'plugin_slug' => 'cms-365netexpertsandcompanie',
                 'icon' => 'user-star',
                 'label' => (string) ($settings['experts_card_title'] ?? 'Experten'),
                 'text' => (string) ($settings['experts_card_text'] ?? ''),
                 'url' => $this->safe_url((string) ($settings['experts_card_url'] ?? '/experts')),
                 'stat' => 'experts',
-                'integration_active' => $this->is_area_integration_active('cms-experts', 'CMS_Experts', 'experts'),
+                'integration_active' => $this->is_area_integration_active_multi(
+                    ['cms-365NETexpertsandcompanie', 'cms-365netexpertsandcompanie', 'cms-experts'],
+                    ['CMS_365NET_Experts_And_Companie', 'CMS_Experts'],
+                    ['experts', '365net_excomp_experts', 'expert']
+                ),
             ],
         ];
     }
 
     private function is_area_integration_active(string $slug, string $className, string $table): bool
     {
-        $hasStatusSignal = false;
+        return $this->is_area_integration_active_multi([$slug], [$className], [$table]);
+    }
 
-        try {
-            if (function_exists('cms_plugin_active')) {
-                $hasStatusSignal = true;
-                if ((bool) cms_plugin_active($slug)) {
-                    return true;
+    /**
+     * @param array<int, string> $slugs
+     * @param array<int, string> $classNames
+     * @param array<int, string> $tables
+     */
+    private function is_area_integration_active_multi(array $slugs, array $classNames, array $tables): bool
+    {
+        foreach ($slugs as $slug) {
+            $slug = trim($slug);
+            if ($slug === '') {
+                continue;
+            }
+
+            $slugCandidates = array_values(array_unique([$slug, strtolower($slug)]));
+            foreach ($slugCandidates as $slugCandidate) {
+                try {
+                    if (function_exists('cms_plugin_active') && (bool) cms_plugin_active($slugCandidate)) {
+                        return true;
+                    }
+                } catch (\Throwable $e) {
+                    error_log('CMS 365NETWORK area plugin status via cms_plugin_active failed for ' . $slugCandidate . ': ' . $e->getMessage());
+                }
+
+                try {
+                    if (class_exists('CMS\\PluginManager') && CMS\PluginManager::instance()->isPluginActive($slugCandidate)) {
+                        return true;
+                    }
+                } catch (\Throwable $e) {
+                    error_log('CMS 365NETWORK area plugin status via PluginManager failed for ' . $slugCandidate . ': ' . $e->getMessage());
                 }
             }
-        } catch (\Throwable $e) {
-            error_log('CMS 365NETWORK area plugin status via cms_plugin_active failed for ' . $slug . ': ' . $e->getMessage());
         }
 
-        try {
-            if (class_exists('CMS\\PluginManager')) {
-                $hasStatusSignal = true;
-                if (CMS\PluginManager::instance()->isPluginActive($slug)) {
-                    return true;
-                }
+        foreach ($classNames as $className) {
+            $className = trim($className);
+            if ($className !== '' && class_exists($className)) {
+                return true;
             }
-        } catch (\Throwable $e) {
-            error_log('CMS 365NETWORK area plugin status via PluginManager failed for ' . $slug . ': ' . $e->getMessage());
         }
 
-        if ($hasStatusSignal) {
-            return false;
+        foreach ($tables as $table) {
+            if ($this->table_exists($table)) {
+                return true;
+            }
         }
 
-        return class_exists($className, false) || $this->table_exists($table);
+        return false;
     }
 
     private function fetch_upcoming_events(int $limit): array
@@ -548,7 +585,7 @@ final class CMS_365NETWORK_Public
             $db = CMS\Database::instance();
             $offset = $this->random_offset('companies', ['active'], $limit);
             $params = [];
-            $statusWhere = $this->status_filter_sql('companies', ['active'], $params);
+            $statusWhere = $this->status_filter_sql('companies', ['active', 'published'], $params);
             $params[] = $limit;
             $params[] = $offset;
             $sql = "SELECT id, name, industry, logo_url, location_city, is_partner, is_top_partner
@@ -581,7 +618,7 @@ final class CMS_365NETWORK_Public
             $db = CMS\Database::instance();
             $offset = $this->random_offset('experts', ['active'], $limit);
             $params = [];
-            $statusWhere = $this->status_filter_sql('experts', ['active'], $params);
+            $statusWhere = $this->status_filter_sql('experts', ['active', 'published'], $params);
             $params[] = $limit;
             $params[] = $offset;
             $sql = "SELECT id, first_name, last_name, position, company, photo_url, location_city
@@ -613,7 +650,7 @@ final class CMS_365NETWORK_Public
         try {
             $db = CMS\Database::instance();
             $params = [];
-            $statusWhere = $this->status_filter_sql('companies', ['active'], $params);
+            $statusWhere = $this->status_filter_sql('companies', ['active', 'published'], $params);
             $params[] = $limit;
             $sql = "SELECT id, name, industry, logo_url, location_city, is_partner, is_top_partner
                 FROM `{$companiesTable}`
@@ -645,7 +682,7 @@ final class CMS_365NETWORK_Public
         try {
             $db = CMS\Database::instance();
             $params = [];
-            $statusWhere = $this->status_filter_sql('experts', ['active'], $params);
+            $statusWhere = $this->status_filter_sql('experts', ['active', 'published'], $params);
             $params[] = $limit;
             $sql = "SELECT id, first_name, last_name, position, company, photo_url, location_city
                 FROM `{$expertsTable}`
@@ -980,13 +1017,13 @@ final class CMS_365NETWORK_Public
     private function count_companies_stat(): int
     {
         $count = $this->count_via_plugin_api('cms-companies', 'CMS_Companies_Database', 'get_companies_count', [['status' => 'active'], ['status' => 'any']]);
-        return $count > 0 ? $count : $this->count_public_rows('companies', ['active']);
+        return $count > 0 ? $count : $this->count_public_rows('companies', ['active', 'published']);
     }
 
     private function count_experts_stat(): int
     {
         $count = $this->count_via_plugin_api('cms-experts', 'CMS_Experts_Database', 'countExperts', ['active', '']);
-        return $count > 0 ? $count : $this->count_public_rows('experts', ['active']);
+        return $count > 0 ? $count : $this->count_public_rows('experts', ['active', 'published']);
     }
 
     /**
@@ -1100,7 +1137,7 @@ final class CMS_365NETWORK_Public
     {
         $rows = $this->search_table(
             'companies',
-            ['active'],
+            ['active', 'published'],
             ['id', 'name', 'industry', 'description', 'location_city', 'is_partner', 'is_top_partner'],
             ['name', 'industry', 'description', 'location_city', 'location_country'],
             $query,
@@ -1525,8 +1562,10 @@ final class CMS_365NETWORK_Public
             $db = CMS\Database::instance();
             $prefix = $db->prefix();
             $aliases = [
-                'events' => ['365net_events', 'events'],
-                'speakers' => ['365net_event_speakers', 'speakers'],
+                'events' => ['365net_events', 'events', 'event_events'],
+                'speakers' => ['365net_event_speakers', 'event_speakers', 'speakers'],
+                'companies' => ['365net_excomp_companies', 'companies', 'company'],
+                'experts' => ['365net_excomp_experts', 'experts', 'expert'],
             ];
             $baseCandidates = $aliases[$table] ?? [$table];
             $candidates = [];

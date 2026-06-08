@@ -84,6 +84,8 @@ final class CMS_365NET_Experts_And_Companie_Database
             'layout_page_padding_top' => '24px',
             'layout_page_padding_bottom' => '40px',
             'layout_grid_gap' => '18px',
+            'layout_grid_gap_x' => '18px',
+            'layout_grid_gap_y' => '18px',
             'layout_section_gap' => '20px',
             'style_radius_card' => '2px',
             'style_radius_button' => '2px',
@@ -254,13 +256,13 @@ final class CMS_365NET_Experts_And_Companie_Database
             'linked_company_id',
         ]);
 
-        $where = in_array('status', $columns, true) ? ' WHERE status = ?' : '';
-        $params = $where !== '' ? ['published'] : [];
-
         $db = CMS\Database::instance();
         $limit = max(1, min(500, $limit));
-        $stmt = $db->prepare('SELECT ' . $select . ' FROM ' . $db->prefix() . '365net_event_speakers' . $where . ' ORDER BY display_name ASC LIMIT ' . $limit);
-        $stmt->execute($params);
+        $orderBy = in_array('status', $columns, true)
+            ? "CASE WHEN status = 'published' THEN 0 WHEN status = 'active' THEN 1 ELSE 2 END, display_name ASC"
+            : 'display_name ASC';
+        $stmt = $db->prepare('SELECT ' . $select . ' FROM ' . $db->prefix() . '365net_event_speakers ORDER BY ' . $orderBy . ' LIMIT ' . $limit);
+        $stmt->execute([]);
 
         return $stmt->fetchAll() ?: [];
     }

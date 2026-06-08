@@ -205,6 +205,8 @@ final class CMS_365NET_Experts_And_Companie_Admin
         $layoutPagePaddingTop = trim((string) ($settings['layout_page_padding_top'] ?? '24px'));
         $layoutPagePaddingBottom = trim((string) ($settings['layout_page_padding_bottom'] ?? '40px'));
         $layoutGridGap = trim((string) ($settings['layout_grid_gap'] ?? '18px'));
+        $layoutGridGapX = trim((string) ($settings['layout_grid_gap_x'] ?? $layoutGridGap));
+        $layoutGridGapY = trim((string) ($settings['layout_grid_gap_y'] ?? $layoutGridGap));
         $layoutSectionGap = trim((string) ($settings['layout_section_gap'] ?? '20px'));
 
         $styleRadiusCard = trim((string) ($settings['style_radius_card'] ?? '2px'));
@@ -280,7 +282,8 @@ final class CMS_365NET_Experts_And_Companie_Admin
                 <?php $this->textField('layout_content_max_width', 'Content-Breite (z. B. 1160px)', $layoutContentMaxWidth); ?>
                 <?php $this->textField('layout_page_padding_top', 'Abstand Header → Content', $layoutPagePaddingTop); ?>
                 <?php $this->textField('layout_page_padding_bottom', 'Abstand Content → Footer', $layoutPagePaddingBottom); ?>
-                <?php $this->textField('layout_grid_gap', 'Grid-Abstand', $layoutGridGap); ?>
+                <?php $this->textField('layout_grid_gap_x', 'Grid-Abstand horizontal (Karten nebeneinander)', $layoutGridGapX); ?>
+                <?php $this->textField('layout_grid_gap_y', 'Grid-Abstand vertikal (Karten untereinander)', $layoutGridGapY); ?>
                 <?php $this->textField('layout_section_gap', 'Abschnitt-Abstand', $layoutSectionGap); ?>
             </div>
 

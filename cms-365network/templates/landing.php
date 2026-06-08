@@ -231,9 +231,15 @@ $areaCounts = ['events' => $countEvents, 'speakers' => $countSpeakers, 'companie
 $areaOrderKeys = ['events', 'speakers', 'experts', 'companies'];
 $areaOrder = $normalizeOrder($hubValue('hub_area_card_order', implode(',', $areaOrderKeys)), $areaOrderKeys);
 $areasMaintenanceMode = $hubEnabled('hub_areas_maintenance_mode', false);
+$areaMaintenance = [
+    'events' => $hubEnabled('hub_area_events_maintenance', false),
+    'speakers' => $hubEnabled('hub_area_speakers_maintenance', false),
+    'companies' => $hubEnabled('hub_area_companies_maintenance', false),
+    'experts' => $hubEnabled('hub_area_experts_maintenance', false),
+];
 $areaUnavailableLabel = $t('area.unavailable', 'Bald verfügbar', 'Coming soon');
 $eventsIntegrationActive = array_key_exists('events', $areaByKey) && is_array($areaByKey['events']) && array_key_exists('integration_active', $areaByKey['events']) ? (bool) $areaByKey['events']['integration_active'] : true;
-$eventsAvailable = $eventsIntegrationActive && !$areasMaintenanceMode;
+$eventsAvailable = $eventsIntegrationActive && !$areasMaintenanceMode && !(bool) ($areaMaintenance['events'] ?? false);
 $hubAreas = [];
 foreach ($areaOrder as $key) {
     if (!$hubEnabled('hub_area_' . $key . '_visible')) {
@@ -241,7 +247,7 @@ foreach ($areaOrder as $key) {
     }
     $fallback = $areaByKey[$key] ?? [];
     $integrationActive = array_key_exists('integration_active', $fallback) ? (bool) $fallback['integration_active'] : true;
-    $isAvailable = $integrationActive && !$areasMaintenanceMode;
+    $isAvailable = $integrationActive && !$areasMaintenanceMode && !(bool) ($areaMaintenance[$key] ?? false);
     $hubAreas[] = [
         'key' => $key,
         'label' => $hubValue('hub_area_' . $key . '_label', (string) ($fallback['label'] ?? ucfirst($key))),

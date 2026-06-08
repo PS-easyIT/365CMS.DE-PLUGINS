@@ -31,6 +31,33 @@ $paginationUrl = static function (int $page) use ($base, $filters): string {
     return $base . '/events' . ($query !== [] ? '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986) : '');
 };
 
+$eventsHeaderTextEnabled = (string) ($settings['events_header_text_enabled'] ?? '1') !== '0';
+$normalizeHeaderCta = static function (string $text, string $url): ?array {
+    $label = trim($text);
+    $href = trim($url);
+    if ($label === '' || $href === '') {
+        return null;
+    }
+
+    if (preg_match('#^https?://#i', $href) !== 1 && !str_starts_with($href, '/')) {
+        return null;
+    }
+
+    return ['text' => $label, 'url' => $href];
+};
+
+$eventsHeaderButtons = [];
+for ($buttonIndex = 1; $buttonIndex <= 3; $buttonIndex++) {
+    $button = $normalizeHeaderCta(
+        (string) ($settings['events_header_btn_' . $buttonIndex . '_text'] ?? ''),
+        (string) ($settings['events_header_btn_' . $buttonIndex . '_url'] ?? '')
+    );
+
+    if ($button !== null) {
+        $eventsHeaderButtons[] = $button;
+    }
+}
+
 $eventCardExcerpt = static function (object $event): string {
     $raw = (string) ($event->description ?? '');
     if ($raw === '') {
@@ -49,10 +76,19 @@ $eventCardExcerpt = static function (object $event): string {
 ?>
 <main class="cms-events-public cms-events-archive">
     <div class="cms-events-container">
-        <section class="cms-events-hero cms-events-hero--compact">
-            <span class="cms-events-kicker"><?= htmlspecialchars((string) ($settings['archive_kicker'] ?? '365NET Event Directory'), ENT_QUOTES, 'UTF-8') ?></span>
-            <h1><?= htmlspecialchars((string) ($settings['archive_title'] ?? 'Events & Messen'), ENT_QUOTES, 'UTF-8') ?></h1>
-            <p class="cms-events-hero__description"><?= htmlspecialchars((string) ($settings['archive_description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+        <section class="cms-events-hero cms-events-hero--compact<?= $eventsHeaderButtons !== [] ? ' cms-events-hero--has-actions' : '' ?>">
+            <?php if ($eventsHeaderTextEnabled): ?>
+                <span class="cms-events-kicker"><?= htmlspecialchars((string) ($settings['archive_kicker'] ?? '365NET Event Directory'), ENT_QUOTES, 'UTF-8') ?></span>
+                <h1><?= htmlspecialchars((string) ($settings['archive_title'] ?? 'Events & Messen'), ENT_QUOTES, 'UTF-8') ?></h1>
+                <p class="cms-events-hero__description"><?= htmlspecialchars((string) ($settings['archive_description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+            <?php endif; ?>
+            <?php if ($eventsHeaderButtons !== []): ?>
+                <div class="cms-events-hero__actions" aria-label="Header-Aktionen">
+                    <?php foreach ($eventsHeaderButtons as $button): ?>
+                        <a class="cms-events-hero__action" href="<?= htmlspecialchars((string) $button['url'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $button['text'], ENT_QUOTES, 'UTF-8') ?></a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </section>
 
         <form method="GET" class="cms-events-search cms-events-search--header-card" role="search">
