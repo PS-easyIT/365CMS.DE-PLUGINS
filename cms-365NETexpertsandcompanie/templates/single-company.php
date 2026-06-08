@@ -49,6 +49,7 @@ $website = trim((string) ($company->website ?? ''));
 $email = trim((string) ($company->email ?? ''));
 $phone = trim((string) ($company->phone ?? ''));
 $companySize = trim((string) ($company->company_size ?? ''));
+$logoUrl = trim((string) ($company->logo_url ?? ''));
 
 $partnerLabel = 'Unternehmen';
 if ((int) ($company->is_sponsor ?? 0) === 1) {
@@ -64,7 +65,20 @@ $linkedSpeaker = is_object($linkedSpeaker ?? null) ? $linkedSpeaker : null;
 $linkedExperts = is_array($linkedExperts ?? null) ? $linkedExperts : [];
 $linkedSpeakers = is_array($linkedSpeakers ?? null) ? $linkedSpeakers : [];
 
-$metaItems = array_values(array_filter([$industry, $city, $country, $partnerLabel], static fn(string $value): bool => $value !== ''));
+$detailRows = [];
+if ($industry !== '') {
+    $detailRows[] = ['label' => 'Branche', 'value' => $industry];
+}
+if ($city !== '') {
+    $detailRows[] = ['label' => 'Ort', 'value' => $city];
+}
+if ($country !== '') {
+    $detailRows[] = ['label' => 'Land', 'value' => $country];
+}
+if ($companySize !== '') {
+    $detailRows[] = ['label' => 'Größe', 'value' => $companySize];
+}
+$detailRows[] = ['label' => 'Status', 'value' => $partnerLabel];
 
 $companyInitials = 'CO';
 $parts = preg_split('/\s+/', $name) ?: [];
@@ -78,51 +92,90 @@ foreach ($parts as $part) {
 if ($letters !== '') {
     $companyInitials = substr($letters, 0, 2);
 }
+
+$sidebarContactLink = '';
+if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $sidebarContactLink = 'mailto:' . $email;
+}
+
+$hasSidebarPrimaryActions = $sidebarContactLink !== '' || $website !== '';
 ?>
 
-<main class="cms-events-public cms-events-detail cms-excomp-public cms-excomp-detail cms-excomp-detail--company">
+<main class="cms-excomp-public cms-excomp-detail cms-excomp-detail--company">
     <div class="cms-excomp-container">
-        <nav class="cms-events-breadcrumb cms-excomp-breadcrumb">
+        <nav class="cms-excomp-breadcrumb">
             <a href="<?= $e($base . '/companies') ?>">Companies</a>
             <span>/</span>
             <span><?= $e($name) ?></span>
         </nav>
 
-        <article class="cms-events-detail-layout cms-excomp-detail-layout">
-            <header class="cms-events-detail-header cms-excomp-detail-header cms-excomp-detail-header--company">
-                <div class="cms-events-detail-header__content">
-                    <div class="cms-events-detail-header__intro cms-excomp-detail-header__identity">
-                        <span class="cms-excomp-avatar cms-excomp-avatar--fallback cms-excomp-avatar--company cms-excomp-avatar--detail"><?= $e($companyInitials) ?></span>
-                        <div class="cms-events-detail-header__text cms-excomp-detail-header__text">
-                            <h1><?= $e($name) ?></h1>
-                            <?php if ($metaItems !== []): ?>
-                                <div class="cms-excomp-detail-header__meta"><?php foreach ($metaItems as $meta): ?><span><?= $e($meta) ?></span><?php endforeach; ?></div>
+        <article class="cms-excomp-detail-layout">
+            <header class="cms-excomp-detail-header cms-excomp-detail-header--company">
+                <div class="cms-excomp-detail-header__content">
+                    <div class="cms-excomp-detail-header__intro">
+                        <div class="cms-excomp-detail-badge cms-excomp-detail-badge--company" aria-label="Companyprofil">
+                            <?php if ($logoUrl !== ''): ?>
+                                <img src="<?= $e($logoUrl) ?>" alt="<?= $e($name) ?>" loading="eager">
+                            <?php else: ?>
+                                <span class="cms-excomp-detail-badge__initial"><?= $e($companyInitials) ?></span>
                             <?php endif; ?>
+                        </div>
+                        <div class="cms-excomp-detail-header__text">
+                            <h1><?= $e($name) ?></h1>
+                            <div class="cms-excomp-detail-header__meta">
+                                <?php if ($industry !== ''): ?><span><?= $e($industry) ?></span><?php endif; ?>
+                                <?php if ($city !== ''): ?><span><?= $e($city) ?></span><?php endif; ?>
+                                <span><?= $e($partnerLabel) ?></span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </header>
 
-            <div class="cms-events-detail-layout__body cms-excomp-detail-layout__body">
-                <section class="cms-events-detail-main cms-excomp-detail-main">
+            <div class="cms-excomp-detail-layout__body">
+                <section class="cms-excomp-detail-main">
                     <?= $renderEditor($company->description_json ?? '', $company->description ?? '') ?>
                 </section>
 
-                <aside class="cms-events-sidebar cms-excomp-sidebar">
-                    <section class="cms-events-sidecard cms-excomp-sidecard">
-                        <h2>Kontakt</h2>
-                        <dl class="cms-events-sidecard__meta cms-excomp-meta-list">
-                            <?php if ($companySize !== ''): ?><div><dt>Größe</dt><dd><?= $e($companySize) ?></dd></div><?php endif; ?>
-                            <?php if ($email !== ''): ?><div><dt>E-Mail</dt><dd><a href="mailto:<?= $e($email) ?>"><?= $e($email) ?></a></dd></div><?php endif; ?>
-                            <?php if ($phone !== ''): ?><div><dt>Telefon</dt><dd><?= $e($phone) ?></dd></div><?php endif; ?>
-                            <?php if ($website !== ''): ?><div><dt>Website</dt><dd><a href="<?= $e($website) ?>" target="_blank" rel="noopener noreferrer"><?= $e($website) ?></a></dd></div><?php endif; ?>
-                        </dl>
-                    </section>
+                <aside class="cms-excomp-sidebar">
+                    <div class="cms-excomp-sidebar-stack">
+                        <div class="cms-excomp-sidecard cms-excomp-sidecard--details<?= $hasSidebarPrimaryActions ? ' cms-excomp-sidecard--details-has-links' : '' ?>">
+                            <dl class="cms-excomp-sidecard__meta">
+                                <?php foreach ($detailRows as $detailRow): ?>
+                                    <div class="cms-excomp-sidecard__meta-row">
+                                        <dt><?= $e((string) ($detailRow['label'] ?? '')) ?></dt>
+                                        <dd><?= $e((string) ($detailRow['value'] ?? '')) ?></dd>
+                                    </div>
+                                <?php endforeach; ?>
+                                <?php if ($email !== ''): ?><div class="cms-excomp-sidecard__meta-row"><dt>E-Mail</dt><dd><a href="mailto:<?= $e($email) ?>"><?= $e($email) ?></a></dd></div><?php endif; ?>
+                                <?php if ($phone !== ''): ?><div class="cms-excomp-sidecard__meta-row"><dt>Telefon</dt><dd><?= $e($phone) ?></dd></div><?php endif; ?>
+                            </dl>
+                        </div>
+
+                        <?php if ($hasSidebarPrimaryActions): ?>
+                            <div class="cms-excomp-sidecard cms-excomp-sidecard--links">
+                                <div class="cms-excomp-side-actions cms-excomp-side-actions--primary-row">
+                                    <?php if ($sidebarContactLink !== ''): ?>
+                                        <a class="cms-excomp-side-action cms-excomp-side-action--primary" href="<?= $e($sidebarContactLink) ?>" aria-label="Kontakt" title="Kontakt">
+                                            <span class="cms-excomp-side-action__icon">✉</span>
+                                            <span class="cms-excomp-side-action__label">Kontakt</span>
+                                        </a>
+                                    <?php endif; ?>
+                                    <?php if ($website !== ''): ?>
+                                        <a class="cms-excomp-side-action cms-excomp-side-action--primary" href="<?= $e($website) ?>" target="_blank" rel="noopener noreferrer" aria-label="Zur Website" title="Zur Website">
+                                            <span class="cms-excomp-side-action__icon">🌐</span>
+                                            <span class="cms-excomp-side-action__label">Website</span>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
 
                     <?php if ($linkedExpert !== null || $linkedSpeaker !== null): ?>
-                        <section class="cms-events-sidecard cms-excomp-sidecard">
+                        <div class="cms-excomp-sidecard">
                             <h2>Direkt verknüpft</h2>
-                            <div class="cms-excomp-linked cms-excomp-linked--stack">
+                            <div class="cms-excomp-linked">
                                 <?php if ($linkedExpert !== null): ?>
                                     <?php
                                     $linkedExpertId = (int) ($linkedExpert->id ?? 0);
@@ -131,57 +184,66 @@ if ($letters !== '') {
                                         $linkedExpertName = 'Expert #' . $linkedExpertId;
                                     }
                                     ?>
-                                    <a class="cms-excomp-linked-item" href="<?= $e($linkedExpertId > 0 ? ($base . '/experts/' . $linkedExpertId) : ($base . '/experts')) ?>">👤 <?= $e($linkedExpertName) ?></a>
+                                    <a class="cms-excomp-btn" href="<?= $e($linkedExpertId > 0 ? ($base . '/experts/' . $linkedExpertId) : ($base . '/experts')) ?>">👤 <?= $e($linkedExpertName) ?></a>
                                 <?php endif; ?>
                                 <?php if ($linkedSpeaker !== null): ?>
-                                    <?php $linkedSpeakerSlug = trim((string) ($linkedSpeaker->slug ?? '')); ?>
-                                    <a class="cms-excomp-linked-item" href="<?= $e($linkedSpeakerSlug !== '' ? ($base . '/speakers/' . rawurlencode($linkedSpeakerSlug)) : ($base . '/speakers')) ?>">🎤 <?= $e((string) ($linkedSpeaker->display_name ?? 'Speaker')) ?></a>
+                                    <?php
+                                    $linkedSpeakerSlug = trim((string) ($linkedSpeaker->slug ?? ''));
+                                    $linkedSpeakerName = trim((string) ($linkedSpeaker->display_name ?? ''));
+                                    ?>
+                                    <a class="cms-excomp-btn" href="<?= $e($linkedSpeakerSlug !== '' ? ($base . '/speakers/' . rawurlencode($linkedSpeakerSlug)) : ($base . '/speakers')) ?>">🎤 <?= $e($linkedSpeakerName !== '' ? $linkedSpeakerName : 'Speaker') ?></a>
                                 <?php endif; ?>
                             </div>
-                        </section>
+                        </div>
                     <?php endif; ?>
                 </aside>
             </div>
 
             <?php if ($linkedExperts !== [] || $linkedSpeakers !== []): ?>
-                <section class="cms-events-section cms-excomp-detail-related">
+                <section class="cms-excomp-section cms-excomp-section--fullwidth">
                     <?php if ($linkedExperts !== []): ?>
-                        <div class="cms-events-sidecard cms-excomp-sidecard">
+                        <div class="cms-excomp-related-block">
                             <h2>Expert:innen</h2>
-                            <div class="cms-excomp-linked">
-                                <?php foreach ($linkedExperts as $expert): ?>
+                            <div class="cms-excomp-speaker-list">
+                                <?php foreach ($linkedExperts as $expertItem): ?>
                                     <?php
-                                    if (!is_object($expert)) {
+                                    if (!is_object($expertItem)) {
                                         continue;
                                     }
-                                    $expertId = (int) ($expert->id ?? 0);
-                                    $expertName = trim((string) (($expert->first_name ?? '') . ' ' . ($expert->last_name ?? '')));
+                                    $expertId = (int) ($expertItem->id ?? 0);
+                                    $expertName = trim((string) (($expertItem->first_name ?? '') . ' ' . ($expertItem->last_name ?? '')));
                                     if ($expertName === '') {
                                         $expertName = 'Expert #' . $expertId;
                                     }
                                     ?>
-                                    <a class="cms-excomp-linked-item" href="<?= $e($expertId > 0 ? ($base . '/experts/' . $expertId) : ($base . '/experts')) ?>">👤 <?= $e($expertName) ?></a>
+                                    <a class="cms-excomp-speaker-row" href="<?= $e($expertId > 0 ? ($base . '/experts/' . $expertId) : ($base . '/experts')) ?>">
+                                        <span>👤</span>
+                                        <span><strong><?= $e($expertName) ?></strong></span>
+                                    </a>
                                 <?php endforeach; ?>
                             </div>
                         </div>
                     <?php endif; ?>
 
                     <?php if ($linkedSpeakers !== []): ?>
-                        <div class="cms-events-sidecard cms-excomp-sidecard">
+                        <div class="cms-excomp-related-block">
                             <h2>Speaker</h2>
-                            <div class="cms-excomp-linked">
-                                <?php foreach ($linkedSpeakers as $speaker): ?>
+                            <div class="cms-excomp-speaker-list">
+                                <?php foreach ($linkedSpeakers as $speakerItem): ?>
                                     <?php
-                                    if (!is_object($speaker)) {
+                                    if (!is_object($speakerItem)) {
                                         continue;
                                     }
-                                    $speakerName = trim((string) ($speaker->display_name ?? ''));
+                                    $speakerName = trim((string) ($speakerItem->display_name ?? ''));
                                     if ($speakerName === '') {
-                                        $speakerName = 'Speaker #' . (int) ($speaker->id ?? 0);
+                                        $speakerName = 'Speaker #' . (int) ($speakerItem->id ?? 0);
                                     }
-                                    $speakerSlug = trim((string) ($speaker->slug ?? ''));
+                                    $speakerSlug = trim((string) ($speakerItem->slug ?? ''));
                                     ?>
-                                    <a class="cms-excomp-linked-item" href="<?= $e($speakerSlug !== '' ? ($base . '/speakers/' . rawurlencode($speakerSlug)) : ($base . '/speakers')) ?>">🎤 <?= $e($speakerName) ?></a>
+                                    <a class="cms-excomp-speaker-row" href="<?= $e($speakerSlug !== '' ? ($base . '/speakers/' . rawurlencode($speakerSlug)) : ($base . '/speakers')) ?>">
+                                        <span>🎤</span>
+                                        <span><strong><?= $e($speakerName) ?></strong></span>
+                                    </a>
                                 <?php endforeach; ?>
                             </div>
                         </div>
