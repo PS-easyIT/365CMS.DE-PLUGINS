@@ -95,18 +95,34 @@ if ($dateMeta !== '') {
 if ((string) ($event->location ?? '') !== '') {
     $metaInfo[] = (string) $event->location;
 }
-if ((string) (($event->event_format ?? '') ?: ($event->event_type ?? '')) !== '') {
-    $metaInfo[] = (string) (($event->event_format ?? '') ?: ($event->event_type ?? ''));
-}
 if ((string) ($event->organizer ?? '') !== '') {
     $metaInfo[] = (string) $event->organizer;
 }
 if ((string) ($event->attendance_mode ?? '') !== '') {
     $metaInfo[] = (string) $event->attendance_mode;
 }
-$headerTag = $tags !== [] ? (string) reset($tags) : '';
 
-$headerCategories = array_slice($badges, 0, 10);
+$formatBadge = trim((string) (($event->event_format ?? '') ?: ($event->event_type ?? '')));
+$aiBadgeSource = implode(' | ', array_filter(array_merge(
+    $tags,
+    $badges,
+    [
+        (string) ($event->title ?? ''),
+        (string) ($event->excerpt ?? ''),
+    ]
+), static fn (mixed $value): bool => trim((string) $value) !== ''));
+$hasAiBadge = $aiBadgeSource !== ''
+    && preg_match('/\b(ai|genai|artificial intelligence|künstliche intelligenz)\b/ui', $aiBadgeSource) === 1;
+
+$headerCategories = $badges;
+if ($formatBadge !== '') {
+    $headerCategories[] = $formatBadge;
+}
+if ($hasAiBadge) {
+    $headerCategories[] = 'AI';
+}
+$headerCategories = array_values(array_unique(array_filter(array_map('trim', $headerCategories), static fn (string $badge): bool => $badge !== '')));
+$headerCategories = array_slice($headerCategories, 0, 12);
 $hasHeaderImage = !empty($event->image_url);
 $headerImageBgColor = '';
 $rawHeaderImageBgColor = trim((string) ($event->image_bg_color ?? ''));
@@ -201,6 +217,13 @@ if ($detailTimeLabel !== '') {
     $detailRows[] = ['label' => 'Uhrzeit', 'value' => $detailTimeLabel];
 }
 
+if ($tags !== []) {
+    $detailRows[] = [
+        'label' => count($tags) > 1 ? 'Tags' : 'Tag',
+        'value' => implode(', ', array_slice($tags, 0, 5)),
+    ];
+}
+
 $detailFormat = trim((string) (($event->event_format ?? '') ?: ($event->event_type ?? '')));
 if ($detailFormat !== '') {
     $detailRows[] = ['label' => 'Format', 'value' => $detailFormat];
@@ -245,7 +268,7 @@ if (!empty($event->capacity)) {
                         </div>
                         <div class="cms-events-detail-header__text">
                             <h1><?= htmlspecialchars((string) ($event->title ?? ''), ENT_QUOTES, 'UTF-8') ?></h1>
-                            <?php if ($metaInfo !== [] || $headerTag !== ''): ?><div class="cms-events-detail-header__meta"><?php foreach (array_slice($metaInfo, 0, 5) as $meta): ?><span><?= htmlspecialchars((string) $meta, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?><?php if ($headerTag !== ''): ?><span><?= htmlspecialchars($headerTag, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?></div><?php endif; ?>
+                            <?php if ($metaInfo !== []): ?><div class="cms-events-detail-header__meta"><?php foreach (array_slice($metaInfo, 0, 5) as $meta): ?><span><?= htmlspecialchars((string) $meta, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?></div><?php endif; ?>
                         </div>
                     </div>
                     <?php if (!empty($event->excerpt)): ?><p class="cms-events-detail-header__lead"><?= htmlspecialchars((string) $event->excerpt, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
@@ -270,7 +293,7 @@ if (!empty($event->capacity)) {
                                 <?php endforeach; ?>
                             </dl>
                         </div>
-                        <?php if ($hasSidebarLinks): ?><div class="cms-events-sidecard cms-events-sidecard--links"><?php if ($sidebarPrimaryLink !== ''): ?><a class="cms-events-side-action cms-events-side-action--primary" href="<?= htmlspecialchars((string) $sidebarPrimaryLink, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= htmlspecialchars($sidebarPrimaryLabel, ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars($sidebarPrimaryLabel, ENT_QUOTES, 'UTF-8') ?>"><span class="cms-events-side-action__icon">🌐</span><span class="cms-events-side-action__label"><?= htmlspecialchars($sidebarPrimaryLabel, ENT_QUOTES, 'UTF-8') ?></span></a><?php endif; ?><?php if ($sidebarContactLink !== ''): ?><a class="cms-events-side-action cms-events-side-action--primary" href="<?= htmlspecialchars($sidebarContactLink, ENT_QUOTES, 'UTF-8') ?>" aria-label="Kontakt" title="Kontakt"><span class="cms-events-side-action__icon">✉</span><span class="cms-events-side-action__label">Kontakt</span></a><?php endif; ?><?php if ($sidebarSocialLinks !== []): ?><div class="cms-events-side-actions cms-events-side-actions--social"><?php foreach ($sidebarSocialLinks as $sidebarSocialLink): ?><a class="cms-events-side-action cms-events-side-action--icon-only" href="<?= htmlspecialchars((string) $sidebarSocialLink['url'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= htmlspecialchars((string) $sidebarSocialLink['label'], ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars((string) $sidebarSocialLink['label'], ENT_QUOTES, 'UTF-8') ?>"><span class="cms-events-side-action__icon"><?= htmlspecialchars((string) $sidebarSocialLink['icon'], ENT_QUOTES, 'UTF-8') ?></span></a><?php endforeach; ?></div><?php endif; ?></div><?php endif; ?>
+                        <?php if ($hasSidebarLinks): ?><div class="cms-events-sidecard cms-events-sidecard--links"><?php if ($sidebarPrimaryLink !== '' || $sidebarContactLink !== ''): ?><div class="cms-events-side-actions cms-events-side-actions--primary-row"><?php if ($sidebarPrimaryLink !== ''): ?><a class="cms-events-side-action cms-events-side-action--primary" href="<?= htmlspecialchars((string) $sidebarPrimaryLink, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= htmlspecialchars($sidebarPrimaryLabel, ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars($sidebarPrimaryLabel, ENT_QUOTES, 'UTF-8') ?>"><span class="cms-events-side-action__icon">🌐</span><span class="cms-events-side-action__label"><?= htmlspecialchars($sidebarPrimaryLabel, ENT_QUOTES, 'UTF-8') ?></span></a><?php endif; ?><?php if ($sidebarContactLink !== ''): ?><a class="cms-events-side-action cms-events-side-action--primary" href="<?= htmlspecialchars($sidebarContactLink, ENT_QUOTES, 'UTF-8') ?>" aria-label="Kontakt" title="Kontakt"><span class="cms-events-side-action__icon">✉</span><span class="cms-events-side-action__label">Kontakt</span></a><?php endif; ?></div><?php endif; ?><?php if ($sidebarSocialLinks !== []): ?><div class="cms-events-side-actions cms-events-side-actions--social"><?php foreach ($sidebarSocialLinks as $sidebarSocialLink): ?><a class="cms-events-side-action cms-events-side-action--icon-only" href="<?= htmlspecialchars((string) $sidebarSocialLink['url'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= htmlspecialchars((string) $sidebarSocialLink['label'], ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars((string) $sidebarSocialLink['label'], ENT_QUOTES, 'UTF-8') ?>"><span class="cms-events-side-action__icon"><?= htmlspecialchars((string) $sidebarSocialLink['icon'], ENT_QUOTES, 'UTF-8') ?></span></a><?php endforeach; ?></div><?php endif; ?></div><?php endif; ?>
                     </div>
                     <?php if ($addressRows !== []): ?><section class="cms-events-address-block" aria-label="Adresse"><ul class="cms-events-address-block__list"><?php foreach ($addressRows as $addressRow): ?><li><span><?= htmlspecialchars((string) ($addressRow['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span><strong><?= htmlspecialchars((string) ($addressRow['value'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong></li><?php endforeach; ?></ul></section><?php endif; ?>
                     <?php if (!empty($linkedCompany) || !empty($linkedExpert)): ?><div class="cms-events-sidecard"><h2>365CMS-Verknüpfung</h2><div class="cms-events-socials">

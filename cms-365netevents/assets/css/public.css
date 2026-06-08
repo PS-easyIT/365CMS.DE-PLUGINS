@@ -86,6 +86,8 @@
 .cms-events-detail .cms-events-side-action--primary:hover{background:#e5f0ff;border-color:#bfd6ff;color:#163464}
 .cms-events-detail .cms-events-side-action--primary .cms-events-side-action__icon{width:26px;height:26px;border-radius:0;background:transparent;font-size:1.02rem}
 .cms-events-detail .cms-events-side-action__label{line-height:1}
+.cms-events-detail .cms-events-side-actions--primary-row{display:flex;align-items:stretch;gap:10px;flex-wrap:nowrap;overflow:visible;padding-bottom:0}
+.cms-events-detail .cms-events-side-actions--primary-row .cms-events-side-action--primary{width:auto;flex:1 1 0;min-width:0;display:inline-flex;justify-content:center}
 .cms-events-detail .cms-events-side-actions--social{border-top:1px solid #dbe4ef;padding-top:10px;padding-bottom:0;overflow:visible;flex-wrap:wrap}
 .cms-events-detail .cms-events-side-action--icon-only{width:44px;height:44px;min-width:44px;justify-content:center;padding:0;gap:0;border:0!important;background:transparent!important;box-shadow:none}
 .cms-events-detail .cms-events-side-action--icon-only:hover{background:#eaf1f9!important;border:0!important;color:#1d4ed8}
@@ -99,7 +101,8 @@
 .cms-events-detail .cms-events-sidecard--details .cms-events-sidecard__meta dt{margin:0;color:#64748b;font-weight:800;font-size:calc(.74rem - 2px);text-transform:uppercase;letter-spacing:.04em}
 .cms-events-detail .cms-events-sidecard--details .cms-events-sidecard__meta dd{margin:0;text-align:right;color:#0f172a;font-weight:700;font-size:calc(1rem - 2px)}
 .cms-events-detail .cms-events-sidecard--details .cms-events-sidecard__meta-row.is-date dd{white-space:nowrap}
-.cms-events-detail .cms-events-address-block{margin-top:14px;padding:10px 12px;border:1px solid #e8eef5;border-radius:4px;background:#fcfdff}
+.cms-events-detail .cms-events-address-block{margin-top:0;padding:10px 12px;border:1px solid #e8eef5;border-radius:4px;background:#fcfdff}
+.cms-events-detail .cms-events-sidebar>.cms-events-sidebar-stack+.cms-events-address-block{margin-top:-7px}
 .cms-events-detail .cms-events-address-block__list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
 .cms-events-detail .cms-events-address-block__list li{display:grid;grid-template-columns:minmax(110px,42%) minmax(0,1fr);column-gap:12px;align-items:start}
 .cms-events-detail .cms-events-address-block__list li span{color:#64748b;font-weight:800;font-size:calc(.74rem - 1px);text-transform:uppercase;letter-spacing:.04em}
