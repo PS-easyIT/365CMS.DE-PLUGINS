@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: 365 | Events & Speaker
- * Plugin URI: https://365network.de/cms-365netevents
+ * Plugin URI: https://365network.de/cms-365neteventsandspeaker
  * Description: Modulares Event- und Speaker-Verzeichnis für 365CMS mit Seed-Daten, Admin-CRUD und Public-Views.
  * Version: 3.0.0
  * Author: 365 Network
@@ -16,10 +16,13 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+$pluginDirPath = str_replace('\\', '/', dirname(__FILE__));
+$pluginFolderName = basename($pluginDirPath);
+
 defined('CMS_365NET_EVENTS_VERSION') || define('CMS_365NET_EVENTS_VERSION', '3.0.0');
-defined('CMS_365NET_EVENTS_PLUGIN_DIR') || define('CMS_365NET_EVENTS_PLUGIN_DIR', dirname(__FILE__) . '/');
-defined('CMS_365NET_EVENTS_PLUGIN_URL') || define('CMS_365NET_EVENTS_PLUGIN_URL', '/plugins/cms-365NETevents/');
-defined('CMS_365NET_EVENTS_TEXT_DOMAIN') || define('CMS_365NET_EVENTS_TEXT_DOMAIN', 'cms-365netevents');
+defined('CMS_365NET_EVENTS_PLUGIN_DIR') || define('CMS_365NET_EVENTS_PLUGIN_DIR', rtrim($pluginDirPath, '/') . '/');
+defined('CMS_365NET_EVENTS_PLUGIN_URL') || define('CMS_365NET_EVENTS_PLUGIN_URL', '/plugins/' . $pluginFolderName . '/');
+defined('CMS_365NET_EVENTS_TEXT_DOMAIN') || define('CMS_365NET_EVENTS_TEXT_DOMAIN', 'cms-365neteventsandspeaker');
 
 if (!class_exists('CMS_365NET_Events', false)) {
     /**
@@ -182,7 +185,7 @@ if (!class_exists('CMS_365NET_Events', false)) {
         {
             $slug = $this->normalizePluginSlug($plugin);
 
-            return $slug === 'cms-365netevents';
+            return in_array($slug, ['cms-365netevents', 'cms-365neteventsandspeaker'], true);
         }
 
         private function normalizePluginSlug(string $plugin): string
@@ -245,7 +248,7 @@ if (!class_exists('CMS_365NET_Events', false)) {
             $settings = CMS_365NET_Events_Database::instance()->getSettings();
             $color = static fn(string $key, string $fallback): string => preg_match('/^#[0-9a-f]{6}$/i', (string) ($settings[$key] ?? '')) === 1 ? (string) $settings[$key] : $fallback;
             $number = static fn(string $key, int $fallback, int $min = 0, int $max = 1800): int => max($min, min($max, (int) ($settings[$key] ?? $fallback)));
-            echo '<style id="cms-365netevents-settings">.cms-events-public{--cms-events-primary:' . htmlspecialchars($color('layout_primary_color', '#1d4ed8'), ENT_QUOTES, 'UTF-8') . ';--cms-events-accent:' . htmlspecialchars($color('layout_accent_color', '#f59e0b'), ENT_QUOTES, 'UTF-8') . ';--cms-events-text:' . htmlspecialchars($color('layout_text_color', '#0f172a'), ENT_QUOTES, 'UTF-8') . ';--cms-events-card-bg:' . htmlspecialchars($color('layout_card_background', '#ffffff'), ENT_QUOTES, 'UTF-8') . ';--cms-events-card-border:' . htmlspecialchars($color('layout_card_border', '#e2e8f0'), ENT_QUOTES, 'UTF-8') . ';--cms-events-radius:' . $number('layout_radius', 24, 0, 96) . 'px;--cms-events-card-radius:' . $number('layout_card_radius', 20, 0, 96) . 'px;--cms-events-gap:' . $number('layout_gap', 18, 0, 120) . 'px;--cms-events-top:' . $number('layout_top_spacing', 32, 0, 240) . 'px;--cms-events-bottom:' . $number('layout_bottom_spacing', 56, 0, 240) . 'px;--cms-events-width:' . $number('layout_container_width', 1160, 320, 1800) . 'px;background:transparent!important;padding-top:var(--cms-events-top)!important;padding-bottom:var(--cms-events-bottom)!important;color:var(--cms-events-text)!important}.cms-events-container{max-width:var(--cms-events-width)!important}.cms-events-hero{border-radius:var(--cms-events-radius)!important;background:linear-gradient(135deg,var(--cms-events-primary),#172554)!important}.cms-events-card,.cms-events-detail-main,.cms-events-sidecard,.cms-events-search{background:var(--cms-events-card-bg)!important;border-color:var(--cms-events-card-border)!important;border-radius:var(--cms-events-card-radius)!important}.cms-events-grid{gap:var(--cms-events-gap)!important}.cms-events-search button,.cms-events-btn{background:var(--cms-events-primary)!important}.cms-events-kicker{color:var(--cms-events-accent)!important}.cms-events-card__more{color:var(--cms-events-primary)!important}</style>' . "\n";
+            echo '<style id="cms-365neteventsandspeaker-settings">.cms-events-public{--cms-events-primary:' . htmlspecialchars($color('layout_primary_color', '#1d4ed8'), ENT_QUOTES, 'UTF-8') . ';--cms-events-accent:' . htmlspecialchars($color('layout_accent_color', '#f59e0b'), ENT_QUOTES, 'UTF-8') . ';--cms-events-text:' . htmlspecialchars($color('layout_text_color', '#0f172a'), ENT_QUOTES, 'UTF-8') . ';--cms-events-card-bg:' . htmlspecialchars($color('layout_card_background', '#ffffff'), ENT_QUOTES, 'UTF-8') . ';--cms-events-card-border:' . htmlspecialchars($color('layout_card_border', '#e2e8f0'), ENT_QUOTES, 'UTF-8') . ';--cms-events-radius:' . $number('layout_radius', 24, 0, 96) . 'px;--cms-events-card-radius:' . $number('layout_card_radius', 20, 0, 96) . 'px;--cms-events-gap:' . $number('layout_gap', 18, 0, 120) . 'px;--cms-events-top:' . $number('layout_top_spacing', 32, 0, 240) . 'px;--cms-events-bottom:' . $number('layout_bottom_spacing', 56, 0, 240) . 'px;--cms-events-width:' . $number('layout_container_width', 1160, 320, 1800) . 'px;background:transparent!important;padding-top:var(--cms-events-top)!important;padding-bottom:var(--cms-events-bottom)!important;color:var(--cms-events-text)!important}.cms-events-container{max-width:var(--cms-events-width)!important}.cms-events-hero{border-radius:var(--cms-events-radius)!important;background:linear-gradient(135deg,var(--cms-events-primary),#172554)!important}.cms-events-card,.cms-events-detail-main,.cms-events-sidecard,.cms-events-search{background:var(--cms-events-card-bg)!important;border-color:var(--cms-events-card-border)!important;border-radius:var(--cms-events-card-radius)!important}.cms-events-grid{gap:var(--cms-events-gap)!important}.cms-events-search button,.cms-events-btn{background:var(--cms-events-primary)!important}.cms-events-kicker{color:var(--cms-events-accent)!important}.cms-events-card__more{color:var(--cms-events-primary)!important}</style>' . "\n";
         }
 
         private function enqueueScriptFile(string $file): void
@@ -300,7 +303,7 @@ if (!class_exists('CMS_365NET_Events', false)) {
             }
 
             if (is_dir($logDir) && is_writable($logDir)) {
-                @file_put_contents($logDir . 'cms-365netevents.log', $message, FILE_APPEND | LOCK_EX);
+                @file_put_contents($logDir . 'cms-365neteventsandspeaker.log', $message, FILE_APPEND | LOCK_EX);
             }
 
             error_log('CMS 365NET Events [' . $context . ']: ' . $error->getMessage());

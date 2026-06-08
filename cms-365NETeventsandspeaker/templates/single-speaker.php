@@ -239,12 +239,14 @@ $hasSidebarLinks = $hasSidebarPrimaryActions || $sidebarSocialLinks !== [];
                                     if ($linkedExpertName === '') {
                                         $linkedExpertName = 'Expert';
                                     }
+                                    $linkedExpertId = (int) ($linkedExpert->id ?? 0);
                                     ?>
-                                    <a class="cms-events-btn" href="<?= htmlspecialchars($base . '/experts?q=' . rawurlencode($linkedExpertName), ENT_QUOTES, 'UTF-8') ?>">👤 <?= htmlspecialchars($linkedExpertName, ENT_QUOTES, 'UTF-8') ?></a>
+                                    <a class="cms-events-btn" href="<?= htmlspecialchars($linkedExpertId > 0 ? ($base . '/experts/' . $linkedExpertId) : ($base . '/experts'), ENT_QUOTES, 'UTF-8') ?>">👤 <?= htmlspecialchars($linkedExpertName, ENT_QUOTES, 'UTF-8') ?></a>
                                 <?php endif; ?>
                                 <?php if (!empty($linkedCompany)): ?>
                                     <?php $linkedCompanyName = trim((string) ($linkedCompany->name ?? '')); ?>
-                                    <a class="cms-events-btn" href="<?= htmlspecialchars($base . '/companies?q=' . rawurlencode($linkedCompanyName), ENT_QUOTES, 'UTF-8') ?>">🏢 <?= htmlspecialchars($linkedCompanyName !== '' ? $linkedCompanyName : 'Firma', ENT_QUOTES, 'UTF-8') ?></a>
+                                    <?php $linkedCompanyId = (int) ($linkedCompany->id ?? 0); ?>
+                                    <a class="cms-events-btn" href="<?= htmlspecialchars($linkedCompanyId > 0 ? ($base . '/companies/' . $linkedCompanyId) : ($base . '/companies'), ENT_QUOTES, 'UTF-8') ?>">🏢 <?= htmlspecialchars($linkedCompanyName !== '' ? $linkedCompanyName : 'Firma', ENT_QUOTES, 'UTF-8') ?></a>
                                 <?php endif; ?>
                             </div>
                         </div>

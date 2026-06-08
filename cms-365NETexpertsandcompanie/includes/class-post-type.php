@@ -229,6 +229,32 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
 
                 $company->linked_experts = $db->getExpertsByLinkedCompany((int) ($company->id ?? 0), 3);
                 $company->linked_speakers = $db->getSpeakersByLinkedCompany((int) ($company->id ?? 0), 3);
+
+                if ($company->linked_expert !== null) {
+                    $hasManualExpert = false;
+                    foreach ($company->linked_experts as $linkedExpertRow) {
+                        if ((int) ($linkedExpertRow->id ?? 0) === (int) ($company->linked_expert->id ?? 0)) {
+                            $hasManualExpert = true;
+                            break;
+                        }
+                    }
+                    if (!$hasManualExpert) {
+                        array_unshift($company->linked_experts, $company->linked_expert);
+                    }
+                }
+
+                if ($company->linked_speaker !== null) {
+                    $hasManualSpeaker = false;
+                    foreach ($company->linked_speakers as $linkedSpeakerRow) {
+                        if ((int) ($linkedSpeakerRow->id ?? 0) === (int) ($company->linked_speaker->id ?? 0)) {
+                            $hasManualSpeaker = true;
+                            break;
+                        }
+                    }
+                    if (!$hasManualSpeaker) {
+                        array_unshift($company->linked_speakers, $company->linked_speaker);
+                    }
+                }
             }
         }
 

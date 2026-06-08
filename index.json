@@ -13,9 +13,9 @@
       "manifest": "PLUGINS/cms-365netcompanies/update.json"
     },
     {
-      "slug": "cms-365netevents",
-      "name": "365NET | Events",
-      "manifest": "PLUGINS/cms-365netevents/update.json"
+      "slug": "cms-365neteventsandspeaker",
+      "name": "365NET | Events & Speaker",
+      "manifest": "PLUGINS/cms-365neteventsandspeaker/update.json"
     },
     {
       "slug": "cms-365netexperts",
