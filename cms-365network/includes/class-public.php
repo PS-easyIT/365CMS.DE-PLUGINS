@@ -392,23 +392,23 @@ final class CMS_365NETWORK_Public
         return [
             [
                 'key' => 'events',
-                'plugin_slug' => 'cms-365NETevents',
+                'plugin_slug' => 'cms-365neteventsandspeaker',
                 'icon' => 'calendar-event',
                 'label' => (string) ($settings['events_card_title'] ?? 'Events'),
                 'text' => (string) ($settings['events_card_text'] ?? ''),
                 'url' => $this->safe_url((string) ($settings['events_card_url'] ?? '/events')),
                 'stat' => 'events',
-                'integration_active' => $this->is_area_integration_active('cms-365NETevents', 'CMS_365NET_Events', 'events'),
+                'integration_active' => $this->is_area_integration_active('cms-365neteventsandspeaker', 'CMS_365NET_Events', 'events'),
             ],
             [
                 'key' => 'speakers',
-                'plugin_slug' => 'cms-365NETevents',
+                'plugin_slug' => 'cms-365neteventsandspeaker',
                 'icon' => 'microphone-2',
                 'label' => (string) ($settings['speakers_card_title'] ?? 'Speaker'),
                 'text' => (string) ($settings['speakers_card_text'] ?? ''),
                 'url' => $this->safe_url((string) ($settings['speakers_card_url'] ?? '/event-speakers')),
                 'stat' => 'speakers',
-                'integration_active' => $this->is_area_integration_active('cms-365NETevents', 'CMS_365NET_Events', 'speakers'),
+                'integration_active' => $this->is_area_integration_active('cms-365neteventsandspeaker', 'CMS_365NET_Events', 'speakers'),
             ],
             [
                 'key' => 'companies',
@@ -469,7 +469,7 @@ final class CMS_365NETWORK_Public
     private function fetch_upcoming_events(int $limit): array
     {
         $limit = $this->clamp_int($limit, 0, 8);
-        if ($limit === 0 || !$this->is_integration_available('cms-365NETevents', 'CMS_365NET_Events', 'events')) {
+        if ($limit === 0 || !$this->is_integration_available('cms-365neteventsandspeaker', 'CMS_365NET_Events', 'events')) {
             return [];
         }
 
@@ -502,7 +502,7 @@ final class CMS_365NETWORK_Public
     private function fetch_random_speakers(int $limit): array
     {
         $limit = $this->clamp_int($limit, 0, 4);
-        if ($limit === 0 || !$this->is_integration_available('cms-365NETevents', 'CMS_365NET_Events', 'speakers')) {
+        if ($limit === 0 || !$this->is_integration_available('cms-365neteventsandspeaker', 'CMS_365NET_Events', 'speakers')) {
             return [];
         }
 

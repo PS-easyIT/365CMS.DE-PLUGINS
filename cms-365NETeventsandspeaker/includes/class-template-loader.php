@@ -15,7 +15,8 @@ final class CMS_365NET_Events_Template_Loader
 {
     private static ?self $instance = null;
     private string $templateDir;
-    private string $themeTemplateDir = '';
+    /** @var array<int, string> */
+    private array $themeTemplateDirs = [];
 
     public static function instance(): self
     {
@@ -30,7 +31,11 @@ final class CMS_365NET_Events_Template_Loader
     {
         $this->templateDir = CMS_365NET_EVENTS_PLUGIN_DIR . 'templates/';
         if (class_exists('CMS\\ThemeManager')) {
-            $this->themeTemplateDir = CMS\ThemeManager::instance()->getThemePath() . 'cms-365netevents/';
+            $themePath = CMS\ThemeManager::instance()->getThemePath();
+            $this->themeTemplateDirs = [
+                $themePath . 'cms-365neteventsandspeaker/',
+                $themePath . 'cms-365netevents/',
+            ];
         }
     }
 
@@ -53,6 +58,8 @@ final class CMS_365NET_Events_Template_Loader
         $filters = $context['filters'] ?? [];
         $pagination = $context['pagination'] ?? [];
         $relatedEvents = $context['relatedEvents'] ?? [];
+        $linkedCompany = $context['linkedCompany'] ?? null;
+        $linkedExpert = $context['linkedExpert'] ?? null;
 
         include $file;
     }
@@ -72,7 +79,7 @@ final class CMS_365NET_Events_Template_Loader
         }
 
         $filename = $templateName . '.php';
-        foreach ([$this->themeTemplateDir, $this->templateDir] as $baseDir) {
+        foreach ([...$this->themeTemplateDirs, $this->templateDir] as $baseDir) {
             if ($baseDir === '') {
                 continue;
             }
