@@ -502,6 +502,7 @@ final class CMS_365NET_Experts_And_Companie_Database
             'country' => $this->cleanText((string) ($data['country'] ?? ''), 120),
             'founded_year' => $this->cleanInt($data['founded_year'] ?? null),
             'employee_count' => $this->cleanInt($data['employee_count'] ?? null),
+            'parent_company_id' => null,
             'linked_expert_id' => $linkedExpertId,
             'linked_speaker_id' => $linkedSpeakerId,
             'is_partner' => !empty($data['is_partner']) ? 1 : 0,
@@ -509,6 +510,16 @@ final class CMS_365NET_Experts_And_Companie_Database
             'is_sponsor' => !empty($data['is_sponsor']) ? 1 : 0,
             'status' => in_array((string) ($data['status'] ?? 'active'), ['active', 'inactive'], true) ? (string) $data['status'] : 'active',
         ];
+
+        $parentCompanyId = $this->cleanPositiveInt($data['parent_company_id'] ?? null);
+        if ($parentCompanyId !== null) {
+            if ($id > 0 && $parentCompanyId === $id) {
+                $parentCompanyId = null;
+            } elseif ($this->getCompanyById($parentCompanyId) === null) {
+                $parentCompanyId = null;
+            }
+        }
+        $payload['parent_company_id'] = $parentCompanyId;
 
         if ($this->wordCount((string) $payload['description']) < 250) {
             $payload['description'] = $this->buildLongCompanyDescription([
@@ -599,6 +610,7 @@ final class CMS_365NET_Experts_And_Companie_Database
             country VARCHAR(120) DEFAULT NULL,
             founded_year INT DEFAULT NULL,
             employee_count INT DEFAULT NULL,
+            parent_company_id INT UNSIGNED DEFAULT NULL,
             linked_expert_id INT UNSIGNED DEFAULT NULL,
             linked_speaker_id INT UNSIGNED DEFAULT NULL,
             is_partner TINYINT(1) NOT NULL DEFAULT 0,
@@ -610,6 +622,7 @@ final class CMS_365NET_Experts_And_Companie_Database
             UNIQUE KEY uniq_seed_key (seed_key),
             INDEX idx_status (status),
             INDEX idx_name (name),
+            INDEX idx_parent_company (parent_company_id),
             INDEX idx_linked_expert (linked_expert_id),
             INDEX idx_linked_speaker (linked_speaker_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
@@ -625,6 +638,7 @@ final class CMS_365NET_Experts_And_Companie_Database
         $this->ensureColumn(self::TABLE_EXPERTS, 'biography_json', 'biography_json LONGTEXT DEFAULT NULL');
         $this->ensureColumn(self::TABLE_COMPANIES, 'linked_expert_id', 'linked_expert_id INT UNSIGNED DEFAULT NULL');
         $this->ensureColumn(self::TABLE_COMPANIES, 'linked_speaker_id', 'linked_speaker_id INT UNSIGNED DEFAULT NULL');
+        $this->ensureColumn(self::TABLE_COMPANIES, 'parent_company_id', 'parent_company_id INT UNSIGNED DEFAULT NULL');
         $this->ensureColumn(self::TABLE_COMPANIES, 'description_json', 'description_json LONGTEXT DEFAULT NULL');
     }
 
@@ -916,6 +930,7 @@ final class CMS_365NET_Experts_And_Companie_Database
             'country',
             'founded_year',
             'employee_count',
+            'parent_company_id',
             'linked_expert_id',
             'linked_speaker_id',
             'is_partner',

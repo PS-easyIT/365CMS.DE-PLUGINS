@@ -236,12 +236,38 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
 
         $db = CMS_365NET_Experts_And_Companie_Database::instance();
         $settings = $db->getSettings();
+        $requestedPage = max(1, (int) ($_GET['page'] ?? 1));
+        $perPage = 15;
 
         $experts = [];
         $companies = [];
+        $pagination = [
+            'current' => 1,
+            'total' => 0,
+            'per_page' => $perPage,
+            'total_pages' => 1,
+        ];
 
         if ($type === 'all' || $type === 'experts') {
-            $experts = $db->getExpertsPublic($search, $city, 30, 0);
+            $expertsLimit = 30;
+            $expertsOffset = 0;
+
+            if ($routeType === 'experts') {
+                $expertsTotal = max(0, $db->countExpertsPublic($search, $city));
+                $expertsTotalPages = max(1, (int) ceil($expertsTotal / $perPage));
+                $expertsPage = min($requestedPage, $expertsTotalPages);
+                $expertsLimit = $perPage;
+                $expertsOffset = ($expertsPage - 1) * $expertsLimit;
+
+                $pagination = [
+                    'current' => $expertsPage,
+                    'total' => $expertsTotal,
+                    'per_page' => $perPage,
+                    'total_pages' => $expertsTotalPages,
+                ];
+            }
+
+            $experts = $db->getExpertsPublic($search, $city, $expertsLimit, $expertsOffset);
             foreach ($experts as $expert) {
                 $expert->detail_url = rtrim((string) SITE_URL, '/') . '/experts/' . (int) ($expert->id ?? 0);
 
@@ -258,7 +284,25 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
         }
 
         if ($type === 'all' || $type === 'companies') {
-            $companies = $db->getCompaniesPublic($search, $city, 30, 0);
+            $companiesLimit = 30;
+            $companiesOffset = 0;
+
+            if ($routeType === 'companies') {
+                $companiesTotal = max(0, $db->countCompaniesPublic($search, $city));
+                $companiesTotalPages = max(1, (int) ceil($companiesTotal / $perPage));
+                $companiesPage = min($requestedPage, $companiesTotalPages);
+                $companiesLimit = $perPage;
+                $companiesOffset = ($companiesPage - 1) * $companiesLimit;
+
+                $pagination = [
+                    'current' => $companiesPage,
+                    'total' => $companiesTotal,
+                    'per_page' => $perPage,
+                    'total_pages' => $companiesTotalPages,
+                ];
+            }
+
+            $companies = $db->getCompaniesPublic($search, $city, $companiesLimit, $companiesOffset);
             foreach ($companies as $company) {
                 $company->detail_url = rtrim((string) SITE_URL, '/') . '/companies/' . (int) ($company->id ?? 0);
                 $company->linked_expert = null;
@@ -313,6 +357,7 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
         CMS_365NET_Experts_And_Companie_Template_Loader::instance()->render($template, [
             'experts' => $experts,
             'companies' => $companies,
+            'pagination' => $pagination,
             'settings' => $settings,
             'filters' => [
                 'q' => $search,
@@ -520,6 +565,7 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
             'csrf' => $this->csrfToken('excomp_company_form'),
             'experts' => $db->getExpertsAdmin('', 300),
             'speakers' => $db->getAvailableSpeakers(300),
+            'companies' => $db->getCompaniesAdmin('', 400),
         ]);
     }
 
@@ -543,6 +589,7 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
             'csrf' => $this->csrfToken('excomp_company_form'),
             'experts' => $db->getExpertsAdmin('', 300),
             'speakers' => $db->getAvailableSpeakers(300),
+            'companies' => $db->getCompaniesAdmin('', 400),
         ]);
     }
 
@@ -571,6 +618,7 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
             'country' => $this->cleanText((string) ($_POST['country'] ?? ''), 120),
             'founded_year' => $this->cleanText((string) ($_POST['founded_year'] ?? ''), 10),
             'employee_count' => $this->cleanText((string) ($_POST['employee_count'] ?? ''), 20),
+            'parent_company_id' => max(0, (int) ($_POST['parent_company_id'] ?? 0)),
             'linked_expert_id' => max(0, (int) ($_POST['linked_expert_id'] ?? 0)),
             'linked_speaker_id' => max(0, (int) ($_POST['linked_speaker_id'] ?? 0)),
             'description_json' => (string) ($_POST['description_json'] ?? ''),

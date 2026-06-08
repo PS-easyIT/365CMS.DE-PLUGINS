@@ -27,7 +27,7 @@
 }
 
 .cms-excomp-public {
-    background: var(--cms-excomp-color-bg);
+    background: transparent;
     color: var(--cms-excomp-color-text);
     padding: var(--cms-excomp-page-pt) 16px var(--cms-excomp-page-pb);
 }
@@ -201,11 +201,75 @@
 
 .cms-excomp-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--cms-excomp-grid-gap);
 }
 
+.cms-excomp-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+
+.cms-excomp-pagination__pages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.cms-excomp-pagination__link,
+.cms-excomp-pagination__page {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 0.8rem;
+    border: 1px solid #dbe4ef;
+    border-radius: var(--cms-excomp-radius-btn-safe);
+    background: #fff;
+    color: var(--cms-excomp-color-primary);
+    font-size: 0.9rem;
+    font-weight: 800;
+    text-decoration: none;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.cms-excomp-pagination__link:hover,
+.cms-excomp-pagination__page:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.cms-excomp-pagination__page.is-active {
+    background: var(--cms-excomp-color-primary);
+    border-color: var(--cms-excomp-color-primary);
+    color: #fff;
+    pointer-events: none;
+}
+
+.cms-excomp-pagination__link.is-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+    color: #64748b;
+}
+
+.cms-excomp-pagination__ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    color: #64748b;
+    font-weight: 800;
+}
+
 .cms-excomp-card {
+    position: relative;
     background: var(--cms-excomp-color-card-bg);
     border: 1px solid var(--cms-excomp-color-border);
     border-radius: var(--cms-excomp-radius-card-safe);
@@ -232,8 +296,30 @@
     min-width: 0;
 }
 
+.cms-excomp-archive--companies .cms-excomp-card--company .cms-excomp-card__head {
+    margin: -14px -14px 10px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #edf3fb;
+    border-bottom: 1px solid rgba(30, 58, 138, 0.2);
+    border-radius: 0;
+    box-sizing: border-box;
+}
+
 .cms-excomp-card__media {
     flex: 0 0 auto;
+}
+
+.cms-excomp-archive--companies .cms-excomp-card--company .cms-excomp-card__media {
+    flex: 0 0 30%;
+    min-width: 92px;
+    max-width: 180px;
+    min-height: 75px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 }
 
 .cms-excomp-avatar {
@@ -243,6 +329,26 @@
     object-fit: cover;
     border: 1px solid #dbe4ef;
     background: #fff;
+}
+
+.cms-excomp-archive--companies .cms-excomp-card--company .cms-excomp-avatar--company {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 75px;
+    border-radius: 0;
+    object-fit: contain;
+    border: 0;
+    background: transparent;
+}
+
+.cms-excomp-archive--companies .cms-excomp-card--company .cms-excomp-avatar--company.cms-excomp-avatar--fallback {
+    width: 100%;
+    max-width: 140px;
+    height: 75px;
+    border: 1px solid #dbe4ef;
+    border-radius: 0;
+    font-size: 1.15rem;
 }
 
 .cms-excomp-avatar--fallback {
@@ -262,6 +368,26 @@
 .cms-excomp-card__titleblock {
     min-width: 0;
     flex: 1;
+}
+
+.cms-excomp-archive--companies .cms-excomp-card--company .cms-excomp-card__titleblock {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.cms-excomp-archive--companies .cms-excomp-card--company .cms-excomp-card__name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cms-excomp-archive--companies .cms-excomp-card--company .cms-excomp-card__name a {
+    display: block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .cms-excomp-card__name {
@@ -369,6 +495,7 @@
     text-decoration: underline;
 }
 
+.cms-excomp-archive--experts .cms-excomp-card--expert .cms-excomp-card__footer,
 .cms-excomp-archive--companies .cms-excomp-card--company .cms-excomp-card__footer {
     margin: auto -14px -14px;
     padding: 10px 14px;
@@ -378,11 +505,60 @@
     box-sizing: border-box;
 }
 
+.cms-excomp-archive--experts .cms-excomp-card--expert .cms-excomp-card__badge,
 .cms-excomp-archive--companies .cms-excomp-card--company .cms-excomp-card__badge {
     background: transparent;
     border: 0;
     padding: 0;
     color: #475569;
+}
+
+.cms-excomp-card__corner-badge {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    z-index: 2;
+    min-height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius: 0 var(--cms-excomp-radius-card-safe) 0 var(--cms-excomp-radius-btn-safe);
+    border: 1px solid transparent;
+}
+
+.cms-excomp-card__corner-badge.is-mvp {
+    background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%);
+    border-color: #f59e0b;
+    color: #78350f;
+}
+
+.cms-excomp-card__corner-badge.is-award {
+    background: linear-gradient(180deg, #ede9fe 0%, #ddd6fe 100%);
+    border-color: #a78bfa;
+    color: #4c1d95;
+}
+
+.cms-excomp-card__corner-badge--company.is-sponsor {
+    background: linear-gradient(180deg, #fde68a 0%, #f59e0b 100%);
+    border-color: #d97706;
+    color: #78350f;
+}
+
+.cms-excomp-card__corner-badge--company.is-top-partner {
+    background: linear-gradient(180deg, #fef3c7 0%, #fbbf24 100%);
+    border-color: #f59e0b;
+    color: #78350f;
+}
+
+.cms-excomp-card__corner-badge--company.is-partner {
+    background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%);
+    border-color: #94a3b8;
+    color: #334155;
 }
 
 .cms-excomp-card__ghost-link {
@@ -892,10 +1068,6 @@
 
     .cms-excomp-search__actions {
         display: grid;
-        grid-template-columns: 1fr;
-    }
-
-    .cms-excomp-grid {
         grid-template-columns: 1fr;
     }
 

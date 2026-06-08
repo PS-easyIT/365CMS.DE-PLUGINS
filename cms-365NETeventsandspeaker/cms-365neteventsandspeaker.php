@@ -214,6 +214,7 @@ if (!class_exists('CMS_365NET_Events', false)) {
             if ($this->isAdminRoute()) {
                 $this->enqueueStyleFile('admin.css');
                 $this->enqueueStyleFile('admin-enhancements.css');
+                $this->enqueueStyleFile('admin-excomp-forms.css');
             }
         }
 

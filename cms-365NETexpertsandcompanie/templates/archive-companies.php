@@ -24,10 +24,30 @@ $filters = is_array($filters ?? null) ? $filters : [];
 $q = trim((string) ($filters['q'] ?? ''));
 $city = trim((string) ($filters['city'] ?? ''));
 $settings = is_array($settings ?? null) ? $settings : [];
+$pagination = is_array($pagination ?? null)
+    ? $pagination
+    : ['current' => 1, 'total' => count($companies), 'per_page' => 15, 'total_pages' => 1];
 
 $base = rtrim((string) SITE_URL, '/');
 $baseUrl = $base . '/companies';
 $e = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$currentPage = max(1, (int) ($pagination['current'] ?? 1));
+$totalPages = max(1, (int) ($pagination['total_pages'] ?? 1));
+
+$paginationUrl = static function (int $page) use ($baseUrl, $q, $city): string {
+    $query = [];
+    if ($q !== '') {
+        $query['q'] = $q;
+    }
+    if ($city !== '') {
+        $query['city'] = $city;
+    }
+    if ($page > 1) {
+        $query['page'] = (string) $page;
+    }
+
+    return $baseUrl . ($query !== [] ? '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986) : '');
+};
 
 $setting = static function (string $key, string $default) use ($settings): string {
     $value = trim((string) ($settings[$key] ?? ''));
@@ -165,11 +185,26 @@ $partnerLabel = static function (object $company): string {
                     $location = trim((string) ($company->location_city ?? $company->city ?? ''));
                     $logo = trim((string) ($company->logo_url ?? ''));
                     $description = $companyCardExcerpt($company);
+                    $partnerStatus = $partnerLabel($company);
+                    $hasPartnerCornerBadge = $partnerStatus !== 'Unternehmen';
+                    $partnerCornerClass = match ($partnerStatus) {
+                        'Sponsor' => 'is-sponsor',
+                        'Top-Partner' => 'is-top-partner',
+                        'Partner' => 'is-partner',
+                        default => '',
+                    };
                     $linkedExperts = is_array($company->linked_experts ?? null) ? $company->linked_experts : [];
                     $linkedSpeakers = is_array($company->linked_speakers ?? null) ? $company->linked_speakers : [];
                     $relationsCount = count($linkedExperts) + count($linkedSpeakers);
+                    $hasMetaRow = $location !== '' || $relationsCount > 0;
                     ?>
                     <article class="cms-excomp-card cms-excomp-card--company">
+                        <?php if ($hasPartnerCornerBadge): ?>
+                            <span class="cms-excomp-card__corner-badge cms-excomp-card__corner-badge--company <?= $e($partnerCornerClass) ?>" title="<?= $e($partnerStatus) ?>">
+                                <?= $e($partnerStatus) ?>
+                            </span>
+                        <?php endif; ?>
+
                         <div class="cms-excomp-card__head">
                             <div class="cms-excomp-card__media">
                                 <?php if ($logo !== ''): ?>
@@ -180,15 +215,15 @@ $partnerLabel = static function (object $company): string {
                             </div>
                             <div class="cms-excomp-card__titleblock">
                                 <h2 class="cms-excomp-card__name"><a href="<?= $e($detailUrl) ?>"><?= $e($name) ?></a></h2>
-                                <?php if ($industry !== ''): ?><p class="cms-excomp-card__meta-line"><?= $e($industry) ?></p><?php endif; ?>
                             </div>
                         </div>
 
-                        <div class="cms-excomp-card__meta">
-                            <span><?= $e($partnerLabel($company)) ?></span>
-                            <?php if ($location !== ''): ?><span><?= $e($location) ?></span><?php endif; ?>
-                            <?php if ($relationsCount > 0): ?><span><?= $relationsCount ?> Verknüpfungen</span><?php endif; ?>
-                        </div>
+                        <?php if ($hasMetaRow): ?>
+                            <div class="cms-excomp-card__meta">
+                                <?php if ($location !== ''): ?><span><?= $e($location) ?></span><?php endif; ?>
+                                <?php if ($relationsCount > 0): ?><span><?= $relationsCount ?> Verknüpfungen</span><?php endif; ?>
+                            </div>
+                        <?php endif; ?>
 
                         <?php if ($linkedExperts !== [] || $linkedSpeakers !== []): ?>
                             <div class="cms-excomp-linked">
@@ -235,6 +270,22 @@ $partnerLabel = static function (object $company): string {
                     </article>
                 <?php endforeach; ?>
             </div>
+
+            <?php if ($totalPages > 1): ?>
+                <nav class="cms-excomp-pagination" aria-label="Companies-Seiten">
+                    <a class="cms-excomp-pagination__link<?= $currentPage <= 1 ? ' is-disabled' : '' ?>" href="<?= $e($paginationUrl(max(1, $currentPage - 1))) ?>" aria-disabled="<?= $currentPage <= 1 ? 'true' : 'false' ?>">Zurück</a>
+                    <div class="cms-excomp-pagination__pages">
+                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                            <?php if ($i === 1 || $i === $totalPages || abs($i - $currentPage) <= 2): ?>
+                                <a class="cms-excomp-pagination__page<?= $i === $currentPage ? ' is-active' : '' ?>" href="<?= $e($paginationUrl($i)) ?>"<?= $i === $currentPage ? ' aria-current="page"' : '' ?>><?= $i ?></a>
+                            <?php elseif ($i === $currentPage - 3 || $i === $currentPage + 3): ?>
+                                <span class="cms-excomp-pagination__ellipsis" aria-hidden="true">…</span>
+                            <?php endif; ?>
+                        <?php endfor; ?>
+                    </div>
+                    <a class="cms-excomp-pagination__link<?= $currentPage >= $totalPages ? ' is-disabled' : '' ?>" href="<?= $e($paginationUrl(min($totalPages, $currentPage + 1))) ?>" aria-disabled="<?= $currentPage >= $totalPages ? 'true' : 'false' ?>">Weiter</a>
+                </nav>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 </main>

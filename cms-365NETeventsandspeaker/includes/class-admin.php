@@ -161,7 +161,7 @@ final class CMS_365NET_Events_Admin
         ?>
         <div class="cms365-admin-header"><div><h2><?= $isEdit ? '✏️ Event bearbeiten' : '➕ Neues Event' ?></h2><p><?= $isEdit ? 'ID #' . (int) $event->id : 'Manuellen Event-Datensatz anlegen.' ?></p></div><div><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents', ENT_QUOTES, 'UTF-8') ?>">← Zurück</a></div></div>
         <?php $this->flash(); ?>
-        <form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/save', ENT_QUOTES, 'UTF-8') ?>" class="cms365-form" novalidate>
+        <form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/save', ENT_QUOTES, 'UTF-8') ?>" class="cms365-form cms365-form--excomp" novalidate>
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
             <?php if ($isEdit): ?><input type="hidden" name="id" value="<?= (int) $event->id ?>"><input type="hidden" name="unique_id" value="<?= $this->e($event->unique_id ?? '') ?>"><?php endif; ?>
             <div class="admin-card cms365-admin-card cms365-section"><h3>1. Basisdaten & Veröffentlichung</h3><p class="description">Pflichtdaten, Slug, Status und redaktionelle Hervorhebung.</p><div class="cms365-form-grid">
@@ -378,7 +378,7 @@ final class CMS_365NET_Events_Admin
         ?>
         <div class="cms365-admin-header"><div><h2><?= $isEdit ? '✏️ Speaker bearbeiten' : '➕ Neuer Speaker' ?></h2><p><?= $isEdit ? 'ID #' . (int) $speaker->id : 'Nur echte Personen als Speaker anlegen. Firmen werden über das Companies-Plugin verknüpft.' ?></p></div><div><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers', ENT_QUOTES, 'UTF-8') ?>">← Zurück</a></div></div>
         <?php $this->flash(); ?>
-        <form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers/save', ENT_QUOTES, 'UTF-8') ?>" class="cms365-form" novalidate>
+        <form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers/save', ENT_QUOTES, 'UTF-8') ?>" class="cms365-form cms365-form--excomp" novalidate>
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
             <?php if ($isEdit): ?><input type="hidden" name="id" value="<?= (int) $speaker->id ?>"><input type="hidden" name="unique_id" value="<?= $this->e($speaker->unique_id ?? '') ?>"><?php endif; ?>
             <div class="admin-card cms365-admin-card cms365-section"><h3>1. Profil & Veröffentlichung</h3><div class="cms365-form-grid">

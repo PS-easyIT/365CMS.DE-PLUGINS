@@ -599,7 +599,10 @@ final class CMS_365NET_Experts_And_Companie_Admin
         $csrf = trim((string) ($data['csrf'] ?? ''));
         $experts = is_array($data['experts'] ?? null) ? $data['experts'] : [];
         $speakers = is_array($data['speakers'] ?? null) ? $data['speakers'] : [];
+        $companies = is_array($data['companies'] ?? null) ? $data['companies'] : [];
         $isEdit = $mode === 'edit' && $item !== null;
+        $currentCompanyId = (int) ($item->id ?? 0);
+        $selectedParentCompanyId = (int) ($item->parent_company_id ?? 0);
         $selectedLinkedExpertId = (int) ($item->linked_expert_id ?? 0);
         $selectedLinkedSpeakerId = (int) ($item->linked_speaker_id ?? 0);
 
@@ -635,6 +638,36 @@ final class CMS_365NET_Experts_And_Companie_Admin
             </div>
 
             <div class="cms-excomp-form-grid">
+                <label class="cms-excomp-form-field">
+                    <span>Mutterkonzern / Mutterfirma</span>
+                    <select name="parent_company_id">
+                        <option value="">— keine —</option>
+                        <?php foreach ($companies as $parentCompany): ?>
+                            <?php
+                            if (!is_object($parentCompany)) {
+                                continue;
+                            }
+                            $parentCompanyId = (int) ($parentCompany->id ?? 0);
+                            if ($parentCompanyId <= 0) {
+                                continue;
+                            }
+                            if ($currentCompanyId > 0 && $parentCompanyId === $currentCompanyId) {
+                                continue;
+                            }
+                            $parentCompanyName = trim((string) ($parentCompany->name ?? ''));
+                            if ($parentCompanyName === '') {
+                                $parentCompanyName = 'Company #' . $parentCompanyId;
+                            }
+                            $parentCompanyCity = trim((string) ($parentCompany->location_city ?? $parentCompany->city ?? ''));
+                            $parentCompanyLabel = $parentCompanyCity !== ''
+                                ? ($parentCompanyName . ' — ' . $parentCompanyCity)
+                                : $parentCompanyName;
+                            ?>
+                            <option value="<?= $parentCompanyId ?>"<?= $selectedParentCompanyId === $parentCompanyId ? ' selected' : '' ?>><?= htmlspecialchars($parentCompanyLabel, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+
                 <label class="cms-excomp-form-field">
                     <span>Verknüpfter Expert</span>
                     <select name="linked_expert_id">
