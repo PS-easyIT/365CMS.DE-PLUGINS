@@ -27,6 +27,7 @@ $companies = array_values(array_filter(array_map(
 $filters = is_array($filters ?? null) ? $filters : [];
 $q = trim((string) ($filters['q'] ?? ''));
 $city = trim((string) ($filters['city'] ?? ''));
+$settings = is_array($settings ?? null) ? $settings : [];
 $type = trim((string) ($filters['type'] ?? 'all'));
 if (!in_array($type, ['all', 'experts', 'companies'], true)) {
     $type = 'all';
@@ -38,6 +39,51 @@ $showCompanies = in_array($type, ['all', 'companies'], true);
 $hubUrl = rtrim((string) SITE_URL, '/') . '/experts-companie';
 
 $e = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+
+$setting = static function (string $key, string $default) use ($settings): string {
+    $value = trim((string) ($settings[$key] ?? ''));
+    return $value !== '' ? $value : $default;
+};
+
+$designVars = [
+    '--cms-excomp-page-pt' => $setting('layout_page_padding_top', '24px'),
+    '--cms-excomp-page-pb' => $setting('layout_page_padding_bottom', '40px'),
+    '--cms-excomp-content-max' => $setting('layout_content_max_width', '1160px'),
+    '--cms-excomp-grid-gap' => $setting('layout_grid_gap', '18px'),
+    '--cms-excomp-section-gap' => $setting('layout_section_gap', '20px'),
+    '--cms-excomp-radius-card' => $setting('style_radius_card', '2px'),
+    '--cms-excomp-radius-btn' => $setting('style_radius_button', '2px'),
+    '--cms-excomp-radius-surface' => $setting('style_radius_surface', '4px'),
+    '--cms-excomp-radius-hero' => $setting('style_radius_hero', '4px'),
+    '--cms-excomp-color-bg' => $setting('color_bg', '#f8fafc'),
+    '--cms-excomp-color-text' => $setting('color_text', '#0f172a'),
+    '--cms-excomp-color-primary' => $setting('color_primary', '#1d4ed8'),
+    '--cms-excomp-color-hero-start' => $setting('color_hero_start', '#172554'),
+    '--cms-excomp-color-hero-end' => $setting('color_hero_end', '#1e40af'),
+    '--cms-excomp-color-expert-accent' => $setting('color_expert_accent', '#f97316'),
+    '--cms-excomp-color-company-accent' => $setting('color_company_accent', '#16a34a'),
+    '--cms-excomp-color-card-bg' => $setting('color_card_bg', '#ffffff'),
+    '--cms-excomp-color-border' => $setting('color_border', '#e2e8f0'),
+];
+
+$renderDesignVars = static function (array $vars): string {
+    $parts = [];
+    foreach ($vars as $name => $value) {
+        $name = trim((string) $name);
+        $value = trim((string) $value);
+        if ($name === '' || $value === '') {
+            continue;
+        }
+
+        $parts[] = htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ':' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    }
+
+    if ($parts === []) {
+        return '';
+    }
+
+    return '<style id="cms-excomp-design-vars">:root{' . implode(';', $parts) . ';}</style>';
+};
 
 $expertInitials = static function (object $expert): string {
     $first = trim((string) ($expert->first_name ?? ''));
@@ -86,6 +132,8 @@ $companyPartnerLabel = static function (object $company): string {
 };
 ?>
 
+<?= $renderDesignVars($designVars) ?>
+
 <main class="cms-excomp-public">
     <div class="cms-excomp-container">
         <section class="cms-excomp-hero" aria-label="Experts and Companies Hub">
@@ -106,9 +154,9 @@ $companyPartnerLabel = static function (object $company): string {
                 <option value="experts"<?= $type === 'experts' ? ' selected' : '' ?>>Nur Experts</option>
                 <option value="companies"<?= $type === 'companies' ? ' selected' : '' ?>>Nur Companies</option>
             </select>
-            <button type="submit">Suchen</button>
+            <button type="submit"><?= $e($setting('search_button_label', 'Suchen')) ?></button>
             <?php if ($q !== '' || $city !== '' || $type !== 'all'): ?>
-                <a href="<?= $e($hubUrl) ?>" class="cms-excomp-reset">Reset</a>
+                <a href="<?= $e($hubUrl) ?>" class="cms-excomp-reset"><?= $e($setting('reset_button_label', 'Zurücksetzen')) ?></a>
             <?php endif; ?>
         </form>
     </div>

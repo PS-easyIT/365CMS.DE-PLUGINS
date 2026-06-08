@@ -144,13 +144,21 @@ $expertCardExcerpt = static function (object $expert): string {
                     $position = trim((string) ($expert->position ?? ''));
                     $company = trim((string) ($expert->company ?? ''));
                     $location = trim((string) ($expert->location_city ?? $expert->city ?? ''));
-                    $availability = trim((string) ($expert->availability ?? ''));
+                    $awards = trim((string) ($expert->awards ?? ''));
+                    $isMvp = $awards !== '' && stripos($awards, 'mvp') !== false;
+                    $hasAwardBadge = $awards !== '';
                     $photo = trim((string) ($expert->photo_url ?? ''));
                     $bio = $expertCardExcerpt($expert);
                     $linkedSpeaker = is_object($expert->linked_speaker ?? null) ? $expert->linked_speaker : null;
                     $linkedCompany = is_object($expert->linked_company ?? null) ? $expert->linked_company : null;
                     ?>
                     <article class="cms-excomp-card cms-excomp-card--expert">
+                        <?php if ($hasAwardBadge): ?>
+                            <span class="cms-excomp-card__corner-badge <?= $isMvp ? 'is-mvp' : 'is-award' ?>" title="<?= $e($awards) ?>">
+                                <?= $e($isMvp ? 'MVP' : 'Auszeichnung') ?>
+                            </span>
+                        <?php endif; ?>
+
                         <div class="cms-excomp-card__head">
                             <div class="cms-excomp-card__media">
                                 <?php if ($photo !== ''): ?>
@@ -161,18 +169,12 @@ $expertCardExcerpt = static function (object $expert): string {
                             </div>
                             <div class="cms-excomp-card__titleblock">
                                 <h2 class="cms-excomp-card__name"><a href="<?= $e($detailUrl) ?>"><?= $e($name) ?></a></h2>
-                                <?php
-                                $metaLine = trim($position . ($company !== '' ? ' · ' . $company : ''));
-                                if ($metaLine !== ''):
-                                ?>
-                                    <p class="cms-excomp-card__meta-line"><?= $e($metaLine) ?></p>
-                                <?php endif; ?>
                             </div>
                         </div>
 
                         <div class="cms-excomp-card__meta">
                             <?php if ($location !== ''): ?><span><?= $e($location) ?></span><?php endif; ?>
-                            <?php if ($availability !== ''): ?><span class="is-highlight"><?= $e($availability) ?></span><?php endif; ?>
+                            <?php if ($position !== ''): ?><span><?= $e($position) ?></span><?php endif; ?>
                         </div>
 
                         <?php if ($linkedSpeaker !== null || $linkedCompany !== null): ?>
@@ -199,7 +201,7 @@ $expertCardExcerpt = static function (object $expert): string {
                         <?php if ($bio !== ''): ?><p class="cms-excomp-card__excerpt"><?= $e($bio) ?></p><?php endif; ?>
 
                         <footer class="cms-excomp-card__footer">
-                            <span class="cms-excomp-card__badge"><?= $availability !== '' ? $e($availability) : 'Expert' ?></span>
+                            <span class="cms-excomp-card__badge"><?= $company !== '' ? $e($company) : 'Firma nicht hinterlegt' ?></span>
                             <a class="cms-excomp-card__more" href="<?= $e($detailUrl) ?>">Mehr Infos …</a>
                         </footer>
                     </article>
