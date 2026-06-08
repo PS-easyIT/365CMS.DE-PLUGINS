@@ -122,7 +122,8 @@ if ($hasAiBadge) {
     $headerCategories[] = 'AI';
 }
 $headerCategories = array_values(array_unique(array_filter(array_map('trim', $headerCategories), static fn (string $badge): bool => $badge !== '')));
-$headerCategories = array_slice($headerCategories, 0, 12);
+$headerCategories = array_slice($headerCategories, 0, 3);
+$targetAudienceBadge = trim((string) ($event->target_audience ?? ''));
 $hasHeaderImage = !empty($event->image_url);
 $headerImageBgColor = '';
 $rawHeaderImageBgColor = trim((string) ($event->image_bg_color ?? ''));
@@ -241,9 +242,6 @@ if (!empty($event->difficulty_level)) {
 if (!empty($event->language)) {
     $detailRows[] = ['label' => 'Sprache', 'value' => (string) $event->language];
 }
-if (!empty($event->target_audience)) {
-    $detailRows[] = ['label' => 'Zielgruppe', 'value' => (string) $event->target_audience];
-}
 if (!empty($event->price_class)) {
     $detailRows[] = ['label' => 'Preisklasse', 'value' => (string) $event->price_class];
 }
@@ -281,7 +279,7 @@ if (!empty($event->capacity)) {
                 </section>
                 <aside class="cms-events-sidebar">
                     <div class="cms-events-sidebar-stack">
-                        <?php if ($headerCategories !== []): ?><div class="cms-events-sidecard cms-events-sidecard--categories"><div class="cms-events-sidecard__badges"><?php foreach ($headerCategories as $category): ?><span><?= htmlspecialchars((string) $category, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?></div></div><?php endif; ?>
+                        <?php if ($headerCategories !== [] || $targetAudienceBadge !== ''): ?><div class="cms-events-sidecard cms-events-sidecard--categories"><div class="cms-events-sidecard__badges"><?php foreach ($headerCategories as $category): ?><span><?= htmlspecialchars((string) $category, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?><?php if ($targetAudienceBadge !== ''): ?><span class="is-audience"><?= htmlspecialchars($targetAudienceBadge, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?></div></div><?php endif; ?>
                         <div class="cms-events-sidecard cms-events-sidecard--details<?= $hasSidebarLinks ? ' cms-events-sidecard--details-has-links' : '' ?>">
                             <dl class="cms-events-sidecard__meta">
                                 <?php foreach ($detailRows as $detailRow): ?>
