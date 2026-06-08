@@ -131,7 +131,6 @@ $companyPartnerLabel = static function (object $company): string {
                             <?php
                             $name = $expertName($expert);
                             $detailUrl = trim((string) ($expert->detail_url ?? ''));
-                            $websiteUrl = trim((string) ($expert->website ?? ''));
                             $availability = trim((string) ($expert->availability ?? ''));
                             $position = trim((string) ($expert->position ?? ''));
                             $company = trim((string) ($expert->company ?? ''));
@@ -180,9 +179,6 @@ $companyPartnerLabel = static function (object $company): string {
                                     <span class="cms-excomp-card-link is-disabled">Kein Profil verfügbar</span>
                                 <?php endif; ?>
 
-                                <?php if ($websiteUrl !== ''): ?>
-                                    <a class="cms-excomp-card-link cms-excomp-card-link--ghost" href="<?= $e($websiteUrl) ?>" target="_blank" rel="noopener noreferrer">Website öffnen</a>
-                                <?php endif; ?>
                             </article>
                         <?php endforeach; ?>
                     </div>
@@ -208,7 +204,6 @@ $companyPartnerLabel = static function (object $company): string {
                             $name = trim((string) ($company->name ?? ''));
                             $name = $name !== '' ? $name : 'Company #' . (int) ($company->id ?? 0);
                             $detailUrl = trim((string) ($company->detail_url ?? ''));
-                            $websiteUrl = trim((string) ($company->website ?? ''));
                             $industry = trim((string) ($company->industry ?? ''));
                             $location = trim((string) ($company->location_city ?? ''));
                             $website = trim((string) ($company->website ?? ''));
@@ -276,9 +271,6 @@ $companyPartnerLabel = static function (object $company): string {
                                     <span class="cms-excomp-card-link is-disabled">Kein Profil verfügbar</span>
                                 <?php endif; ?>
 
-                                <?php if ($websiteUrl !== ''): ?>
-                                    <a class="cms-excomp-card-link cms-excomp-card-link--ghost" href="<?= $e($websiteUrl) ?>" target="_blank" rel="noopener noreferrer">Website öffnen</a>
-                                <?php endif; ?>
                             </article>
                         <?php endforeach; ?>
                     </div>
