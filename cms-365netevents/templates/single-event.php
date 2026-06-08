@@ -175,9 +175,9 @@ $addressStreet = trim((string) ($event->street ?? ''));
 if ($addressStreet !== '') {
     $addressRows[] = ['label' => 'Straße', 'value' => $addressStreet];
 }
-$addressPostalCity = trim((string) ($event->postal_code ?? '') . ' ' . (string) ($event->city ?? ''));
-if ($addressPostalCity !== '') {
-    $addressRows[] = ['label' => 'PLZ / Stadt', 'value' => $addressPostalCity];
+$addressPostalCode = trim((string) ($event->postal_code ?? ''));
+if ($addressPostalCode !== '') {
+    $addressRows[] = ['label' => 'PLZ', 'value' => $addressPostalCode];
 }
 $addressCountry = trim((string) ($event->country ?? ''));
 if ($addressCountry !== '') {
@@ -185,6 +185,8 @@ if ($addressCountry !== '') {
 }
 
 $detailRows = [];
+$organizerValues = array_values(array_filter(array_map('trim', preg_split('/[,;\n]+/', (string) ($event->organizer ?? '')) ?: []), static fn(string $value): bool => $value !== ''));
+$organizerValues = array_slice(array_values(array_unique($organizerValues)), 0, 8);
 $detailDateLabel = '';
 $detailDateLabelRaw = $dateLabelRaw;
 $detailEndDateLabelRaw = $endDateLabelRaw;
@@ -233,7 +235,13 @@ if ($detailFormat !== '') {
 if (!empty($event->attendance_mode)) {
     $detailRows[] = ['label' => 'Durchführung', 'value' => (string) $event->attendance_mode];
 }
-if (!empty($event->organizer)) {
+if ($organizerValues !== []) {
+    $detailRows[] = [
+        'label' => 'Veranstalter',
+        'value' => implode(', ', $organizerValues),
+        'class' => 'is-organizer',
+    ];
+} elseif (!empty($event->organizer)) {
     $detailRows[] = ['label' => 'Veranstalter', 'value' => (string) $event->organizer];
 }
 if (!empty($event->difficulty_level)) {
@@ -242,11 +250,42 @@ if (!empty($event->difficulty_level)) {
 if (!empty($event->language)) {
     $detailRows[] = ['label' => 'Sprache', 'value' => (string) $event->language];
 }
-if (!empty($event->price_class)) {
-    $detailRows[] = ['label' => 'Preisklasse', 'value' => (string) $event->price_class];
+$detailCostStatusRaw = trim((string) ($event->price_class ?? ''));
+$detailCostStatus = '';
+if ($detailCostStatusRaw !== '' && mb_strtolower($detailCostStatusRaw, 'UTF-8') !== 'bitte wählen') {
+    $detailCostStatus = $detailCostStatusRaw;
 }
-if (!empty($event->price)) {
-    $detailRows[] = ['label' => 'Preis', 'value' => (string) $event->price];
+
+if ($detailCostStatus === '') {
+    $legacyPriceLabel = trim((string) ($event->price ?? ''));
+    $legacyPriceLower = mb_strtolower($legacyPriceLabel, 'UTF-8');
+
+    if ($legacyPriceLabel !== '') {
+        if (preg_match('/\b(kostenfrei|kostenlos|free|frei)\b/ui', $legacyPriceLabel) === 1) {
+            $detailCostStatus = 'Kostenfrei';
+        } elseif (preg_match('/\b(kostenpflichtig|paid|bezahl|ticket|eintritt|gebühr)\b/ui', $legacyPriceLabel) === 1) {
+            $detailCostStatus = 'Kostenpflichtig';
+        } elseif (str_contains($legacyPriceLower, 'auf einladung')) {
+            $detailCostStatus = 'Auf Einladung';
+        } elseif (str_contains($legacyPriceLower, 'auf anfrage')) {
+            $detailCostStatus = 'Auf Anfrage';
+        } elseif (str_contains($legacyPriceLower, 'sponsorenfinanziert')) {
+            $detailCostStatus = 'Sponsorenfinanziert';
+        }
+    }
+}
+
+if ($detailCostStatus === '') {
+    $priceMin = isset($event->price_min) ? (float) $event->price_min : 0.0;
+    $priceMax = isset($event->price_max) ? (float) $event->price_max : 0.0;
+    $legacyPriceLabel = trim((string) ($event->price ?? ''));
+    if ($priceMin > 0 || $priceMax > 0 || preg_match('/\d/', $legacyPriceLabel) === 1) {
+        $detailCostStatus = 'Kostenpflichtig';
+    }
+}
+
+if ($detailCostStatus !== '') {
+    $detailRows[] = ['label' => 'Kosten', 'value' => $detailCostStatus];
 }
 if (!empty($event->capacity)) {
     $detailRows[] = ['label' => 'Kapazität', 'value' => (int) $event->capacity . ' Personen'];
@@ -308,8 +347,16 @@ if (!empty($event->capacity)) {
                     <?php else: ?>
                         <div class="cms-speaker-list">
                             <?php foreach ($speakers as $speaker): ?>
+                                <?php
+                                $speakerAvatarUrl = trim((string) ($speaker->avatar_url ?? ''));
+                                $speakerAvatarAlt = trim((string) (($speaker->avatar_alt ?? '') ?: ($speaker->display_name ?? 'Speaker')));
+                                ?>
                                 <a class="cms-speaker-row" href="<?= htmlspecialchars($base . '/speakers/' . rawurlencode((string) $speaker->slug), ENT_QUOTES, 'UTF-8') ?>">
-                                    <span class="cms-speaker-avatar"><?= htmlspecialchars(strtoupper(substr((string) ($speaker->display_name ?? 'S'), 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php if ($speakerAvatarUrl !== ''): ?>
+                                        <img class="cms-speaker-photo cms-speaker-photo--event" src="<?= htmlspecialchars($speakerAvatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($speakerAvatarAlt, ENT_QUOTES, 'UTF-8') ?>" loading="lazy">
+                                    <?php else: ?>
+                                        <span class="cms-speaker-avatar"><?= htmlspecialchars(strtoupper(substr((string) ($speaker->display_name ?? 'S'), 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
                                     <span><strong><?= htmlspecialchars((string) $speaker->display_name, ENT_QUOTES, 'UTF-8') ?></strong><?php if (!empty($speaker->relation_topic) || !empty($speaker->topic)): ?><small><?= htmlspecialchars((string) ($speaker->relation_topic ?: $speaker->topic), ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?></span>
                                 </a>
                             <?php endforeach; ?>

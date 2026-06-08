@@ -63,6 +63,11 @@ $speakerCardExcerpt = static function (object $speaker): string {
                 $speakerUrl = $base . '/speakers/' . rawurlencode((string) $speaker->slug);
                 $speakerExcerpt = $speakerCardExcerpt($speaker);
                 $speakerEvents = (int) ($speaker->event_count ?? 0);
+                $speakerMetaItems = array_values(array_filter([
+                    trim((string) ($speaker->location ?? '')),
+                    trim((string) ($speaker->speaking_formats ?? '')),
+                ], static fn(string $value): bool => $value !== ''));
+                $speakerMetaLine = implode(' · ', array_slice($speakerMetaItems, 0, 3));
                 ?>
                 <article class="cms-events-card cms-speaker-card">
                     <div class="cms-speaker-card__head">
@@ -73,7 +78,12 @@ $speakerCardExcerpt = static function (object $speaker): string {
                                 <span class="cms-speaker-avatar cms-speaker-avatar--card"><?= htmlspecialchars(strtoupper(substr((string) ($speaker->display_name ?? 'S'), 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
                             <?php endif; ?>
                         </div>
-                        <h2 class="cms-speaker-card__name"><a href="<?= htmlspecialchars($speakerUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $speaker->display_name, ENT_QUOTES, 'UTF-8') ?></a></h2>
+                        <div class="cms-speaker-card__titleblock">
+                            <h2 class="cms-speaker-card__name"><a href="<?= htmlspecialchars($speakerUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $speaker->display_name, ENT_QUOTES, 'UTF-8') ?></a></h2>
+                            <?php if ($speakerMetaLine !== ''): ?>
+                                <p class="cms-speaker-card__meta"><?= htmlspecialchars($speakerMetaLine, ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php endif; ?>
+                        </div>
                     </div>
 
                     <?php if ($speakerExcerpt !== ''): ?>

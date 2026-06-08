@@ -26,22 +26,23 @@ $renderEditor = static function (mixed $json, mixed $fallback): string {
         : '';
 };
 
-$badges = array_filter(array_map('trim', explode(',', (string) (($speaker->categories ?? '') ?: ($speaker->topic ?? '')))));
-$tags = array_filter(array_map('trim', explode(',', (string) ($speaker->tags ?? ''))));
-
 $speakerName = (string) ($speaker->display_name ?? '');
 $speakerInitial = strtoupper(substr($speakerName !== '' ? $speakerName : 'S', 0, 1));
+$profileImageUrl = trim((string) ($speaker->avatar_url ?? ''));
+$profileImageAlt = trim((string) (($speaker->avatar_alt ?? '') ?: $speakerName));
+$themeImageUrl = trim((string) ($speaker->theme_image_url ?? ''));
+$themeImageAlt = trim((string) (($speaker->theme_image_alt ?? '') ?: $speakerName));
 $speakerTopic = trim((string) ($speaker->topic ?? ''));
-$speakerLead = $speakerTopic;
-if ($speakerLead === '' && !empty($speaker->speaker_type)) {
+$speakerLead = '';
+if (!empty($speaker->speaker_type)) {
     $speakerLead = (string) $speaker->speaker_type;
 }
 if ($speakerLead === '' && !empty($speaker->award)) {
     $speakerLead = (string) $speaker->award;
 }
 
-$hasHeaderImage = !empty($speaker->avatar_url);
-$headerBadges = array_slice($badges, 0, 10);
+$hasProfileImage = $profileImageUrl !== '';
+$hasThemeImage = $themeImageUrl !== '';
 
 $metaInfo = [];
 if (!empty($speaker->speaker_type)) {
@@ -58,6 +59,29 @@ if (!empty($speaker->availability)) {
 }
 
 $detailRows = [];
+$speakerCategories = array_values(array_filter(array_map('trim', preg_split('/[,;\n]+/', (string) ($speaker->categories ?? '')) ?: []), static fn(string $value): bool => $value !== ''));
+if ($speakerCategories === [] && $speakerTopic !== '') {
+    $speakerCategories[] = $speakerTopic;
+}
+if ($speakerCategories !== []) {
+    $detailRows[] = [
+        'label' => count($speakerCategories) > 1 ? 'Schwerpunkte' : 'Schwerpunkt',
+        'value' => implode(', ', array_slice($speakerCategories, 0, 5)),
+    ];
+}
+
+$speakerOrganization = '';
+if (!empty($linkedCompany) && !empty($linkedCompany->name)) {
+    $speakerOrganization = trim((string) $linkedCompany->name);
+} elseif (!empty($speaker->company)) {
+    $speakerOrganization = trim((string) $speaker->company);
+} elseif (!empty($linkedExpert) && !empty($linkedExpert->company)) {
+    $speakerOrganization = trim((string) $linkedExpert->company);
+}
+if ($speakerOrganization !== '') {
+    $detailRows[] = ['label' => 'Organisation', 'value' => $speakerOrganization];
+}
+
 if ($speakerTopic !== '') {
     $detailRows[] = ['label' => 'Thema', 'value' => $speakerTopic];
 }
@@ -78,6 +102,9 @@ if (!empty($speaker->price_class)) {
 }
 if (!empty($speaker->availability)) {
     $detailRows[] = ['label' => 'Verfügbarkeit', 'value' => (string) $speaker->availability];
+}
+if ($detailRows === []) {
+    $detailRows[] = ['label' => 'Hinweis', 'value' => 'Keine Details hinterlegt'];
 }
 
 $sidebarPrimaryLink = trim((string) ($speaker->website ?? ''));
@@ -134,12 +161,12 @@ $hasSidebarLinks = $hasSidebarPrimaryActions || $sidebarSocialLinks !== [];
         </nav>
 
         <article class="cms-events-detail-layout">
-            <header class="cms-events-detail-header cms-speaker-detail-header<?= $hasHeaderImage ? ' cms-events-detail-header--has-image' : ' cms-events-detail-header--no-image' ?>">
+            <header class="cms-events-detail-header cms-speaker-detail-header cms-events-detail-header--has-image">
                 <div class="cms-events-detail-header__content">
                     <div class="cms-events-detail-header__intro">
                         <div class="cms-speaker-detail-badge" aria-label="Speakerprofil">
-                            <?php if ($hasHeaderImage): ?>
-                                <img src="<?= htmlspecialchars((string) $speaker->avatar_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($speaker->avatar_alt ?? $speakerName), ENT_QUOTES, 'UTF-8') ?>" loading="eager">
+                            <?php if ($hasProfileImage): ?>
+                                <img src="<?= htmlspecialchars($profileImageUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($profileImageAlt, ENT_QUOTES, 'UTF-8') ?>" loading="eager">
                             <?php else: ?>
                                 <span class="cms-speaker-detail-badge__initial"><?= htmlspecialchars($speakerInitial, ENT_QUOTES, 'UTF-8') ?></span>
                             <?php endif; ?>
@@ -159,50 +186,36 @@ $hasSidebarLinks = $hasSidebarPrimaryActions || $sidebarSocialLinks !== [];
                         <p class="cms-events-detail-header__lead"><?= htmlspecialchars($speakerLead, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endif; ?>
                 </div>
-                <?php if ($hasHeaderImage): ?>
-                    <figure class="cms-events-detail-header__media cms-speaker-detail-header__media">
-                        <img src="<?= htmlspecialchars((string) $speaker->avatar_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($speaker->avatar_alt ?? $speakerName), ENT_QUOTES, 'UTF-8') ?>" loading="eager">
-                    </figure>
-                <?php endif; ?>
+                <figure class="cms-events-detail-header__media cms-speaker-detail-header__media<?= $hasThemeImage ? '' : ' is-placeholder' ?>">
+                    <?php if ($hasThemeImage): ?>
+                        <img src="<?= htmlspecialchars($themeImageUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($themeImageAlt, ENT_QUOTES, 'UTF-8') ?>" loading="eager">
+                    <?php else: ?>
+                        <div class="cms-speaker-detail-topic-placeholder" aria-hidden="true">
+                            <span class="cms-speaker-detail-topic-placeholder__icon">🖼️</span>
+                            <span class="cms-speaker-detail-topic-placeholder__title">Themenbild</span>
+                            <span class="cms-speaker-detail-topic-placeholder__hint">Kein Bild hinterlegt</span>
+                        </div>
+                    <?php endif; ?>
+                </figure>
             </header>
 
             <div class="cms-events-detail-layout__body">
                 <section class="cms-events-detail-main">
-                    <?php if ($tags !== []): ?>
-                        <div class="cms-events-mini-tags cms-events-detail-tags">
-                            <?php foreach (array_slice($tags, 0, 12) as $tag): ?>
-                                <span><?= htmlspecialchars((string) $tag, ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-
                     <?= $renderEditor($speaker->bio_json ?? '', $speaker->bio ?? '') ?>
                 </section>
 
                 <aside class="cms-events-sidebar">
                     <div class="cms-events-sidebar-stack">
-                        <?php if ($headerBadges !== []): ?>
-                            <div class="cms-events-sidecard cms-events-sidecard--categories">
-                                <div class="cms-events-sidecard__badges">
-                                    <?php foreach ($headerBadges as $badge): ?>
-                                        <span><?= htmlspecialchars((string) $badge, ENT_QUOTES, 'UTF-8') ?></span>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if ($detailRows !== []): ?>
-                            <div class="cms-events-sidecard cms-events-sidecard--details<?= $hasSidebarLinks ? ' cms-events-sidecard--details-has-links' : '' ?>">
-                                <dl class="cms-events-sidecard__meta">
-                                    <?php foreach ($detailRows as $detailRow): ?>
-                                        <div class="cms-events-sidecard__meta-row">
-                                            <dt><?= htmlspecialchars((string) ($detailRow['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dt>
-                                            <dd><?= htmlspecialchars((string) ($detailRow['value'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </dl>
-                            </div>
-                        <?php endif; ?>
+                        <div class="cms-events-sidecard cms-events-sidecard--details<?= $hasSidebarLinks ? ' cms-events-sidecard--details-has-links' : '' ?>">
+                            <dl class="cms-events-sidecard__meta">
+                                <?php foreach ($detailRows as $detailRow): ?>
+                                    <div class="cms-events-sidecard__meta-row">
+                                        <dt><?= htmlspecialchars((string) ($detailRow['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dt>
+                                        <dd><?= htmlspecialchars((string) ($detailRow['value'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd>
+                                    </div>
+                                <?php endforeach; ?>
+                            </dl>
+                        </div>
 
                         <?php if ($hasSidebarLinks): ?>
                             <div class="cms-events-sidecard cms-events-sidecard--links">
@@ -275,6 +288,7 @@ $hasSidebarLinks = $hasSidebarPrimaryActions || $sidebarSocialLinks !== [];
                     <?php endif; ?>
                 </section>
             </section>
+
         </article>
     </div>
 </main>

@@ -74,10 +74,20 @@ $eventCardExcerpt = static function (object $event): string {
                 <?php foreach ($events as $event): ?>
                     <?php $eventUrl = $base . '/events/' . rawurlencode((string) $event->slug); ?>
                     <?php $cardExcerpt = $eventCardExcerpt($event); ?>
+                    <?php
+                    $cardImageBgColor = '';
+                    $rawCardImageBgColor = trim((string) ($event->image_bg_color ?? ''));
+                    if (preg_match('/^#[0-9a-fA-F]{6}$/', $rawCardImageBgColor) === 1) {
+                        $cardImageBgColor = strtolower($rawCardImageBgColor);
+                    }
+                    $cardImageStyle = $cardImageBgColor !== ''
+                        ? ' style="--cms-events-card-image-bg:' . htmlspecialchars($cardImageBgColor, ENT_QUOTES, 'UTF-8') . '"'
+                        : '';
+                    ?>
                     <article class="cms-events-card">
                         <h2>
                             <a class="cms-events-card__title-link" href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $event->title, ENT_QUOTES, 'UTF-8') ?></a>
-                            <?php if (!empty($event->image_url)): ?><a class="cms-events-card__title-image-link" href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>" aria-label="<?= htmlspecialchars('Event öffnen: ' . (string) ($event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>"><span class="cms-events-card__title-image"><img src="<?= htmlspecialchars((string) $event->image_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($event->image_alt ?? $event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="lazy"></span></a><?php endif; ?>
+                            <?php if (!empty($event->image_url)): ?><a class="cms-events-card__title-image-link" href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>" aria-label="<?= htmlspecialchars('Event öffnen: ' . (string) ($event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>"><span class="cms-events-card__title-image"<?= $cardImageStyle ?>><img src="<?= htmlspecialchars((string) $event->image_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($event->image_alt ?? $event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="lazy"></span></a><?php endif; ?>
                         </h2>
                         <div class="cms-events-card__meta">
                             <?php if (!empty($event->organizer)): ?><span><?= htmlspecialchars((string) $event->organizer, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>

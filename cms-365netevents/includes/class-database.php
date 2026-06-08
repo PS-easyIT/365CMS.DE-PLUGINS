@@ -141,6 +141,8 @@ final class CMS_365NET_Events_Database
             bio_json LONGTEXT DEFAULT NULL,
             avatar_url VARCHAR(600) DEFAULT NULL,
             avatar_alt VARCHAR(255) DEFAULT NULL,
+            theme_image_url VARCHAR(600) DEFAULT NULL,
+            theme_image_alt VARCHAR(255) DEFAULT NULL,
             categories VARCHAR(500) DEFAULT NULL,
             tags VARCHAR(700) DEFAULT NULL,
             specializations VARCHAR(700) DEFAULT NULL,
@@ -281,6 +283,8 @@ final class CMS_365NET_Events_Database
             'bio_json' => 'bio_json LONGTEXT DEFAULT NULL',
             'avatar_url' => 'avatar_url VARCHAR(600) DEFAULT NULL',
             'avatar_alt' => 'avatar_alt VARCHAR(255) DEFAULT NULL',
+            'theme_image_url' => 'theme_image_url VARCHAR(600) DEFAULT NULL',
+            'theme_image_alt' => 'theme_image_alt VARCHAR(255) DEFAULT NULL',
             'categories' => 'categories VARCHAR(500) DEFAULT NULL',
             'tags' => 'tags VARCHAR(700) DEFAULT NULL',
             'specializations' => 'specializations VARCHAR(700) DEFAULT NULL',
@@ -823,6 +827,12 @@ final class CMS_365NET_Events_Database
             }
         }
 
+        $locationValue = $this->cleanText((string) ($data['location'] ?? ''), 255);
+        $cityValue = $this->cleanText((string) ($data['city'] ?? ''), 120);
+        if ($cityValue === '') {
+            $cityValue = $this->cleanText($locationValue, 120);
+        }
+
         $payload = [
             'unique_id' => (string) ($data['unique_id'] ?? ('manual-event-' . substr(hash('sha256', $title . microtime(true)), 0, 12))),
             'source_nr' => isset($data['source_nr']) && (int) $data['source_nr'] > 0 ? (int) $data['source_nr'] : null,
@@ -832,7 +842,7 @@ final class CMS_365NET_Events_Database
             'end_date' => $this->normalizeDate((string) ($data['end_date'] ?? '')),
             'date_label' => $this->cleanText((string) ($data['date_label'] ?? ''), 80),
             'end_date_label' => $this->cleanText((string) ($data['end_date_label'] ?? ''), 80),
-            'location' => $this->cleanText((string) ($data['location'] ?? ''), 255),
+            'location' => $locationValue,
             'organizer' => $this->cleanText((string) ($data['organizer'] ?? ''), 255),
             'source_column' => $this->cleanText((string) ($data['source_column'] ?? ''), 255),
             'category' => $this->cleanText((string) ($data['category'] ?? ''), 255),
@@ -854,18 +864,18 @@ final class CMS_365NET_Events_Database
             'gallery_json' => $this->cleanJsonList((string) ($data['gallery_json'] ?? '')),
             'categories' => $this->cleanList($data['categories'] ?? '', 500),
             'tags' => $this->cleanList($data['tags'] ?? '', 700),
-            'target_audience' => $this->cleanText((string) ($data['target_audience'] ?? ''), 255),
+            'target_audience' => $this->cleanList($data['target_audience'] ?? '', 255),
             'event_format' => $this->cleanText((string) ($data['event_format'] ?? ''), 80),
             'attendance_mode' => $this->cleanText((string) ($data['attendance_mode'] ?? ''), 80),
             'difficulty_level' => $this->cleanText((string) ($data['difficulty_level'] ?? ''), 80),
-            'language' => $this->cleanText((string) ($data['language'] ?? ''), 80),
+            'language' => $this->cleanList($data['language'] ?? '', 80),
             'timezone' => $this->cleanText((string) ($data['timezone'] ?? ''), 80),
             'start_time' => $this->cleanText((string) ($data['start_time'] ?? ''), 20),
             'end_time' => $this->cleanText((string) ($data['end_time'] ?? ''), 20),
             'venue_name' => $this->cleanText((string) ($data['venue_name'] ?? ''), 255),
             'street' => $this->cleanText((string) ($data['street'] ?? ''), 255),
             'postal_code' => $this->cleanText((string) ($data['postal_code'] ?? ''), 30),
-            'city' => $this->cleanText((string) ($data['city'] ?? ''), 120),
+            'city' => $cityValue,
             'country' => $this->cleanText((string) ($data['country'] ?? ''), 120),
             'online_url' => $this->cleanUrl((string) ($data['online_url'] ?? '')),
             'registration_url' => $this->cleanUrl((string) ($data['registration_url'] ?? '')),
@@ -1024,23 +1034,27 @@ final class CMS_365NET_Events_Database
         $existing = $id > 0 ? $this->getSpeaker($id) : null;
         $firstName = $this->cleanText((string) ($data['first_name'] ?? ''), 120);
         $lastName = $this->cleanText((string) ($data['last_name'] ?? ''), 120);
-        $displayName = $this->cleanText((string) ($data['display_name'] ?? trim($firstName . ' ' . $lastName)), 255);
+        $displayName = $this->cleanText((string) ($data['display_name'] ?? ''), 255);
         if ($firstName === '' && $existing !== null && (string) ($existing->first_name ?? '') !== '') {
             $firstName = (string) $existing->first_name;
         }
         if ($lastName === '' && $existing !== null && (string) ($existing->last_name ?? '') !== '') {
             $lastName = (string) $existing->last_name;
         }
-        if (!$this->isRealPersonSpeaker($firstName, $lastName)) {
-            return false;
-        }
         if ($displayName === '' && $existing !== null && (string) ($existing->display_name ?? '') !== '') {
             $displayName = (string) $existing->display_name;
         }
-        if ($displayName === '') {
+
+        $hasNamePair = $firstName !== '' && $lastName !== '';
+        if ($displayName === '' && $hasNamePair) {
             $displayName = trim($firstName . ' ' . $lastName);
         }
-        if ($displayName === '') {
+
+        if ($displayName === '' && !$hasNamePair) {
+            return false;
+        }
+
+        if ($hasNamePair && !$this->isRealPersonSpeaker($firstName, $lastName, $displayName)) {
             return false;
         }
 
@@ -1071,6 +1085,11 @@ final class CMS_365NET_Events_Database
                 $existing !== null ? (string) ($existing->avatar_url ?? '') : null
             ),
             'avatar_alt' => $this->cleanText((string) ($data['avatar_alt'] ?? ''), 255),
+            'theme_image_url' => $this->cleanMediaUrl(
+                (string) ($data['theme_image_url'] ?? ''),
+                $existing !== null ? (string) ($existing->theme_image_url ?? '') : null
+            ),
+            'theme_image_alt' => $this->cleanText((string) ($data['theme_image_alt'] ?? ''), 255),
             'categories' => $this->cleanList($data['categories'] ?? '', 500),
             'tags' => $this->cleanList($data['tags'] ?? '', 700),
             'specializations' => $this->cleanList($data['specializations'] ?? '', 700),
@@ -1717,12 +1736,12 @@ final class CMS_365NET_Events_Database
             'layout_bottom_spacing' => '56',
             'layout_container_width' => '1160',
             'taxonomy_event_categories' => "KI & Copilot\nMicrosoft 365\nAzure\nSecurity\nModern Workplace\nBusiness Applications\nEntwicklung\nCommunity\nMesse\nKonferenz\nWebinar\nWorkshop",
-            'taxonomy_event_types' => "Konferenz\nMesse\nWebinar\nWorkshop\nMeetup\nHackathon\nTraining\nRoundtable\nCommunity Event\nNetworking\nMasterclass",
-            'taxonomy_event_price_classes' => "Kostenlos\nFreemium\nCommunity\nEarly Bird\nStandard\nPremium\nEnterprise\nAuf Anfrage",
+            'taxonomy_event_types' => "Konferenz\nKonferenz & Messe\nKongress\nKongress & Messe\nFestival\nMesse\nWebinar\nWorkshop\nKonferenz & Workshops\nKongress & Workshops\nMeetup\nHackathon\nTraining\nRoundtable\nCommunity Event\nNetworking\nMasterclass",
+            'taxonomy_event_price_classes' => "Kostenfrei\nKostenpflichtig\nAuf Einladung\nAuf Anfrage\nSponsorenfinanziert",
             'taxonomy_event_tags' => "Microsoft 365\nCopilot\nAzure\nSecurity\nAI\nPower Platform\nTeams\nSharePoint\nEntra ID\nIntune\nWindows\nGovernance\nCompliance\nAutomation\nCommunity",
             'taxonomy_speaker_categories' => "MVP\nCommunity Speaker\nConsultant\nTrainer\nVendor\nModerator\nPanelist\nExpertengruppe\nOrganisation",
             'taxonomy_speaker_types' => "MVP\nCommunity Speaker\nConsultant\nTrainer\nVendor\nModerator\nPanelist\nKeynote Speaker\nWorkshop Lead\nOrganisation",
-            'taxonomy_speaker_price_classes' => "Kostenlos\nCommunity\nStandard\nPremium\nEnterprise\nAuf Anfrage",
+            'taxonomy_speaker_price_classes' => "Kostenfrei\nKostenpflichtig\nAuf Einladung\nAuf Anfrage\nPro-bono",
             'taxonomy_speaker_tags' => "Microsoft 365\nCopilot\nAzure\nSecurity\nAI\nPower Platform\nTeams\nSharePoint\nLeadership\nGovernance\nDeveloper\nAdmin\nConsulting\nTraining",
         ];
 
@@ -1735,6 +1754,11 @@ final class CMS_365NET_Events_Database
             }
         } catch (Throwable) {
         }
+
+        $defaults['taxonomy_event_types'] = $this->ensureOptionListContains(
+            (string) ($defaults['taxonomy_event_types'] ?? ''),
+            ['Konferenz & Messe', 'Konferenz & Workshops', 'Kongress', 'Kongress & Messe', 'Kongress & Workshops', 'Festival']
+        );
 
         return $defaults;
     }
@@ -1785,6 +1809,22 @@ final class CMS_365NET_Events_Database
             $options[$name] = $this->splitOptionList((string) ($settings[$settingKey] ?? ''));
         }
 
+        // Preislogik bewusst vereinfacht: keine Unterteilung kostenpflichtiger Kategorien.
+        $options['event_price_classes'] = [
+            'Kostenfrei',
+            'Kostenpflichtig',
+            'Auf Einladung',
+            'Auf Anfrage',
+            'Sponsorenfinanziert',
+        ];
+        $options['speaker_price_classes'] = [
+            'Kostenfrei',
+            'Kostenpflichtig',
+            'Auf Einladung',
+            'Auf Anfrage',
+            'Pro-bono',
+        ];
+
         return $options;
     }
 
@@ -1810,6 +1850,20 @@ final class CMS_365NET_Events_Database
         }
 
         return $clean;
+    }
+
+    /** @param array<int, string> $requiredOptions */
+    private function ensureOptionListContains(string $value, array $requiredOptions): string
+    {
+        $options = $this->splitOptionList($value);
+        foreach ($requiredOptions as $requiredOption) {
+            $requiredOption = $this->cleanText((string) $requiredOption, 120);
+            if ($requiredOption !== '' && !in_array($requiredOption, $options, true)) {
+                $options[] = $requiredOption;
+            }
+        }
+
+        return implode("\n", $options);
     }
 
     private function cleanLayoutSetting(string $key, string $value): string

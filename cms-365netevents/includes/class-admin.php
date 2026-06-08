@@ -97,26 +97,36 @@ final class CMS_365NET_Events_Admin
     }
 
     /** @param array<int, object> $events */
-    public function renderEventsList(array $events): void
+    public function renderEventsList(array $events, bool $showPast = false): void
     {
         $this->start('365NET Events', '365netevents');
         $csrf = CMS\Security::instance()->generateToken('365net_admin');
         $q = htmlspecialchars((string) ($_GET['q'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $baseAdminUrl = rtrim((string) SITE_URL, '/') . '/admin/365netevents';
+        $toggleUrl = $showPast ? $baseAdminUrl : ($baseAdminUrl . '?past=1');
+        $toggleLabel = $showPast ? 'Anstehende anzeigen' : 'Vergangene einblenden';
+        $listLabel = $showPast ? 'Vergangene Eventliste' : 'Anstehende Eventliste';
+        $listHint = $showPast
+            ? 'Es werden nur zurückliegende Events angezeigt (absteigend nach Datum).'
+            : 'Es werden nur anstehende Events angezeigt (aufsteigend nach Datum).';
+        $resetUrl = $baseAdminUrl . ($showPast ? '?past=1' : '');
         ?>
         <div class="cms365-admin-header">
             <div><h2>📅 365NET Events</h2><p>Verwalte Events, Messen und verknüpfte Speaker.</p></div>
-            <div class="cms365-admin-actions"><form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/link-sync', ENT_QUOTES, 'UTF-8') ?>"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>"><button class="btn btn-secondary" type="submit">🔗 Verknüpfungen aktualisieren</button></form><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/events', ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Öffentlich</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/taxonomies', ENT_QUOTES, 'UTF-8') ?>">Kategorien & Tags</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/settings', ENT_QUOTES, 'UTF-8') ?>">Einstellungen</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers', ENT_QUOTES, 'UTF-8') ?>">Speaker</a><a class="btn btn-primary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/new', ENT_QUOTES, 'UTF-8') ?>">Neues Event</a></div>
+            <div class="cms365-admin-actions"><form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/link-sync', ENT_QUOTES, 'UTF-8') ?>"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>"><button class="btn btn-secondary" type="submit">🔗 Verknüpfungen aktualisieren</button></form><a class="btn btn-secondary" href="<?= htmlspecialchars($toggleUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($toggleLabel, ENT_QUOTES, 'UTF-8') ?></a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/events', ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Öffentlich</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/taxonomies', ENT_QUOTES, 'UTF-8') ?>">Kategorien & Tags</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/settings', ENT_QUOTES, 'UTF-8') ?>">Einstellungen</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers', ENT_QUOTES, 'UTF-8') ?>">Speaker</a><a class="btn btn-primary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/new', ENT_QUOTES, 'UTF-8') ?>">Neues Event</a></div>
         </div>
         <?php $this->flash(); ?>
         <div class="admin-card cms365-admin-card">
             <form method="GET" class="cms365-filter-form">
+                <?php if ($showPast): ?><input type="hidden" name="past" value="1"><?php endif; ?>
                 <input type="text" name="q" value="<?= $q ?>" placeholder="Titel, Ort, Veranstalter oder Kategorie suchen …" class="form-control">
                 <button class="btn btn-primary" type="submit">Suchen</button>
-                <?php if ($q !== ''): ?><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents', ENT_QUOTES, 'UTF-8') ?>">Reset</a><?php endif; ?>
+                <?php if ($q !== ''): ?><a class="btn btn-secondary" href="<?= htmlspecialchars($resetUrl, ENT_QUOTES, 'UTF-8') ?>">Reset</a><?php endif; ?>
             </form>
         </div>
         <div class="admin-card cms365-admin-card">
-            <h3>Eventliste (<?= count($events) ?>)</h3>
+            <h3><?= htmlspecialchars($listLabel, ENT_QUOTES, 'UTF-8') ?> (<?= count($events) ?>)</h3>
+            <p class="description"><?= htmlspecialchars($listHint, ENT_QUOTES, 'UTF-8') ?></p>
             <div class="cms365-table-wrap"><table class="users-table cms365-table"><thead><tr><th>Event</th><th>Datum</th><th>Ort</th><th>Speaker</th><th>Status</th><th>Aktionen</th></tr></thead><tbody>
             <?php foreach ($events as $event): ?>
                 <tr>
@@ -183,7 +193,6 @@ final class CMS_365NET_Events_Admin
                 <?= $this->field('venue_name', 'Venue / Locationname', $event->venue_name ?? '') ?>
                 <?= $this->field('street', 'Straße', $event->street ?? '') ?>
                 <?= $this->field('postal_code', 'PLZ', $event->postal_code ?? '') ?>
-                <?= $this->field('city', 'Stadt', $event->city ?? '') ?>
                 <?= $this->field('country', 'Land', $event->country ?? 'Deutschland') ?>
                 <?= $this->select('attendance_mode', 'Durchführung', (string) ($event->attendance_mode ?? ''), ['' => 'Bitte wählen', 'Vor Ort' => 'Vor Ort', 'Online' => 'Online', 'Hybrid' => 'Hybrid']) ?>
                 <?= $this->field('online_url', 'Online-/Stream-Link', $event->online_url ?? '', false, 'url') ?>
@@ -199,16 +208,16 @@ final class CMS_365NET_Events_Admin
                 <?= $this->select('linked_company_id', 'Vorhandene Firma verknüpfen', (string) ($event->linked_company_id ?? ''), $this->companyOptions($companies)) ?>
                 <?= $this->select('linked_expert_id', 'Vorhandenen Expert verknüpfen', (string) ($event->linked_expert_id ?? ''), $this->expertOptions($experts)) ?>
             </div></div>
-            <div class="admin-card cms365-admin-card cms365-section"><h3>7. Kategorien, Tags & Zielgruppe</h3><div class="cms365-form-grid">
+            <div class="admin-card cms365-admin-card cms365-section cms365-section--taxonomy-target"><h3>7. Kategorien, Tags & Zielgruppe</h3><p class="description">Alle Metadaten kompakt nebeneinander. Mehrfachauswahl ist bei Kategorien, Tags, Zielgruppe und Sprache möglich.</p><div class="cms365-form-grid cms365-form-grid--taxonomy-target">
                 <?= $this->select('category', 'Hauptkategorie', (string) ($event->category ?? ''), $this->optionMap($taxonomies['event_categories'] ?? [])) ?>
                 <?= $this->multiSelect('categories', 'Weitere Kategorien', (string) ($event->categories ?? ''), $taxonomies['event_categories'] ?? []) ?>
                 <?= $this->multiSelect('tags', 'Tags / Schlagwörter', (string) ($event->tags ?? ''), $taxonomies['event_tags'] ?? [], 8) ?>
-                <?= $this->field('target_audience', 'Zielgruppe', $event->target_audience ?? '') ?>
+                <?= $this->multiSelect('target_audience', 'Zielgruppe', (string) ($event->target_audience ?? ''), $this->targetAudienceOptions(), 8) ?>
                 <?= $this->select('event_format', 'Format', (string) ($event->event_format ?? $event->event_type ?? ''), $this->optionMap($taxonomies['event_types'] ?? [])) ?>
                 <?= $this->select('difficulty_level', 'Level', (string) ($event->difficulty_level ?? ''), ['' => 'Bitte wählen', 'Einsteiger' => 'Einsteiger', 'Fortgeschritten' => 'Fortgeschritten', 'Expert' => 'Expert', 'Business' => 'Business', 'Technisch' => 'Technisch']) ?>
-                <?= $this->field('language', 'Sprache', $event->language ?? 'Deutsch') ?>
+                <?= $this->multiSelect('language', 'Sprache', (string) ($event->language ?? 'Deutsch'), $this->languageOptions(), 6) ?>
                 <?= $this->field('event_type', 'Event Art (Legacy)', $event->event_type ?? '') ?>
-            </div><label class="form-group"><span>Barrierefreiheit / Hinweise</span><textarea name="accessibility" class="form-control" rows="3"><?= $this->e($event->accessibility ?? '') ?></textarea></label></div>
+            </div><label class="form-group cms365-form-group--full"><span>Barrierefreiheit / Hinweise</span><textarea name="accessibility" class="form-control" rows="3"><?= $this->e($event->accessibility ?? '') ?></textarea></label></div>
             <div class="admin-card cms365-admin-card cms365-section"><h3>8. Preise, Tickets & Registrierung</h3><div class="cms365-form-grid">
                 <?= $this->select('price_class', 'Preisklasse', (string) ($event->price_class ?? ''), $this->optionMap($taxonomies['event_price_classes'] ?? [])) ?>
                 <?= $this->field('price', 'Preislabel', $event->price ?? '') ?>
@@ -357,7 +366,7 @@ final class CMS_365NET_Events_Admin
             <div class="admin-card cms365-admin-card cms365-section"><h3>1. Profil & Veröffentlichung</h3><div class="cms365-form-grid">
                 <?= $this->field('first_name', 'Vorname', $speaker->first_name ?? '') ?>
                 <?= $this->field('last_name', 'Nachname', $speaker->last_name ?? '') ?>
-                <?= $this->field('display_name', 'Anzeigename *', $speaker->display_name ?? '', true) ?>
+                <?= $this->field('display_name', 'Anzeigename (optional, alternativ zu Vorname + Nachname)', $speaker->display_name ?? '') ?>
                 <?= $this->field('slug', 'Slug', $speaker->slug ?? '') ?>
                 <?= $this->field('location', 'Standort', $speaker->location ?? '') ?>
                 <?= $this->select('speaker_type', 'Speaker-Typ', (string) ($speaker->speaker_type ?? ''), $this->optionMap($taxonomies['speaker_types'] ?? [])) ?>
@@ -367,10 +376,11 @@ final class CMS_365NET_Events_Admin
             <div class="admin-card cms365-admin-card cms365-section"><h3>2. Bio (EditorJS)</h3><?= $this->editor('bio_json', (string) ($speaker->bio_json ?? ''), (string) ($speaker->bio ?? ''), 'Speaker-Bio') ?></div>
             <div class="admin-card cms365-admin-card cms365-section"><h3>3. Bild & Kontakt</h3><div class="cms365-form-grid">
                 <?= $this->imageField('avatar_url', 'Profilbild URL', $speaker->avatar_url ?? '', 'avatar_alt', $speaker->avatar_alt ?? '') ?>
+                <?= $this->imageField('theme_image_url', 'Speaker Themenbild URL (Header rechts)', $speaker->theme_image_url ?? '', 'theme_image_alt', $speaker->theme_image_alt ?? '') ?>
                 <?= $this->field('email', 'E-Mail', $speaker->email ?? '', false, 'email') ?>
                 <?= $this->field('phone', 'Telefon', $speaker->phone ?? '') ?>
                 <?= $this->field('website', 'Website', $speaker->website ?? '', false, 'url') ?>
-            </div></div>
+            </div><p class="description">Pfad-Vorgaben: Profilbild bevorzugt unter <code>/uploads/speaker/…</code>, Themenbild bevorzugt unter <code>/uploads/speakerthemen/…</code>.</p></div>
             <div class="admin-card cms365-admin-card cms365-section"><h3>3b. 365CMS-Verknüpfung</h3><p class="description">Optional vorhandenen Expert-/Firmen-Datensatz auswählen. Firmeninformationen bleiben im Companies-Plugin; am Speaker wird nur die Verknüpfung gespeichert.</p><div class="cms365-form-grid">
                 <?= $this->select('linked_expert_id', 'Vorhandenen Expert verknüpfen', (string) ($speaker->linked_expert_id ?? ''), $this->expertOptions($experts)) ?>
                 <?= $this->select('linked_company_id', 'Vorhandene Firma verknüpfen', (string) ($speaker->linked_company_id ?? ''), $this->companyOptions($companies)) ?>
@@ -509,6 +519,38 @@ final class CMS_365NET_Events_Admin
         }
 
         return $options;
+    }
+
+    /** @return array<int, string> */
+    private function targetAudienceOptions(): array
+    {
+        return [
+            'IT-Admins',
+            'Entscheider',
+            'Developers',
+            'Architects',
+            'Consultants',
+            'Security Teams',
+            'Endanwender',
+            'Führungskräfte',
+            'Community',
+            'Einsteiger',
+            'Fortgeschrittene',
+        ];
+    }
+
+    /** @return array<int, string> */
+    private function languageOptions(): array
+    {
+        return [
+            'Deutsch',
+            'Englisch',
+            'Deutsch/Englisch',
+            'Französisch',
+            'Spanisch',
+            'Italienisch',
+            'Niederländisch',
+        ];
     }
 
     /** @param array<int, string> $options */
