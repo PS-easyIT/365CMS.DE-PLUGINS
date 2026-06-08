@@ -23,6 +23,11 @@
       "manifest": "PLUGINS/cms-365netexperts/update.json"
     },
     {
+      "slug": "cms-365netexpertsandcompanie",
+      "name": "365NET | Experts & Companie",
+      "manifest": "PLUGINS/cms-365NETexpertsandcompanie/update.json"
+    },
+    {
       "slug": "cms-365netspeakers",
       "name": "365NET | Speakers",
       "manifest": "PLUGINS/cms-365netspeakers/update.json"

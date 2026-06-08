@@ -250,6 +250,34 @@ if (!empty($event->difficulty_level)) {
 if (!empty($event->language)) {
     $detailRows[] = ['label' => 'Sprache', 'value' => (string) $event->language];
 }
+$detailPriceInfo = '';
+$detailPriceMin = isset($event->price_min) ? (float) $event->price_min : 0.0;
+$detailPriceMax = isset($event->price_max) ? (float) $event->price_max : 0.0;
+$detailCurrency = trim((string) ($event->currency ?? 'EUR'));
+$detailCurrencyCode = function_exists('mb_strtoupper') ? mb_strtoupper($detailCurrency, 'UTF-8') : strtoupper($detailCurrency);
+$detailCurrencyPrefix = $detailCurrencyCode === 'EUR' ? '€' : ($detailCurrencyCode !== '' ? $detailCurrencyCode . ' ' : '');
+
+if ($detailPriceMin > 0 || $detailPriceMax > 0) {
+    if ($detailPriceMin > 0 && $detailPriceMax > 0) {
+        if (abs($detailPriceMin - $detailPriceMax) < 0.0001) {
+            $detailPriceInfo = $detailCurrencyPrefix . number_format($detailPriceMin, 2, ',', '.');
+        } else {
+            $detailPriceInfo = $detailCurrencyPrefix . number_format($detailPriceMin, 2, ',', '.')
+                . ' – '
+                . $detailCurrencyPrefix . number_format($detailPriceMax, 2, ',', '.');
+        }
+    } elseif ($detailPriceMin > 0) {
+        $detailPriceInfo = 'ab ' . $detailCurrencyPrefix . number_format($detailPriceMin, 2, ',', '.');
+    } else {
+        $detailPriceInfo = 'bis ' . $detailCurrencyPrefix . number_format($detailPriceMax, 2, ',', '.');
+    }
+} else {
+    $detailPriceLabel = trim((string) ($event->price ?? ''));
+    if ($detailPriceLabel !== '' && preg_match('/\d|€|eur|usd|chf/iu', $detailPriceLabel) === 1) {
+        $detailPriceInfo = $detailPriceLabel;
+    }
+}
+
 $detailCostStatusRaw = trim((string) ($event->price_class ?? ''));
 $detailCostStatus = '';
 if ($detailCostStatusRaw !== '' && mb_strtolower($detailCostStatusRaw, 'UTF-8') !== 'bitte wählen') {
@@ -285,7 +313,33 @@ if ($detailCostStatus === '') {
 }
 
 if ($detailCostStatus !== '') {
-    $detailRows[] = ['label' => 'Kosten', 'value' => $detailCostStatus];
+    $detailCostStatusLower = function_exists('mb_strtolower')
+        ? mb_strtolower($detailCostStatus, 'UTF-8')
+        : strtolower($detailCostStatus);
+    $detailCostClass = '';
+    if (
+        str_contains($detailCostStatusLower, 'kostenfrei')
+        || str_contains($detailCostStatusLower, 'kostenlos')
+        || $detailCostStatusLower === 'free'
+        || $detailCostStatusLower === 'frei'
+    ) {
+        $detailCostClass = 'is-cost-free';
+    } elseif (
+        str_contains($detailCostStatusLower, 'kostenpflichtig')
+        || str_contains($detailCostStatusLower, 'paid')
+        || str_contains($detailCostStatusLower, 'bezahl')
+        || str_contains($detailCostStatusLower, 'eintritt')
+        || str_contains($detailCostStatusLower, 'gebühr')
+    ) {
+        $detailCostClass = 'is-cost-paid';
+    }
+
+    $detailRows[] = [
+        'label' => 'Kosten',
+        'value' => $detailCostStatus,
+        'subvalue' => $detailCostClass === 'is-cost-paid' ? $detailPriceInfo : '',
+        'class' => $detailCostClass,
+    ];
 }
 if (!empty($event->capacity)) {
     $detailRows[] = ['label' => 'Kapazität', 'value' => (int) $event->capacity . ' Personen'];
@@ -323,9 +377,14 @@ if (!empty($event->capacity)) {
                             <dl class="cms-events-sidecard__meta">
                                 <?php foreach ($detailRows as $detailRow): ?>
                                     <?php $rowClass = trim((string) ($detailRow['class'] ?? '')); ?>
+                                    <?php $rowValue = (string) ($detailRow['value'] ?? ''); ?>
+                                    <?php $rowSubvalue = trim((string) ($detailRow['subvalue'] ?? '')); ?>
                                     <div class="cms-events-sidecard__meta-row<?= $rowClass !== '' ? ' ' . htmlspecialchars($rowClass, ENT_QUOTES, 'UTF-8') : '' ?>">
                                         <dt><?= htmlspecialchars((string) ($detailRow['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dt>
-                                        <dd><?= htmlspecialchars((string) ($detailRow['value'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd>
+                                        <dd>
+                                            <span class="cms-events-sidecard__meta-value-main"><?= htmlspecialchars($rowValue, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php if ($rowSubvalue !== ''): ?><small class="cms-events-sidecard__meta-value-sub"><?= htmlspecialchars($rowSubvalue, ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?>
+                                        </dd>
                                     </div>
                                 <?php endforeach; ?>
                             </dl>

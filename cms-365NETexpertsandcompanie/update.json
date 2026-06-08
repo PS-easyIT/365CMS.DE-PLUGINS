@@ -1,0 +1,15 @@
+{
+  "slug": "cms-365netexpertsandcompanie",
+  "name": "365NET | Experts & Companie",
+  "type": "plugin",
+  "license": "free",
+  "version": "1.0.0",
+  "min_cms_version": "3.0.0",
+  "min_php": "8.1",
+  "released": "2026-06-08",
+  "download_url": "",
+  "checksum_sha256": "",
+  "changelog": {
+    "1.0.0": "Neu: Standalone-Kombi-Plugin für Experts & Companies mit eigenem Admin-Hub (365 | Experts & Companie), gemeinsamer Public-Übersicht plus dedizierten /experts- und /companies-Seiten im Events/Speakers-Stil, plugin-eigenem Seed/CRUD sowie getrenntem Orange-/Grün-Farbsystem."
+  }
+}

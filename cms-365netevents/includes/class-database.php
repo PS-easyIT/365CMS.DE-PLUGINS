@@ -1138,6 +1138,11 @@ final class CMS_365NET_Events_Database
             $sets = implode(', ', array_map(static fn(string $key): string => "`{$key}` = ?", array_keys($payload)));
             $stmt = $db->prepare("UPDATE {$p}365net_event_speakers SET {$sets} WHERE id = ?");
             $stmt->execute([...array_values($payload), $id]);
+            $this->syncExcompLinksFromSpeaker(
+                $id,
+                $this->cleanPositiveInt($payload['linked_expert_id'] ?? null),
+                $this->cleanPositiveInt($payload['linked_company_id'] ?? null)
+            );
             CMS\Hooks::doAction('cms_365net_speaker_updated', $id, $payload);
             return $id;
         }
@@ -1147,6 +1152,11 @@ final class CMS_365NET_Events_Database
         $stmt = $db->prepare("INSERT INTO {$p}365net_event_speakers ({$keys}) VALUES ({$places})");
         $stmt->execute(array_values($payload));
         $newId = (int) $db->getPdo()->lastInsertId();
+        $this->syncExcompLinksFromSpeaker(
+            $newId,
+            $this->cleanPositiveInt($payload['linked_expert_id'] ?? null),
+            $this->cleanPositiveInt($payload['linked_company_id'] ?? null)
+        );
         CMS\Hooks::doAction('cms_365net_speaker_created', $newId, $payload);
         return $newId;
     }
@@ -1213,14 +1223,36 @@ final class CMS_365NET_Events_Database
     /** @return array<int, object> */
     public function getAvailableCompanies(int $limit = 300): array
     {
-        if (!$this->tableExists('companies')) {
+        $sourceTable = $this->tableExists('companies')
+            ? 'companies'
+            : ($this->tableExists('365net_excomp_companies') ? '365net_excomp_companies' : '');
+
+        if ($sourceTable === '') {
             return [];
         }
 
+        $columns = $this->getExternalTableColumns($sourceTable);
+        if ($columns === []) {
+            return [];
+        }
+
+        $selectColumns = [];
+        foreach (['id', 'name', 'website', 'location_city', 'status'] as $column) {
+            if (in_array($column, $columns, true)) {
+                $selectColumns[] = $column;
+            }
+        }
+        if ($selectColumns === []) {
+            return [];
+        }
+
+        $whereStatus = in_array('status', $columns, true) ? ' WHERE status = ?' : '';
+        $params = $whereStatus !== '' ? ['active'] : [];
+
         $db = CMS\Database::instance();
         $limit = $this->limit($limit, 300);
-        $stmt = $db->prepare("SELECT id, name, website, location_city, status FROM {$db->prefix()}companies WHERE status = ? ORDER BY name ASC LIMIT {$limit}");
-        $stmt->execute(['active']);
+        $stmt = $db->prepare('SELECT ' . implode(', ', $selectColumns) . " FROM {$db->prefix()}{$sourceTable}" . $whereStatus . " ORDER BY name ASC LIMIT {$limit}");
+        $stmt->execute($params);
 
         return $stmt->fetchAll();
     }
@@ -1228,26 +1260,70 @@ final class CMS_365NET_Events_Database
     /** @return array<int, object> */
     public function getAvailableExperts(int $limit = 300): array
     {
-        if (!$this->tableExists('experts')) {
+        $sourceTable = $this->tableExists('experts')
+            ? 'experts'
+            : ($this->tableExists('365net_excomp_experts') ? '365net_excomp_experts' : '');
+
+        if ($sourceTable === '') {
             return [];
         }
 
+        $columns = $this->getExternalTableColumns($sourceTable);
+        if ($columns === []) {
+            return [];
+        }
+
+        $selectColumns = [];
+        foreach (['id', 'first_name', 'last_name', 'email', 'position', 'company', 'status'] as $column) {
+            if (in_array($column, $columns, true)) {
+                $selectColumns[] = $column;
+            }
+        }
+        if ($selectColumns === []) {
+            return [];
+        }
+
+        $whereStatus = in_array('status', $columns, true) ? ' WHERE status = ?' : '';
+        $params = $whereStatus !== '' ? ['active'] : [];
+
         $db = CMS\Database::instance();
         $limit = $this->limit($limit, 300);
-        $stmt = $db->prepare("SELECT id, first_name, last_name, email, position, company, status FROM {$db->prefix()}experts WHERE status = ? ORDER BY last_name ASC, first_name ASC LIMIT {$limit}");
-        $stmt->execute(['active']);
+        $stmt = $db->prepare('SELECT ' . implode(', ', $selectColumns) . " FROM {$db->prefix()}{$sourceTable}" . $whereStatus . " ORDER BY last_name ASC, first_name ASC LIMIT {$limit}");
+        $stmt->execute($params);
 
         return $stmt->fetchAll();
     }
 
     public function getLinkedCompany(?int $companyId): ?object
     {
-        if (!$companyId || !$this->tableExists('companies')) {
+        if (!$companyId) {
             return null;
         }
 
+        $sourceTable = $this->tableExists('companies')
+            ? 'companies'
+            : ($this->tableExists('365net_excomp_companies') ? '365net_excomp_companies' : '');
+        if ($sourceTable === '') {
+            return null;
+        }
+
+        $columns = $this->getExternalTableColumns($sourceTable);
+        if ($columns === []) {
+            return null;
+        }
+
+        $selectColumns = [];
+        foreach (['id', 'name', 'website', 'logo_url', 'location_city', 'industry', 'status'] as $column) {
+            if (in_array($column, $columns, true)) {
+                $selectColumns[] = $column;
+            }
+        }
+        if (!in_array('id', $selectColumns, true)) {
+            $selectColumns[] = 'id';
+        }
+
         $db = CMS\Database::instance();
-        $stmt = $db->prepare("SELECT id, name, website, logo_url, location_city, industry, status FROM {$db->prefix()}companies WHERE id = ? LIMIT 1");
+        $stmt = $db->prepare('SELECT ' . implode(', ', $selectColumns) . " FROM {$db->prefix()}{$sourceTable} WHERE id = ? LIMIT 1");
         $stmt->execute([$companyId]);
         $row = $stmt->fetch();
 
@@ -1256,12 +1332,34 @@ final class CMS_365NET_Events_Database
 
     public function getLinkedExpert(?int $expertId): ?object
     {
-        if (!$expertId || !$this->tableExists('experts')) {
+        if (!$expertId) {
             return null;
         }
 
+        $sourceTable = $this->tableExists('experts')
+            ? 'experts'
+            : ($this->tableExists('365net_excomp_experts') ? '365net_excomp_experts' : '');
+        if ($sourceTable === '') {
+            return null;
+        }
+
+        $columns = $this->getExternalTableColumns($sourceTable);
+        if ($columns === []) {
+            return null;
+        }
+
+        $selectColumns = [];
+        foreach (['id', 'first_name', 'last_name', 'email', 'position', 'company', 'photo_url', 'location_city', 'status'] as $column) {
+            if (in_array($column, $columns, true)) {
+                $selectColumns[] = $column;
+            }
+        }
+        if (!in_array('id', $selectColumns, true)) {
+            $selectColumns[] = 'id';
+        }
+
         $db = CMS\Database::instance();
-        $stmt = $db->prepare("SELECT id, first_name, last_name, email, position, company, photo_url, location_city, status FROM {$db->prefix()}experts WHERE id = ? LIMIT 1");
+        $stmt = $db->prepare('SELECT ' . implode(', ', $selectColumns) . " FROM {$db->prefix()}{$sourceTable} WHERE id = ? LIMIT 1");
         $stmt->execute([$expertId]);
         $row = $stmt->fetch();
 
@@ -1388,7 +1486,7 @@ final class CMS_365NET_Events_Database
             return $this->tableExistsCache[$table];
         }
 
-        if (!in_array($table, ['companies', 'experts', '365net_events', '365net_event_speakers'], true)) {
+        if (!in_array($table, ['companies', 'experts', '365net_excomp_companies', '365net_excomp_experts', '365net_events', '365net_event_speakers'], true)) {
             return false;
         }
 
@@ -1521,6 +1619,64 @@ final class CMS_365NET_Events_Database
         }
 
         return preg_match('/^[\p{L}\p{M} .\'\-]+$/u', $firstName . ' ' . $lastName) === 1;
+    }
+
+    private function syncExcompLinksFromSpeaker(int $speakerId, ?int $linkedExpertId, ?int $linkedCompanyId): void
+    {
+        if ($speakerId <= 0 || !$this->tableExists('365net_excomp_experts')) {
+            return;
+        }
+
+        $excompColumns = $this->getExternalTableColumns('365net_excomp_experts');
+        if (!in_array('linked_speaker_id', $excompColumns, true)) {
+            return;
+        }
+
+        $db = CMS\Database::instance();
+        $table = $db->prefix() . '365net_excomp_experts';
+
+        try {
+            if ($linkedExpertId === null || $linkedExpertId <= 0) {
+                $clearAll = $db->prepare("UPDATE {$table} SET linked_speaker_id = NULL WHERE linked_speaker_id = ?");
+                $clearAll->execute([$speakerId]);
+                return;
+            }
+
+            $clearOthers = $db->prepare("UPDATE {$table} SET linked_speaker_id = NULL WHERE linked_speaker_id = ? AND id <> ?");
+            $clearOthers->execute([$speakerId, $linkedExpertId]);
+
+            if (in_array('linked_company_id', $excompColumns, true)) {
+                $stmt = $db->prepare("UPDATE {$table} SET linked_speaker_id = ?, linked_company_id = ? WHERE id = ?");
+                $stmt->execute([$speakerId, $linkedCompanyId, $linkedExpertId]);
+                return;
+            }
+
+            $stmt = $db->prepare("UPDATE {$table} SET linked_speaker_id = ? WHERE id = ?");
+            $stmt->execute([$speakerId, $linkedExpertId]);
+        } catch (Throwable $e) {
+            $this->logDatabaseWarning('sync_excomp_links_from_speaker', $e);
+        }
+    }
+
+    /** @return array<int, string> */
+    private function getExternalTableColumns(string $table): array
+    {
+        try {
+            $db = CMS\Database::instance();
+            $fullTable = $db->prefix() . $table;
+            $stmt = $db->prepare("SHOW COLUMNS FROM `{$fullTable}`");
+            $stmt->execute([]);
+            $columns = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $field = is_object($row) ? ($row->Field ?? null) : ($row['Field'] ?? null);
+                if (is_string($field) && $field !== '') {
+                    $columns[] = $field;
+                }
+            }
+            return $columns;
+        } catch (Throwable) {
+            return [];
+        }
     }
 
     private function ensureSchemaForSave(): void

@@ -33,30 +33,9 @@ $profileImageAlt = trim((string) (($speaker->avatar_alt ?? '') ?: $speakerName))
 $themeImageUrl = trim((string) ($speaker->theme_image_url ?? ''));
 $themeImageAlt = trim((string) (($speaker->theme_image_alt ?? '') ?: $speakerName));
 $speakerTopic = trim((string) ($speaker->topic ?? ''));
-$speakerLead = '';
-if (!empty($speaker->speaker_type)) {
-    $speakerLead = (string) $speaker->speaker_type;
-}
-if ($speakerLead === '' && !empty($speaker->award)) {
-    $speakerLead = (string) $speaker->award;
-}
 
 $hasProfileImage = $profileImageUrl !== '';
 $hasThemeImage = $themeImageUrl !== '';
-
-$metaInfo = [];
-if (!empty($speaker->speaker_type)) {
-    $metaInfo[] = (string) $speaker->speaker_type;
-}
-if (!empty($speaker->languages)) {
-    $metaInfo[] = (string) $speaker->languages;
-}
-if (!empty($speaker->speaking_formats)) {
-    $metaInfo[] = (string) $speaker->speaking_formats;
-}
-if (!empty($speaker->availability)) {
-    $metaInfo[] = (string) $speaker->availability;
-}
 
 $detailRows = [];
 $speakerCategories = array_values(array_filter(array_map('trim', preg_split('/[,;\n]+/', (string) ($speaker->categories ?? '')) ?: []), static fn(string $value): bool => $value !== ''));
@@ -85,8 +64,14 @@ if ($speakerOrganization !== '') {
 if ($speakerTopic !== '') {
     $detailRows[] = ['label' => 'Thema', 'value' => $speakerTopic];
 }
-if (!empty($speaker->award)) {
-    $detailRows[] = ['label' => 'Auszeichnung', 'value' => (string) $speaker->award];
+$speakerAward = trim((string) ($speaker->award ?? ''));
+$sidebarMvpBadge = '';
+if ($speakerAward !== '') {
+    if (preg_match('/\bmvp\b/i', $speakerAward) === 1) {
+        $sidebarMvpBadge = 'Microsoft MVP';
+    } else {
+        $detailRows[] = ['label' => 'Auszeichnung', 'value' => $speakerAward];
+    }
 }
 if (!empty($speaker->speaker_type)) {
     $detailRows[] = ['label' => 'Typ', 'value' => (string) $speaker->speaker_type];
@@ -173,18 +158,8 @@ $hasSidebarLinks = $hasSidebarPrimaryActions || $sidebarSocialLinks !== [];
                         </div>
                         <div class="cms-events-detail-header__text">
                             <h1><?= htmlspecialchars($speakerName, ENT_QUOTES, 'UTF-8') ?></h1>
-                            <?php if ($metaInfo !== []): ?>
-                                <div class="cms-events-detail-header__meta">
-                                    <?php foreach (array_slice($metaInfo, 0, 5) as $meta): ?>
-                                        <span><?= htmlspecialchars((string) $meta, ENT_QUOTES, 'UTF-8') ?></span>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
                         </div>
                     </div>
-                    <?php if ($speakerLead !== ''): ?>
-                        <p class="cms-events-detail-header__lead"><?= htmlspecialchars($speakerLead, ENT_QUOTES, 'UTF-8') ?></p>
-                    <?php endif; ?>
                 </div>
                 <figure class="cms-events-detail-header__media cms-speaker-detail-header__media<?= $hasThemeImage ? '' : ' is-placeholder' ?>">
                     <?php if ($hasThemeImage): ?>
@@ -215,6 +190,11 @@ $hasSidebarLinks = $hasSidebarPrimaryActions || $sidebarSocialLinks !== [];
                                     </div>
                                 <?php endforeach; ?>
                             </dl>
+                            <?php if ($sidebarMvpBadge !== ''): ?>
+                                <div class="cms-events-sidecard__badges cms-events-sidecard__badges--details" aria-label="Auszeichnungen">
+                                    <span class="is-mvp"><?= htmlspecialchars($sidebarMvpBadge, ENT_QUOTES, 'UTF-8') ?></span>
+                                </div>
+                            <?php endif; ?>
                         </div>
 
                         <?php if ($hasSidebarLinks): ?>
@@ -254,10 +234,17 @@ $hasSidebarLinks = $hasSidebarPrimaryActions || $sidebarSocialLinks !== [];
                             <h2>365CMS-Verknüpfung</h2>
                             <div class="cms-events-socials">
                                 <?php if (!empty($linkedExpert)): ?>
-                                    <a class="cms-events-btn" href="<?= htmlspecialchars($base . '/experts/' . (int) $linkedExpert->id, ENT_QUOTES, 'UTF-8') ?>">👤 Expert-Profil öffnen</a>
+                                    <?php
+                                    $linkedExpertName = trim((string) (($linkedExpert->first_name ?? '') . ' ' . ($linkedExpert->last_name ?? '')));
+                                    if ($linkedExpertName === '') {
+                                        $linkedExpertName = 'Expert';
+                                    }
+                                    ?>
+                                    <a class="cms-events-btn" href="<?= htmlspecialchars($base . '/experts?q=' . rawurlencode($linkedExpertName), ENT_QUOTES, 'UTF-8') ?>">👤 <?= htmlspecialchars($linkedExpertName, ENT_QUOTES, 'UTF-8') ?></a>
                                 <?php endif; ?>
                                 <?php if (!empty($linkedCompany)): ?>
-                                    <a class="cms-events-btn" href="<?= htmlspecialchars($base . '/companies/' . (int) $linkedCompany->id, ENT_QUOTES, 'UTF-8') ?>">🏢 <?= htmlspecialchars((string) ($linkedCompany->name ?? 'Firma'), ENT_QUOTES, 'UTF-8') ?></a>
+                                    <?php $linkedCompanyName = trim((string) ($linkedCompany->name ?? '')); ?>
+                                    <a class="cms-events-btn" href="<?= htmlspecialchars($base . '/companies?q=' . rawurlencode($linkedCompanyName), ENT_QUOTES, 'UTF-8') ?>">🏢 <?= htmlspecialchars($linkedCompanyName !== '' ? $linkedCompanyName : 'Firma', ENT_QUOTES, 'UTF-8') ?></a>
                                 <?php endif; ?>
                             </div>
                         </div>
