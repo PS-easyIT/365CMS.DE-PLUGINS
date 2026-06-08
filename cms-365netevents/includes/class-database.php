@@ -77,6 +77,7 @@ final class CMS_365NET_Events_Database
             excerpt TEXT DEFAULT NULL,
             image_url VARCHAR(600) DEFAULT NULL,
             image_alt VARCHAR(255) DEFAULT NULL,
+            image_bg_color VARCHAR(7) DEFAULT NULL,
             gallery_json LONGTEXT DEFAULT NULL,
             categories VARCHAR(500) DEFAULT NULL,
             tags VARCHAR(700) DEFAULT NULL,
@@ -233,6 +234,7 @@ final class CMS_365NET_Events_Database
             'excerpt' => 'excerpt TEXT DEFAULT NULL',
             'image_url' => 'image_url VARCHAR(600) DEFAULT NULL',
             'image_alt' => 'image_alt VARCHAR(255) DEFAULT NULL',
+            'image_bg_color' => 'image_bg_color VARCHAR(7) DEFAULT NULL',
             'gallery_json' => 'gallery_json LONGTEXT DEFAULT NULL',
             'categories' => 'categories VARCHAR(500) DEFAULT NULL',
             'tags' => 'tags VARCHAR(700) DEFAULT NULL',
@@ -845,6 +847,10 @@ final class CMS_365NET_Events_Database
                 $existing !== null ? (string) ($existing->image_url ?? '') : null
             ),
             'image_alt' => $this->cleanText((string) ($data['image_alt'] ?? ''), 255),
+            'image_bg_color' => $this->cleanHexColor(
+                (string) ($data['image_bg_color'] ?? ''),
+                $existing !== null ? (string) ($existing->image_bg_color ?? '') : null
+            ),
             'gallery_json' => $this->cleanJsonList((string) ($data['gallery_json'] ?? '')),
             'categories' => $this->cleanList($data['categories'] ?? '', 500),
             'tags' => $this->cleanList($data['tags'] ?? '', 700),
@@ -2730,6 +2736,53 @@ final class CMS_365NET_Events_Database
     {
         $email = trim($value);
         return filter_var($email, FILTER_VALIDATE_EMAIL) ? substr($email, 0, 180) : null;
+    }
+
+    private function cleanHexColor(string $value, ?string $fallback = null): ?string
+    {
+        $normalized = $this->normalizeColorToHex($value);
+        if ($normalized !== null) {
+            return $normalized;
+        }
+
+        if ($fallback !== null) {
+            $fallbackNormalized = $this->normalizeColorToHex((string) $fallback);
+            if ($fallbackNormalized !== null) {
+                return $fallbackNormalized;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeColorToHex(string $value): ?string
+    {
+        $normalized = strtolower(trim($value));
+        if ($normalized === '') {
+            return null;
+        }
+
+        if (preg_match('/^#?[0-9a-f]{6}$/', $normalized) === 1) {
+            return '#' . ltrim($normalized, '#');
+        }
+
+        if (preg_match('/^#?[0-9a-f]{3}$/', $normalized) === 1) {
+            $short = ltrim($normalized, '#');
+            return '#' . $short[0] . $short[0] . $short[1] . $short[1] . $short[2] . $short[2];
+        }
+
+        if (preg_match('/^rgba?\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})(?:\s*,\s*(?:0|0?\.\d+|1(?:\.0+)?))?\s*\)$/i', $normalized, $matches) === 1) {
+            $r = (int) ($matches[1] ?? 0);
+            $g = (int) ($matches[2] ?? 0);
+            $b = (int) ($matches[3] ?? 0);
+            if ($r < 0 || $r > 255 || $g < 0 || $g > 255 || $b < 0 || $b > 255) {
+                return null;
+            }
+
+            return sprintf('#%02x%02x%02x', $r, $g, $b);
+        }
+
+        return null;
     }
 
     private function cleanUrl(string $value): ?string

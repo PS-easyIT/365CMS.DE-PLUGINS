@@ -165,8 +165,9 @@ final class CMS_365NET_Events_Admin
             <div class="admin-card cms365-admin-card cms365-section"><h3>2. Beschreibung (EditorJS)</h3><p class="description">Strukturierter Block-Inhalt mit Medien, Tabellen, Checklisten und Linkkarten.</p><?= $this->editor('description_json', (string) ($event->description_json ?? ''), (string) ($event->description ?? ''), 'Event-Beschreibung') ?></div>
             <div class="admin-card cms365-admin-card cms365-section"><h3>3. Bild & Medien</h3><div class="cms365-form-grid">
                 <?= $this->imageField('image_url', 'Event Bild / Hero URL', $event->image_url ?? '', 'image_alt', $event->image_alt ?? '') ?>
+                <?= $this->field('image_bg_color', 'Bild-Hintergrund (rechter Header, HEX oder RGB)', $event->image_bg_color ?? '#eef2f7') ?>
                 <?= $this->mediaUrlField('og_image_url', 'Social Sharing Bild', $event->og_image_url ?? '') ?>
-            </div><?= $this->galleryField('gallery_json', 'Galerie (mehrere Bilder aus der Mediathek oder je Zeile ein Bild)', $event->gallery_json ?? '') ?></div>
+            </div><p class="description">Optional: Farbe hinter dem Event-Bild im rechten 33%-Headerbereich (wird nur auf der Detailseite genutzt).</p><?= $this->galleryField('gallery_json', 'Galerie (mehrere Bilder aus der Mediathek oder je Zeile ein Bild)', $event->gallery_json ?? '') ?></div>
             <div class="admin-card cms365-admin-card cms365-section"><h3>4. Datum, Zeit & Zeitzone</h3><div class="cms365-form-grid">
                 <?= $this->field('start_date', 'Startdatum', $event->start_date ?? '', false, 'date') ?>
                 <?= $this->field('end_date', 'Enddatum', $event->end_date ?? '', false, 'date') ?>

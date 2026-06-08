@@ -22,19 +22,265 @@ $renderEditor = static function (mixed $json, mixed $fallback): string {
 };
 $badges = array_filter(array_map('trim', explode(',', (string) (($event->categories ?? '') ?: ($event->category ?? '')))));
 $tags = array_filter(array_map('trim', explode(',', (string) ($event->tags ?? ''))));
+
+$dateMonth = 'DATUM';
+$dateDay = '--';
+$dateYear = '----';
+
+$startDate = null;
+$startDateRaw = trim((string) ($event->start_date ?? ''));
+if ($startDateRaw !== '') {
+    try {
+        $startDate = new DateTimeImmutable($startDateRaw);
+    } catch (\Throwable $e) {
+        $startDate = null;
+    }
+}
+
+if (!$startDate instanceof DateTimeImmutable) {
+    $dateLabelRaw = (string) ($event->date_label ?? '');
+    if (preg_match('/(\d{1,2})\.(\d{1,2})\.(\d{4})/u', $dateLabelRaw, $dateParts) === 1) {
+        $normalizedDate = sprintf('%04d-%02d-%02d', (int) $dateParts[3], (int) $dateParts[2], (int) $dateParts[1]);
+        try {
+            $startDate = new DateTimeImmutable($normalizedDate);
+        } catch (\Throwable $e) {
+            $startDate = null;
+        }
+    }
+}
+
+$endDate = null;
+$endDateRaw = trim((string) ($event->end_date ?? ''));
+if ($endDateRaw !== '') {
+    try {
+        $endDate = new DateTimeImmutable($endDateRaw);
+    } catch (\Throwable $e) {
+        $endDate = null;
+    }
+}
+
+$dateLabelRaw = trim((string) ($event->date_label ?? ''));
+$endDateLabelRaw = trim((string) ($event->end_date_label ?? ''));
+if (!$endDate instanceof DateTimeImmutable && $endDateLabelRaw !== '' && preg_match('/(\d{1,2})\.(\d{1,2})\.(\d{4})/u', $endDateLabelRaw, $endDateParts) === 1) {
+    $normalizedEndDate = sprintf('%04d-%02d-%02d', (int) $endDateParts[3], (int) $endDateParts[2], (int) $endDateParts[1]);
+    try {
+        $endDate = new DateTimeImmutable($normalizedEndDate);
+    } catch (\Throwable $e) {
+        $endDate = null;
+    }
+}
+
+if ($startDate instanceof DateTimeImmutable) {
+    $months = [
+        1 => 'JAN', 2 => 'FEB', 3 => 'MÄR', 4 => 'APR', 5 => 'MAI', 6 => 'JUN',
+        7 => 'JUL', 8 => 'AUG', 9 => 'SEP', 10 => 'OKT', 11 => 'NOV', 12 => 'DEZ',
+    ];
+    $monthIndex = (int) $startDate->format('n');
+    $dateMonth = $months[$monthIndex] ?? strtoupper((string) $startDate->format('M'));
+    $dateDay = (string) $startDate->format('d');
+    $dateYear = (string) $startDate->format('Y');
+}
+
+$metaInfo = [];
+$dateMeta = $dateLabelRaw;
+$isSameDateRange = $startDate instanceof DateTimeImmutable
+    && $endDate instanceof DateTimeImmutable
+    && $startDate->format('Y-m-d') === $endDate->format('Y-m-d');
+if ($dateMeta !== '' && $endDateLabelRaw !== '' && $endDateLabelRaw !== $dateMeta && !$isSameDateRange) {
+    $dateMeta .= ' – ' . $endDateLabelRaw;
+}
+if ($dateMeta !== '') {
+    $metaInfo[] = $dateMeta;
+}
+if ((string) ($event->location ?? '') !== '') {
+    $metaInfo[] = (string) $event->location;
+}
+if ((string) (($event->event_format ?? '') ?: ($event->event_type ?? '')) !== '') {
+    $metaInfo[] = (string) (($event->event_format ?? '') ?: ($event->event_type ?? ''));
+}
+if ((string) ($event->organizer ?? '') !== '') {
+    $metaInfo[] = (string) $event->organizer;
+}
+if ((string) ($event->attendance_mode ?? '') !== '') {
+    $metaInfo[] = (string) $event->attendance_mode;
+}
+$headerTag = $tags !== [] ? (string) reset($tags) : '';
+
+$headerCategories = array_slice($badges, 0, 10);
+$hasHeaderImage = !empty($event->image_url);
+$headerImageBgColor = '';
+$rawHeaderImageBgColor = trim((string) ($event->image_bg_color ?? ''));
+if (preg_match('/^#[0-9a-fA-F]{6}$/', $rawHeaderImageBgColor) === 1) {
+    $headerImageBgColor = strtolower($rawHeaderImageBgColor);
+}
+$headerInlineStyle = $headerImageBgColor !== ''
+    ? ' style="--cms-events-event-image-bg:' . htmlspecialchars($headerImageBgColor, ENT_QUOTES, 'UTF-8') . '"'
+    : '';
+
+$sidebarPrimaryLink = trim((string) (($event->website ?? '') ?: ($event->registration_url ?? '') ?: ($event->ticket_url ?? '')));
+$sidebarPrimaryLabel = 'Zur Eventseite';
+$sidebarContactLink = '';
+$sidebarContactEmail = trim((string) (($event->contact_email ?? '') ?: ($event->contact_mail ?? '') ?: ($event->email ?? '')));
+if ($sidebarContactEmail !== '' && filter_var($sidebarContactEmail, FILTER_VALIDATE_EMAIL)) {
+    $sidebarContactLink = 'mailto:' . $sidebarContactEmail;
+}
+$sidebarSocialLinks = [];
+$sidebarSocialMap = [
+    ['field' => 'linkedin_url', 'label' => 'LinkedIn', 'icon' => 'in'],
+    ['field' => 'x_url', 'label' => 'X', 'icon' => 'X'],
+    ['field' => 'youtube_url', 'label' => 'YouTube', 'icon' => '▶'],
+    ['field' => 'facebook_url', 'label' => 'Facebook', 'icon' => 'f'],
+    ['field' => 'instagram_url', 'label' => 'Instagram', 'icon' => '◎'],
+];
+foreach ($sidebarSocialMap as $sidebarSocial) {
+    $field = (string) ($sidebarSocial['field'] ?? '');
+    if ($field === '' || empty($event->{$field})) {
+        continue;
+    }
+    $sidebarSocialLinks[] = [
+        'url' => (string) $event->{$field},
+        'label' => (string) ($sidebarSocial['label'] ?? $field),
+        'icon' => (string) ($sidebarSocial['icon'] ?? '↗'),
+    ];
+}
+$hasSidebarLinks = $sidebarPrimaryLink !== '' || $sidebarContactLink !== '' || $sidebarSocialLinks !== [];
+
+$addressRows = [];
+$addressLocation = trim((string) ($event->location ?? ''));
+if ($addressLocation !== '') {
+    $addressRows[] = ['label' => 'Ort', 'value' => $addressLocation];
+}
+$addressVenue = trim((string) ($event->venue_name ?? ''));
+if ($addressVenue !== '') {
+    $addressRows[] = ['label' => 'Venue', 'value' => $addressVenue];
+}
+$addressStreet = trim((string) ($event->street ?? ''));
+if ($addressStreet !== '') {
+    $addressRows[] = ['label' => 'Straße', 'value' => $addressStreet];
+}
+$addressPostalCity = trim((string) ($event->postal_code ?? '') . ' ' . (string) ($event->city ?? ''));
+if ($addressPostalCity !== '') {
+    $addressRows[] = ['label' => 'PLZ / Stadt', 'value' => $addressPostalCity];
+}
+$addressCountry = trim((string) ($event->country ?? ''));
+if ($addressCountry !== '') {
+    $addressRows[] = ['label' => 'Land', 'value' => $addressCountry];
+}
+
+$detailRows = [];
+$detailDateLabel = '';
+$detailDateLabelRaw = $dateLabelRaw;
+$detailEndDateLabelRaw = $endDateLabelRaw;
+
+if ($startDate instanceof DateTimeImmutable && $endDate instanceof DateTimeImmutable) {
+    $detailDateLabel = $startDate->format('Y-m-d') === $endDate->format('Y-m-d')
+        ? (string) $startDate->format('d.m.Y')
+        : (string) $startDate->format('d.m.Y') . ' – ' . (string) $endDate->format('d.m.Y');
+} elseif ($startDate instanceof DateTimeImmutable) {
+    $detailDateLabel = (string) $startDate->format('d.m.Y');
+} elseif ($detailDateLabelRaw !== '') {
+    $detailDateLabel = $detailDateLabelRaw;
+    if ($detailEndDateLabelRaw !== '' && $detailDateLabelRaw !== $detailEndDateLabelRaw) {
+        $detailDateLabel .= ' – ' . $detailEndDateLabelRaw;
+    }
+}
+
+if ($detailDateLabel !== '') {
+    $detailRows[] = ['label' => 'Datum', 'value' => $detailDateLabel, 'class' => 'is-date'];
+}
+
+$detailStartTime = trim((string) ($event->start_time ?? ''));
+$detailEndTime = trim((string) ($event->end_time ?? ''));
+$detailTimeLabel = '';
+if ($detailStartTime !== '') {
+    $detailTimeLabel = $detailStartTime . ($detailEndTime !== '' ? ' – ' . $detailEndTime : '');
+} elseif ($detailEndTime !== '') {
+    $detailTimeLabel = $detailEndTime;
+}
+if ($detailTimeLabel !== '') {
+    $detailRows[] = ['label' => 'Uhrzeit', 'value' => $detailTimeLabel];
+}
+
+$detailFormat = trim((string) (($event->event_format ?? '') ?: ($event->event_type ?? '')));
+if ($detailFormat !== '') {
+    $detailRows[] = ['label' => 'Format', 'value' => $detailFormat];
+}
+
+if (!empty($event->attendance_mode)) {
+    $detailRows[] = ['label' => 'Durchführung', 'value' => (string) $event->attendance_mode];
+}
+if (!empty($event->organizer)) {
+    $detailRows[] = ['label' => 'Veranstalter', 'value' => (string) $event->organizer];
+}
+if (!empty($event->difficulty_level)) {
+    $detailRows[] = ['label' => 'Level', 'value' => (string) $event->difficulty_level];
+}
+if (!empty($event->language)) {
+    $detailRows[] = ['label' => 'Sprache', 'value' => (string) $event->language];
+}
+if (!empty($event->target_audience)) {
+    $detailRows[] = ['label' => 'Zielgruppe', 'value' => (string) $event->target_audience];
+}
+if (!empty($event->price_class)) {
+    $detailRows[] = ['label' => 'Preisklasse', 'value' => (string) $event->price_class];
+}
+if (!empty($event->price)) {
+    $detailRows[] = ['label' => 'Preis', 'value' => (string) $event->price];
+}
+if (!empty($event->capacity)) {
+    $detailRows[] = ['label' => 'Kapazität', 'value' => (int) $event->capacity . ' Personen'];
+}
 ?>
 <main class="cms-events-public cms-events-detail">
     <div class="cms-events-container">
         <nav class="cms-events-breadcrumb"><a href="<?= htmlspecialchars($base . '/events', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($settings['detail_back_events_label'] ?? 'Events'), ENT_QUOTES, 'UTF-8') ?></a><span>/</span><span><?= htmlspecialchars((string) ($event->title ?? ''), ENT_QUOTES, 'UTF-8') ?></span></nav>
         <article class="cms-events-detail-layout">
-            <section class="cms-events-detail-main">
-                <span class="cms-events-kicker"><?= htmlspecialchars((string) ($event->date_label ?? ''), ENT_QUOTES, 'UTF-8') ?><?= !empty($event->end_date_label) ? ' – ' . htmlspecialchars((string) $event->end_date_label, ENT_QUOTES, 'UTF-8') : '' ?></span>
-                <h1><?= htmlspecialchars((string) ($event->title ?? ''), ENT_QUOTES, 'UTF-8') ?></h1>
-                <?php if (!empty($event->excerpt)): ?><p class="cms-events-lead"><?= htmlspecialchars((string) $event->excerpt, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-                <?php if ($badges !== [] || $tags !== []): ?><div class="cms-events-badges"><?php foreach (array_slice(array_merge($badges, $tags), 0, 12) as $badge): ?><span><?= htmlspecialchars($badge, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?></div><?php endif; ?>
-                <?= $renderEditor($event->description_json ?? '', $event->description ?? '') ?>
-
-                <section class="cms-events-section">
+            <header class="cms-events-detail-header<?= $hasHeaderImage ? ' cms-events-detail-header--has-image' : ' cms-events-detail-header--no-image' ?>"<?= $headerInlineStyle ?>>
+                <div class="cms-events-detail-header__content">
+                    <div class="cms-events-detail-header__intro">
+                        <div class="cms-events-date-badge" aria-label="Eventdatum">
+                            <span class="cms-events-date-badge__month"><?= htmlspecialchars($dateMonth, ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="cms-events-date-badge__day"><?= htmlspecialchars($dateDay, ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="cms-events-date-badge__year"><?= htmlspecialchars($dateYear, ENT_QUOTES, 'UTF-8') ?></span>
+                        </div>
+                        <div class="cms-events-detail-header__text">
+                            <h1><?= htmlspecialchars((string) ($event->title ?? ''), ENT_QUOTES, 'UTF-8') ?></h1>
+                            <?php if ($metaInfo !== [] || $headerTag !== ''): ?><div class="cms-events-detail-header__meta"><?php foreach (array_slice($metaInfo, 0, 5) as $meta): ?><span><?= htmlspecialchars((string) $meta, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?><?php if ($headerTag !== ''): ?><span><?= htmlspecialchars($headerTag, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?></div><?php endif; ?>
+                        </div>
+                    </div>
+                    <?php if (!empty($event->excerpt)): ?><p class="cms-events-detail-header__lead"><?= htmlspecialchars((string) $event->excerpt, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+                </div>
+                <?php if ($hasHeaderImage): ?><figure class="cms-events-detail-header__media"><img src="<?= htmlspecialchars((string) $event->image_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($event->image_alt ?? $event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="eager"></figure><?php endif; ?>
+            </header>
+            <div class="cms-events-detail-layout__body">
+                <section class="cms-events-detail-main">
+                    <?= $renderEditor($event->description_json ?? '', $event->description ?? '') ?>
+                </section>
+                <aside class="cms-events-sidebar">
+                    <div class="cms-events-sidebar-stack">
+                        <?php if ($headerCategories !== []): ?><div class="cms-events-sidecard cms-events-sidecard--categories"><div class="cms-events-sidecard__badges"><?php foreach ($headerCategories as $category): ?><span><?= htmlspecialchars((string) $category, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?></div></div><?php endif; ?>
+                        <div class="cms-events-sidecard cms-events-sidecard--details<?= $hasSidebarLinks ? ' cms-events-sidecard--details-has-links' : '' ?>">
+                            <dl class="cms-events-sidecard__meta">
+                                <?php foreach ($detailRows as $detailRow): ?>
+                                    <?php $rowClass = trim((string) ($detailRow['class'] ?? '')); ?>
+                                    <div class="cms-events-sidecard__meta-row<?= $rowClass !== '' ? ' ' . htmlspecialchars($rowClass, ENT_QUOTES, 'UTF-8') : '' ?>">
+                                        <dt><?= htmlspecialchars((string) ($detailRow['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dt>
+                                        <dd><?= htmlspecialchars((string) ($detailRow['value'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dd>
+                                    </div>
+                                <?php endforeach; ?>
+                            </dl>
+                        </div>
+                        <?php if ($hasSidebarLinks): ?><div class="cms-events-sidecard cms-events-sidecard--links"><?php if ($sidebarPrimaryLink !== ''): ?><a class="cms-events-side-action cms-events-side-action--primary" href="<?= htmlspecialchars((string) $sidebarPrimaryLink, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= htmlspecialchars($sidebarPrimaryLabel, ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars($sidebarPrimaryLabel, ENT_QUOTES, 'UTF-8') ?>"><span class="cms-events-side-action__icon">🌐</span><span class="cms-events-side-action__label"><?= htmlspecialchars($sidebarPrimaryLabel, ENT_QUOTES, 'UTF-8') ?></span></a><?php endif; ?><?php if ($sidebarContactLink !== ''): ?><a class="cms-events-side-action cms-events-side-action--primary" href="<?= htmlspecialchars($sidebarContactLink, ENT_QUOTES, 'UTF-8') ?>" aria-label="Kontakt" title="Kontakt"><span class="cms-events-side-action__icon">✉</span><span class="cms-events-side-action__label">Kontakt</span></a><?php endif; ?><?php if ($sidebarSocialLinks !== []): ?><div class="cms-events-side-actions cms-events-side-actions--social"><?php foreach ($sidebarSocialLinks as $sidebarSocialLink): ?><a class="cms-events-side-action cms-events-side-action--icon-only" href="<?= htmlspecialchars((string) $sidebarSocialLink['url'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= htmlspecialchars((string) $sidebarSocialLink['label'], ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars((string) $sidebarSocialLink['label'], ENT_QUOTES, 'UTF-8') ?>"><span class="cms-events-side-action__icon"><?= htmlspecialchars((string) $sidebarSocialLink['icon'], ENT_QUOTES, 'UTF-8') ?></span></a><?php endforeach; ?></div><?php endif; ?></div><?php endif; ?>
+                    </div>
+                    <?php if ($addressRows !== []): ?><section class="cms-events-address-block" aria-label="Adresse"><ul class="cms-events-address-block__list"><?php foreach ($addressRows as $addressRow): ?><li><span><?= htmlspecialchars((string) ($addressRow['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span><strong><?= htmlspecialchars((string) ($addressRow['value'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong></li><?php endforeach; ?></ul></section><?php endif; ?>
+                    <?php if (!empty($linkedCompany) || !empty($linkedExpert)): ?><div class="cms-events-sidecard"><h2>365CMS-Verknüpfung</h2><div class="cms-events-socials">
+                        <?php if (!empty($linkedCompany)): ?><a class="cms-events-btn" href="<?= htmlspecialchars($base . '/companies/' . (int) $linkedCompany->id, ENT_QUOTES, 'UTF-8') ?>">🏢 <?= htmlspecialchars((string) ($linkedCompany->name ?? 'Firma'), ENT_QUOTES, 'UTF-8') ?></a><?php endif; ?>
+                        <?php if (!empty($linkedExpert)): ?><a class="cms-events-btn" href="<?= htmlspecialchars($base . '/experts/' . (int) $linkedExpert->id, ENT_QUOTES, 'UTF-8') ?>">👤 <?= htmlspecialchars(trim((string) ($linkedExpert->first_name ?? '') . ' ' . (string) ($linkedExpert->last_name ?? '')) ?: 'Expert', ENT_QUOTES, 'UTF-8') ?></a><?php endif; ?>
+                    </div></div><?php endif; ?>
+                </aside>
+            </div>
+            <section class="cms-events-detail-main cms-events-detail-main--fullwidth">
+                <section class="cms-events-section cms-events-section--fullwidth">
                     <h2><?= htmlspecialchars((string) ($settings['detail_speakers_heading'] ?? 'Speaker & Themen'), ENT_QUOTES, 'UTF-8') ?></h2>
                     <?php if ($speakers === []): ?>
                         <p><?= htmlspecialchars((string) ($settings['detail_no_speakers_text'] ?? 'Für dieses Event sind noch keine Speaker verknüpft.'), ENT_QUOTES, 'UTF-8') ?></p>
@@ -50,27 +296,6 @@ $tags = array_filter(array_map('trim', explode(',', (string) ($event->tags ?? ''
                     <?php endif; ?>
                 </section>
             </section>
-            <aside class="cms-events-sidebar">
-                <?php if (!empty($event->image_url)): ?><figure class="cms-events-hero-image"><img src="<?= htmlspecialchars((string) $event->image_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($event->image_alt ?? $event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="eager"></figure><?php endif; ?>
-                <div class="cms-events-sidecard"><h2>Details</h2><dl>
-                    <?php if (!empty($event->location)): ?><dt>Ort</dt><dd><?= htmlspecialchars((string) $event->location, ENT_QUOTES, 'UTF-8') ?></dd><?php endif; ?>
-                    <?php if (!empty($event->venue_name)): ?><dt>Venue</dt><dd><?= htmlspecialchars((string) $event->venue_name, ENT_QUOTES, 'UTF-8') ?></dd><?php endif; ?>
-                    <?php if (!empty($event->city) || !empty($event->country)): ?><dt>Region</dt><dd><?= htmlspecialchars(trim((string) ($event->postal_code ?? '') . ' ' . (string) ($event->city ?? '') . ', ' . (string) ($event->country ?? ''), ' ,'), ENT_QUOTES, 'UTF-8') ?></dd><?php endif; ?>
-                    <?php if (!empty($event->attendance_mode)): ?><dt>Durchführung</dt><dd><?= htmlspecialchars((string) $event->attendance_mode, ENT_QUOTES, 'UTF-8') ?></dd><?php endif; ?>
-                    <?php if (!empty($event->organizer)): ?><dt>Veranstalter</dt><dd><?= htmlspecialchars((string) $event->organizer, ENT_QUOTES, 'UTF-8') ?></dd><?php endif; ?>
-                    <?php if (!empty($event->event_format) || !empty($event->event_type)): ?><dt>Format</dt><dd><?= htmlspecialchars((string) ($event->event_format ?: $event->event_type), ENT_QUOTES, 'UTF-8') ?></dd><?php endif; ?>
-                    <?php if (!empty($event->difficulty_level)): ?><dt>Level</dt><dd><?= htmlspecialchars((string) $event->difficulty_level, ENT_QUOTES, 'UTF-8') ?></dd><?php endif; ?>
-                    <?php if (!empty($event->language)): ?><dt>Sprache</dt><dd><?= htmlspecialchars((string) $event->language, ENT_QUOTES, 'UTF-8') ?></dd><?php endif; ?>
-                    <?php if (!empty($event->target_audience)): ?><dt>Zielgruppe</dt><dd><?= htmlspecialchars((string) $event->target_audience, ENT_QUOTES, 'UTF-8') ?></dd><?php endif; ?>
-                    <?php if (!empty($event->price_class)): ?><dt>Preisklasse</dt><dd><?= htmlspecialchars((string) $event->price_class, ENT_QUOTES, 'UTF-8') ?></dd><?php endif; ?>
-                    <?php if (!empty($event->price)): ?><dt>Preis</dt><dd><?= htmlspecialchars((string) $event->price, ENT_QUOTES, 'UTF-8') ?></dd><?php endif; ?>
-                    <?php if (!empty($event->capacity)): ?><dt>Kapazität</dt><dd><?= (int) $event->capacity ?> Personen</dd><?php endif; ?>
-                </dl><?php if (!empty($event->registration_url)): ?><a class="cms-events-btn" href="<?= htmlspecialchars((string) $event->registration_url, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars((string) ($settings['detail_register_label'] ?? 'Registrieren'), ENT_QUOTES, 'UTF-8') ?></a><?php elseif (!empty($event->website)): ?><a class="cms-events-btn" href="<?= htmlspecialchars((string) $event->website, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars((string) ($settings['detail_website_label'] ?? 'Website öffnen'), ENT_QUOTES, 'UTF-8') ?></a><?php endif; ?></div>
-                <?php if (!empty($linkedCompany) || !empty($linkedExpert)): ?><div class="cms-events-sidecard"><h2>365CMS-Verknüpfung</h2><div class="cms-events-socials">
-                    <?php if (!empty($linkedCompany)): ?><a class="cms-events-btn" href="<?= htmlspecialchars($base . '/companies/' . (int) $linkedCompany->id, ENT_QUOTES, 'UTF-8') ?>">🏢 <?= htmlspecialchars((string) ($linkedCompany->name ?? 'Firma'), ENT_QUOTES, 'UTF-8') ?></a><?php endif; ?>
-                    <?php if (!empty($linkedExpert)): ?><a class="cms-events-btn" href="<?= htmlspecialchars($base . '/experts/' . (int) $linkedExpert->id, ENT_QUOTES, 'UTF-8') ?>">👤 <?= htmlspecialchars(trim((string) ($linkedExpert->first_name ?? '') . ' ' . (string) ($linkedExpert->last_name ?? '')) ?: 'Expert', ENT_QUOTES, 'UTF-8') ?></a><?php endif; ?>
-                </div></div><?php endif; ?>
-            </aside>
         </article>
     </div>
 </main>

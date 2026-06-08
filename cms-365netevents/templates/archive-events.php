@@ -9,8 +9,6 @@ $base = rtrim((string) SITE_URL, '/');
 $q = htmlspecialchars((string) ($filters['q'] ?? ''), ENT_QUOTES, 'UTF-8');
 $showPast = (string) ($filters['past'] ?? '0') === '1';
 $toggleUrl = $base . '/events' . ($showPast ? '' : '?past=1');
-$futureLabel = trim((string) ($settings['archive_current_month_label'] ?? ''));
-$futureLabel = ($futureLabel === '' || $futureLabel === 'Aktueller Monat') ? 'Zukünftige Events' : $futureLabel;
 $futureButton = trim((string) ($settings['archive_current_button'] ?? ''));
 $futureButton = ($futureButton === '' || $futureButton === 'Zurück zum aktuellen Monat') ? 'Zurück zu zukünftigen Events' : $futureButton;
 $futureEmpty = trim((string) ($settings['archive_empty_current'] ?? ''));
@@ -60,7 +58,6 @@ $eventCardExcerpt = static function (object $event): string {
         <form method="GET" class="cms-events-search cms-events-search--header-card" role="search">
             <?php if ($showPast): ?><input type="hidden" name="past" value="1"><?php endif; ?>
             <div class="cms-events-search__field">
-                <p class="cms-events-search__hint"><?= htmlspecialchars($showPast ? (string) ($settings['archive_past_button'] ?? 'Vergangene Events') : $futureLabel, ENT_QUOTES, 'UTF-8') ?></p>
                 <input type="search" name="q" value="<?= $q ?>" placeholder="<?= htmlspecialchars((string) ($settings['archive_search_placeholder'] ?? 'Event, Ort, Thema oder Veranstalter suchen …'), ENT_QUOTES, 'UTF-8') ?>" aria-label="Events suchen">
             </div>
             <div class="cms-events-search__actions">
@@ -83,15 +80,13 @@ $eventCardExcerpt = static function (object $event): string {
                             <?php if (!empty($event->image_url)): ?><a class="cms-events-card__title-image-link" href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>" aria-label="<?= htmlspecialchars('Event öffnen: ' . (string) ($event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>"><span class="cms-events-card__title-image"><img src="<?= htmlspecialchars((string) $event->image_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($event->image_alt ?? $event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>" loading="lazy"></span></a><?php endif; ?>
                         </h2>
                         <div class="cms-events-card__meta">
-                            <span><?= htmlspecialchars((string) ($event->date_label ?? 'Termin offen'), ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php if (!empty($event->organizer)): ?><span><?= htmlspecialchars((string) $event->organizer, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                             <?php if (!empty($event->location)): ?><span><?= htmlspecialchars((string) $event->location, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
-                            <?php if (!empty($event->price_class)): ?><span><?= htmlspecialchars((string) $event->price_class, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                             <span class="cms-events-card__speaker-count"><?= (int) ($event->speaker_count ?? 0) ?> Speaker</span>
                         </div>
                         <?php if ($cardExcerpt !== ''): ?><p class="cms-events-card__excerpt"><?= htmlspecialchars($cardExcerpt, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-                        <?php $cardTags = array_filter(array_map('trim', explode(',', (string) (($event->tags ?? '') ?: ($event->categories ?? ''))))); if ($cardTags !== []): ?><div class="cms-events-mini-tags"><?php foreach (array_slice($cardTags, 0, 4) as $tag): ?><span><?= htmlspecialchars($tag, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?></div><?php endif; ?>
                         <footer>
-                            <?php if (!empty($event->event_format)): ?><span><?= htmlspecialchars((string) $event->event_format, ENT_QUOTES, 'UTF-8') ?></span><?php elseif (!empty($event->organizer)): ?><span><?= htmlspecialchars((string) $event->organizer, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                            <span class="cms-events-card__date-badge"><?= htmlspecialchars((string) ($event->date_label ?? 'Termin offen'), ENT_QUOTES, 'UTF-8') ?></span>
                             <a class="cms-events-card__more" href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>">Mehr Infos …</a>
                         </footer>
                     </article>
