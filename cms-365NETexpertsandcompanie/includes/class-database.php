@@ -41,6 +41,7 @@ final class CMS_365NET_Experts_And_Companie_Database
     {
         $this->createFallbackTables();
         $this->seedDefaults($forceSeed);
+        $this->syncExistingSpeakerLinks();
         $this->saveSetting('schema_version', self::SCHEMA_VERSION);
     }
 
@@ -117,9 +118,9 @@ final class CMS_365NET_Experts_And_Companie_Database
     }
 
     /** @return array<int, object> */
-    public function getExpertsAdmin(string $search = '', int $limit = 250): array
+    public function getExpertsAdmin(string $search = '', int $limit = 250, string $sort = 'az'): array
     {
-        return $this->getExperts($search, '', $limit, 0, false);
+        return $this->getExperts($search, '', $limit, 0, false, $sort);
     }
 
     public function countExpertsPublic(string $search = '', string $city = ''): int
@@ -134,9 +135,9 @@ final class CMS_365NET_Experts_And_Companie_Database
     }
 
     /** @return array<int, object> */
-    public function getCompaniesAdmin(string $search = '', int $limit = 250): array
+    public function getCompaniesAdmin(string $search = '', int $limit = 250, string $sort = 'az'): array
     {
-        return $this->getCompanies($search, '', $limit, 0, false);
+        return $this->getCompanies($search, '', $limit, 0, false, $sort);
     }
 
     public function countCompaniesPublic(string $search = '', string $city = ''): int
@@ -734,7 +735,7 @@ final class CMS_365NET_Experts_And_Companie_Database
     }
 
     /** @return array<int, object> */
-    private function getExperts(string $search, string $city, int $limit, int $offset, bool $onlyActive): array
+    private function getExperts(string $search, string $city, int $limit, int $offset, bool $onlyActive, string $sort = 'az'): array
     {
         $table = $this->resolveTable('experts');
         $columns = $this->getExistingColumns($table);
@@ -803,6 +804,44 @@ final class CMS_365NET_Experts_And_Companie_Database
         }
 
         $orderBy = in_array('updated_at', $columns, true) ? 'updated_at DESC' : 'id DESC';
+        if (!$onlyActive) {
+            $sort = in_array($sort, ['az', 'za', 'date_old_new', 'date_new_old'], true) ? $sort : 'az';
+            if ($sort === 'za') {
+                if (in_array('last_name', $columns, true) && in_array('first_name', $columns, true)) {
+                    $orderBy = 'last_name DESC, first_name DESC';
+                } elseif (in_array('last_name', $columns, true)) {
+                    $orderBy = 'last_name DESC';
+                } elseif (in_array('first_name', $columns, true)) {
+                    $orderBy = 'first_name DESC';
+                } else {
+                    $orderBy = in_array('id', $columns, true) ? 'id DESC' : $orderBy;
+                }
+            } elseif ($sort === 'date_old_new') {
+                if (in_array('updated_at', $columns, true)) {
+                    $orderBy = 'updated_at ASC';
+                } elseif (in_array('created_at', $columns, true)) {
+                    $orderBy = 'created_at ASC';
+                } else {
+                    $orderBy = in_array('id', $columns, true) ? 'id ASC' : $orderBy;
+                }
+            } elseif ($sort === 'date_new_old') {
+                if (in_array('updated_at', $columns, true)) {
+                    $orderBy = 'updated_at DESC';
+                } elseif (in_array('created_at', $columns, true)) {
+                    $orderBy = 'created_at DESC';
+                } else {
+                    $orderBy = in_array('id', $columns, true) ? 'id DESC' : $orderBy;
+                }
+            } else {
+                if (in_array('last_name', $columns, true) && in_array('first_name', $columns, true)) {
+                    $orderBy = 'last_name ASC, first_name ASC';
+                } elseif (in_array('last_name', $columns, true)) {
+                    $orderBy = 'last_name ASC';
+                } elseif (in_array('first_name', $columns, true)) {
+                    $orderBy = 'first_name ASC';
+                }
+            }
+        }
         $limit = max(1, min(500, $limit));
         $offset = max(0, $offset);
 
@@ -825,7 +864,7 @@ final class CMS_365NET_Experts_And_Companie_Database
     }
 
     /** @return array<int, object> */
-    private function getCompanies(string $search, string $city, int $limit, int $offset, bool $onlyActive): array
+    private function getCompanies(string $search, string $city, int $limit, int $offset, bool $onlyActive, string $sort = 'az'): array
     {
         $table = $this->resolveTable('companies');
         $columns = $this->getExistingColumns($table);
@@ -892,7 +931,36 @@ final class CMS_365NET_Experts_And_Companie_Database
         }
 
         $orderBy = 'id DESC';
-        if (in_array('is_sponsor', $columns, true) || in_array('is_top_partner', $columns, true) || in_array('is_partner', $columns, true)) {
+        if (!$onlyActive) {
+            $sort = in_array($sort, ['az', 'za', 'date_old_new', 'date_new_old'], true) ? $sort : 'az';
+            if ($sort === 'za') {
+                if (in_array('name', $columns, true)) {
+                    $orderBy = 'name DESC';
+                } else {
+                    $orderBy = in_array('id', $columns, true) ? 'id DESC' : $orderBy;
+                }
+            } elseif ($sort === 'date_old_new') {
+                if (in_array('updated_at', $columns, true)) {
+                    $orderBy = 'updated_at ASC';
+                } elseif (in_array('created_at', $columns, true)) {
+                    $orderBy = 'created_at ASC';
+                } else {
+                    $orderBy = in_array('id', $columns, true) ? 'id ASC' : $orderBy;
+                }
+            } elseif ($sort === 'date_new_old') {
+                if (in_array('updated_at', $columns, true)) {
+                    $orderBy = 'updated_at DESC';
+                } elseif (in_array('created_at', $columns, true)) {
+                    $orderBy = 'created_at DESC';
+                } else {
+                    $orderBy = in_array('id', $columns, true) ? 'id DESC' : $orderBy;
+                }
+            } else {
+                if (in_array('name', $columns, true)) {
+                    $orderBy = 'name ASC';
+                }
+            }
+        } elseif (in_array('is_sponsor', $columns, true) || in_array('is_top_partner', $columns, true) || in_array('is_partner', $columns, true)) {
             $parts = [];
             if (in_array('is_sponsor', $columns, true)) {
                 $parts[] = 'is_sponsor DESC';
@@ -1599,6 +1667,86 @@ final class CMS_365NET_Experts_And_Companie_Database
             } else {
                 $linkStmt = $db->prepare('UPDATE ' . $speakersTable . ' SET linked_company_id = ? WHERE id = ?');
                 $linkStmt->execute([$companyId, $speakerId]);
+            }
+        } catch (Throwable) {
+        }
+    }
+
+    private function syncExistingSpeakerLinks(): void
+    {
+        if (!$this->tableExists('365net_event_speakers')) {
+            return;
+        }
+
+        $speakerColumns = $this->getExistingColumns('365net_event_speakers');
+        if ($speakerColumns === [] || !in_array('id', $speakerColumns, true)) {
+            return;
+        }
+
+        $db = CMS\Database::instance();
+        $speakersTable = $db->prefix() . '365net_event_speakers';
+
+        try {
+            $expertColumns = $this->getExistingColumns(self::TABLE_EXPERTS);
+            if (in_array('linked_speaker_id', $expertColumns, true)) {
+                $expertSelect = 'SELECT id, linked_speaker_id' . (in_array('linked_company_id', $expertColumns, true) ? ', linked_company_id' : '')
+                    . ' FROM ' . $db->prefix() . self::TABLE_EXPERTS
+                    . ' WHERE linked_speaker_id IS NOT NULL AND linked_speaker_id > 0 LIMIT 2000';
+
+                $experts = $db->prepare($expertSelect);
+                $experts->execute([]);
+
+                foreach ($experts->fetchAll() ?: [] as $expert) {
+                    if (!is_object($expert)) {
+                        continue;
+                    }
+
+                    $speakerId = max(0, (int) ($expert->linked_speaker_id ?? 0));
+                    $expertId = max(0, (int) ($expert->id ?? 0));
+                    if ($speakerId <= 0 || $expertId <= 0) {
+                        continue;
+                    }
+
+                    $expertCompanyId = max(0, (int) ($expert->linked_company_id ?? 0));
+                    if (in_array('linked_expert_id', $speakerColumns, true) && in_array('linked_company_id', $speakerColumns, true)) {
+                        $stmt = $db->prepare('UPDATE ' . $speakersTable . ' SET linked_expert_id = COALESCE(linked_expert_id, ?), linked_company_id = COALESCE(linked_company_id, ?) WHERE id = ?');
+                        $stmt->execute([$expertId, $expertCompanyId > 0 ? $expertCompanyId : null, $speakerId]);
+                    } elseif (in_array('linked_expert_id', $speakerColumns, true)) {
+                        $stmt = $db->prepare('UPDATE ' . $speakersTable . ' SET linked_expert_id = COALESCE(linked_expert_id, ?) WHERE id = ?');
+                        $stmt->execute([$expertId, $speakerId]);
+                    }
+                }
+            }
+
+            $companyColumns = $this->getExistingColumns(self::TABLE_COMPANIES);
+            if (in_array('linked_speaker_id', $companyColumns, true)) {
+                $companySelect = 'SELECT id, linked_speaker_id' . (in_array('linked_expert_id', $companyColumns, true) ? ', linked_expert_id' : '')
+                    . ' FROM ' . $db->prefix() . self::TABLE_COMPANIES
+                    . ' WHERE linked_speaker_id IS NOT NULL AND linked_speaker_id > 0 LIMIT 2000';
+
+                $companies = $db->prepare($companySelect);
+                $companies->execute([]);
+
+                foreach ($companies->fetchAll() ?: [] as $company) {
+                    if (!is_object($company)) {
+                        continue;
+                    }
+
+                    $speakerId = max(0, (int) ($company->linked_speaker_id ?? 0));
+                    $companyId = max(0, (int) ($company->id ?? 0));
+                    if ($speakerId <= 0 || $companyId <= 0 || !in_array('linked_company_id', $speakerColumns, true)) {
+                        continue;
+                    }
+
+                    $companyExpertId = max(0, (int) ($company->linked_expert_id ?? 0));
+                    if (in_array('linked_expert_id', $speakerColumns, true)) {
+                        $stmt = $db->prepare('UPDATE ' . $speakersTable . ' SET linked_company_id = COALESCE(linked_company_id, ?), linked_expert_id = COALESCE(linked_expert_id, ?) WHERE id = ?');
+                        $stmt->execute([$companyId, $companyExpertId > 0 ? $companyExpertId : null, $speakerId]);
+                    } else {
+                        $stmt = $db->prepare('UPDATE ' . $speakersTable . ' SET linked_company_id = COALESCE(linked_company_id, ?) WHERE id = ?');
+                        $stmt->execute([$companyId, $speakerId]);
+                    }
+                }
             }
         } catch (Throwable) {
         }

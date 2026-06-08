@@ -124,6 +124,18 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
         if ($linkedSpeaker === null) {
             $linkedSpeaker = $db->getSpeakerByLinkedExpert($expertId);
         }
+        if ($linkedSpeaker === null && $linkedCompanyId > 0) {
+            $companySpeakers = $db->getSpeakersByLinkedCompany($linkedCompanyId, 1);
+            if ($companySpeakers !== []) {
+                $linkedSpeaker = $companySpeakers[0];
+            }
+        }
+        if ($linkedSpeaker === null && $linkedCompany !== null) {
+            $companyLinkedSpeakerId = (int) ($linkedCompany->linked_speaker_id ?? 0);
+            if ($companyLinkedSpeakerId > 0) {
+                $linkedSpeaker = $db->getLinkedSpeaker($companyLinkedSpeakerId);
+            }
+        }
 
         $theme = CMS\ThemeManager::instance();
         $theme->getHeader();
@@ -162,14 +174,46 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
             $linkedSpeaker = $db->getLinkedSpeaker($linkedSpeakerId);
         }
 
+        if ($linkedSpeaker === null && $linkedExpertId > 0) {
+            $linkedSpeaker = $db->getSpeakerByLinkedExpert($linkedExpertId);
+        }
+
+        $linkedExperts = $db->getExpertsByLinkedCompany($companyId, 8);
+        if ($linkedExpert !== null) {
+            $hasPrimaryExpert = false;
+            foreach ($linkedExperts as $linkedExpertRow) {
+                if ((int) ($linkedExpertRow->id ?? 0) === (int) ($linkedExpert->id ?? 0)) {
+                    $hasPrimaryExpert = true;
+                    break;
+                }
+            }
+            if (!$hasPrimaryExpert) {
+                array_unshift($linkedExperts, $linkedExpert);
+            }
+        }
+
+        $linkedSpeakers = $db->getSpeakersByLinkedCompany($companyId, 8);
+        if ($linkedSpeaker !== null) {
+            $hasPrimarySpeaker = false;
+            foreach ($linkedSpeakers as $linkedSpeakerRow) {
+                if ((int) ($linkedSpeakerRow->id ?? 0) === (int) ($linkedSpeaker->id ?? 0)) {
+                    $hasPrimarySpeaker = true;
+                    break;
+                }
+            }
+            if (!$hasPrimarySpeaker) {
+                array_unshift($linkedSpeakers, $linkedSpeaker);
+            }
+        }
+
         $theme = CMS\ThemeManager::instance();
         $theme->getHeader();
         CMS_365NET_Experts_And_Companie_Template_Loader::instance()->render('single-company', [
             'company' => $company,
             'linkedExpert' => $linkedExpert,
             'linkedSpeaker' => $linkedSpeaker,
-            'linkedExperts' => $db->getExpertsByLinkedCompany($companyId, 8),
-            'linkedSpeakers' => $db->getSpeakersByLinkedCompany($companyId, 8),
+            'linkedExperts' => $linkedExperts,
+            'linkedSpeakers' => $linkedSpeakers,
         ]);
         $theme->getFooter();
     }
@@ -225,6 +269,9 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
                 $linkedSpeakerId = (int) ($company->linked_speaker_id ?? 0);
                 if ($linkedSpeakerId > 0) {
                     $company->linked_speaker = $db->getLinkedSpeaker($linkedSpeakerId);
+                }
+                if ($company->linked_speaker === null && $linkedExpertId > 0) {
+                    $company->linked_speaker = $db->getSpeakerByLinkedExpert($linkedExpertId);
                 }
 
                 $company->linked_experts = $db->getExpertsByLinkedCompany((int) ($company->id ?? 0), 3);
@@ -338,12 +385,14 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
         }
 
         $search = $this->cleanText((string) ($_GET['q'] ?? ''), 120);
-        $rows = CMS_365NET_Experts_And_Companie_Database::instance()->getExpertsAdmin($search, 400);
+        $sort = $this->parseAdminSort((string) ($_GET['sort'] ?? 'az'));
+        $rows = CMS_365NET_Experts_And_Companie_Database::instance()->getExpertsAdmin($search, 400, $sort);
         $csrf = $this->csrfToken('excomp_expert_form');
 
         CMS_365NET_Experts_And_Companie_Admin::instance()->renderExpertsOverview([
             'rows' => $rows,
             'search' => $search,
+            'sort' => $sort,
             'csrf' => $csrf,
         ]);
     }
@@ -442,11 +491,13 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
         }
 
         $search = $this->cleanText((string) ($_GET['q'] ?? ''), 120);
-        $rows = CMS_365NET_Experts_And_Companie_Database::instance()->getCompaniesAdmin($search, 400);
+        $sort = $this->parseAdminSort((string) ($_GET['sort'] ?? 'az'));
+        $rows = CMS_365NET_Experts_And_Companie_Database::instance()->getCompaniesAdmin($search, 400, $sort);
 
         CMS_365NET_Experts_And_Companie_Admin::instance()->renderCompaniesOverview([
             'rows' => $rows,
             'search' => $search,
+            'sort' => $sort,
             'csrf' => $this->csrfToken('excomp_company_form'),
         ]);
     }
@@ -584,6 +635,12 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
         }
 
         return max(0, (int) $value);
+    }
+
+    private function parseAdminSort(string $sort): string
+    {
+        $sort = trim($sort);
+        return in_array($sort, ['az', 'za', 'date_old_new', 'date_new_old'], true) ? $sort : 'az';
     }
 
     private function renderSimpleError(string $message): void

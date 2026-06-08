@@ -27,6 +27,22 @@ $city = trim((string) ($filters['city'] ?? ''));
 $baseUrl = rtrim((string) SITE_URL, '/') . '/companies';
 $e = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 
+$companyCardExcerpt = static function (object $company): string {
+    $raw = trim((string) ($company->description ?? ''));
+    if ($raw === '') {
+        return '';
+    }
+
+    $text = trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($raw), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+    if ($text === '') {
+        return '';
+    }
+
+    return function_exists('mb_substr')
+        ? (string) mb_substr($text, 0, 260, 'UTF-8')
+        : substr($text, 0, 260);
+};
+
 $companyInitials = static function (object $company): string {
     $name = trim((string) ($company->name ?? ''));
     if ($name === '') {
@@ -60,25 +76,29 @@ $partnerLabel = static function (object $company): string {
 };
 ?>
 
-<main class="cms-excomp-public cms-excomp-public--companies">
-    <div class="cms-excomp-container">
-        <section class="cms-excomp-hero cms-excomp-hero--companies" aria-label="Companies">
-            <p class="cms-excomp-kicker">365 Network · Companies</p>
+<main class="cms-events-public cms-events-archive cms-excomp-public cms-excomp-public--companies">
+    <div class="cms-events-container cms-excomp-container">
+        <section class="cms-events-hero cms-events-hero--compact cms-excomp-hero cms-excomp-hero--companies" aria-label="Companies">
+            <span class="cms-events-kicker">365 Network · Companies</span>
             <h1>Companies</h1>
             <p>Publicsite im Events-/Speaker-Stil: Filter zuerst, klares Grid und Partner-Visualisierung in Grün.</p>
         </section>
 
-        <form method="GET" action="<?= $e($baseUrl) ?>" class="cms-excomp-search" role="search" aria-label="Companies Suche">
-            <input type="search" name="q" value="<?= $e($q) ?>" placeholder="Name, Branche, Beschreibung …">
-            <input type="text" name="city" value="<?= $e($city) ?>" placeholder="Stadt …">
-            <button type="submit">Suchen</button>
-            <?php if ($q !== '' || $city !== ''): ?>
-                <a href="<?= $e($baseUrl) ?>" class="cms-excomp-reset">Reset</a>
-            <?php endif; ?>
+        <form method="GET" action="<?= $e($baseUrl) ?>" class="cms-events-search cms-events-search--header-card cms-excomp-search" role="search" aria-label="Companies Suche">
+            <div class="cms-events-search__field">
+                <input type="search" name="q" value="<?= $e($q) ?>" placeholder="Name, Branche, Beschreibung …">
+            </div>
+            <div class="cms-events-search__field">
+                <input type="text" name="city" value="<?= $e($city) ?>" placeholder="Stadt …">
+            </div>
+            <div class="cms-events-search__actions">
+                <button type="submit">Suchen</button>
+                <?php if ($q !== '' || $city !== ''): ?>
+                    <a href="<?= $e($baseUrl) ?>" class="cms-excomp-reset">Reset</a>
+                <?php endif; ?>
+            </div>
         </form>
-    </div>
 
-    <div class="cms-excomp-container cms-excomp-content">
         <section class="cms-excomp-section cms-excomp-section--companies" aria-label="Companies Liste">
             <header class="cms-excomp-section-head">
                 <h2>Unternehmen</h2>
@@ -90,7 +110,7 @@ $partnerLabel = static function (object $company): string {
                     <p>Keine Companies für den aktuellen Filter gefunden.</p>
                 </div>
             <?php else: ?>
-                <div class="cms-excomp-grid">
+                <div class="cms-events-grid cms-excomp-grid">
                     <?php foreach ($companies as $company): ?>
                         <?php
                         $name = trim((string) ($company->name ?? ''));
@@ -100,11 +120,11 @@ $partnerLabel = static function (object $company): string {
                         $industry = trim((string) ($company->industry ?? ''));
                         $location = trim((string) ($company->location_city ?? $company->city ?? ''));
                         $logo = trim((string) ($company->logo_url ?? ''));
-                        $description = trim((string) ($company->description ?? ''));
+                        $description = $companyCardExcerpt($company);
                         $linkedExperts = is_array($company->linked_experts ?? null) ? $company->linked_experts : [];
                         $linkedSpeakers = is_array($company->linked_speakers ?? null) ? $company->linked_speakers : [];
                         ?>
-                        <article class="cms-excomp-card cms-excomp-card--company">
+                        <article class="cms-events-card cms-excomp-card cms-excomp-card--company">
                             <div class="cms-excomp-card-head">
                                 <?php if ($logo !== ''): ?>
                                     <img src="<?= $e($logo) ?>" alt="<?= $e($name) ?>" loading="lazy" class="cms-excomp-avatar cms-excomp-avatar--company">
@@ -117,7 +137,7 @@ $partnerLabel = static function (object $company): string {
                                 </div>
                             </div>
 
-                            <div class="cms-excomp-card-meta">
+                            <div class="cms-events-card__meta cms-excomp-card-meta">
                                 <span><?= $e($partnerLabel($company)) ?></span>
                                 <?php if ($location !== ''): ?><span><?= $e($location) ?></span><?php endif; ?>
                             </div>
@@ -159,11 +179,14 @@ $partnerLabel = static function (object $company): string {
 
                             <?php if ($description !== ''): ?><p class="cms-excomp-card-excerpt"><?= $e($description) ?></p><?php endif; ?>
 
-                            <?php if ($detailUrl !== ''): ?>
-                                <a class="cms-excomp-card-link" href="<?= $e($detailUrl) ?>">Company öffnen</a>
-                            <?php else: ?>
-                                <span class="cms-excomp-card-link is-disabled">Kein Profil verfügbar</span>
-                            <?php endif; ?>
+                            <footer>
+                                <span class="cms-events-card__date-badge"><?= $industry !== '' ? $e($industry) : 'Company' ?></span>
+                                <?php if ($detailUrl !== ''): ?>
+                                    <a class="cms-events-card__more" href="<?= $e($detailUrl) ?>">Mehr Infos …</a>
+                                <?php else: ?>
+                                    <span class="cms-events-card__more">Kein Profil</span>
+                                <?php endif; ?>
+                            </footer>
 
                             <?php if ($websiteUrl !== ''): ?>
                                 <a class="cms-excomp-card-link cms-excomp-card-link--ghost" href="<?= $e($websiteUrl) ?>" target="_blank" rel="noopener noreferrer">Website öffnen</a>

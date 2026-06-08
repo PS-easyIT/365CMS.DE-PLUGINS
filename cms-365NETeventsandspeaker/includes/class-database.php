@@ -968,13 +968,19 @@ final class CMS_365NET_Events_Database
 
         $limit = $this->limit($args['limit'] ?? 100, 100);
         $offset = max(0, (int) ($args['offset'] ?? 0));
+        $order = match ((string) ($args['order'] ?? 'az')) {
+            'za' => 's.display_name DESC',
+            'date_old_new' => 'COALESCE(s.updated_at, s.created_at) ASC, s.display_name ASC',
+            'date_new_old' => 'COALESCE(s.updated_at, s.created_at) DESC, s.display_name ASC',
+            default => 's.display_name ASC',
+        };
 
         $stmt = $db->prepare("SELECT s.*, COUNT(r.id) AS event_count
             FROM {$p}365net_event_speakers s
             LEFT JOIN {$p}365net_event_speaker_rel r ON r.speaker_id = s.id
             WHERE " . implode(' AND ', $where) . "
             GROUP BY s.id
-            ORDER BY s.display_name ASC
+            ORDER BY {$order}
             LIMIT {$limit} OFFSET {$offset}");
         $stmt->execute($params);
 
@@ -1223,9 +1229,7 @@ final class CMS_365NET_Events_Database
     /** @return array<int, object> */
     public function getAvailableCompanies(int $limit = 300): array
     {
-        $sourceTable = $this->tableExists('companies')
-            ? 'companies'
-            : ($this->tableExists('365net_excomp_companies') ? '365net_excomp_companies' : '');
+        $sourceTable = $this->resolveCompanySourceTable();
 
         if ($sourceTable === '') {
             return [];
@@ -1260,9 +1264,7 @@ final class CMS_365NET_Events_Database
     /** @return array<int, object> */
     public function getAvailableExperts(int $limit = 300): array
     {
-        $sourceTable = $this->tableExists('experts')
-            ? 'experts'
-            : ($this->tableExists('365net_excomp_experts') ? '365net_excomp_experts' : '');
+        $sourceTable = $this->resolveExpertSourceTable();
 
         if ($sourceTable === '') {
             return [];
@@ -1300,9 +1302,7 @@ final class CMS_365NET_Events_Database
             return null;
         }
 
-        $sourceTable = $this->tableExists('companies')
-            ? 'companies'
-            : ($this->tableExists('365net_excomp_companies') ? '365net_excomp_companies' : '');
+        $sourceTable = $this->resolveCompanySourceTable();
         if ($sourceTable === '') {
             return null;
         }
@@ -1313,7 +1313,7 @@ final class CMS_365NET_Events_Database
         }
 
         $selectColumns = [];
-        foreach (['id', 'name', 'website', 'logo_url', 'location_city', 'industry', 'status'] as $column) {
+        foreach (['id', 'name', 'website', 'logo_url', 'location_city', 'industry', 'linked_expert_id', 'linked_speaker_id', 'status'] as $column) {
             if (in_array($column, $columns, true)) {
                 $selectColumns[] = $column;
             }
@@ -1336,9 +1336,7 @@ final class CMS_365NET_Events_Database
             return null;
         }
 
-        $sourceTable = $this->tableExists('experts')
-            ? 'experts'
-            : ($this->tableExists('365net_excomp_experts') ? '365net_excomp_experts' : '');
+        $sourceTable = $this->resolveExpertSourceTable();
         if ($sourceTable === '') {
             return null;
         }
@@ -1349,7 +1347,7 @@ final class CMS_365NET_Events_Database
         }
 
         $selectColumns = [];
-        foreach (['id', 'first_name', 'last_name', 'email', 'position', 'company', 'photo_url', 'location_city', 'status'] as $column) {
+        foreach (['id', 'first_name', 'last_name', 'email', 'position', 'company', 'photo_url', 'location_city', 'linked_company_id', 'linked_speaker_id', 'status'] as $column) {
             if (in_array($column, $columns, true)) {
                 $selectColumns[] = $column;
             }
@@ -1404,10 +1402,119 @@ final class CMS_365NET_Events_Database
         return $this->findExpertIdBySignals($data);
     }
 
+    private function resolveCompanySourceTable(): string
+    {
+        return $this->tableExists('companies')
+            ? 'companies'
+            : ($this->tableExists('365net_excomp_companies') ? '365net_excomp_companies' : '');
+    }
+
+    private function resolveExpertSourceTable(): string
+    {
+        return $this->tableExists('experts')
+            ? 'experts'
+            : ($this->tableExists('365net_excomp_experts') ? '365net_excomp_experts' : '');
+    }
+
+    /** @param array<string, mixed> $signals */
+    public function detectLinkedCompanyBySignals(array $signals): ?object
+    {
+        $companyId = $this->findCompanyIdBySignals($signals);
+        return $companyId !== null ? $this->getLinkedCompany($companyId) : null;
+    }
+
+    /** @param array<string, mixed> $signals */
+    public function detectLinkedExpertBySignals(array $signals): ?object
+    {
+        $expertId = $this->findExpertIdBySignals($signals);
+        return $expertId !== null ? $this->getLinkedExpert($expertId) : null;
+    }
+
+    public function findLinkedCompanyBySpeakerId(int $speakerId): ?object
+    {
+        if ($speakerId <= 0) {
+            return null;
+        }
+
+        $sourceTable = $this->resolveCompanySourceTable();
+        if ($sourceTable === '') {
+            return null;
+        }
+
+        $columns = $this->getExternalTableColumns($sourceTable);
+        if (!in_array('linked_speaker_id', $columns, true)) {
+            return null;
+        }
+
+        $where = ['linked_speaker_id = ?'];
+        $params = [$speakerId];
+        if (in_array('status', $columns, true)) {
+            $where[] = 'status = ?';
+            $params[] = 'active';
+        }
+
+        $orderParts = [];
+        foreach (['is_sponsor', 'is_top_partner', 'is_partner'] as $partnerColumn) {
+            if (in_array($partnerColumn, $columns, true)) {
+                $orderParts[] = $partnerColumn . ' DESC';
+            }
+        }
+        $orderParts[] = in_array('name', $columns, true) ? 'name ASC' : 'id ASC';
+
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare(
+            "SELECT id FROM {$db->prefix()}{$sourceTable} WHERE " . implode(' AND ', $where) . ' ORDER BY ' . implode(', ', $orderParts) . ' LIMIT 1'
+        );
+        $stmt->execute($params);
+        $companyId = (int) ($stmt->fetchColumn() ?: 0);
+
+        return $companyId > 0 ? $this->getLinkedCompany($companyId) : null;
+    }
+
+    public function findLinkedExpertBySpeakerId(int $speakerId): ?object
+    {
+        if ($speakerId <= 0) {
+            return null;
+        }
+
+        $sourceTable = $this->resolveExpertSourceTable();
+        if ($sourceTable === '') {
+            return null;
+        }
+
+        $columns = $this->getExternalTableColumns($sourceTable);
+        if (!in_array('linked_speaker_id', $columns, true)) {
+            return null;
+        }
+
+        $where = ['linked_speaker_id = ?'];
+        $params = [$speakerId];
+        if (in_array('status', $columns, true)) {
+            $where[] = 'status = ?';
+            $params[] = 'active';
+        }
+
+        $orderBy = in_array('updated_at', $columns, true) ? 'updated_at DESC' : 'id DESC';
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare(
+            "SELECT id FROM {$db->prefix()}{$sourceTable} WHERE " . implode(' AND ', $where) . ' ORDER BY ' . $orderBy . ' LIMIT 1'
+        );
+        $stmt->execute($params);
+        $expertId = (int) ($stmt->fetchColumn() ?: 0);
+
+        return $expertId > 0 ? $this->getLinkedExpert($expertId) : null;
+    }
+
     /** @param array<string, mixed> $data */
     private function findCompanyIdBySignals(array $data): ?int
     {
-        if (!$this->tableExists('companies')) {
+        $sourceTable = $this->resolveCompanySourceTable();
+        if ($sourceTable === '') {
+            return null;
+        }
+
+        $columns = $this->getExternalTableColumns($sourceTable);
+        if ($columns === [] || !in_array('id', $columns, true)) {
             return null;
         }
 
@@ -1424,17 +1531,44 @@ final class CMS_365NET_Events_Database
 
         $conditions = [];
         $params = [];
-        foreach ($names as $name) {
-            $conditions[] = 'LOWER(TRIM(name)) = ?';
-            $params[] = $name;
+        if (in_array('name', $columns, true)) {
+            foreach ($names as $name) {
+                $conditions[] = 'LOWER(TRIM(name)) = ?';
+                $params[] = $name;
+            }
         }
-        if ($domain !== '') {
+        if ($domain !== '' && in_array('website', $columns, true)) {
             $conditions[] = 'website LIKE ?';
             $params[] = '%' . $domain . '%';
         }
 
+        if ($conditions === []) {
+            return null;
+        }
+
+        $where = [];
+        if (in_array('status', $columns, true)) {
+            $where[] = 'status = ?';
+            $params = array_merge(['active'], $params);
+        }
+        $where[] = '(' . implode(' OR ', $conditions) . ')';
+
+        $orderParts = [];
+        foreach (['is_sponsor', 'is_top_partner', 'is_partner'] as $partnerColumn) {
+            if (in_array($partnerColumn, $columns, true)) {
+                $orderParts[] = $partnerColumn . ' DESC';
+            }
+        }
+        if (in_array('name', $columns, true)) {
+            $orderParts[] = 'name ASC';
+        } else {
+            $orderParts[] = 'id ASC';
+        }
+
         $db = CMS\Database::instance();
-        $stmt = $db->prepare("SELECT id FROM {$db->prefix()}companies WHERE status = 'active' AND (" . implode(' OR ', $conditions) . ") ORDER BY is_sponsor DESC, is_top_partner DESC, is_partner DESC, name ASC LIMIT 1");
+        $stmt = $db->prepare(
+            "SELECT id FROM {$db->prefix()}{$sourceTable} WHERE " . implode(' AND ', $where) . ' ORDER BY ' . implode(', ', $orderParts) . ' LIMIT 1'
+        );
         $stmt->execute($params);
         $id = (int) ($stmt->fetchColumn() ?: 0);
 
@@ -1444,7 +1578,13 @@ final class CMS_365NET_Events_Database
     /** @param array<string, mixed> $data */
     private function findExpertIdBySignals(array $data): ?int
     {
-        if (!$this->tableExists('experts')) {
+        $sourceTable = $this->resolveExpertSourceTable();
+        if ($sourceTable === '') {
+            return null;
+        }
+
+        $columns = $this->getExternalTableColumns($sourceTable);
+        if ($columns === [] || !in_array('id', $columns, true)) {
             return null;
         }
 
@@ -1455,15 +1595,15 @@ final class CMS_365NET_Events_Database
         $conditions = [];
         $params = [];
 
-        if ($email !== '') {
+        if ($email !== '' && in_array('email', $columns, true)) {
             $conditions[] = 'LOWER(email) = ?';
             $params[] = $email;
         }
-        if ($display !== '') {
+        if ($display !== '' && in_array('first_name', $columns, true) && in_array('last_name', $columns, true)) {
             $conditions[] = "LOWER(TRIM(CONCAT(first_name, ' ', last_name))) = ?";
             $params[] = $display;
         }
-        if ($first !== '' && $last !== '') {
+        if ($first !== '' && $last !== '' && in_array('first_name', $columns, true) && in_array('last_name', $columns, true)) {
             $conditions[] = '(LOWER(TRIM(first_name)) = ? AND LOWER(TRIM(last_name)) = ?)';
             $params[] = $first;
             $params[] = $last;
@@ -1472,8 +1612,19 @@ final class CMS_365NET_Events_Database
             return null;
         }
 
+        $where = [];
+        if (in_array('status', $columns, true)) {
+            $where[] = 'status = ?';
+            $params = array_merge(['active'], $params);
+        }
+        $where[] = '(' . implode(' OR ', $conditions) . ')';
+
+        $orderBy = in_array('updated_at', $columns, true) ? 'updated_at DESC' : 'id DESC';
+
         $db = CMS\Database::instance();
-        $stmt = $db->prepare("SELECT id FROM {$db->prefix()}experts WHERE status = 'active' AND (" . implode(' OR ', $conditions) . ") ORDER BY updated_at DESC LIMIT 1");
+        $stmt = $db->prepare(
+            "SELECT id FROM {$db->prefix()}{$sourceTable} WHERE " . implode(' AND ', $where) . ' ORDER BY ' . $orderBy . ' LIMIT 1'
+        );
         $stmt->execute($params);
         $id = (int) ($stmt->fetchColumn() ?: 0);
 
@@ -1623,36 +1774,63 @@ final class CMS_365NET_Events_Database
 
     private function syncExcompLinksFromSpeaker(int $speakerId, ?int $linkedExpertId, ?int $linkedCompanyId): void
     {
-        if ($speakerId <= 0 || !$this->tableExists('365net_excomp_experts')) {
-            return;
-        }
-
-        $excompColumns = $this->getExternalTableColumns('365net_excomp_experts');
-        if (!in_array('linked_speaker_id', $excompColumns, true)) {
+        if ($speakerId <= 0) {
             return;
         }
 
         $db = CMS\Database::instance();
-        $table = $db->prefix() . '365net_excomp_experts';
 
         try {
-            if ($linkedExpertId === null || $linkedExpertId <= 0) {
-                $clearAll = $db->prepare("UPDATE {$table} SET linked_speaker_id = NULL WHERE linked_speaker_id = ?");
-                $clearAll->execute([$speakerId]);
-                return;
+            if ($this->tableExists('365net_excomp_experts')) {
+                $expertColumns = $this->getExternalTableColumns('365net_excomp_experts');
+                if (in_array('linked_speaker_id', $expertColumns, true)) {
+                    $expertsTable = $db->prefix() . '365net_excomp_experts';
+
+                    if ($linkedExpertId === null || $linkedExpertId <= 0) {
+                        $clearExperts = $db->prepare("UPDATE {$expertsTable} SET linked_speaker_id = NULL WHERE linked_speaker_id = ?");
+                        $clearExperts->execute([$speakerId]);
+                    } else {
+                        $clearOtherExperts = $db->prepare("UPDATE {$expertsTable} SET linked_speaker_id = NULL WHERE linked_speaker_id = ? AND id <> ?");
+                        $clearOtherExperts->execute([$speakerId, $linkedExpertId]);
+
+                        if (in_array('linked_company_id', $expertColumns, true)) {
+                            $updateExpert = $db->prepare("UPDATE {$expertsTable} SET linked_speaker_id = ?, linked_company_id = ? WHERE id = ?");
+                            $updateExpert->execute([$speakerId, $linkedCompanyId, $linkedExpertId]);
+                        } else {
+                            $updateExpert = $db->prepare("UPDATE {$expertsTable} SET linked_speaker_id = ? WHERE id = ?");
+                            $updateExpert->execute([$speakerId, $linkedExpertId]);
+                        }
+                    }
+                }
             }
 
-            $clearOthers = $db->prepare("UPDATE {$table} SET linked_speaker_id = NULL WHERE linked_speaker_id = ? AND id <> ?");
-            $clearOthers->execute([$speakerId, $linkedExpertId]);
+            if ($this->tableExists('365net_excomp_companies')) {
+                $companyColumns = $this->getExternalTableColumns('365net_excomp_companies');
+                if (in_array('linked_speaker_id', $companyColumns, true)) {
+                    $companiesTable = $db->prefix() . '365net_excomp_companies';
 
-            if (in_array('linked_company_id', $excompColumns, true)) {
-                $stmt = $db->prepare("UPDATE {$table} SET linked_speaker_id = ?, linked_company_id = ? WHERE id = ?");
-                $stmt->execute([$speakerId, $linkedCompanyId, $linkedExpertId]);
-                return;
+                    if ($linkedCompanyId === null || $linkedCompanyId <= 0) {
+                        $clearCompanies = $db->prepare("UPDATE {$companiesTable} SET linked_speaker_id = NULL WHERE linked_speaker_id = ?");
+                        $clearCompanies->execute([$speakerId]);
+                    } else {
+                        $clearOtherCompanies = $db->prepare("UPDATE {$companiesTable} SET linked_speaker_id = NULL WHERE linked_speaker_id = ? AND id <> ?");
+                        $clearOtherCompanies->execute([$speakerId, $linkedCompanyId]);
+
+                        if (in_array('linked_expert_id', $companyColumns, true)) {
+                            if ($linkedExpertId !== null && $linkedExpertId > 0) {
+                                $updateCompany = $db->prepare("UPDATE {$companiesTable} SET linked_speaker_id = ?, linked_expert_id = COALESCE(linked_expert_id, ?) WHERE id = ?");
+                                $updateCompany->execute([$speakerId, $linkedExpertId, $linkedCompanyId]);
+                            } else {
+                                $updateCompany = $db->prepare("UPDATE {$companiesTable} SET linked_speaker_id = ? WHERE id = ?");
+                                $updateCompany->execute([$speakerId, $linkedCompanyId]);
+                            }
+                        } else {
+                            $updateCompany = $db->prepare("UPDATE {$companiesTable} SET linked_speaker_id = ? WHERE id = ?");
+                            $updateCompany->execute([$speakerId, $linkedCompanyId]);
+                        }
+                    }
+                }
             }
-
-            $stmt = $db->prepare("UPDATE {$table} SET linked_speaker_id = ? WHERE id = ?");
-            $stmt->execute([$speakerId, $linkedExpertId]);
         } catch (Throwable $e) {
             $this->logDatabaseWarning('sync_excomp_links_from_speaker', $e);
         }

@@ -117,11 +117,77 @@ final class CMS_365NET_Events_Post_Type
         $speakers = $db->getSpeakersForEvent((int) $event->id);
         CMS\Hooks::doAction('cms_365net_event_viewed', (int) $event->id);
 
+        $linkedCompany = $db->getLinkedCompany(isset($event->linked_company_id) ? (int) $event->linked_company_id : null);
+        $linkedExpert = $db->getLinkedExpert(isset($event->linked_expert_id) ? (int) $event->linked_expert_id : null);
+
+        $eventSignals = [
+            'organizer' => (string) ($event->organizer ?? ''),
+            'company' => (string) ($event->organizer ?? ''),
+            'contact_name' => (string) ($event->contact_name ?? ''),
+            'website' => (string) ($event->website ?? ''),
+            'registration_url' => (string) ($event->registration_url ?? ''),
+            'ticket_url' => (string) ($event->ticket_url ?? ''),
+        ];
+
+        if ($linkedCompany === null) {
+            $linkedCompany = $db->detectLinkedCompanyBySignals($eventSignals);
+        }
+        if ($linkedExpert === null) {
+            $linkedExpert = $db->detectLinkedExpertBySignals($eventSignals);
+        }
+
+        if (($linkedCompany === null || $linkedExpert === null) && $speakers !== []) {
+            foreach ($speakers as $speaker) {
+                if (!is_object($speaker)) {
+                    continue;
+                }
+
+                $speakerId = (int) ($speaker->id ?? 0);
+
+                if ($linkedCompany === null) {
+                    $speakerLinkedCompanyId = (int) ($speaker->linked_company_id ?? 0);
+                    if ($speakerLinkedCompanyId > 0) {
+                        $linkedCompany = $db->getLinkedCompany($speakerLinkedCompanyId);
+                    }
+                    if ($linkedCompany === null && $speakerId > 0) {
+                        $linkedCompany = $db->findLinkedCompanyBySpeakerId($speakerId);
+                    }
+                }
+
+                if ($linkedExpert === null) {
+                    $speakerLinkedExpertId = (int) ($speaker->linked_expert_id ?? 0);
+                    if ($speakerLinkedExpertId > 0) {
+                        $linkedExpert = $db->getLinkedExpert($speakerLinkedExpertId);
+                    }
+                    if ($linkedExpert === null && $speakerId > 0) {
+                        $linkedExpert = $db->findLinkedExpertBySpeakerId($speakerId);
+                    }
+                }
+
+                if ($linkedCompany !== null && $linkedExpert !== null) {
+                    break;
+                }
+            }
+        }
+
+        if ($linkedCompany === null && $linkedExpert !== null) {
+            $expertLinkedCompanyId = (int) ($linkedExpert->linked_company_id ?? 0);
+            if ($expertLinkedCompanyId > 0) {
+                $linkedCompany = $db->getLinkedCompany($expertLinkedCompanyId);
+            }
+        }
+        if ($linkedExpert === null && $linkedCompany !== null) {
+            $companyLinkedExpertId = (int) ($linkedCompany->linked_expert_id ?? 0);
+            if ($companyLinkedExpertId > 0) {
+                $linkedExpert = $db->getLinkedExpert($companyLinkedExpertId);
+            }
+        }
+
         $this->renderWithTheme('single-event', [
             'event' => $event,
             'speakers' => $speakers,
-            'linkedCompany' => $db->getLinkedCompany(isset($event->linked_company_id) ? (int) $event->linked_company_id : null),
-            'linkedExpert' => $db->getLinkedExpert(isset($event->linked_expert_id) ? (int) $event->linked_expert_id : null),
+            'linkedCompany' => $linkedCompany,
+            'linkedExpert' => $linkedExpert,
             'settings' => $db->getSettings(),
         ]);
     }
@@ -159,11 +225,50 @@ final class CMS_365NET_Events_Post_Type
         $events = $db->getEventsForSpeaker((int) $speaker->id);
         CMS\Hooks::doAction('cms_365net_speaker_viewed', (int) $speaker->id);
 
+        $linkedCompany = $db->getLinkedCompany(isset($speaker->linked_company_id) ? (int) $speaker->linked_company_id : null);
+        $linkedExpert = $db->getLinkedExpert(isset($speaker->linked_expert_id) ? (int) $speaker->linked_expert_id : null);
+
+        $speakerId = (int) ($speaker->id ?? 0);
+        if ($linkedCompany === null && $speakerId > 0) {
+            $linkedCompany = $db->findLinkedCompanyBySpeakerId($speakerId);
+        }
+        if ($linkedExpert === null && $speakerId > 0) {
+            $linkedExpert = $db->findLinkedExpertBySpeakerId($speakerId);
+        }
+
+        $speakerSignals = [
+            'display_name' => (string) ($speaker->display_name ?? ''),
+            'first_name' => (string) ($speaker->first_name ?? ''),
+            'last_name' => (string) ($speaker->last_name ?? ''),
+            'company' => (string) ($speaker->company ?? ''),
+            'email' => (string) ($speaker->email ?? ''),
+            'website' => (string) ($speaker->website ?? ''),
+        ];
+        if ($linkedCompany === null) {
+            $linkedCompany = $db->detectLinkedCompanyBySignals($speakerSignals);
+        }
+        if ($linkedExpert === null) {
+            $linkedExpert = $db->detectLinkedExpertBySignals($speakerSignals);
+        }
+
+        if ($linkedCompany === null && $linkedExpert !== null) {
+            $expertLinkedCompanyId = (int) ($linkedExpert->linked_company_id ?? 0);
+            if ($expertLinkedCompanyId > 0) {
+                $linkedCompany = $db->getLinkedCompany($expertLinkedCompanyId);
+            }
+        }
+        if ($linkedExpert === null && $linkedCompany !== null) {
+            $companyLinkedExpertId = (int) ($linkedCompany->linked_expert_id ?? 0);
+            if ($companyLinkedExpertId > 0) {
+                $linkedExpert = $db->getLinkedExpert($companyLinkedExpertId);
+            }
+        }
+
         $this->renderWithTheme('single-speaker', [
             'speaker' => $speaker,
             'relatedEvents' => $events,
-            'linkedCompany' => $db->getLinkedCompany(isset($speaker->linked_company_id) ? (int) $speaker->linked_company_id : null),
-            'linkedExpert' => $db->getLinkedExpert(isset($speaker->linked_expert_id) ? (int) $speaker->linked_expert_id : null),
+            'linkedCompany' => $linkedCompany,
+            'linkedExpert' => $linkedExpert,
             'settings' => $db->getSettings(),
         ]);
     }
@@ -411,11 +516,14 @@ final class CMS_365NET_Events_Post_Type
         if (!$this->requireAdmin()) {
             return;
         }
+        $search = $this->cleanQuery((string) ($_GET['q'] ?? ''));
+        $sort = $this->parseAdminSort((string) ($_GET['sort'] ?? 'az'));
         $speakers = CMS_365NET_Events_Database::instance()->getSpeakers([
-            'search' => $this->cleanQuery((string) ($_GET['q'] ?? '')),
+            'search' => $search,
+            'order' => $sort,
             'limit' => 300,
         ]);
-        CMS_365NET_Events_Admin::instance()->renderSpeakersList($speakers);
+        CMS_365NET_Events_Admin::instance()->renderSpeakersList($speakers, $search, $sort);
     }
 
     public function adminSpeakerNew(): void
@@ -556,5 +664,11 @@ final class CMS_365NET_Events_Post_Type
         $value = trim($value);
         $value = preg_replace('/[^a-zA-Z0-9_-]+/', '', $value) ?? '';
         return substr($value, 0, 255);
+    }
+
+    private function parseAdminSort(string $sort): string
+    {
+        $sort = trim($sort);
+        return in_array($sort, ['az', 'za', 'date_old_new', 'date_new_old'], true) ? $sort : 'az';
     }
 }

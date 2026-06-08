@@ -242,15 +242,33 @@ final class CMS_365NET_Events_Admin
     }
 
     /** @param array<int, object> $speakers */
-    public function renderSpeakersList(array $speakers): void
+    public function renderSpeakersList(array $speakers, string $search = '', string $sort = 'az'): void
     {
         $this->start('365NET Speaker', '365netevents');
         $csrf = CMS\Security::instance()->generateToken('365net_admin');
-        $q = htmlspecialchars((string) ($_GET['q'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $search = trim($search);
+        $sort = in_array($sort, ['az', 'za', 'date_old_new', 'date_new_old'], true) ? $sort : 'az';
+        $q = htmlspecialchars($search, ENT_QUOTES, 'UTF-8');
+        $sortOptions = [
+            'az' => 'A–Z',
+            'za' => 'Z–A',
+            'date_old_new' => 'Datum alt→neu',
+            'date_new_old' => 'Datum neu→alt',
+        ];
+        $baseUrl = rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers';
+        $buildSortUrl = static function (string $targetSort) use ($baseUrl, $search): string {
+            $query = ['sort' => $targetSort];
+            if ($search !== '') {
+                $query['q'] = $search;
+            }
+
+            return $baseUrl . '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        };
         ?>
         <div class="cms365-admin-header"><div><h2>🎤 Event-Speaker</h2><p>Speaker, Organisationen und Sammel-Speaker aus den Seed-Daten verwalten.</p></div><div class="cms365-admin-actions"><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents', ENT_QUOTES, 'UTF-8') ?>">Events</a><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/speakers', ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Öffentlich</a><a class="btn btn-primary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers/new', ENT_QUOTES, 'UTF-8') ?>">Neuer Speaker</a></div></div>
         <?php $this->flash(); ?>
-        <div class="admin-card cms365-admin-card"><form method="GET" class="cms365-filter-form"><input type="text" name="q" value="<?= $q ?>" placeholder="Speaker, Thema oder Tag suchen …" class="form-control"><button class="btn btn-primary" type="submit">Suchen</button></form></div>
+        <div class="admin-card cms365-admin-card"><form method="GET" class="cms365-filter-form"><input type="hidden" name="sort" value="<?= htmlspecialchars($sort, ENT_QUOTES, 'UTF-8') ?>"><input type="text" name="q" value="<?= $q ?>" placeholder="Speaker, Thema oder Tag suchen …" class="form-control"><button class="btn btn-primary" type="submit">Suchen</button><?php if ($search !== ''): ?><a class="btn btn-secondary" href="<?= htmlspecialchars($buildSortUrl($sort), ENT_QUOTES, 'UTF-8') ?>">Reset</a><?php endif; ?></form></div>
+        <div class="cms365-admin-actions cms365-admin-sort-actions"><?php foreach ($sortOptions as $sortKey => $sortLabel): ?><a class="btn <?= $sortKey === $sort ? 'btn-primary' : 'btn-secondary' ?>" href="<?= htmlspecialchars($buildSortUrl($sortKey), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($sortLabel, ENT_QUOTES, 'UTF-8') ?></a><?php endforeach; ?></div>
         <div class="admin-card cms365-admin-card"><h3>Speakerliste (<?= count($speakers) ?>)</h3><div class="cms365-table-wrap"><table class="users-table cms365-table"><thead><tr><th>Speaker</th><th>Thema</th><th>Events</th><th>Status</th><th>Aktionen</th></tr></thead><tbody>
         <?php foreach ($speakers as $speaker): ?><tr><td><strong><?= $this->e($speaker->display_name ?? '') ?></strong><br><small><?= $this->e($speaker->award ?? '') ?></small></td><td><?= $this->e($speaker->topic ?? '') ?></td><td><?= (int) ($speaker->event_count ?? 0) ?></td><td><span class="status-badge <?= ($speaker->status ?? '') === 'published' ? 'active' : 'inactive' ?>"><?= $this->e($speaker->status ?? '') ?></span></td><td class="cms365-row-actions"><a class="btn btn-sm btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers/edit/' . (int) $speaker->id, ENT_QUOTES, 'UTF-8') ?>">✏️</a><a class="btn btn-sm btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/speakers/' . rawurlencode((string) $speaker->slug), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">👁️</a><form method="POST" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365netevents/speakers/delete/' . (int) $speaker->id, ENT_QUOTES, 'UTF-8') ?>" data-confirm="Diesen Speaker löschen?"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>"><button class="btn btn-sm btn-danger" type="submit">🗑️</button></form></td></tr><?php endforeach; ?>
         </tbody></table></div></div>

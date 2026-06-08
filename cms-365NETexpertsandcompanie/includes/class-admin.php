@@ -228,6 +228,25 @@ final class CMS_365NET_Experts_And_Companie_Admin
     {
         $rows = is_array($data['rows'] ?? null) ? $data['rows'] : [];
         $search = trim((string) ($data['search'] ?? ''));
+        $sort = trim((string) ($data['sort'] ?? 'az'));
+        if (!in_array($sort, ['az', 'za', 'date_old_new', 'date_new_old'], true)) {
+            $sort = 'az';
+        }
+        $sortOptions = [
+            'az' => 'A–Z',
+            'za' => 'Z–A',
+            'date_old_new' => 'Datum alt→neu',
+            'date_new_old' => 'Datum neu→alt',
+        ];
+        $baseUrl = rtrim((string) SITE_URL, '/') . '/admin/experts-companie/experts';
+        $buildSortUrl = static function (string $targetSort) use ($baseUrl, $search): string {
+            $query = ['sort' => $targetSort];
+            if ($search !== '') {
+                $query['q'] = $search;
+            }
+
+            return $baseUrl . '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        };
 
         $this->start('Experts verwalten', 'experts-companie');
         ?>
@@ -242,11 +261,18 @@ final class CMS_365NET_Experts_And_Companie_Admin
             </div>
         </div>
 
-        <form class="cms-excomp-admin-search" method="GET" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/experts-companie/experts', ENT_QUOTES, 'UTF-8') ?>">
+        <form class="cms-excomp-admin-search" method="GET" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="sort" value="<?= htmlspecialchars($sort, ENT_QUOTES, 'UTF-8') ?>">
             <input type="search" name="q" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" placeholder="Name, Firma, Skills ...">
             <button type="submit" class="btn btn-secondary">Suchen</button>
-            <?php if ($search !== ''): ?><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/experts-companie/experts', ENT_QUOTES, 'UTF-8') ?>">Reset</a><?php endif; ?>
+            <?php if ($search !== ''): ?><a class="btn btn-secondary" href="<?= htmlspecialchars($buildSortUrl($sort), ENT_QUOTES, 'UTF-8') ?>">Reset</a><?php endif; ?>
         </form>
+
+        <div class="cms-excomp-admin-actions cms-excomp-admin-sort">
+            <?php foreach ($sortOptions as $sortKey => $sortLabel): ?>
+                <a class="btn <?= $sortKey === $sort ? 'btn-primary' : 'btn-secondary' ?>" href="<?= htmlspecialchars($buildSortUrl($sortKey), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($sortLabel, ENT_QUOTES, 'UTF-8') ?></a>
+            <?php endforeach; ?>
+        </div>
 
         <div class="admin-card cms-excomp-admin-table-wrap">
             <table class="cms-excomp-admin-table">
@@ -288,6 +314,25 @@ final class CMS_365NET_Experts_And_Companie_Admin
     {
         $rows = is_array($data['rows'] ?? null) ? $data['rows'] : [];
         $search = trim((string) ($data['search'] ?? ''));
+        $sort = trim((string) ($data['sort'] ?? 'az'));
+        if (!in_array($sort, ['az', 'za', 'date_old_new', 'date_new_old'], true)) {
+            $sort = 'az';
+        }
+        $sortOptions = [
+            'az' => 'A–Z',
+            'za' => 'Z–A',
+            'date_old_new' => 'Datum alt→neu',
+            'date_new_old' => 'Datum neu→alt',
+        ];
+        $baseUrl = rtrim((string) SITE_URL, '/') . '/admin/experts-companie/companies';
+        $buildSortUrl = static function (string $targetSort) use ($baseUrl, $search): string {
+            $query = ['sort' => $targetSort];
+            if ($search !== '') {
+                $query['q'] = $search;
+            }
+
+            return $baseUrl . '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        };
 
         $this->start('Companies verwalten', 'experts-companie');
         ?>
@@ -302,11 +347,18 @@ final class CMS_365NET_Experts_And_Companie_Admin
             </div>
         </div>
 
-        <form class="cms-excomp-admin-search" method="GET" action="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/experts-companie/companies', ENT_QUOTES, 'UTF-8') ?>">
+        <form class="cms-excomp-admin-search" method="GET" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="sort" value="<?= htmlspecialchars($sort, ENT_QUOTES, 'UTF-8') ?>">
             <input type="search" name="q" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" placeholder="Name, Branche ...">
             <button type="submit" class="btn btn-secondary">Suchen</button>
-            <?php if ($search !== ''): ?><a class="btn btn-secondary" href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/experts-companie/companies', ENT_QUOTES, 'UTF-8') ?>">Reset</a><?php endif; ?>
+            <?php if ($search !== ''): ?><a class="btn btn-secondary" href="<?= htmlspecialchars($buildSortUrl($sort), ENT_QUOTES, 'UTF-8') ?>">Reset</a><?php endif; ?>
         </form>
+
+        <div class="cms-excomp-admin-actions cms-excomp-admin-sort">
+            <?php foreach ($sortOptions as $sortKey => $sortLabel): ?>
+                <a class="btn <?= $sortKey === $sort ? 'btn-primary' : 'btn-secondary' ?>" href="<?= htmlspecialchars($buildSortUrl($sortKey), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($sortLabel, ENT_QUOTES, 'UTF-8') ?></a>
+            <?php endforeach; ?>
+        </div>
 
         <div class="admin-card cms-excomp-admin-table-wrap">
             <table class="cms-excomp-admin-table">

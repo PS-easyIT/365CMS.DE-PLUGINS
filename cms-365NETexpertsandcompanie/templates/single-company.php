@@ -80,36 +80,38 @@ if ($letters !== '') {
 }
 ?>
 
-<main class="cms-excomp-public cms-excomp-detail cms-excomp-detail--company">
+<main class="cms-events-public cms-events-detail cms-excomp-public cms-excomp-detail cms-excomp-detail--company">
     <div class="cms-excomp-container">
-        <nav class="cms-excomp-breadcrumb">
+        <nav class="cms-events-breadcrumb cms-excomp-breadcrumb">
             <a href="<?= $e($base . '/companies') ?>">Companies</a>
             <span>/</span>
             <span><?= $e($name) ?></span>
         </nav>
 
-        <article class="cms-excomp-detail-layout">
-            <header class="cms-excomp-detail-header cms-excomp-detail-header--company">
-                <div class="cms-excomp-detail-header__identity">
-                    <span class="cms-excomp-avatar cms-excomp-avatar--fallback cms-excomp-avatar--company cms-excomp-avatar--detail"><?= $e($companyInitials) ?></span>
-                    <div class="cms-excomp-detail-header__text">
-                        <h1><?= $e($name) ?></h1>
-                        <?php if ($metaItems !== []): ?>
-                            <div class="cms-excomp-detail-header__meta"><?php foreach ($metaItems as $meta): ?><span><?= $e($meta) ?></span><?php endforeach; ?></div>
-                        <?php endif; ?>
+        <article class="cms-events-detail-layout cms-excomp-detail-layout">
+            <header class="cms-events-detail-header cms-excomp-detail-header cms-excomp-detail-header--company">
+                <div class="cms-events-detail-header__content">
+                    <div class="cms-events-detail-header__intro cms-excomp-detail-header__identity">
+                        <span class="cms-excomp-avatar cms-excomp-avatar--fallback cms-excomp-avatar--company cms-excomp-avatar--detail"><?= $e($companyInitials) ?></span>
+                        <div class="cms-events-detail-header__text cms-excomp-detail-header__text">
+                            <h1><?= $e($name) ?></h1>
+                            <?php if ($metaItems !== []): ?>
+                                <div class="cms-excomp-detail-header__meta"><?php foreach ($metaItems as $meta): ?><span><?= $e($meta) ?></span><?php endforeach; ?></div>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
             </header>
 
-            <div class="cms-excomp-detail-layout__body">
-                <section class="cms-excomp-detail-main">
+            <div class="cms-events-detail-layout__body cms-excomp-detail-layout__body">
+                <section class="cms-events-detail-main cms-excomp-detail-main">
                     <?= $renderEditor($company->description_json ?? '', $company->description ?? '') ?>
                 </section>
 
-                <aside class="cms-excomp-sidebar">
-                    <section class="cms-excomp-sidecard">
+                <aside class="cms-events-sidebar cms-excomp-sidebar">
+                    <section class="cms-events-sidecard cms-excomp-sidecard">
                         <h2>Kontakt</h2>
-                        <dl class="cms-excomp-meta-list">
+                        <dl class="cms-events-sidecard__meta cms-excomp-meta-list">
                             <?php if ($companySize !== ''): ?><div><dt>Größe</dt><dd><?= $e($companySize) ?></dd></div><?php endif; ?>
                             <?php if ($email !== ''): ?><div><dt>E-Mail</dt><dd><a href="mailto:<?= $e($email) ?>"><?= $e($email) ?></a></dd></div><?php endif; ?>
                             <?php if ($phone !== ''): ?><div><dt>Telefon</dt><dd><?= $e($phone) ?></dd></div><?php endif; ?>
@@ -118,7 +120,7 @@ if ($letters !== '') {
                     </section>
 
                     <?php if ($linkedExpert !== null || $linkedSpeaker !== null): ?>
-                        <section class="cms-excomp-sidecard">
+                        <section class="cms-events-sidecard cms-excomp-sidecard">
                             <h2>Direkt verknüpft</h2>
                             <div class="cms-excomp-linked cms-excomp-linked--stack">
                                 <?php if ($linkedExpert !== null): ?>
@@ -142,9 +144,9 @@ if ($letters !== '') {
             </div>
 
             <?php if ($linkedExperts !== [] || $linkedSpeakers !== []): ?>
-                <section class="cms-excomp-detail-related">
+                <section class="cms-events-section cms-excomp-detail-related">
                     <?php if ($linkedExperts !== []): ?>
-                        <div class="cms-excomp-sidecard">
+                        <div class="cms-events-sidecard cms-excomp-sidecard">
                             <h2>Expert:innen</h2>
                             <div class="cms-excomp-linked">
                                 <?php foreach ($linkedExperts as $expert): ?>
@@ -165,7 +167,7 @@ if ($letters !== '') {
                     <?php endif; ?>
 
                     <?php if ($linkedSpeakers !== []): ?>
-                        <div class="cms-excomp-sidecard">
+                        <div class="cms-events-sidecard cms-excomp-sidecard">
                             <h2>Speaker</h2>
                             <div class="cms-excomp-linked">
                                 <?php foreach ($linkedSpeakers as $speaker): ?>

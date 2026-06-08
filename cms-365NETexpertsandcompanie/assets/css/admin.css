@@ -108,6 +108,10 @@
     margin-bottom: 14px;
 }
 
+.cms-excomp-admin-sort {
+    margin: -4px 0 12px;
+}
+
 .cms-excomp-admin-search input {
     flex: 1;
     min-width: 220px;

@@ -65,36 +65,38 @@ if ($initials === '') {
 }
 ?>
 
-<main class="cms-excomp-public cms-excomp-detail cms-excomp-detail--expert">
+<main class="cms-events-public cms-events-detail cms-excomp-public cms-excomp-detail cms-excomp-detail--expert">
     <div class="cms-excomp-container">
-        <nav class="cms-excomp-breadcrumb">
+        <nav class="cms-events-breadcrumb cms-excomp-breadcrumb">
             <a href="<?= $e($base . '/experts') ?>">Experts</a>
             <span>/</span>
             <span><?= $e($fullName) ?></span>
         </nav>
 
-        <article class="cms-excomp-detail-layout">
-            <header class="cms-excomp-detail-header">
-                <div class="cms-excomp-detail-header__identity">
-                    <span class="cms-excomp-avatar cms-excomp-avatar--fallback cms-excomp-avatar--detail"><?= $e($initials) ?></span>
-                    <div class="cms-excomp-detail-header__text">
-                        <h1><?= $e($fullName) ?></h1>
-                        <?php if ($metaItems !== []): ?>
-                            <div class="cms-excomp-detail-header__meta"><?php foreach ($metaItems as $meta): ?><span><?= $e($meta) ?></span><?php endforeach; ?></div>
-                        <?php endif; ?>
+        <article class="cms-events-detail-layout cms-excomp-detail-layout">
+            <header class="cms-events-detail-header cms-excomp-detail-header">
+                <div class="cms-events-detail-header__content">
+                    <div class="cms-events-detail-header__intro cms-excomp-detail-header__identity">
+                        <span class="cms-excomp-avatar cms-excomp-avatar--fallback cms-excomp-avatar--detail"><?= $e($initials) ?></span>
+                        <div class="cms-events-detail-header__text cms-excomp-detail-header__text">
+                            <h1><?= $e($fullName) ?></h1>
+                            <?php if ($metaItems !== []): ?>
+                                <div class="cms-excomp-detail-header__meta"><?php foreach ($metaItems as $meta): ?><span><?= $e($meta) ?></span><?php endforeach; ?></div>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
             </header>
 
-            <div class="cms-excomp-detail-layout__body">
-                <section class="cms-excomp-detail-main">
+            <div class="cms-events-detail-layout__body cms-excomp-detail-layout__body">
+                <section class="cms-events-detail-main cms-excomp-detail-main">
                     <?= $renderEditor($expert->biography_json ?? '', $expert->biography ?? '') ?>
                 </section>
 
-                <aside class="cms-excomp-sidebar">
-                    <section class="cms-excomp-sidecard">
+                <aside class="cms-events-sidebar cms-excomp-sidebar">
+                    <section class="cms-events-sidecard cms-excomp-sidecard">
                         <h2>Profil</h2>
-                        <dl class="cms-excomp-meta-list">
+                        <dl class="cms-events-sidecard__meta cms-excomp-meta-list">
                             <?php if ($availability !== ''): ?><div><dt>Verfügbarkeit</dt><dd><?= $e($availability) ?></dd></div><?php endif; ?>
                             <?php if ($skillsGeneral !== ''): ?><div><dt>Skills</dt><dd><?= $e($skillsGeneral) ?></dd></div><?php endif; ?>
                             <?php if ($skillsTech !== ''): ?><div><dt>Tech</dt><dd><?= $e($skillsTech) ?></dd></div><?php endif; ?>
@@ -103,7 +105,7 @@ if ($initials === '') {
                     </section>
 
                     <?php if ($linkedCompany !== null || $linkedSpeaker !== null || $website !== ''): ?>
-                        <section class="cms-excomp-sidecard">
+                        <section class="cms-events-sidecard cms-excomp-sidecard">
                             <h2>Verknüpfungen</h2>
                             <div class="cms-excomp-linked cms-excomp-linked--stack">
                                 <?php if ($linkedCompany !== null): ?>

@@ -27,6 +27,22 @@ $city = trim((string) ($filters['city'] ?? ''));
 $baseUrl = rtrim((string) SITE_URL, '/') . '/experts';
 $e = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 
+$expertCardExcerpt = static function (object $expert): string {
+    $raw = trim((string) ($expert->biography ?? ''));
+    if ($raw === '') {
+        return '';
+    }
+
+    $text = trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($raw), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+    if ($text === '') {
+        return '';
+    }
+
+    return function_exists('mb_substr')
+        ? (string) mb_substr($text, 0, 180, 'UTF-8')
+        : substr($text, 0, 180);
+};
+
 $expertInitials = static function (object $expert): string {
     $first = trim((string) ($expert->first_name ?? ''));
     $last = trim((string) ($expert->last_name ?? ''));
@@ -42,25 +58,29 @@ $expertName = static function (object $expert): string {
 };
 ?>
 
-<main class="cms-excomp-public cms-excomp-public--experts">
-    <div class="cms-excomp-container">
-        <section class="cms-excomp-hero cms-excomp-hero--experts" aria-label="Experts">
-            <p class="cms-excomp-kicker">365 Network · Experts</p>
+<main class="cms-events-public cms-speakers-archive cms-excomp-public cms-excomp-public--experts">
+    <div class="cms-events-container cms-excomp-container">
+        <section class="cms-events-hero cms-events-hero--compact cms-excomp-hero cms-excomp-hero--experts" aria-label="Experts">
+            <span class="cms-events-kicker">365 Network · Experts</span>
             <h1>Experts</h1>
             <p>Publicsite im Events-/Speaker-Stil: filter-first, responsive Card-Grid und fokussierte Expertenprofile.</p>
         </section>
 
-        <form method="GET" action="<?= $e($baseUrl) ?>" class="cms-excomp-search" role="search" aria-label="Experts Suche">
-            <input type="search" name="q" value="<?= $e($q) ?>" placeholder="Name, Firma, Position, Skills …">
-            <input type="text" name="city" value="<?= $e($city) ?>" placeholder="Stadt …">
-            <button type="submit">Suchen</button>
-            <?php if ($q !== '' || $city !== ''): ?>
-                <a href="<?= $e($baseUrl) ?>" class="cms-excomp-reset">Reset</a>
-            <?php endif; ?>
+        <form method="GET" action="<?= $e($baseUrl) ?>" class="cms-events-search cms-events-search--header-card cms-excomp-search" role="search" aria-label="Experts Suche">
+            <div class="cms-events-search__field">
+                <input type="search" name="q" value="<?= $e($q) ?>" placeholder="Name, Firma, Position, Skills …">
+            </div>
+            <div class="cms-events-search__field">
+                <input type="text" name="city" value="<?= $e($city) ?>" placeholder="Stadt …">
+            </div>
+            <div class="cms-events-search__actions">
+                <button type="submit">Suchen</button>
+                <?php if ($q !== '' || $city !== ''): ?>
+                    <a href="<?= $e($baseUrl) ?>" class="cms-excomp-reset">Reset</a>
+                <?php endif; ?>
+            </div>
         </form>
-    </div>
 
-    <div class="cms-excomp-container cms-excomp-content">
         <section class="cms-excomp-section cms-excomp-section--experts" aria-label="Experts Liste">
             <header class="cms-excomp-section-head">
                 <h2>Expert:innen</h2>
@@ -72,7 +92,7 @@ $expertName = static function (object $expert): string {
                     <p>Keine Experts für den aktuellen Filter gefunden.</p>
                 </div>
             <?php else: ?>
-                <div class="cms-excomp-grid">
+                <div class="cms-events-grid cms-excomp-grid">
                     <?php foreach ($experts as $expert): ?>
                         <?php
                         $name = $expertName($expert);
@@ -83,27 +103,31 @@ $expertName = static function (object $expert): string {
                         $location = trim((string) ($expert->location_city ?? $expert->city ?? ''));
                         $availability = trim((string) ($expert->availability ?? ''));
                         $photo = trim((string) ($expert->photo_url ?? ''));
-                        $bio = trim((string) ($expert->biography ?? ''));
+                        $bio = $expertCardExcerpt($expert);
                         $linkedSpeaker = is_object($expert->linked_speaker ?? null) ? $expert->linked_speaker : null;
                         $linkedCompany = is_object($expert->linked_company ?? null) ? $expert->linked_company : null;
                         $speakerSlug = trim((string) ($linkedSpeaker->slug ?? ''));
                         $speakerName = trim((string) ($linkedSpeaker->display_name ?? ''));
                         $companyName = trim((string) ($linkedCompany->name ?? ''));
                         ?>
-                        <article class="cms-excomp-card cms-excomp-card--expert">
-                            <div class="cms-excomp-card-head">
+                        <article class="cms-events-card cms-speaker-card cms-excomp-card cms-excomp-card--expert">
+                            <div class="cms-speaker-card__head cms-excomp-card-head">
+                                <div class="cms-speaker-card__media">
                                 <?php if ($photo !== ''): ?>
-                                    <img src="<?= $e($photo) ?>" alt="<?= $e($name) ?>" loading="lazy" class="cms-excomp-avatar">
+                                    <img src="<?= $e($photo) ?>" alt="<?= $e($name) ?>" loading="lazy" class="cms-speaker-photo cms-speaker-photo--card cms-excomp-avatar">
                                 <?php else: ?>
-                                    <span class="cms-excomp-avatar cms-excomp-avatar--fallback"><?= $e($expertInitials($expert)) ?></span>
+                                    <span class="cms-speaker-avatar cms-speaker-avatar--card cms-excomp-avatar cms-excomp-avatar--fallback"><?= $e($expertInitials($expert)) ?></span>
                                 <?php endif; ?>
-                                <div>
-                                    <h3><?= $e($name) ?></h3>
-                                    <?php if ($position !== ''): ?><p><?= $e($position) ?></p><?php endif; ?>
+                                </div>
+                                <div class="cms-speaker-card__titleblock">
+                                    <h2 class="cms-speaker-card__name"><a href="<?= $e($detailUrl !== '' ? $detailUrl : '#') ?>"><?= $e($name) ?></a></h2>
+                                    <?php if ($position !== '' || $company !== ''): ?>
+                                        <p class="cms-speaker-card__meta"><?= $e(trim($position . ($company !== '' ? ' · ' . $company : ''))) ?></p>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
-                            <div class="cms-excomp-card-meta">
+                            <div class="cms-events-card__meta cms-excomp-card-meta">
                                 <?php if ($company !== ''): ?><span><?= $e($company) ?></span><?php endif; ?>
                                 <?php if ($location !== ''): ?><span><?= $e($location) ?></span><?php endif; ?>
                                 <?php if ($availability !== ''): ?><span class="cms-excomp-badge"><?= $e($availability) ?></span><?php endif; ?>
@@ -121,17 +145,18 @@ $expertName = static function (object $expert): string {
                                 </div>
                             <?php endif; ?>
 
-                            <?php if ($bio !== ''): ?><p class="cms-excomp-card-excerpt"><?= $e($bio) ?></p><?php endif; ?>
+                            <?php if ($bio !== ''): ?><p class="cms-speaker-card__excerpt cms-excomp-card-excerpt"><?= $e($bio) ?></p><?php endif; ?>
 
-                            <?php if ($detailUrl !== ''): ?>
-                                <a class="cms-excomp-card-link" href="<?= $e($detailUrl) ?>">Profil öffnen</a>
-                            <?php else: ?>
-                                <span class="cms-excomp-card-link is-disabled">Kein Profil verfügbar</span>
-                            <?php endif; ?>
+                            <footer>
+                                <span class="cms-speaker-card__events"><?= $availability !== '' ? $e($availability) : 'Expert' ?></span>
+                                <?php if ($detailUrl !== ''): ?>
+                                    <a class="cms-events-card__more" href="<?= $e($detailUrl) ?>">Mehr Infos …</a>
+                                <?php else: ?>
+                                    <span class="cms-events-card__more">Kein Profil</span>
+                                <?php endif; ?>
+                            </footer>
 
-                            <?php if ($websiteUrl !== ''): ?>
-                                <a class="cms-excomp-card-link cms-excomp-card-link--ghost" href="<?= $e($websiteUrl) ?>" target="_blank" rel="noopener noreferrer">Website öffnen</a>
-                            <?php endif; ?>
+                            <?php if ($websiteUrl !== ''): ?><a class="cms-excomp-card-link cms-excomp-card-link--ghost" href="<?= $e($websiteUrl) ?>" target="_blank" rel="noopener noreferrer">Website öffnen</a><?php endif; ?>
                         </article>
                     <?php endforeach; ?>
                 </div>
