@@ -2,6 +2,8 @@
   const $ = (selector, scope = document) => scope.querySelector(selector);
   const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
   const text = (value) => String(value ?? '');
+  const builderOpenSectionIndexes = new Set();
+  let builderSectionOpenStateReady = false;
 
   const SECTION_TYPES = {
     text: 'Textbereich',
@@ -57,6 +59,8 @@
     download: 'Download Link'
   };
 
+  const DEFAULT_HERO_TRUST_BADGES = ['Ex-Microsoft MVP', '20+ Jahre', 'LPIC 1 & 2', 'Microsoft zertifiziert'];
+
   let mediaFieldCounter = 0;
   let mediaPickerModal = null;
   let activeMediaInput = null;
@@ -72,6 +76,23 @@
       return {};
     }
   })();
+
+  const expertOptions = (() => {
+    const element = $('#beratung-expert-options');
+    if (!element) return [];
+    try {
+      const parsed = JSON.parse(element.textContent || '{}');
+      return Array.isArray(parsed?.experts) ? parsed.experts : [];
+    } catch (_) {
+      return [];
+    }
+  })();
+
+  const expertOptionHtml = (selectedIds = []) => {
+    const selected = new Set((Array.isArray(selectedIds) ? selectedIds : []).map((id) => Number(id)));
+    if (!expertOptions.length) return '<option value="" disabled>Keine Experts aus CMS-Expertsandcompanie gefunden</option>';
+    return expertOptions.map((expert) => `<option value="${Number(expert.id || 0)}"${selected.has(Number(expert.id || 0)) ? ' selected' : ''}>${esc(expert.label || expert.name || `Expert #${expert.id}`)}${expert.is_mvp ? ' · MVP' : ''}</option>`).join('');
+  };
 
   const parseJson = (textarea, fallback) => {
     try {
@@ -318,6 +339,83 @@
 
   const buttonDefaults = (textValue = '', target = '', style = 'primary') => ({ text: textValue, target, target_type: 'internal', style });
 
+  const setCollapsibleState = (section, content, toggle, open) => {
+    section.classList.toggle('is-open', open);
+    section.classList.toggle('is-collapsed', !open);
+    if (content) content.hidden = !open;
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      toggle.textContent = open ? 'Einklappen' : 'Ausklappen';
+    }
+  };
+
+  const enhanceEditorCollapsibleSections = () => {
+    const editor = $('.beratung-editor');
+    if (!editor || editor.dataset.collapsibleReady === '1') return;
+    editor.dataset.collapsibleReady = '1';
+    const sections = $$('.beratung-card', editor).filter((section) => section.querySelector(':scope > h1'));
+    let openedFirstCollapsible = false;
+    sections.forEach((section, index) => {
+      if (section.dataset.collapsibleReady === '1') return;
+      section.dataset.collapsibleReady = '1';
+      section.classList.add('beratung-editor-section');
+      const title = section.querySelector(':scope > h1');
+      if (!title) return;
+      const content = document.createElement('div');
+      content.className = 'beratung-editor-section__body';
+      while (title.nextSibling) content.append(title.nextSibling);
+      const header = document.createElement('div');
+      header.className = 'beratung-editor-section__head';
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'beratung-editor-section__toggle';
+      const titleId = title.id || `beratung-editor-section-title-${index + 1}`;
+      const contentId = `beratung-editor-section-body-${index + 1}`;
+      title.id = titleId;
+      content.id = contentId;
+      toggle.setAttribute('aria-controls', contentId);
+      toggle.setAttribute('aria-labelledby', titleId);
+      header.append(title);
+      if (section.dataset.alwaysOpen !== '1') header.append(toggle);
+      section.append(header, content);
+      if (section.dataset.alwaysOpen === '1') {
+        section.classList.add('is-always-open');
+        setCollapsibleState(section, content, null, true);
+        return;
+      }
+      const open = !openedFirstCollapsible;
+      openedFirstCollapsible = true;
+      setCollapsibleState(section, content, toggle, open);
+      toggle.addEventListener('click', () => setCollapsibleState(section, content, toggle, content.hidden));
+    });
+  };
+
+  const enhanceBuilderSectionCollapsible = (section, open, index) => {
+    if (!section || section.dataset.builderCollapsibleReady === '1') return;
+    section.dataset.builderCollapsibleReady = '1';
+    const head = section.querySelector(':scope > .beratung-builder__section-head');
+    if (!head) return;
+    const content = document.createElement('div');
+    content.className = 'beratung-builder__section-body';
+    while (head.nextSibling) content.append(head.nextSibling);
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'beratung-builder__section-toggle';
+    const contentId = `beratung-builder-section-body-${section.dataset.index || '0'}`;
+    content.id = contentId;
+    toggle.setAttribute('aria-controls', contentId);
+    head.append(toggle);
+    section.append(content);
+    setCollapsibleState(section, content, toggle, open);
+    if (open) builderOpenSectionIndexes.add(index);
+    toggle.addEventListener('click', () => {
+      const nextOpen = content.hidden;
+      setCollapsibleState(section, content, toggle, nextOpen);
+      if (nextOpen) builderOpenSectionIndexes.add(index);
+      else builderOpenSectionIndexes.delete(index);
+    });
+  };
+
   const renderHeroBuilder = () => {
     const mount = $('#beratung-hero-builder');
     const target = $('#' + (mount?.dataset?.target || ''));
@@ -336,8 +434,20 @@
     hero.button_1 ??= { text: 'Beratung anfragen', target: '#kontakt', target_type: 'contact', style: 'primary' };
     hero.button_2 ??= { text: 'Leistungen ansehen', target: '#leistungen', target_type: 'anchor', style: 'ghost' };
     hero.button_3 ??= buttonDefaults('', '', 'secondary');
+    hero.partner_band_enabled ??= false;
+    hero.partner_band_text ??= 'Zugehörig zum copilotberater.de Netzwerk';
+    hero.partner_band_website_label ??= 'copilotberater.de';
+    hero.partner_band_website_url ??= 'https://copilotberater.de';
+    hero.partner_band_map_label ??= 'Copilotberater Deutschland Karte';
+    hero.partner_band_map_url ??= 'https://copilotberater.de/copilotberater-deutschland-karte/';
+    hero.anchor_nav_layout ??= 'pills';
+    if (!Array.isArray(hero.trust_badges)) hero.trust_badges = DEFAULT_HERO_TRUST_BADGES.slice();
+    [0, 1, 2, 3].forEach((index) => { hero[`trust_badge_${index + 1}`] = text(hero.trust_badges[index]); });
 
-    const sync = () => syncJson(target, hero);
+    const sync = () => {
+      hero.trust_badges = [hero.trust_badge_1, hero.trust_badge_2, hero.trust_badge_3, hero.trust_badge_4].map((value) => text(value).trim()).filter(Boolean);
+      syncJson(target, hero);
+    };
     mount.className = 'beratung-builder beratung-hero-builder';
     mount.innerHTML = `
       <div class="beratung-builder__section is-hero">
@@ -355,6 +465,10 @@
           <label>Bildbreite in % <input data-field="image_width" type="number" min="25" max="70"></label>
           <label>Bild Zuschnitt <select data-field="image_fit"><option value="cover">Cover</option><option value="contain">Contain</option></select></label>
           <label>Badge Text <input data-field="badge_text"></label>
+          <label>Trust Badge 1 <input data-field="trust_badge_1" placeholder="z. B. Ex-Microsoft MVP"></label>
+          <label>Trust Badge 2 <input data-field="trust_badge_2" placeholder="z. B. 20+ Jahre"></label>
+          <label>Trust Badge 3 <input data-field="trust_badge_3" placeholder="z. B. LPIC 1 & 2"></label>
+          <label>Trust Badge 4 <input data-field="trust_badge_4" placeholder="z. B. Microsoft zertifiziert"></label>
           <label>Haupttitel <input data-field="title"></label>
           <label>Untertitel <input data-field="subtitle"></label>
           <label>Beschreibungstext <textarea data-field="description" rows="3"></textarea></label>
@@ -368,6 +482,158 @@
     enhanceMediaFields(mount);
     renderButtons($('.is-buttons', mount), hero, sync, ['button_1', 'button_2', 'button_3']);
     sync();
+  };
+
+  const renderPartnerBandBuilder = () => {
+    const mount = $('#beratung-partner-band-builder');
+    const target = $('#' + (mount?.dataset?.target || ''));
+    if (!mount || !target) return;
+    const hero = parseJson(target, {});
+    hero.partner_band_enabled ??= false;
+    hero.partner_band_text ??= 'Zugehörig zum copilotberater.de Netzwerk';
+    hero.partner_band_website_label ??= 'copilotberater.de';
+    hero.partner_band_website_url ??= 'https://copilotberater.de';
+    hero.partner_band_map_label ??= 'Copilotberater Deutschland Karte';
+    hero.partner_band_map_url ??= 'https://copilotberater.de/copilotberater-deutschland-karte/';
+    const sync = () => syncJson(target, hero);
+    mount.className = 'beratung-builder beratung-partner-band-builder';
+    mount.innerHTML = `
+      <div class="beratung-builder__section is-partner-band">
+        <div class="beratung-builder__section-head"><strong>Partnerband</strong><span>Public eigener Bereich</span></div>
+        <div class="beratung-builder__grid">
+          <label><input data-field="partner_band_enabled" type="checkbox"> Partnerband anzeigen</label>
+          <label>Partnerband Text <input data-field="partner_band_text" placeholder="Zugehörig zum copilotberater.de Netzwerk"></label>
+          <label>Website Link Text <input data-field="partner_band_website_label" placeholder="copilotberater.de"></label>
+          <label>Website URL <input data-field="partner_band_website_url" placeholder="https://copilotberater.de"></label>
+          <label>Karten Link Text <input data-field="partner_band_map_label" placeholder="Copilotberater Deutschland Karte"></label>
+          <label>Karten URL <input data-field="partner_band_map_url" placeholder="https://..."></label>
+        </div>
+      </div>`;
+    bindInputs(mount, hero, sync);
+    sync();
+  };
+
+  const renderAnchorNavigationBuilder = () => {
+    const mount = $('#beratung-anchor-nav-builder');
+    const target = $('#' + (mount?.dataset?.target || ''));
+    if (!mount || !target) return;
+    const hero = parseJson(target, {});
+    hero.anchor_nav_layout ??= 'pills';
+    const sync = () => syncJson(target, hero);
+    mount.className = 'beratung-builder beratung-anchor-nav-builder';
+    mount.innerHTML = `
+      <div class="beratung-builder__section is-anchor-nav">
+        <div class="beratung-builder__section-head"><strong>Anker Navigation Layout</strong><span>Public eigener Bereich</span></div>
+        <div class="beratung-builder__grid">
+          <label>Layout auswählen <select data-field="anchor_nav_layout"><option value="pills">Pills mit Glas-Effekt</option><option value="cards">Karten Navigation</option><option value="goldbar">Goldene Netzwerk-Leiste</option><option value="minimal">Minimal Tabs</option><option value="threegrid">3er Breitenraster</option></select></label>
+        </div>
+        <p class="beratung-admin-hint">Die Linkziele entstehen automatisch aus den Anker IDs der aktivierten Inhaltsbereiche. Die Anzeige selbst steuerst du über den Schalter oberhalb.</p>
+      </div>`;
+    bindInputs(mount, hero, sync);
+    sync();
+  };
+
+  const renderContactBuilder = () => {
+    const mount = $('#beratung-contact-builder');
+    const target = $('#' + (mount?.dataset?.target || ''));
+    if (!mount || !target) return;
+    const contact = Object.assign({
+      enabled: true,
+      mode: 'form',
+      eyebrow: 'Kontakt',
+      title: 'Beratungsanfrage senden',
+      description: 'Beschreiben Sie kurz Ihr Anliegen.',
+      image_url: '',
+      background_color: '#ffffff',
+      text_color: '#111827',
+      button_text: 'Kontakt aufnehmen',
+      button_target: '#kontakt',
+      button_target_type: 'contact',
+      button_style: 'primary',
+      button_2_text: '',
+      button_2_target: '',
+      button_2_target_type: 'internal',
+      button_2_style: 'ghost',
+      note_text: '',
+      anchor_id: 'kontakt',
+      privacy_text: '',
+      captcha_enabled: false
+    }, parseJson(target, {}));
+    const sync = () => syncJson(target, contact);
+    mount.className = 'beratung-builder beratung-contact-builder';
+    mount.innerHTML = `
+      <div class="beratung-builder__section is-contact">
+        <div class="beratung-builder__section-head"><strong>Kontakt direkt bearbeiten</strong><span>Keine JSON-Bearbeitung notwendig</span></div>
+        <div class="beratung-builder__grid">
+          <label><input data-field="enabled" type="checkbox"> Kontaktmodul aktiv</label>
+          <label><input data-field="captcha_enabled" type="checkbox"> Captcha aktivieren</label>
+          <label>Modus <select data-field="mode"><option value="form">Formular anzeigen</option><option value="button">Nur Button anzeigen</option></select></label>
+          <label>Anker ID <input data-field="anchor_id" placeholder="kontakt"></label>
+          <label>Oberzeile <input data-field="eyebrow"></label>
+          <label>Überschrift <input data-field="title"></label>
+          <label>Bild URL / Mediathek <input data-field="image_url" placeholder="/uploads/beratung/... oder https://..."></label>
+          <label>Hintergrundfarbe <input data-field="background_color" type="color"></label>
+          <label>Textfarbe <input data-field="text_color" type="color"></label>
+          <label>Button Text <input data-field="button_text"></label>
+          <label>Button Zieltyp <select data-field="button_target_type">${optionHtml(TARGET_TYPES, contact.button_target_type || 'contact')}</select></label>
+          <label>Button Ziel <input data-field="button_target" placeholder="#kontakt, mail@domain.de, https://..."></label>
+          <label>Button Stil <select data-field="button_style"><option value="primary">Primär</option><option value="secondary">Sekundär</option><option value="ghost">Ghost</option><option value="link">Link</option></select></label>
+          <label>Button 2 Text <input data-field="button_2_text"></label>
+          <label>Button 2 Zieltyp <select data-field="button_2_target_type">${optionHtml(TARGET_TYPES, contact.button_2_target_type || 'internal')}</select></label>
+          <label>Button 2 Ziel <input data-field="button_2_target"></label>
+          <label>Button 2 Stil <select data-field="button_2_style"><option value="primary">Primär</option><option value="secondary">Sekundär</option><option value="ghost">Ghost</option><option value="link">Link</option></select></label>
+          <label class="beratung-builder__wide">Beschreibung <textarea data-field="description" rows="3"></textarea></label>
+          <label class="beratung-builder__wide">Hinweistext <textarea data-field="note_text" rows="2"></textarea></label>
+          <label class="beratung-builder__wide">Datenschutztext <textarea data-field="privacy_text" rows="3"></textarea></label>
+        </div>
+      </div>`;
+    bindInputs(mount, contact, sync);
+    enhanceMediaFields(mount);
+    sync();
+  };
+
+  const renderDesignEditor = () => {
+    const mount = $('#beratung-design-builder');
+    const target = $('#' + (mount?.dataset?.target || ''));
+    if (!mount || !target) return;
+    const labels = {
+      primary_color: 'Primärfarbe',
+      secondary_color: 'Sekundärfarbe',
+      accent_color: 'Akzentfarbe',
+      background_color: 'Hintergrundfarbe',
+      text_color: 'Textfarbe',
+      heading_color: 'Überschriftenfarbe',
+      button_color: 'Buttonfarbe',
+      button_text_color: 'Button Textfarbe',
+      card_background_color: 'Card Hintergrund',
+      card_border_color: 'Card Rahmenfarbe'
+    };
+    const defaults = {
+      primary_color: '#1e3a8a',
+      secondary_color: '#0f172a',
+      accent_color: '#d4af37',
+      background_color: '#ffffff',
+      text_color: '#111827',
+      heading_color: '#0f172a',
+      button_color: '#1e3a8a',
+      button_text_color: '#ffffff',
+      card_background_color: '#ffffff',
+      card_border_color: '#e5e7eb'
+    };
+    let design = {};
+    const render = () => {
+      design = Object.assign({}, defaults, parseJson(target, {}));
+      mount.className = 'beratung-builder beratung-design-builder';
+      mount.innerHTML = `<div class="beratung-builder__section is-design"><div class="beratung-builder__section-head"><strong>Design direkt bearbeiten</strong><span>Farben ohne JSON anpassen</span></div><div class="beratung-builder__grid">${Object.entries(labels).map(([field, label]) => `<label>${label} <input data-field="${field}" type="color"></label>`).join('')}<div class="beratung-builder__wide"><button type="button" class="beratung-btn beratung-btn--secondary" data-design-reset>Design-Felder leeren / globale Werte nutzen</button></div></div></div>`;
+      bindInputs(mount, design, () => syncJson(target, design));
+      $('[data-design-reset]', mount)?.addEventListener('click', () => {
+        design = {};
+        syncJson(target, design);
+        render();
+      });
+    };
+    render();
+    window.addEventListener('beratung:design-updated', render);
   };
 
   const renderButtons = (wrap, model, sync, keys) => {
@@ -415,6 +681,9 @@
     categories_enabled: type === 'services',
     note_text: '',
     display_style: type === 'technology' ? 'icon_grid' : 'cards',
+    expert_ids: [],
+    mvp_note_enabled: type === 'collaboration',
+    mvp_note_text: 'Darunter auch Microsoft MVPs aus dem 365 Network.',
     auto_number: true,
     connector: true,
     title_band_enabled: type === 'comparison',
@@ -475,7 +744,111 @@
       section.intro = '';
       section.divider_title = 'Nächster Abschnitt';
     }
+    if (type === 'collaboration') {
+      section.anchor_id = 'zusammenarbeit';
+      section.eyebrow = 'Zusammenarbeit';
+      section.title = 'Expertinnen und Experten, mit denen ich bei dieser Dienstleistung zusammenarbeite';
+      section.intro = 'Für spezialisierte Microsoft 365, Copilot, Security und Governance Themen arbeite ich mit ausgewählten Experts aus dem Netzwerk zusammen.';
+      section.columns = 3;
+      section.card_design = 'accent';
+      section.equal_height = true;
+      section.background_color = '#f8fafc';
+      section.mvp_note_enabled = true;
+      section.mvp_note_text = 'Darunter auch Microsoft MVPs aus dem 365 Network.';
+    }
     return section;
+  };
+
+  const findOrCreateCollaborationSection = (sections) => {
+    let section = sections.find((item) => item && item.type === 'collaboration');
+    if (!section) {
+      section = newSection(sections.length, 'collaboration');
+      section.id = 'zusammenarbeit';
+      section.anchor_id = 'zusammenarbeit';
+      section.enabled = true;
+      sections.push(section);
+    }
+    section.type = 'collaboration';
+    section.id ||= 'zusammenarbeit';
+    section.anchor_id ||= 'zusammenarbeit';
+    section.internal_name ||= 'Zusammenarbeit';
+    section.eyebrow ||= 'Zusammenarbeit';
+    section.title ||= 'Expertinnen und Experten, mit denen ich bei dieser Dienstleistung zusammenarbeite';
+    section.intro ||= 'Für spezialisierte Microsoft 365, Copilot, Security und Governance Themen arbeite ich mit ausgewählten Experts aus dem Netzwerk zusammen.';
+    section.columns = Math.min(4, Math.max(2, Number(section.columns || 3)));
+    section.expert_ids = Array.isArray(section.expert_ids) ? section.expert_ids.map((id) => Number(id)).filter(Boolean) : [];
+    section.mvp_note_enabled ??= true;
+    section.mvp_note_text ||= 'Darunter auch Microsoft MVPs aus dem 365 Network.';
+    section.background_color ||= '#ffffff';
+    section.text_color ||= '#111827';
+    section.padding_top ||= 56;
+    section.padding_bottom ||= 56;
+    section.max_width ||= 1160;
+    section.text_align ||= 'left';
+    return section;
+  };
+
+  const renderCollaborationBandBuilder = () => {
+    const mount = $('#beratung-collaboration-builder');
+    const target = $('#' + (mount?.dataset?.target || ''));
+    if (!mount || !target) return;
+    let sections = parseJson(target, []);
+    if (!Array.isArray(sections)) sections = [];
+    const section = findOrCreateCollaborationSection(sections);
+    const sync = () => {
+      section.columns = Math.min(4, Math.max(2, Number(section.columns || 3)));
+      section.expert_ids = Array.isArray(section.expert_ids) ? section.expert_ids.map((id) => Number(id)).filter(Boolean) : [];
+      syncJson(target, sections);
+    };
+    mount.className = 'beratung-builder beratung-collaboration-band-builder';
+    mount.innerHTML = `
+      <div class="beratung-builder__section is-collaboration-band">
+        <div class="beratung-builder__section-head"><strong>Zusammenarbeit</strong><span>Eigenes Public Band</span></div>
+        <div class="beratung-builder__grid">
+          <label><input data-field="enabled" type="checkbox"> Zusammenarbeit Band anzeigen</label>
+          <label>Interner Name <input data-field="internal_name"></label>
+          <label>Oberzeile <input data-field="eyebrow"></label>
+          <label>Anker ID <input data-field="anchor_id"></label>
+          <label>Öffentliche Überschrift <input data-field="title"></label>
+          <label>Spaltenanzahl <select data-field="columns"><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
+          <label>Hintergrundfarbe <input data-field="background_color" type="color"></label>
+          <label>Textfarbe <input data-field="text_color" type="color"></label>
+          <label>Innenabstand oben <input data-field="padding_top" type="number" min="0" max="180"></label>
+          <label>Innenabstand unten <input data-field="padding_bottom" type="number" min="0" max="180"></label>
+          <label>Maximale Inhaltsbreite <input data-field="max_width" type="number" min="720" max="1800"></label>
+          <label>Textausrichtung <select data-field="text_align"><option value="left">links</option><option value="center">zentriert</option><option value="right">rechts</option></select></label>
+          <label class="beratung-builder__wide">Beschreibung <textarea data-field="intro" rows="2"></textarea></label>
+          <label class="beratung-builder__wide beratung-expert-select-label">Expert-Profile auswählen <select data-expert-ids multiple size="8">${expertOptionHtml(section.expert_ids)}</select><small>Mehrfachauswahl mit Strg/⌘ oder Shift. Quelle: aktive Expert-Profile aus CMS-Expertsandcompanie, keine Speaker-Liste.</small></label>
+          <label><input data-field="mvp_note_enabled" type="checkbox"> MVP Hinweis unter dem Band anzeigen</label>
+          <label class="beratung-builder__wide">MVP Hinweistext <textarea data-field="mvp_note_text" rows="2"></textarea></label>
+        </div>
+        <div class="beratung-builder__toolbar is-compact">
+          <button type="button" class="beratung-btn beratung-btn--secondary" data-collab-position="after-services">Nach Leistungen platzieren</button>
+          <button type="button" class="beratung-btn beratung-btn--secondary" data-collab-position="after-steps">Nach Ablauf platzieren</button>
+          <button type="button" class="beratung-btn beratung-btn--secondary" data-collab-position="end">Ans Ende der Inhaltsbereiche</button>
+        </div>
+        <div class="beratung-live-preview">${sectionPreview(section)}</div>
+      </div>`;
+    const updatePreview = () => { const preview = $('.beratung-live-preview', mount); if (preview) preview.innerHTML = sectionPreview(section); };
+    bindInputs(mount, section, sync, () => { sync(); updatePreview(); });
+    $('[data-expert-ids]', mount)?.addEventListener('change', (event) => {
+      section.expert_ids = [...event.target.selectedOptions].map((option) => Number(option.value)).filter(Boolean);
+      sync();
+      updatePreview();
+    });
+    $$('[data-collab-position]', mount).forEach((button) => button.addEventListener('click', () => {
+      const currentIndex = sections.indexOf(section);
+      if (currentIndex >= 0) sections.splice(currentIndex, 1);
+      const position = button.dataset.collabPosition || 'end';
+      let targetIndex = -1;
+      if (position === 'after-services') targetIndex = sections.findIndex((item) => ['services', 'offers'].includes(item?.type) || item?.anchor_id === 'leistungen');
+      if (position === 'after-steps') targetIndex = sections.findIndex((item) => item?.type === 'steps' || item?.anchor_id === 'ablauf');
+      if (targetIndex >= 0) sections.splice(targetIndex + 1, 0, section);
+      else sections.push(section);
+      sync();
+      renderSectionBuilder();
+    }));
+    sync();
   };
 
   const newCard = (type = 'text', overrides = {}) => ({
@@ -542,6 +915,14 @@
     button_1: { text: 'Beratung anfragen', target: '#kontakt', target_type: 'contact', style: 'primary' },
     button_2: { text: 'Leistungen ansehen', target: '#leistungen', target_type: 'anchor', style: 'ghost' },
     button_3: { text: 'Ablauf ansehen', target: '#ablauf', target_type: 'anchor', style: 'secondary' },
+    trust_badges: key === 'security_review' ? ['Security Review', 'Entra ID', 'Defender', 'Conditional Access'] : key === 'governance_workshop' ? ['Governance', 'SharePoint', 'OneDrive', 'Teams'] : key === 'admin_automation' ? ['Admin Workshop', 'PowerShell', 'Dokumentation', 'Betrieb'] : DEFAULT_HERO_TRUST_BADGES.slice(),
+    partner_band_enabled: false,
+    partner_band_text: 'Zugehörig zum copilotberater.de Netzwerk',
+    partner_band_website_label: 'copilotberater.de',
+    partner_band_website_url: 'https://copilotberater.de',
+    partner_band_map_label: 'Copilotberater Deutschland Karte',
+    partner_band_map_url: 'https://copilotberater.de/copilotberater-deutschland-karte/',
+    anchor_nav_layout: 'pills',
     trust_text: 'Platzhalter: Praxisnahe Beratung mit Fokus auf Sicherheit, Governance und Betrieb.',
     background_color: '#f8fafc',
     text_color: '#111827',
@@ -614,6 +995,7 @@
     let sections = parseJson(target, []);
     if (!Array.isArray(sections)) sections = [];
     sections = sections.filter((section) => section?.type !== 'faq');
+    const visibleSections = sections.filter((section) => section?.type !== 'collaboration');
 
     const sync = () => syncJson(target, sections);
     const rerender = () => { sync(); renderSectionBuilder(); };
@@ -628,10 +1010,14 @@
       const value = event.target.value;
       if (!value) return;
       sections = proposalSections(value);
+      findOrCreateCollaborationSection(sections);
       const heroTarget = $('#hero_json');
       if (heroTarget) syncJson(heroTarget, proposalHero(value));
       rerender();
       renderHeroBuilder();
+      renderPartnerBandBuilder();
+      renderAnchorNavigationBuilder();
+      renderCollaborationBandBuilder();
     });
     $('[data-add-module]', toolbar).addEventListener('change', (event) => {
       const value = event.target.value;
@@ -641,7 +1027,8 @@
     });
     mount.append(toolbar);
 
-    sections.forEach((section, index) => {
+    visibleSections.forEach((section, visibleIndex) => {
+      const index = sections.indexOf(section);
       section.cards = Array.isArray(section.cards) ? section.cards : [];
       section.type ??= 'card_grid';
       section.card_type ??= 'text';
@@ -659,9 +1046,31 @@
           if (section.type === 'steps') section.card_type = 'step';
           if (section.type === 'comparison') section.card_type = 'problem_solution';
           if (section.type === 'technology') section.display_style ||= 'icon_grid';
+          if (section.type === 'collaboration') {
+            section.anchor_id ||= 'zusammenarbeit';
+            section.eyebrow ||= 'Zusammenarbeit';
+            section.title ||= 'Expertinnen und Experten, mit denen ich bei dieser Dienstleistung zusammenarbeite';
+            section.intro ||= 'Für spezialisierte Microsoft 365, Copilot, Security und Governance Themen arbeite ich mit ausgewählten Experts aus dem Netzwerk zusammen.';
+            section.columns = Math.min(4, Math.max(2, Number(section.columns || 3)));
+            section.expert_ids = Array.isArray(section.expert_ids) ? section.expert_ids : [];
+            section.mvp_note_enabled ??= true;
+            section.mvp_note_text ||= 'Darunter auch Microsoft MVPs aus dem 365 Network.';
+          }
+        }
+        if (field === 'columns' && section.type === 'collaboration') {
+          section.columns = Math.min(4, Math.max(2, Number(section.columns || 3)));
         }
         updateVisibility();
       });
+      const expertSelect = $('[data-expert-ids]', box);
+      if (expertSelect) {
+        section.expert_ids = Array.isArray(section.expert_ids) ? section.expert_ids.map((id) => Number(id)).filter(Boolean) : [];
+        expertSelect.addEventListener('change', () => {
+          section.expert_ids = [...expertSelect.selectedOptions].map((option) => Number(option.value)).filter(Boolean);
+          sync();
+          updatePreview();
+        });
+      }
       enhanceMediaFields(box);
 
       const cardsWrap = $('.beratung-builder__cards', box);
@@ -689,8 +1098,10 @@
       });
 
       updateVisibility();
+      enhanceBuilderSectionCollapsible(box, builderSectionOpenStateReady ? builderOpenSectionIndexes.has(visibleIndex) : visibleIndex === 0, visibleIndex);
       mount.append(box);
     });
+    builderSectionOpenStateReady = true;
     sync();
   };
 
@@ -711,6 +1122,12 @@
     if (section.type === 'divider') return `<div class="beratung-preview-divider"><span>${esc(section.divider_icon || '—')}</span><strong>${esc(section.divider_title || 'Trenner')}</strong><p>${esc(section.divider_subtitle || '')}</p></div>`;
     if (section.type === 'html') return `<div class="beratung-preview-section"><small>Freier HTML Bereich</small><h3>${esc(section.title || 'HTML Bereich')}</h3><p>HTML wird sicher gefiltert. Vorschau zeigt bewusst nur eine neutrale Darstellung.</p></div>`;
     if (section.type === 'comparison') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Vergleich')}</small><h3>${esc(section.title || 'Vergleich')}</h3>${section.title_band_text ? `<div class="beratung-preview-band">${esc(section.title_band_text)}</div>` : ''}<div class="beratung-preview-grid cols-${Math.min(3, Math.max(1, Number(section.columns || 2)))}">${cards.map((card, index) => cardPreview(card, index, 'card_grid')).join('')}</div></div>`;
+    if (section.type === 'collaboration') {
+      const selected = new Set((Array.isArray(section.expert_ids) ? section.expert_ids : []).map((id) => Number(id)));
+      const experts = expertOptions.filter((expert) => selected.has(Number(expert.id))).slice(0, 8);
+      const expertCards = experts.map((expert) => `<article class="beratung-preview-card is-trust"><i>${expert.is_mvp ? '★' : '👤'}</i><h4>${esc(expert.name || 'Expert')}</h4><p>${esc([expert.position, expert.company].filter(Boolean).join(' · '))}</p></article>`).join('');
+      return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Zusammenarbeit')}</small><h3>${esc(section.title || 'Zusammenarbeit')}</h3><p>${esc(section.intro || '')}</p><div class="beratung-preview-grid cols-${Math.min(4, Math.max(2, Number(section.columns || 3)))}">${expertCards || '<article class="beratung-preview-card"><h4>Noch keine Experts ausgewählt</h4><p>Wähle unten Experts aus dem CMS-Expertsandcompanie Plugin.</p></article>'}</div>${section.mvp_note_enabled && section.mvp_note_text ? `<em>${esc(section.mvp_note_text)}</em>` : ''}</div>`;
+    }
     return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || SECTION_TYPES[section.type] || 'Bereich')}</small><h3>${esc(section.title || section.internal_name || 'Bereichstitel')}</h3><p>${esc(section.intro || 'Platzhalter Beschreibung für diesen Bereich.')}</p><div class="beratung-preview-grid cols-${Math.min(4, Math.max(1, Number(section.columns || 3)))}">${cards.slice(0, 8).map((card, index) => cardPreview(card, index, section.type)).join('')}</div>${section.note_text ? `<em>${esc(section.note_text)}</em>` : ''}</div>`;
   };
 
@@ -731,6 +1148,7 @@
       <label class="field-comparison"><input data-field="border_enabled" type="checkbox"> Rahmen aktivieren</label>
       <label class="field-comparison"><input data-field="shadow_enabled" type="checkbox"> Schatten aktivieren</label>
       <label class="field-comparison"><input data-field="mobile_stack" type="checkbox"> Mobile Darstellung untereinander</label>
+      <label class="field-collaboration"><input data-field="mvp_note_enabled" type="checkbox"> MVP Hinweis unter dem Band anzeigen</label>
       <label>Bereichstyp <select data-field="type">${optionHtml(SECTION_TYPES, section.type)}</select></label>
       <label>Card Typ <select data-field="card_type">${optionHtml(CARD_TYPES, section.card_type)}</select></label>
       <label>Interner Name <input data-field="internal_name"></label>
@@ -753,6 +1171,8 @@
       <label>Maximale Inhaltsbreite <input data-field="max_width" type="number" min="720" max="1800"></label>
       <label>Textausrichtung <select data-field="text_align"><option value="left">links</option><option value="center">zentriert</option><option value="right">rechts</option></select></label>
       <label class="field-services field-trust">Optionaler Hinweistext <textarea data-field="note_text" rows="2"></textarea></label>
+      <label class="field-collaboration beratung-expert-select-label">Experts auswählen <select data-expert-ids multiple size="8">${expertOptionHtml(section.expert_ids)}</select><small>Mehrfachauswahl mit Strg/⌘ oder Shift. Quelle: CMS-Expertsandcompanie.</small></label>
+      <label class="field-collaboration">MVP Hinweistext <textarea data-field="mvp_note_text" rows="2"></textarea></label>
       <label class="field-faq">FAQ Icon Stil <select data-field="faq_icon_style"><option value="plus">Plus</option><option value="chevron">Chevron</option><option value="question">Fragezeichen</option></select></label>
       <label class="field-faq">Standard Öffnung <select data-field="faq_open_behavior"><option value="none">Kein Eintrag offen</option><option value="first">Erster Eintrag offen</option><option value="custom">Individuell pro Eintrag</option></select></label>
       <label class="field-faq">Frage Hintergrund <input data-field="faq_question_background_color" type="color"></label>
@@ -781,10 +1201,10 @@
     <button type="button" data-action="add-card">Eintrag / Card hinzufügen</button>`;
 
   const updateSectionVisibility = (box, section) => {
-    const groups = ['services', 'steps', 'comparison', 'faq', 'trust', 'technology', 'cta', 'divider', 'html'];
+    const groups = ['services', 'steps', 'comparison', 'faq', 'trust', 'technology', 'collaboration', 'cta', 'divider', 'html'];
     groups.forEach((group) => $$(`.field-${group}`, box).forEach((field) => { field.hidden = section.type !== group; }));
-    $('.beratung-builder__cards', box).hidden = ['cta', 'divider', 'html', 'contact'].includes(section.type);
-    $('[data-action="add-card"]', box).hidden = ['cta', 'divider', 'html', 'contact'].includes(section.type);
+    $('.beratung-builder__cards', box).hidden = ['cta', 'divider', 'html', 'contact', 'collaboration'].includes(section.type);
+    $('[data-action="add-card"]', box).hidden = ['cta', 'divider', 'html', 'contact', 'collaboration'].includes(section.type);
   };
 
   const renderCard = (card, section, cardIndex, sync, rerender) => {
@@ -908,6 +1328,7 @@
         const design = JSON.parse(raw);
         if (design && typeof design === 'object') {
           target.value = JSON.stringify(design, null, 2);
+            window.dispatchEvent(new CustomEvent('beratung:design-updated'));
           const customToggle = $('input[name="custom_design_enabled"]');
           const globalToggle = $('input[name="use_global_settings"]');
           if (customToggle) customToggle.checked = true;
@@ -920,6 +1341,12 @@
   };
 
   renderHeroBuilder();
+  renderPartnerBandBuilder();
+  renderAnchorNavigationBuilder();
+  renderContactBuilder();
+  renderCollaborationBandBuilder();
   renderSectionBuilder();
+  enhanceEditorCollapsibleSections();
+  renderDesignEditor();
   renderDesignPresetSelector();
 })();

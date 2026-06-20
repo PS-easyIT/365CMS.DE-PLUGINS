@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 900" role="img" aria-labelledby="title desc">
+  <title id="title">Microsoft 365 Berater Portrait</title>
+  <desc id="desc">Illustratives Portrait eines Business Consultants im Microsoft 365 Beratungsumfeld.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="0.55" stop-color="#eef4ff"/>
+      <stop offset="1" stop-color="#fff7df"/>
+    </linearGradient>
+    <linearGradient id="jacket" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1f3a"/>
+      <stop offset="1" stop-color="#173b68"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#0b1f3a" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <rect width="720" height="900" rx="36" fill="url(#bg)"/>
+  <circle cx="590" cy="120" r="86" fill="#d4a017" opacity="0.2"/>
+  <circle cx="104" cy="724" r="118" fill="#2563eb" opacity="0.12"/>
+  <g filter="url(#shadow)">
+    <path d="M166 820c22-156 105-238 196-238s174 82 196 238H166z" fill="url(#jacket)"/>
+    <path d="M278 602h168l-34 118-49 54-52-54-33-118z" fill="#ffffff"/>
+    <path d="M316 646l47 128 45-128 42 174H274l42-174z" fill="#d4a017" opacity="0.9"/>
+    <path d="M255 326c0-95 53-164 128-164 77 0 128 69 128 164v78c0 93-57 158-128 158s-128-65-128-158v-78z" fill="#e7c2a7"/>
+    <path d="M236 340c3-122 67-208 157-208 82 0 143 55 157 142-52-14-111-48-151-96-30 62-93 104-163 116v46z" fill="#14213d"/>
+    <path d="M278 390c28 22 60 33 98 33 42 0 77-13 105-39" fill="none" stroke="#9b6b52" stroke-width="10" stroke-linecap="round" opacity="0.35"/>
+    <path d="M330 484c26 18 62 18 90 0" fill="none" stroke="#8f5f49" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="323" cy="374" r="9" fill="#0f172a"/>
+    <circle cx="438" cy="374" r="9" fill="#0f172a"/>
+    <path d="M262 616l78 204H166c17-97 51-164 96-204z" fill="#0b1f3a"/>
+    <path d="M462 616l-78 204h174c-17-97-51-164-96-204z" fill="#102a4c"/>
+  </g>
+  <path d="M92 88h224" stroke="#d4a017" stroke-width="12" stroke-linecap="round"/>
+  <path d="M92 116h154" stroke="#2563eb" stroke-width="8" stroke-linecap="round" opacity="0.75"/>
+</svg>

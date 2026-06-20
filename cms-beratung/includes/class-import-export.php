@@ -127,6 +127,23 @@ final class CMS_Beratung_Import_Export
             ];
         };
 
+        $defaultTrustBadges = ['Ex-Microsoft MVP', '20+ Jahre', 'LPIC 1 & 2', 'Microsoft zertifiziert'];
+        $trustBadgeRawValues = [];
+        if (array_key_exists('trust_badges', $raw) && is_array($raw['trust_badges'])) {
+            $trustBadgeRawValues = $raw['trust_badges'];
+        } elseif (array_key_exists('trust_badge_1', $raw) || array_key_exists('trust_badge_2', $raw) || array_key_exists('trust_badge_3', $raw) || array_key_exists('trust_badge_4', $raw)) {
+            $trustBadgeRawValues = [$raw['trust_badge_1'] ?? '', $raw['trust_badge_2'] ?? '', $raw['trust_badge_3'] ?? '', $raw['trust_badge_4'] ?? ''];
+        } else {
+            $trustBadgeRawValues = $defaultTrustBadges;
+        }
+        $trustBadges = [];
+        foreach (array_slice($trustBadgeRawValues, 0, 4) as $badgeText) {
+            $badgeText = self::limit(CMS_Beratung_Settings::text((string) $badgeText), 80);
+            if (trim($badgeText) !== '') {
+                $trustBadges[] = $badgeText;
+            }
+        }
+
         return [
             'enabled' => array_key_exists('enabled', $raw) ? !empty($raw['enabled']) : true,
             'image_url' => CMS_Beratung_Settings::image_url((string) ($raw['image_url'] ?? '')),
@@ -144,6 +161,14 @@ final class CMS_Beratung_Import_Export
             'button_1' => $button(1),
             'button_2' => $button(2),
             'button_3' => $button(3),
+            'trust_badges' => $trustBadges,
+            'partner_band_enabled' => !empty($raw['partner_band_enabled']),
+            'partner_band_text' => self::limit(CMS_Beratung_Settings::text((string) ($raw['partner_band_text'] ?? 'Zugehörig zum copilotberater.de Netzwerk')), 180),
+            'partner_band_website_label' => self::limit(CMS_Beratung_Settings::text((string) ($raw['partner_band_website_label'] ?? 'copilotberater.de')), 80),
+            'partner_band_website_url' => CMS_Beratung_Settings::public_url((string) ($raw['partner_band_website_url'] ?? 'https://copilotberater.de')),
+            'partner_band_map_label' => self::limit(CMS_Beratung_Settings::text((string) ($raw['partner_band_map_label'] ?? 'Copilotberater Deutschland Karte')), 120),
+            'partner_band_map_url' => CMS_Beratung_Settings::public_url((string) ($raw['partner_band_map_url'] ?? 'https://copilotberater.de/copilotberater-deutschland-karte/')),
+            'anchor_nav_layout' => self::choice((string) ($raw['anchor_nav_layout'] ?? 'pills'), ['pills', 'cards', 'goldbar', 'minimal', 'threegrid'], 'pills'),
             'trust_text' => self::limit(CMS_Beratung_Settings::text((string) ($raw['trust_text'] ?? '')), 255),
             'background_color' => CMS_Beratung_Settings::color((string) ($raw['background_color'] ?? '#f8fafc'), '#f8fafc'),
             'text_color' => CMS_Beratung_Settings::color((string) ($raw['text_color'] ?? '#111827'), '#111827'),
@@ -236,7 +261,7 @@ final class CMS_Beratung_Import_Export
                 continue;
             }
             $columns = (int) ($section['columns'] ?? 3);
-            $type = self::choice((string) ($section['type'] ?? 'card_grid'), ['text', 'card_grid', 'image_cards', 'services', 'offers', 'comparison', 'faq', 'steps', 'cta', 'trust', 'technology', 'contact', 'divider', 'html', 'infographic', 'cards'], 'card_grid');
+            $type = self::choice((string) ($section['type'] ?? 'card_grid'), ['text', 'card_grid', 'image_cards', 'services', 'offers', 'comparison', 'faq', 'steps', 'cta', 'trust', 'technology', 'collaboration', 'contact', 'divider', 'html', 'infographic', 'cards'], 'card_grid');
             if ($type === 'faq') {
                 continue;
             }
@@ -261,10 +286,13 @@ final class CMS_Beratung_Import_Export
                 'card_design' => self::choice((string) ($section['card_design'] ?? 'standard'), ['standard', 'compact', 'bordered', 'filled', 'minimal', 'accent'], 'standard'),
                 'equal_height' => !empty($section['equal_height']),
                 'text_color' => CMS_Beratung_Settings::color((string) ($section['text_color'] ?? '#111827'), '#111827'),
-                'columns' => max(1, min(4, $columns)),
+                'columns' => $type === 'collaboration' ? max(2, min(4, $columns)) : max(1, min(4, $columns)),
                 'anchor' => CMS_Beratung_Settings::slug((string) ($section['anchor'] ?? $section['title'] ?? 'bereich-' . ($index + 1)), 'bereich-' . ($index + 1)),
                 'categories_enabled' => !empty($section['categories_enabled']),
                 'note_text' => self::limit(CMS_Beratung_Settings::text((string) ($section['note_text'] ?? '')), 500),
+                'expert_ids' => self::positive_ids($section['expert_ids'] ?? []),
+                'mvp_note_enabled' => array_key_exists('mvp_note_enabled', $section) ? !empty($section['mvp_note_enabled']) : true,
+                'mvp_note_text' => self::limit(CMS_Beratung_Settings::text((string) ($section['mvp_note_text'] ?? 'Darunter auch Microsoft MVPs aus dem 365 Network.')), 255),
                 'display_style' => self::choice((string) ($section['display_style'] ?? 'cards'), ['cards', 'horizontal', 'vertical', 'icon_grid', 'logo_strip', 'compact', 'large'], 'cards'),
                 'auto_number' => array_key_exists('auto_number', $section) ? !empty($section['auto_number']) : true,
                 'connector' => array_key_exists('connector', $section) ? !empty($section['connector']) : true,
@@ -370,6 +398,30 @@ final class CMS_Beratung_Import_Export
     private static function choice(string $value, array $allowed, string $fallback): string
     {
         return in_array($value, $allowed, true) ? $value : $fallback;
+    }
+
+    /** @return array<int,int> */
+    private static function positive_ids(mixed $raw): array
+    {
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $raw = $decoded;
+            } else {
+                $raw = preg_split('/[\s,;]+/', $raw) ?: [];
+            }
+        }
+        if (!is_array($raw)) {
+            return [];
+        }
+        $ids = [];
+        foreach ($raw as $value) {
+            $id = (int) $value;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+        return array_slice(array_values($ids), 0, 24);
     }
 
     private static function button_target(string $value, string $type): string

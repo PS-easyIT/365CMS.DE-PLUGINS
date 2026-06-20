@@ -27,6 +27,70 @@ $contact = is_array($page['contact'] ?? null) ? $page['contact'] : [];
 $formErrors = is_array($formResult['errors'] ?? null) ? $formResult['errors'] : [];
 $formValues = is_array($formResult['values'] ?? null) ? $formResult['values'] : [];
 $primaryCtaUsed = false;
+$heroPortraitPath = CMS_BERATUNG_PLUGIN_DIR . 'assets/img/consultant-portrait.svg';
+$heroPortraitUrl = CMS_BERATUNG_PLUGIN_URL . 'assets/img/consultant-portrait.svg';
+
+// Platzhalter: Microsoft Bookings Link hier eintragen, wenn die Terminbuchung aktiv angezeigt werden soll.
+$bookingUrl = '';
+
+$serviceOutcomeTexts = [
+    'Microsoft 365 Tenant Check' => 'Du bekommst eine klare Risiko- und Lizenzeinschätzung deines Tenants und weißt, wo Governance fehlt.',
+    'Copilot Readiness Check' => 'Du erkennst, ob Datenzugriffe, Inhalte und Compliance für Copilot belastbar vorbereitet sind. So startest du kontrolliert statt mit blinden Flecken.',
+    'Entra ID Security Review' => 'Du siehst, welche Identitätsrisiken deinen Tenant wirklich betreffen. Daraus entstehen konkrete Schritte für MFA, Rollen und Zugriffsschutz.',
+    'Microsoft Purview Beratung' => 'Du weißt, welche Purview-Funktionen für deine Daten sinnvoll sind und wie Schutz, DLP und Aufbewahrung zusammenwirken.',
+    'SharePoint und OneDrive Governance' => 'Du bekommst klare Regeln für Sites, Freigaben und Berechtigungen. So reduzierst du Wildwuchs und schaffst eine bessere Grundlage für Copilot.',
+    'Exchange Online Analyse' => 'Du erkennst Risiken in Mailfluss, Postfächern und Schutzfunktionen. Danach weißt du, welche Anpassungen Betrieb und Sicherheit verbessern.',
+    'Microsoft Defender Review' => 'Du bekommst priorisierte Findings zu Defender und Secure Score. So weißt du, welche Schutzmaßnahmen zuerst Wirkung bringen.',
+    'Conditional Access Bewertung' => 'Du erkennst unsichere Ausnahmen, Lücken und Konflikte in deinen Richtlinien. Daraus entsteht ein belastbarer Zugriffsschutz für Benutzer und Admins.',
+    'Admin Workshops' => 'Dein Admin-Team versteht die Entscheidungen und kann sie selbstständig weiterführen. Die Inhalte richten sich an euren echten Aufgaben aus.',
+    'PowerShell Automatisierung' => 'Du reduzierst wiederkehrende Admin-Arbeit und bekommst nachvollziehbare Skripte für stabile Abläufe.',
+    'Dokumentation und Übergabe' => 'Du erhältst verständliche Ergebnisse, Entscheidungen und nächste Schritte. Damit bleiben Wissen und Verantwortung im Team nutzbar.',
+    'Projektbegleitung' => 'Du bekommst technische Begleitung während Umsetzung, Review und Übergabe. So bleiben Entscheidungen sauber und Risiken früh sichtbar.',
+];
+
+// Editierbare Platzhalter für Social Proof. Für echte Referenzen nur dieses Array anpassen, kein Markup ändern.
+// Platzhalter-Hinweis: Diese Einträge später durch echte, freigegebene Referenzen oder anonymisierte Projektergebnisse ersetzen.
+// Wird das Array geleert, unterdrückt sich die Social-Proof-Sektion automatisch.
+$proofItems = [
+    [
+        'quote' => 'Nach dem Tenant Check war klar, welche Risiken zuerst angegangen werden müssen. Die Empfehlungen waren verständlich genug für Management und Admin-Team.',
+        'attribution' => 'IT-Leiter, Fertigungsunternehmen, rund 250 MA',
+        'initials' => 'IT',
+    ],
+    [
+        'quote' => 'Der Copilot Readiness Check hat unsere offenen SharePoint-Berechtigungen sichtbar gemacht. Danach konnten wir Pilotierung und Governance deutlich sicherer planen.',
+        'attribution' => 'Head of Digital Workplace, Dienstleister, rund 600 MA',
+        'initials' => 'DW',
+    ],
+    [
+        'quote' => 'Statt allgemeiner Folien gab es konkrete Maßnahmen für Entra ID, Defender und Conditional Access. Genau das hat uns in der Umsetzung geholfen.',
+        'attribution' => 'Senior Administrator, öffentliche Einrichtung',
+        'initials' => 'SA',
+    ],
+];
+
+$hasText = static function (mixed $value): bool {
+    return trim((string) $value) !== '';
+};
+
+$defaultHeroTrustBadges = ['Ex-Microsoft MVP', '20+ Jahre', 'LPIC 1 & 2', 'Microsoft zertifiziert'];
+$heroTrustBadgeValues = [];
+if (array_key_exists('trust_badges', $hero) && is_array($hero['trust_badges'])) {
+    $heroTrustBadgeValues = $hero['trust_badges'];
+} elseif (array_key_exists('trust_badge_1', $hero) || array_key_exists('trust_badge_2', $hero) || array_key_exists('trust_badge_3', $hero) || array_key_exists('trust_badge_4', $hero)) {
+    $heroTrustBadgeValues = [$hero['trust_badge_1'] ?? '', $hero['trust_badge_2'] ?? '', $hero['trust_badge_3'] ?? '', $hero['trust_badge_4'] ?? ''];
+} else {
+    $heroTrustBadgeValues = $defaultHeroTrustBadges;
+}
+$heroTrustBadges = array_values(array_filter(array_map(static fn(mixed $value): string => trim((string) $value), array_slice($heroTrustBadgeValues, 0, 4)), static fn(string $value): bool => $value !== ''));
+$partnerBandEnabled = !empty($hero['partner_band_enabled']);
+$partnerBandText = trim((string) ($hero['partner_band_text'] ?? ''));
+$partnerBandWebsiteLabel = trim((string) ($hero['partner_band_website_label'] ?? ''));
+$partnerBandWebsiteUrl = trim((string) ($hero['partner_band_website_url'] ?? ''));
+$partnerBandMapLabel = trim((string) ($hero['partner_band_map_label'] ?? ''));
+$partnerBandMapUrl = trim((string) ($hero['partner_band_map_url'] ?? ''));
+$partnerBandHasContent = $partnerBandEnabled && ($partnerBandText !== '' || ($partnerBandWebsiteLabel !== '' && $partnerBandWebsiteUrl !== '') || ($partnerBandMapLabel !== '' && $partnerBandMapUrl !== ''));
+$anchorNavLayout = in_array((string) ($hero['anchor_nav_layout'] ?? 'pills'), ['pills', 'cards', 'goldbar', 'minimal', 'threegrid'], true) ? (string) ($hero['anchor_nav_layout'] ?? 'pills') : 'pills';
 
 $buttonClass = static function (string $style): string {
     return 'cms-beratung__btn cms-beratung__btn--' . preg_replace('/[^a-z0-9_-]/i', '', $style ?: 'primary');
@@ -65,9 +129,15 @@ $renderCardButton = static function (array $card) use ($renderLinkButton): void 
     $renderLinkButton((string) ($card['button_label'] ?? ''), (string) ($card['button_url'] ?? ''), 'link');
 };
 
-$renderCard = static function (array $card, int $index, string $sectionType = 'card_grid') use ($renderer, $renderCardButton): void {
+$renderCard = static function (array $card, int $index, string $sectionType = 'card_grid') use ($renderer, $renderCardButton, $serviceOutcomeTexts, $hasText): void {
     if (array_key_exists('enabled', $card) && empty($card['enabled'])) {
         return;
+    }
+    if ($sectionType === 'services') {
+        $serviceTitle = (string) ($card['title'] ?? '');
+        if (isset($serviceOutcomeTexts[$serviceTitle])) {
+            $card['text'] = $serviceOutcomeTexts[$serviceTitle];
+        }
     }
     $type = $sectionType === 'steps' ? 'step' : (string) ($card['card_type'] ?? 'text');
     $classes = ['cms-beratung-card', 'cms-beratung-card--' . $type, 'cms-beratung-card--module-' . $sectionType];
@@ -93,7 +163,7 @@ $renderCard = static function (array $card, int $index, string $sectionType = 'c
             echo '<div class="cms-beratung-card__icon" aria-hidden="true">' . $renderer::esc((string) $card['icon']) . '</div>';
         }
         echo '<h3>' . $renderer::esc((string) ($card['name'] ?? $card['title'] ?? 'Technologie')) . '</h3>';
-        if (!empty($card['text'])) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
+        if ($hasText($card['text'] ?? '')) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
         echo '</article>';
         return;
     }
@@ -102,7 +172,7 @@ $renderCard = static function (array $card, int $index, string $sectionType = 'c
         if (!empty($card['metric'])) { echo '<strong class="cms-beratung-card__metric">' . $renderer::esc((string) $card['metric']) . '</strong>'; }
         if (!empty($card['icon'])) { echo '<div class="cms-beratung-card__icon" aria-hidden="true">' . $renderer::esc((string) $card['icon']) . '</div>'; }
         if (!empty($card['title'])) { echo '<h3>' . $renderer::esc((string) $card['title']) . '</h3>'; }
-        if (!empty($card['text'])) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
+        if ($hasText($card['text'] ?? '')) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
         $renderCardButton($card);
         echo '</article>';
         return;
@@ -123,7 +193,7 @@ $renderCard = static function (array $card, int $index, string $sectionType = 'c
         }
         echo '<div class="cms-beratung-card__body">';
         if (!empty($card['title'])) { echo '<h3>' . $renderer::esc((string) $card['title']) . '</h3>'; }
-        if (!empty($card['text'])) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
+        if ($hasText($card['text'] ?? '')) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
         $renderCardButton($card);
         echo '</div>';
     } elseif ($type === 'offer_icon_tab') {
@@ -131,18 +201,18 @@ $renderCard = static function (array $card, int $index, string $sectionType = 'c
             echo '<div class="cms-beratung-card__tab" style="--icon-bg:' . $renderer::esc((string) ($card['icon_background'] ?? '#eff6ff')) . ';--icon-color:' . $renderer::esc((string) ($card['icon_color'] ?? '#2563eb')) . '" aria-hidden="true">' . $renderer::esc((string) ($card['icon'] ?? '💡')) . '</div>';
         }
         if (!empty($card['title'])) { echo '<h3>' . $renderer::esc((string) $card['title']) . '</h3>'; }
-        if (!empty($card['text'])) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
+        if ($hasText($card['text'] ?? '')) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
         $renderCardButton($card);
     } elseif ($type === 'step') {
         $step = !empty($card['auto_number']) ? (string) ($index + 1) : (string) ($card['step_number'] ?? $index + 1);
         echo '<div class="cms-beratung-card__step"><span>' . $renderer::esc($step) . '</span>' . (!empty($card['icon']) ? '<i aria-hidden="true">' . $renderer::esc((string) $card['icon']) . '</i>' : '') . '</div>';
         if (!empty($card['connector'])) { echo '<span class="cms-beratung-card__connector" aria-hidden="true"></span>'; }
         if (!empty($card['title'])) { echo '<h3>' . $renderer::esc((string) $card['title']) . '</h3>'; }
-        if (!empty($card['text'])) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
+        if ($hasText($card['text'] ?? '')) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
         $renderCardButton($card);
     } elseif ($type === 'problem_solution') {
-        echo '<div class="cms-beratung-problem-solution"><div><span>Spalte 1</span><h3>' . $renderer::esc((string) ($card['problem_title'] ?? 'Problem')) . '</h3><p>' . $renderer::nl((string) ($card['problem_text'] ?? '')) . '</p></div><div><span>Spalte 2</span><h3>' . $renderer::esc((string) ($card['solution_title'] ?? 'Lösung')) . '</h3><p>' . $renderer::nl((string) ($card['solution_text'] ?? '')) . '</p></div></div>';
-        if (!empty($card['extra_text']) || !empty($card['recommendation'])) {
+        echo '<div class="cms-beratung-problem-solution"><div><span>Spalte 1</span><h3>' . $renderer::esc((string) ($card['problem_title'] ?? 'Problem')) . '</h3>' . ($hasText($card['problem_text'] ?? '') ? '<p>' . $renderer::nl((string) $card['problem_text']) . '</p>' : '') . '</div><div><span>Spalte 2</span><h3>' . $renderer::esc((string) ($card['solution_title'] ?? 'Lösung')) . '</h3>' . ($hasText($card['solution_text'] ?? '') ? '<p>' . $renderer::nl((string) $card['solution_text']) . '</p>' : '') . '</div></div>';
+        if ($hasText($card['extra_text'] ?? '') || $hasText($card['recommendation'] ?? '')) {
             echo '<div class="cms-beratung-card__risk"><p>' . $renderer::nl((string) ($card['extra_text'] ?? $card['recommendation'] ?? '')) . '</p></div>';
         }
         $renderCardButton($card);
@@ -150,8 +220,8 @@ $renderCard = static function (array $card, int $index, string $sectionType = 'c
         if (!empty($card['badge'])) { echo '<span class="cms-beratung-card__badge">' . $renderer::esc((string) $card['badge']) . '</span>'; }
         if (!empty($card['icon'])) { echo '<div class="cms-beratung-card__icon" aria-hidden="true">' . $renderer::esc((string) $card['icon']) . '</div>'; }
         if (!empty($card['title'])) { echo '<h3>' . $renderer::esc((string) $card['title']) . '</h3>'; }
-        if (!empty($card['text'])) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
-        if (!empty($card['extra_text'])) { echo '<p class="cms-beratung-card__extra">' . $renderer::nl((string) $card['extra_text']) . '</p>'; }
+        if ($hasText($card['text'] ?? '')) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
+        if ($hasText($card['extra_text'] ?? '')) { echo '<p class="cms-beratung-card__extra">' . $renderer::nl((string) $card['extra_text']) . '</p>'; }
         $renderCardButton($card);
     }
     echo '</article>';
@@ -167,7 +237,103 @@ $renderCardsGrid = static function (array $section, array $cards, int $columns) 
     echo '</div>';
 };
 
-$renderComparison = static function (array $section, array $cards, int $columns) use ($renderer): void {
+$expertName = static function (object $expert): string {
+    $first = trim((string) ($expert->first_name ?? ''));
+    $last = trim((string) ($expert->last_name ?? ''));
+    $name = trim($first . ' ' . $last);
+    return $name !== '' ? $name : 'Expert #' . (int) ($expert->id ?? 0);
+};
+
+$expertInitials = static function (object $expert) use ($expertName): string {
+    $parts = preg_split('/\s+/', trim($expertName($expert))) ?: [];
+    $letters = '';
+    foreach (array_slice($parts, 0, 2) as $part) {
+        $letters .= function_exists('mb_substr') ? mb_substr($part, 0, 1, 'UTF-8') : substr($part, 0, 1);
+    }
+    $letters = strtoupper($letters);
+    return $letters !== '' ? $letters : 'EX';
+};
+
+$expertExcerpt = static function (object $expert): string {
+    $raw = trim((string) ($expert->biography ?? ''));
+    if ($raw === '') {
+        return '';
+    }
+    $text = trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($raw), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+    if ($text === '') {
+        return '';
+    }
+    return function_exists('mb_substr') ? (string) mb_substr($text, 0, 150, 'UTF-8') : substr($text, 0, 150);
+};
+
+$loadCollaborationExperts = static function (array $ids): array {
+    if (!class_exists('CMS_365NET_Experts_And_Companie_Database')) {
+        return [];
+    }
+    $database = CMS_365NET_Experts_And_Companie_Database::instance();
+    $experts = [];
+    foreach (array_values(array_unique(array_map('intval', $ids))) as $id) {
+        if ($id <= 0) {
+            continue;
+        }
+        $expert = $database->getExpertPublicById($id);
+        if (is_object($expert)) {
+            $experts[] = $expert;
+        }
+    }
+    return $experts;
+};
+
+$renderCollaboration = static function (array $section, int $columns) use ($renderer, $loadCollaborationExperts, $expertName, $expertInitials, $expertExcerpt): void {
+    $experts = $loadCollaborationExperts(is_array($section['expert_ids'] ?? null) ? $section['expert_ids'] : []);
+    if ($experts === []) {
+        return;
+    }
+    $base = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
+    echo '<div class="cms-beratung-collab cms-beratung-collab--cols-' . max(2, min(4, $columns)) . '">';
+    foreach ($experts as $expert) {
+        $id = (int) ($expert->id ?? 0);
+        $name = $expertName($expert);
+        $position = trim((string) ($expert->position ?? ''));
+        $company = trim((string) ($expert->company ?? ''));
+        $awards = trim((string) ($expert->awards ?? ''));
+        $isMvp = $awards !== '' && stripos($awards, 'mvp') !== false;
+        $photo = trim((string) ($expert->photo_url ?? ''));
+        $detailUrl = $id > 0 && $base !== '' ? $base . '/experts/' . $id : '';
+        $excerpt = $expertExcerpt($expert);
+        echo '<article class="cms-beratung-collab-card' . ($isMvp ? ' is-mvp' : '') . '">';
+        if ($isMvp) {
+            echo '<span class="cms-beratung-collab-card__mvp">Microsoft MVP</span>';
+        }
+        echo '<div class="cms-beratung-collab-card__head"><div class="cms-beratung-collab-card__avatar">';
+        if ($photo !== '') {
+            echo '<img src="' . $renderer::esc($photo) . '" alt="' . $renderer::esc($name) . '" loading="lazy">';
+        } else {
+            echo '<span>' . $renderer::esc($expertInitials($expert)) . '</span>';
+        }
+        echo '</div><div><h3>' . $renderer::esc($name) . '</h3>';
+        if ($position !== '') {
+            echo '<p class="cms-beratung-collab-card__position">' . $renderer::esc($position) . '</p>';
+        }
+        echo '</div></div>';
+        if ($company !== '') {
+            echo '<span class="cms-beratung-collab-card__company">' . $renderer::esc($company) . '</span>';
+        }
+        if ($excerpt !== '') {
+            echo '<p class="cms-beratung-collab-card__excerpt">' . $renderer::esc($excerpt) . '</p>';
+        }
+        if ($detailUrl !== '') {
+            echo '<a class="cms-beratung-collab-card__link" href="' . $renderer::esc($detailUrl) . '">Expert Profil ansehen</a>';
+        }
+        echo '</article>';
+    }
+    echo '</div>';
+    if (!empty($section['mvp_note_enabled']) && trim((string) ($section['mvp_note_text'] ?? '')) !== '') {
+        echo '<p class="cms-beratung-collab__mvp-note"><span>★</span>' . $renderer::esc((string) $section['mvp_note_text']) . '</p>';
+    }
+};
+
+$renderComparison = static function (array $section, array $cards, int $columns) use ($renderer, $hasText): void {
     if (!empty($section['title_band_enabled']) && !empty($section['title_band_text'])) {
         echo '<div class="cms-beratung-comparison__band" style="--band-bg:' . $renderer::esc((string) ($section['title_band_background_color'] ?? '#1e3a8a')) . ';--band-text:' . $renderer::esc((string) ($section['title_band_text_color'] ?? '#ffffff')) . '">' . $renderer::esc((string) $section['title_band_text']) . '</div>';
     }
@@ -177,14 +343,14 @@ $renderComparison = static function (array $section, array $cards, int $columns)
         echo '<article class="cms-beratung-comparison__column">';
         if (!empty($card['icon'])) { echo '<div aria-hidden="true">' . $renderer::esc((string) $card['icon']) . '</div>'; }
         echo '<h3>' . $renderer::esc((string) ($card['title'] ?? $card['problem_title'] ?? 'Vergleich')) . '</h3>';
-        echo '<p>' . $renderer::nl((string) ($card['text'] ?? $card['problem_text'] ?? '')) . '</p>';
-        if (!empty($card['extra_text'])) { echo '<small>' . $renderer::nl((string) $card['extra_text']) . '</small>'; }
+        if ($hasText($card['text'] ?? $card['problem_text'] ?? '')) { echo '<p>' . $renderer::nl((string) ($card['text'] ?? $card['problem_text'] ?? '')) . '</p>'; }
+        if ($hasText($card['extra_text'] ?? '')) { echo '<small>' . $renderer::nl((string) $card['extra_text']) . '</small>'; }
         echo '</article>';
     }
     echo '</div>';
 };
 
-$renderFaq = static function (array $section, array $cards, string $sectionId) use ($renderer): void {
+$renderFaq = static function (array $section, array $cards, string $sectionId) use ($renderer, $hasText): void {
     echo '<div class="cms-beratung-faq" data-allow-multiple="' . (!empty($section['faq_allow_multiple']) ? '1' : '0') . '" style="--faq-q-bg:' . $renderer::esc((string) ($section['faq_question_background_color'] ?? '#ffffff')) . ';--faq-q-text:' . $renderer::esc((string) ($section['faq_question_text_color'] ?? '#111827')) . ';--faq-a-bg:' . $renderer::esc((string) ($section['faq_answer_background_color'] ?? '#f8fafc')) . '">';
     $openBehavior = (string) ($section['faq_open_behavior'] ?? 'none');
     foreach ($cards as $index => $card) {
@@ -193,12 +359,12 @@ $renderFaq = static function (array $section, array $cards, string $sectionId) u
         $buttonId = $sectionId . '-faq-button-' . $index;
         $panelId = $sectionId . '-faq-panel-' . $index;
         $icon = (string) ($section['faq_icon_style'] ?? 'plus');
-        echo '<article class="cms-beratung-faq__item ' . ($isOpen ? 'is-open' : '') . '"><h3><button type="button" id="' . $renderer::esc($buttonId) . '" aria-controls="' . $renderer::esc($panelId) . '" aria-expanded="' . ($isOpen ? 'true' : 'false') . '"><span>' . $renderer::esc((string) ($card['question'] ?? $card['title'] ?? 'Frage')) . '</span><i data-icon-style="' . $renderer::esc($icon) . '" aria-hidden="true"></i></button></h3><div id="' . $renderer::esc($panelId) . '" role="region" aria-labelledby="' . $renderer::esc($buttonId) . '"' . ($isOpen ? '' : ' hidden') . '><p>' . $renderer::nl((string) ($card['answer'] ?? $card['text'] ?? '')) . '</p></div></article>';
+        echo '<article class="cms-beratung-faq__item ' . ($isOpen ? 'is-open' : '') . '"><h3><button type="button" id="' . $renderer::esc($buttonId) . '" aria-controls="' . $renderer::esc($panelId) . '" aria-expanded="' . ($isOpen ? 'true' : 'false') . '"><span>' . $renderer::esc((string) ($card['question'] ?? $card['title'] ?? 'Frage')) . '</span><i data-icon-style="' . $renderer::esc($icon) . '" aria-hidden="true"></i></button></h3><div id="' . $renderer::esc($panelId) . '" role="region" aria-labelledby="' . $renderer::esc($buttonId) . '"' . ($isOpen ? '' : ' hidden') . '>' . ($hasText($card['answer'] ?? $card['text'] ?? '') ? '<p>' . $renderer::nl((string) ($card['answer'] ?? $card['text'] ?? '')) . '</p>' : '') . '</div></article>';
     }
     echo '</div>';
 };
 
-$renderDivider = static function (array $section) use ($renderer, $renderSectionActions): void {
+$renderDivider = static function (array $section) use ($renderer, $renderSectionActions, $hasText): void {
     $type = (string) ($section['divider_type'] ?? 'line');
     echo '<div class="cms-beratung-divider cms-beratung-divider--' . $renderer::esc($type) . ' cms-beratung-divider--mobile-' . $renderer::esc((string) ($section['divider_mobile_behavior'] ?? 'stack')) . '" style="--divider-bg:' . $renderer::esc((string) ($section['background_color'] ?? '#ffffff')) . ';--divider-text:' . $renderer::esc((string) ($section['text_color'] ?? '#111827')) . ';--divider-line:' . $renderer::esc((string) ($section['divider_line_color'] ?? '#dbeafe')) . ';--divider-width:' . (int) ($section['divider_width'] ?? 100) . '%;">';
     if ($type === 'spacer') { echo '<span aria-hidden="true"></span>'; }
@@ -206,10 +372,37 @@ $renderDivider = static function (array $section) use ($renderer, $renderSection
     else {
         if (!empty($section['divider_icon'])) { echo '<span class="cms-beratung-divider__icon">' . $renderer::esc((string) $section['divider_icon']) . '</span>'; }
         if (!empty($section['divider_title'])) { echo '<h2>' . $renderer::esc((string) $section['divider_title']) . '</h2>'; }
-        if (!empty($section['divider_subtitle'])) { echo '<p>' . $renderer::nl((string) $section['divider_subtitle']) . '</p>'; }
+        if ($hasText($section['divider_subtitle'] ?? '')) { echo '<p>' . $renderer::nl((string) $section['divider_subtitle']) . '</p>'; }
         if ($type === 'cta') { $renderSectionActions($section); }
     }
     echo '</div>';
+};
+
+$renderProofSection = static function (array $items) use ($renderer): void {
+    $items = array_values(array_filter($items, static fn(array $item): bool => trim((string) ($item['quote'] ?? '')) !== '' && trim((string) ($item['attribution'] ?? '')) !== ''));
+    if ($items === []) {
+        return;
+    }
+    echo '<section class="cms-beratung-proof" aria-labelledby="beratung-proof-title"><div class="cms-beratung-proof__inner"><div class="cms-beratung-proof__head"><span>Stimmen aus der Praxis</span><h2 id="beratung-proof-title">Was nach Beratung greifbar wird</h2><p>Platzhalter für anonymisierte Ergebnisse und Referenzen. Später können hier echte Stimmen ergänzt werden.</p></div><div class="cms-beratung-proof__grid">';
+    foreach (array_slice($items, 0, 3) as $item) {
+        $initials = trim((string) ($item['initials'] ?? ''));
+        echo '<article class="cms-beratung-proof-card"><div class="cms-beratung-proof-card__mark" aria-hidden="true">“</div><blockquote>' . $renderer::esc((string) $item['quote']) . '</blockquote><footer>' . ($initials !== '' ? '<span class="cms-beratung-proof-card__avatar">' . $renderer::esc($initials) . '</span>' : '') . '<span>' . $renderer::esc((string) $item['attribution']) . '</span></footer></article>';
+    }
+    echo '</div></div></section>';
+};
+
+$renderBookingSection = static function (string $bookingUrl) use ($renderer): void {
+    $bookingUrl = trim($bookingUrl);
+    if ($bookingUrl !== '' && preg_match('#^https://#i', $bookingUrl) !== 1) {
+        $bookingUrl = '';
+    }
+    echo '<section class="cms-beratung-booking" id="termin-buchen" aria-labelledby="beratung-booking-title"><div class="cms-beratung-booking__inner"><div class="cms-beratung-booking__head"><span>Termin</span><h2 id="beratung-booking-title">Direkt einen Termin buchen</h2><p>Wähle einen passenden Slot für ein erstes Gespräch zu Microsoft 365, Copilot oder Security. Danach klären wir Ziel, Ausgangslage und den nächsten sinnvollen Schritt.</p><ul class="cms-beratung-booking__trust" aria-label="Termin Vorteile"><li>Kostenloses Erstgespräch</li><li>Antwort in 24h</li><li>Remote oder vor Ort</li></ul></div><div class="cms-beratung-booking-card">';
+    if ($bookingUrl !== '') {
+        echo '<div class="cms-beratung-booking-card__embed"><iframe src="' . $renderer::esc($bookingUrl) . '" title="Microsoft Bookings Terminbuchung für Beratung" loading="lazy" allow="clipboard-write; fullscreen" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"></iframe></div>';
+    } else {
+        echo '<div class="cms-beratung-booking-card__fallback"><span>Terminbuchung wird vorbereitet</span><h3>Der direkte Kalender ist noch nicht verbunden.</h3><p>Bis der Microsoft Bookings Link hinterlegt ist, kannst du deine Anfrage über das Kontaktformular senden. Ich melde mich mit passenden Terminvorschlägen zurück.</p><a class="cms-beratung__btn cms-beratung__btn--primary" href="#kontakt">Beratung anfragen</a></div>';
+    }
+    echo '</div></div></section>';
 };
 ?>
 <main class="cms-beratung cms-beratung--<?php echo $renderer::esc((string) ($page['template'] ?? 'standard')); ?> <?php echo $renderer::esc($customClass); ?>" style="--beratung-primary: <?php echo $renderer::esc($design['primary_color']); ?>; --beratung-secondary: <?php echo $renderer::esc($design['secondary_color']); ?>; --beratung-accent: <?php echo $renderer::esc($design['accent_color']); ?>; --beratung-bg: <?php echo $renderer::esc($design['background_color']); ?>; --beratung-text: <?php echo $renderer::esc($design['text_color']); ?>; --beratung-heading: <?php echo $renderer::esc($design['heading_color']); ?>; --beratung-button: <?php echo $renderer::esc($design['button_color']); ?>; --beratung-button-text: <?php echo $renderer::esc($design['button_text_color']); ?>; --beratung-card-bg: <?php echo $renderer::esc($design['card_background_color']); ?>; --beratung-card-border: <?php echo $renderer::esc($design['card_border_color']); ?>; --beratung-radius: <?php echo $renderer::esc($design['border_radius']); ?>; --beratung-spacing: <?php echo $renderer::esc($design['spacing']); ?>; --beratung-width: <?php echo $renderer::esc($design['content_width']); ?>; --beratung-card-shadow: <?php echo $renderer::esc($design['card_shadow']); ?>;">
@@ -225,19 +418,40 @@ $renderDivider = static function (array $section) use ($renderer, $renderSection
                 <?php if (!empty($hero['badge_show']) && !empty($hero['badge_text'])): ?><span class="cms-beratung__kicker"><?php echo $renderer::esc((string) $hero['badge_text']); ?></span><?php endif; ?>
                 <h1><?php echo $renderer::esc($heroTitle); ?></h1>
                 <?php if (!empty($hero['subtitle'])): ?><p class="cms-beratung-hero__subtitle"><?php echo $renderer::esc((string) $hero['subtitle']); ?></p><?php endif; ?>
-                <div class="cms-beratung-hero__trust-row" aria-label="Trust Signale"><span>Ex-Microsoft MVP</span><span>20+ Jahre</span><span>LPIC 1 &amp; 2</span><span>Microsoft zertifiziert</span></div>
+                <?php if ($heroTrustBadges !== []): ?><div class="cms-beratung-hero__trust-row" aria-label="Trust Signale"><?php foreach ($heroTrustBadges as $trustBadge): ?><span><?php echo $renderer::esc($trustBadge); ?></span><?php endforeach; ?></div><?php endif; ?>
                 <?php if (!empty($hero['description'])): ?><p class="cms-beratung-hero__description"><?php echo $renderer::esc((string) $hero['description']); ?></p><?php endif; ?>
                 <div class="cms-beratung__hero-actions"><?php $renderButton(is_array($hero['button_1'] ?? null) ? $hero['button_1'] : []); ?><?php $renderButton(is_array($hero['button_2'] ?? null) ? $hero['button_2'] : []); ?><?php $renderButton(is_array($hero['button_3'] ?? null) ? $hero['button_3'] : []); ?></div>
                 <?php if (!empty($hero['trust_text'])): ?><p class="cms-beratung-hero__trust"><?php echo $renderer::esc((string) $hero['trust_text']); ?></p><?php endif; ?>
-                <div class="cms-beratung-hero__portrait-slot" aria-hidden="true"><span>Portrait</span></div>
+                <figure class="cms-beratung-hero__portrait-slot">
+                    <?php if (is_file($heroPortraitPath)): ?>
+                        <img class="cms-beratung-hero__portrait-image" src="<?php echo $renderer::esc($heroPortraitUrl); ?>" alt="Portrait eines Microsoft 365 Beraters" loading="lazy" decoding="async">
+                    <?php else: ?>
+                        <span aria-label="Portrait Platzhalter">M365</span>
+                    <?php endif; ?>
+                </figure>
             </div>
         </header>
     <?php endif; ?>
 
+    <?php if ($partnerBandHasContent): ?>
+        <aside class="cms-beratung-partner-band" aria-label="Partner Netzwerk">
+            <?php if ($partnerBandText !== ''): ?><strong><?php echo $renderer::esc($partnerBandText); ?></strong><?php endif; ?>
+            <span class="cms-beratung-partner-band__links">
+                <?php if ($partnerBandWebsiteLabel !== '' && $partnerBandWebsiteUrl !== ''): ?><a href="<?php echo $renderer::esc($partnerBandWebsiteUrl); ?>" target="_blank" rel="noopener noreferrer"><?php echo $renderer::esc($partnerBandWebsiteLabel); ?></a><?php endif; ?>
+                <?php if ($partnerBandMapLabel !== '' && $partnerBandMapUrl !== ''): ?><a href="<?php echo $renderer::esc($partnerBandMapUrl); ?>" target="_blank" rel="noopener noreferrer"><?php echo $renderer::esc($partnerBandMapLabel); ?></a><?php endif; ?>
+            </span>
+        </aside>
+    <?php endif; ?>
+
+    <?php $renderProofSection($proofItems); ?>
+
+    <?php $renderBookingSection($bookingUrl); ?>
+
     <?php if (!empty($page['show_anchor_nav']) && $anchors !== []): ?>
-        <nav class="cms-beratung__anchor-nav" aria-label="Anker Navigation" id="beratung-inhalte">
-            <?php foreach ($anchors as $section): ?><a href="#<?php echo $renderer::esc((string) ($section['anchor_id'] ?? $section['id'] ?? 'bereich')); ?>"><?php echo $renderer::esc((string) ($section['title'] ?? $section['internal_name'] ?? 'Bereich')); ?></a><?php endforeach; ?>
-            <a href="#kontakt">Kontakt</a>
+        <nav class="cms-beratung__anchor-nav cms-beratung__anchor-nav--<?php echo $renderer::esc($anchorNavLayout); ?>" aria-label="Anker Navigation" id="beratung-inhalte">
+            <span class="cms-beratung__anchor-nav-title">Inhalte</span>
+            <?php foreach ($anchors as $navIndex => $section): ?><a href="#<?php echo $renderer::esc((string) ($section['anchor_id'] ?? $section['id'] ?? 'bereich')); ?>"><span class="cms-beratung__anchor-nav-index"><?php echo $renderer::esc(str_pad((string) ($navIndex + 1), 2, '0', STR_PAD_LEFT)); ?></span><span class="cms-beratung__anchor-nav-text"><?php echo $renderer::esc((string) ($section['title'] ?? $section['internal_name'] ?? 'Bereich')); ?></span></a><?php endforeach; ?>
+            <a href="#kontakt"><span class="cms-beratung__anchor-nav-index"><?php echo $renderer::esc(str_pad((string) (count($anchors) + 1), 2, '0', STR_PAD_LEFT)); ?></span><span class="cms-beratung__anchor-nav-text">Kontakt</span></a>
         </nav>
     <?php endif; ?>
 
@@ -245,22 +459,24 @@ $renderDivider = static function (array $section) use ($renderer, $renderSection
         <?php if (empty($section['enabled'])) { continue; } ?>
         <?php $columns = max(1, min(4, (int) ($section['columns'] ?? 3))); $sectionId = (string) ($section['anchor_id'] ?? $section['id'] ?? 'bereich'); $sectionType = (string) ($section['type'] ?? 'card_grid'); $cards = is_array($section['cards'] ?? null) ? $section['cards'] : []; ?>
         <?php if ($sectionType === 'faq') { continue; } ?>
+        <?php if ($sectionType === 'collaboration' && empty($section['expert_ids'])) { continue; } ?>
         <?php $sectionNumber++; $rhythmClass = $sectionType === 'cta' ? 'cms-beratung__section--rhythm-accent' : (($sectionNumber % 2 === 0) ? 'cms-beratung__section--rhythm-soft' : 'cms-beratung__section--rhythm-white'); ?>
         <section class="cms-beratung__section cms-beratung__section--<?php echo $renderer::esc($sectionType); ?> cms-beratung__section--display-<?php echo $renderer::esc((string) ($section['display_style'] ?? 'cards')); ?> <?php echo $renderer::esc($rhythmClass); ?> <?php echo !empty($section['equal_height']) ? 'has-equal-cards' : ''; ?>" id="<?php echo $renderer::esc($sectionId); ?>" style="--section-bg: <?php echo $renderer::esc((string) ($section['background_color'] ?? '#ffffff')); ?>; --section-text: <?php echo $renderer::esc((string) ($section['text_color'] ?? '#111827')); ?>; --section-pt: <?php echo (int) ($section['padding_top'] ?? 56); ?>px; --section-pb: <?php echo (int) ($section['padding_bottom'] ?? 56); ?>px; --section-width: <?php echo (int) ($section['max_width'] ?? 1200); ?>px; --section-align: <?php echo $renderer::esc((string) ($section['text_align'] ?? 'left')); ?>; <?php if (!empty($section['background_image_url'])): ?>--section-bg-image:url('<?php echo $renderer::esc((string) $section['background_image_url']); ?>');<?php endif; ?>">
             <div class="cms-beratung__section-inner">
                 <?php if (!in_array($sectionType, ['divider'], true)): ?>
-                    <div class="cms-beratung__section-head"><?php if (!empty($section['eyebrow'])): ?><span><?php echo $renderer::esc((string) $section['eyebrow']); ?></span><?php endif; ?><?php if (!empty($section['title'])): ?><h2><?php echo $renderer::esc((string) $section['title']); ?></h2><?php endif; ?><?php if (!empty($section['intro'])): ?><p><?php echo $renderer::esc((string) $section['intro']); ?></p><?php endif; ?></div>
+                    <div class="cms-beratung__section-head"><?php if ($hasText($section['eyebrow'] ?? '')): ?><span><?php echo $renderer::esc((string) $section['eyebrow']); ?></span><?php endif; ?><?php if ($hasText($section['title'] ?? '')): ?><h2><?php echo $renderer::esc((string) $section['title']); ?></h2><?php endif; ?><?php if ($hasText($section['intro'] ?? '')): ?><p><?php echo $renderer::esc((string) $section['intro']); ?></p><?php endif; ?></div>
                 <?php endif; ?>
 
                 <?php if ($sectionType === 'divider'): ?><?php $renderDivider($section); ?>
                 <?php elseif ($sectionType === 'html' && !empty($section['html'])): ?><div class="cms-beratung__html"><?php echo $renderer::safe_html((string) $section['html']); ?></div>
                 <?php elseif ($sectionType === 'comparison'): ?><?php $renderComparison($section, $cards, $columns); ?>
                 <?php elseif ($sectionType === 'faq'): ?><?php $renderFaq($section, $cards, $sectionId); ?>
+                <?php elseif ($sectionType === 'collaboration'): ?><?php $renderCollaboration($section, $columns); ?>
                 <?php elseif ($sectionType === 'cta'): ?><div class="cms-beratung-cta cms-beratung-cta--<?php echo $renderer::esc((string) ($section['display_style'] ?? 'large')); ?>"><?php $renderSectionActions($section); ?></div>
                 <?php elseif ($cards !== []): ?><?php $renderCardsGrid($section, $cards, $columns); ?>
                 <?php endif; ?>
 
-                <?php if (!empty($section['note_text'])): ?><p class="cms-beratung-module__note"><?php echo $renderer::esc((string) $section['note_text']); ?></p><?php endif; ?>
+                <?php if ($hasText($section['note_text'] ?? '')): ?><p class="cms-beratung-module__note"><?php echo $renderer::esc((string) $section['note_text']); ?></p><?php endif; ?>
                 <?php if (!in_array($sectionType, ['cta', 'divider'], true)) { $renderSectionActions($section); } ?>
             </div>
         </section>
@@ -272,7 +488,7 @@ $renderDivider = static function (array $section) use ($renderer, $renderSection
             <?php $faqSection = ['faq_allow_multiple' => !empty($m365Faq['allow_multiple']), 'faq_icon_style' => (string) ($m365Faq['icon_style'] ?? 'plus'), 'faq_open_behavior' => (string) ($m365Faq['open_behavior'] ?? 'first'), 'faq_question_background_color' => '#ffffff', 'faq_question_text_color' => '#111827', 'faq_answer_background_color' => '#f8fafc']; ?>
             <section class="cms-beratung__section cms-beratung__section--faq" id="<?php echo $renderer::esc((string) ($m365Faq['anchor_id'] ?? 'faq')); ?>" style="--section-bg: transparent; --section-text: var(--beratung-text); --section-pt: 25px; --section-pb: 25px; --section-width: 1160px; --section-align: left;">
                 <div class="cms-beratung__section-inner">
-                    <div class="cms-beratung__section-head"><span><?php echo $renderer::esc((string) ($m365Faq['eyebrow'] ?? 'FAQ')); ?></span><h2><?php echo $renderer::esc((string) ($m365Faq['title'] ?? 'Häufige Fragen')); ?></h2><?php if (!empty($m365Faq['intro'])): ?><p><?php echo $renderer::esc((string) $m365Faq['intro']); ?></p><?php endif; ?></div>
+                    <div class="cms-beratung__section-head"><?php if ($hasText($m365Faq['eyebrow'] ?? 'FAQ')): ?><span><?php echo $renderer::esc((string) ($m365Faq['eyebrow'] ?? 'FAQ')); ?></span><?php endif; ?><?php if ($hasText($m365Faq['title'] ?? 'Häufige Fragen')): ?><h2><?php echo $renderer::esc((string) ($m365Faq['title'] ?? 'Häufige Fragen')); ?></h2><?php endif; ?><?php if ($hasText($m365Faq['intro'] ?? '')): ?><p><?php echo $renderer::esc((string) $m365Faq['intro']); ?></p><?php endif; ?></div>
                     <?php $renderFaq($faqSection, $faqItems, (string) ($m365Faq['anchor_id'] ?? 'faq')); ?>
                 </div>
             </section>
@@ -282,7 +498,7 @@ $renderDivider = static function (array $section) use ($renderer, $renderSection
     <?php if (($contact['enabled'] ?? true) !== false): ?>
     <?php $contactId = (string) ($contact['anchor_id'] ?? 'kontakt'); $contactMode = (string) ($contact['mode'] ?? 'form'); ?>
     <section class="cms-beratung__contact" id="<?php echo $renderer::esc($contactId); ?>" aria-labelledby="beratung-contact-title" style="--contact-bg:<?php echo $renderer::esc((string) ($contact['background_color'] ?? '#ffffff')); ?>;--contact-text:<?php echo $renderer::esc((string) ($contact['text_color'] ?? '#111827')); ?>;">
-        <div class="cms-beratung__contact-content"><span class="cms-beratung__kicker"><?php echo $renderer::esc((string) ($contact['eyebrow'] ?? 'Kontakt')); ?></span><h2 id="beratung-contact-title"><?php echo $renderer::esc((string) ($contact['title'] ?? 'Beratungsanfrage senden')); ?></h2><p><?php echo $renderer::esc((string) ($contact['description'] ?? 'Beschreiben Sie kurz Ihr Anliegen rund um Microsoft 365, Copilot, KI, Security, Compliance, SharePoint, Entra ID, Purview oder Defender.')); ?></p><?php if (!empty($contact['image_url'])): ?><img src="<?php echo $renderer::esc((string) $contact['image_url']); ?>" alt="<?php echo $renderer::esc((string) ($contact['title'] ?? 'Kontakt')); ?>" loading="lazy"><?php endif; ?><?php if (!empty($contact['note_text'])): ?><p class="cms-beratung-module__note"><?php echo $renderer::esc((string) $contact['note_text']); ?></p><?php endif; ?></div>
+        <div class="cms-beratung__contact-content"><?php if ($hasText($contact['eyebrow'] ?? 'Kontakt')): ?><span class="cms-beratung__kicker"><?php echo $renderer::esc((string) ($contact['eyebrow'] ?? 'Kontakt')); ?></span><?php endif; ?><h2 id="beratung-contact-title"><?php echo $renderer::esc((string) ($contact['title'] ?? 'Beratungsanfrage senden')); ?></h2><?php if ($hasText($contact['description'] ?? '')): ?><p><?php echo $renderer::esc((string) $contact['description']); ?></p><?php endif; ?><?php if (!empty($contact['image_url'])): ?><img src="<?php echo $renderer::esc((string) $contact['image_url']); ?>" alt="<?php echo $renderer::esc((string) ($contact['title'] ?? 'Kontakt')); ?>" loading="lazy"><?php endif; ?><?php if ($hasText($contact['note_text'] ?? '')): ?><p class="cms-beratung-module__note"><?php echo $renderer::esc((string) $contact['note_text']); ?></p><?php endif; ?></div>
         <?php if ($contactMode === 'button'): ?>
             <div class="cms-beratung-module__actions"><?php $renderLinkButton((string) ($contact['button_text'] ?? 'Kontakt aufnehmen'), (string) ($contact['button_target'] ?? '#kontakt'), (string) ($contact['button_style'] ?? 'primary')); ?><?php $renderLinkButton((string) ($contact['button_2_text'] ?? ''), (string) ($contact['button_2_target'] ?? ''), (string) ($contact['button_2_style'] ?? 'ghost')); ?></div>
         <?php else: ?>

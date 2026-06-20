@@ -20,7 +20,12 @@ final class CMS_Beratung_Renderer
         $design = self::design_tokens($page, $settings);
         $sections = is_array($page['sections'] ?? null) ? $page['sections'] : [];
         $m365Faq = CMS_Beratung_Storage::instance()->m365_faq_config();
-        $anchors = array_values(array_filter($sections, static fn(array $section): bool => !empty($section['enabled']) && trim((string) ($section['title'] ?? '')) !== '' && trim((string) ($section['anchor_id'] ?? $section['id'] ?? '')) !== ''));
+        $anchors = array_values(array_filter($sections, static function (array $section): bool {
+            if (!empty($section['type']) && (string) $section['type'] === 'collaboration' && empty($section['expert_ids'])) {
+                return false;
+            }
+            return !empty($section['enabled']) && trim((string) ($section['title'] ?? '')) !== '' && trim((string) ($section['anchor_id'] ?? $section['id'] ?? '')) !== '';
+        }));
         if (!empty($m365Faq['enabled'])) {
             $anchors[] = ['anchor_id' => (string) ($m365Faq['anchor_id'] ?? 'faq'), 'title' => (string) ($m365Faq['title'] ?? 'FAQ')];
         }

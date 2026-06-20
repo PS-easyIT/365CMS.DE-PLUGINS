@@ -416,11 +416,13 @@ final class CMS_Beratung_Admin_Pages
         $css = CMS_BERATUNG_PLUGIN_DIR . 'assets/css/frontend.css';
         $extraCss = CMS_BERATUNG_PLUGIN_DIR . 'assets/css/frontend-extra.css';
         $themeSafeCss = CMS_BERATUNG_PLUGIN_DIR . 'assets/css/frontend-theme-safe.css';
+        $premiumCss = CMS_BERATUNG_PLUGIN_DIR . 'assets/css/frontend-premium.css';
         $js = CMS_BERATUNG_PLUGIN_DIR . 'assets/js/frontend.js';
         echo '<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Vorschau: ' . self::esc((string) ($page['public_title'] ?? 'CMS Beratung')) . '</title>';
         if (is_file($css)) { echo '<link rel="stylesheet" href="' . self::esc(CMS_BERATUNG_PLUGIN_URL . 'assets/css/frontend.css') . '?v=' . filemtime($css) . '">'; }
         if (is_file($extraCss)) { echo '<link rel="stylesheet" href="' . self::esc(CMS_BERATUNG_PLUGIN_URL . 'assets/css/frontend-extra.css') . '?v=' . filemtime($extraCss) . '">'; }
         if (is_file($themeSafeCss)) { echo '<link rel="stylesheet" href="' . self::esc(CMS_BERATUNG_PLUGIN_URL . 'assets/css/frontend-theme-safe.css') . '?v=' . filemtime($themeSafeCss) . '">'; }
+        if (is_file($premiumCss)) { echo '<link rel="stylesheet" href="' . self::esc(CMS_BERATUNG_PLUGIN_URL . 'assets/css/frontend-premium.css') . '?v=' . filemtime($premiumCss) . '">'; }
         echo '</head><body><div class="cms-beratung-previewbar">Entwurfs-Vorschau · nur für berechtigte Benutzer</div>';
         CMS_Beratung_Renderer::render($page, ['success' => false, 'message' => '', 'errors' => [], 'values' => []]);
         if (is_file($js)) { echo '<script src="' . self::esc(CMS_BERATUNG_PLUGIN_URL . 'assets/js/frontend.js') . '?v=' . filemtime($js) . '" defer></script>'; }
@@ -446,8 +448,9 @@ final class CMS_Beratung_Admin_Pages
         $sectionsJson = json_encode($editableSections, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
         $designJson = json_encode($page['design'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}';
         self::render_media_config();
+        self::render_expert_options_config();
         echo '<form method="post" class="beratung-editor"><input type="hidden" name="csrf_token" value="' . self::esc(self::nonce('beratung_save_landingpage')) . '"><input type="hidden" name="beratung_admin_action" value="save_landingpage"><input type="hidden" name="id" value="' . (int) ($page['id'] ?? 0) . '">';
-        echo '<div class="beratung-grid-2"><section class="beratung-card"><h1>Allgemeine Einstellungen</h1>';
+        echo '<div class="beratung-grid-2"><section class="beratung-card" data-always-open="1"><h1>Allgemeine Einstellungen</h1>';
         self::field('Interner Titel', 'internal_title', (string) ($page['internal_title'] ?? ''));
         self::field('Öffentlicher Titel', 'public_title', (string) ($page['public_title'] ?? ''));
         self::field('URL Slug', 'slug', (string) ($page['slug'] ?? ''));
@@ -462,19 +465,24 @@ final class CMS_Beratung_Admin_Pages
         if ((int) ($page['id'] ?? 0) > 0) {
             echo '<p><a class="beratung-link" target="_blank" rel="noopener noreferrer" href="' . self::esc(self::admin_url('cms-beratung-preview', ['id' => (int) $page['id']])) . '">Entwurfs-Vorschau öffnen</a></p>';
         }
-        echo '</section><section class="beratung-card"><h1>Anzeige Optionen</h1>';
-        foreach (['custom_design_enabled' => 'Individuelles Design aktivieren', 'use_global_settings' => 'Globale Plugin Einstellungen verwenden', 'show_header' => 'Header anzeigen', 'show_footer' => 'Footer anzeigen', 'show_breadcrumb' => 'Breadcrumb anzeigen', 'show_toc' => 'Inhaltsverzeichnis anzeigen', 'show_anchor_nav' => 'Anker Navigation unter dem Content Header anzeigen', 'noindex' => 'Noindex aktivieren', 'nofollow' => 'Nofollow aktivieren'] as $name => $label) {
+        echo '</section><section class="beratung-card" data-always-open="1"><h1>Anzeige Optionen</h1>';
+        foreach (['custom_design_enabled' => 'Individuelles Design aktivieren', 'use_global_settings' => 'Globale Plugin Einstellungen verwenden', 'show_header' => 'Header anzeigen', 'show_footer' => 'Footer anzeigen', 'show_breadcrumb' => 'Breadcrumb anzeigen', 'show_toc' => 'Inhaltsverzeichnis anzeigen', 'noindex' => 'Noindex aktivieren', 'nofollow' => 'Nofollow aktivieren'] as $name => $label) {
             self::checkbox($label, $name, !empty($page[$name]));
         }
         echo '</section></div>';
-        echo '<section class="beratung-card"><h1>Hero / Content Header</h1><p>Bild links oder rechts, nahtloser Bildrand, Badge, Titel, Text, bis zu 3 Buttons und Trust-Hinweis.</p><div id="beratung-hero-builder" data-target="hero_json"></div><textarea id="hero_json" name="hero_json" rows="12" class="beratung-code">' . self::esc($heroJson) . '</textarea></section>';
-        echo '<section class="beratung-card"><h1>Kontaktbereich</h1><p>Der Anfragebereich am Ende der Landingpage kann hier aktiv/deaktiviert und bei Bedarf per JSON feinjustiert werden.</p>';
+        echo '<section class="beratung-card"><h1>Hero / Content Header</h1><p>Bild links oder rechts, nahtloser Bildrand, Badge, Titel, Text, bis zu 3 Buttons und Trust-Hinweis.</p><div id="beratung-hero-builder" data-target="hero_json"></div><textarea id="hero_json" name="hero_json" rows="12" class="beratung-code is-technical-json" aria-hidden="true" tabindex="-1">' . self::esc($heroJson) . '</textarea></section>';
+        echo '<section class="beratung-card"><h1>Partnerband</h1><p>Dieser Bereich wird öffentlich unter dem Content Header angezeigt und ist deshalb getrennt vom Hero pflegbar.</p><div id="beratung-partner-band-builder" data-target="hero_json"></div></section>';
+        echo '<section class="beratung-card"><h1>Anker Navigation / Navigation</h1><p>Die Navigation zwischen Content Header und den Inhaltsbereichen ist hier direkt einstellbar.</p>';
+        self::checkbox('Anker Navigation unter dem Content Header anzeigen', 'show_anchor_nav', !empty($page['show_anchor_nav']));
+        echo '<div id="beratung-anchor-nav-builder" data-target="hero_json"></div></section>';
+        echo '<section class="beratung-card"><h1>Kontaktbereich</h1><p>Der Anfragebereich am Ende der Landingpage kann hier direkt gepflegt werden: Texte, Bild, Farben, Buttons, Datenschutz und Captcha.</p>';
         self::checkbox('Kontaktbereich anzeigen', 'contact_enabled', ($page['contact']['enabled'] ?? true) !== false);
-        echo '<textarea id="contact_json" name="contact_json" rows="10" class="beratung-code">' . self::esc($contactJson) . '</textarea></section>';
-        echo '<section class="beratung-card"><h1>Frei sortierbare Bereiche und Cards</h1><p>Komfort-Builder: Bereiche und Cards können per Drag and Drop sortiert, dupliziert, deaktiviert und gelöscht werden. Card-Typen zeigen passende Feldgruppen.</p><div id="beratung-builder" data-target="sections_json"></div><textarea id="sections_json" name="sections_json" rows="16" class="beratung-code">' . self::esc($sectionsJson) . '</textarea></section>';
-        echo '<section class="beratung-card"><h1>Design Preset und individuelles Design</h1><p>Preset wählen, danach kann das JSON weiter angepasst werden.</p><label class="beratung-field"><span>Design Preset anwenden</span><select id="beratung-design-preset"><option value="">Bitte wählen</option>';
+        echo '<div id="beratung-contact-builder" data-target="contact_json"></div><textarea id="contact_json" name="contact_json" rows="10" class="beratung-code is-technical-json" aria-hidden="true" tabindex="-1">' . self::esc($contactJson) . '</textarea></section>';
+        echo '<section class="beratung-card"><h1>Zusammenarbeit Band</h1><p>Eigener aufklappbarer Bereich für Experts aus dem CMS-Expertsandcompanie Plugin. Hier wählst du direkt die Personen, Spalten, Texte, Farben und den MVP-Hinweis.</p><div id="beratung-collaboration-builder" data-target="sections_json"></div></section>';
+        echo '<section class="beratung-card"><h1>Frei sortierbare Bereiche und Cards</h1><p>Komfort-Builder: Bereiche und Cards können per Drag and Drop sortiert, dupliziert, deaktiviert und gelöscht werden. Card-Typen zeigen passende Feldgruppen. Spezialbänder wie Partnerband, Navigation, Zusammenarbeit und Kontakt haben eigene Adminbereiche.</p><div id="beratung-builder" data-target="sections_json"></div><textarea id="sections_json" name="sections_json" rows="16" class="beratung-code is-technical-json" aria-hidden="true" tabindex="-1">' . self::esc($sectionsJson) . '</textarea></section>';
+        echo '<section class="beratung-card"><h1>Design Preset und individuelles Design</h1><p>Preset wählen und Farben direkt über die Felder anpassen.</p><label class="beratung-field"><span>Design Preset anwenden</span><select id="beratung-design-preset"><option value="">Bitte wählen</option>';
         foreach ($presets as $preset) { echo '<option value="' . self::esc((string) ($preset['slug'] ?? '')) . '" data-design="' . self::esc((string) ($preset['design_json'] ?? '{}')) . '">' . self::esc((string) ($preset['name'] ?? 'Preset')) . '</option>'; }
-        echo '</select></label><textarea id="design_json" name="design_json" rows="8" class="beratung-code">' . self::esc($designJson) . '</textarea></section>';
+        echo '</select></label><div id="beratung-design-builder" data-target="design_json"></div><textarea id="design_json" name="design_json" rows="8" class="beratung-code is-technical-json" aria-hidden="true" tabindex="-1">' . self::esc($designJson) . '</textarea></section>';
         echo '<p><button type="submit" class="beratung-btn">Landingpage speichern</button> <a class="beratung-link" href="' . self::esc(self::admin_url('cms-beratung-landingpages')) . '">Zur Übersicht</a></p></form>';
     }
 
@@ -596,6 +604,14 @@ final class CMS_Beratung_Admin_Pages
                 'button_1' => ['text' => 'Beratung anfragen', 'target' => '#kontakt', 'target_type' => 'contact', 'style' => 'primary'],
                 'button_2' => ['text' => 'Leistungen ansehen', 'target' => '#leistungen', 'target_type' => 'anchor', 'style' => 'ghost'],
                 'button_3' => ['text' => 'Copilot Readiness prüfen', 'target' => '#copilot-readiness', 'target_type' => 'anchor', 'style' => 'secondary'],
+                'trust_badges' => ['Ex-Microsoft MVP', '20+ Jahre', 'LPIC 1 & 2', 'Microsoft zertifiziert'],
+                'partner_band_enabled' => false,
+                'partner_band_text' => 'Zugehörig zum copilotberater.de Netzwerk',
+                'partner_band_website_label' => 'copilotberater.de',
+                'partner_band_website_url' => 'https://copilotberater.de',
+                'partner_band_map_label' => 'Copilotberater Deutschland Karte',
+                'partner_band_map_url' => 'https://copilotberater.de/copilotberater-deutschland-karte/',
+                'anchor_nav_layout' => 'pills',
                 'trust_text' => 'Praxisnahe Beratung für Microsoft 365, Copilot, Security und Compliance.',
                 'background_color' => '#f8fafc',
                 'text_color' => '#111827',
@@ -663,19 +679,39 @@ final class CMS_Beratung_Admin_Pages
                 'max_width' => 1160,
                 'text_align' => 'left',
                 'cards' => [
-                    ['enabled' => true, 'icon' => '🏢', 'category' => 'Tenant', 'title' => 'Microsoft 365 Tenant Check', 'text' => 'Struktur, Lizenzen, Adminrollen, Sicherheit und Governance systematisch prüfen.'],
-                    ['enabled' => true, 'icon' => '🤖', 'category' => 'Copilot', 'title' => 'Copilot Readiness Check', 'text' => 'Berechtigungen, Datenqualität, Compliance und technische Voraussetzungen bewerten.'],
-                    ['enabled' => true, 'icon' => '🔐', 'category' => 'Identity', 'title' => 'Entra ID Security Review', 'text' => 'MFA, Rollen, Conditional Access, Gastzugriffe und Identity Governance analysieren.'],
-                    ['enabled' => true, 'icon' => '📜', 'category' => 'Compliance', 'title' => 'Microsoft Purview Beratung', 'text' => 'Informationsschutz, DLP, Labels, eDiscovery und Aufbewahrung praxisnah einordnen.'],
-                    ['enabled' => true, 'icon' => '🧭', 'category' => 'Governance', 'title' => 'SharePoint und OneDrive Governance', 'text' => 'Sites, Freigaben, Lifecycle, Berechtigungen und Informationsarchitektur strukturieren.'],
-                    ['enabled' => true, 'icon' => '✉️', 'category' => 'Exchange', 'title' => 'Exchange Online Analyse', 'text' => 'Postfächer, Transportregeln, Schutzfunktionen und Betriebsrisiken bewerten.'],
-                    ['enabled' => true, 'icon' => '🛡️', 'category' => 'Security', 'title' => 'Microsoft Defender Review', 'text' => 'Defender-Konfigurationen, Secure Score und Schutzmaßnahmen priorisieren.'],
-                    ['enabled' => true, 'icon' => '🚦', 'category' => 'Access', 'title' => 'Conditional Access Bewertung', 'text' => 'Richtlinien, Ausnahmen, Break-Glass-Konten und Risiko-Szenarien prüfen.'],
-                    ['enabled' => true, 'icon' => '🎓', 'category' => 'Enablement', 'title' => 'Admin Workshops', 'text' => 'Praxisnahe Workshops für Admin Teams statt Folien-Consulting von der Stange.'],
-                    ['enabled' => true, 'icon' => '⚙️', 'category' => 'Automation', 'title' => 'PowerShell Automatisierung', 'text' => 'Wiederkehrende Admin-Aufgaben mit nachvollziehbaren Skripten automatisieren.'],
-                    ['enabled' => true, 'icon' => '📘', 'category' => 'Betrieb', 'title' => 'Dokumentation und Übergabe', 'text' => 'Verständliche Dokumentation für Betrieb, Entscheidungen und nächste Schritte.'],
-                    ['enabled' => true, 'icon' => '🤝', 'category' => 'Projekt', 'title' => 'Projektbegleitung', 'text' => 'Technische Umsetzung, Review-Termine und Enablement über das Projekt hinweg begleiten.'],
+                    ['enabled' => true, 'icon' => '🏢', 'category' => 'Tenant', 'title' => 'Microsoft 365 Tenant Check', 'text' => 'Du bekommst eine klare Risiko- und Lizenzeinschätzung deines Tenants und weißt, wo Governance fehlt.'],
+                    ['enabled' => true, 'icon' => '🤖', 'category' => 'Copilot', 'title' => 'Copilot Readiness Check', 'text' => 'Du erkennst, ob Datenzugriffe, Inhalte und Compliance für Copilot belastbar vorbereitet sind. So startest du kontrolliert statt mit blinden Flecken.'],
+                    ['enabled' => true, 'icon' => '🔐', 'category' => 'Identity', 'title' => 'Entra ID Security Review', 'text' => 'Du siehst, welche Identitätsrisiken deinen Tenant wirklich betreffen. Daraus entstehen konkrete Schritte für MFA, Rollen und Zugriffsschutz.'],
+                    ['enabled' => true, 'icon' => '📜', 'category' => 'Compliance', 'title' => 'Microsoft Purview Beratung', 'text' => 'Du weißt, welche Purview-Funktionen für deine Daten sinnvoll sind und wie Schutz, DLP und Aufbewahrung zusammenwirken.'],
+                    ['enabled' => true, 'icon' => '🧭', 'category' => 'Governance', 'title' => 'SharePoint und OneDrive Governance', 'text' => 'Du bekommst klare Regeln für Sites, Freigaben und Berechtigungen. So reduzierst du Wildwuchs und schaffst eine bessere Grundlage für Copilot.'],
+                    ['enabled' => true, 'icon' => '✉️', 'category' => 'Exchange', 'title' => 'Exchange Online Analyse', 'text' => 'Du erkennst Risiken in Mailfluss, Postfächern und Schutzfunktionen. Danach weißt du, welche Anpassungen Betrieb und Sicherheit verbessern.'],
+                    ['enabled' => true, 'icon' => '🛡️', 'category' => 'Security', 'title' => 'Microsoft Defender Review', 'text' => 'Du bekommst priorisierte Findings zu Defender und Secure Score. So weißt du, welche Schutzmaßnahmen zuerst Wirkung bringen.'],
+                    ['enabled' => true, 'icon' => '🚦', 'category' => 'Access', 'title' => 'Conditional Access Bewertung', 'text' => 'Du erkennst unsichere Ausnahmen, Lücken und Konflikte in deinen Richtlinien. Daraus entsteht ein belastbarer Zugriffsschutz für Benutzer und Admins.'],
+                    ['enabled' => true, 'icon' => '🎓', 'category' => 'Enablement', 'title' => 'Admin Workshops', 'text' => 'Dein Admin-Team versteht die Entscheidungen und kann sie selbstständig weiterführen. Die Inhalte richten sich an euren echten Aufgaben aus.'],
+                    ['enabled' => true, 'icon' => '⚙️', 'category' => 'Automation', 'title' => 'PowerShell Automatisierung', 'text' => 'Du reduzierst wiederkehrende Admin-Arbeit und bekommst nachvollziehbare Skripte für stabile Abläufe.'],
+                    ['enabled' => true, 'icon' => '📘', 'category' => 'Betrieb', 'title' => 'Dokumentation und Übergabe', 'text' => 'Du erhältst verständliche Ergebnisse, Entscheidungen und nächste Schritte. Damit bleiben Wissen und Verantwortung im Team nutzbar.'],
+                    ['enabled' => true, 'icon' => '🤝', 'category' => 'Projekt', 'title' => 'Projektbegleitung', 'text' => 'Du bekommst technische Begleitung während Umsetzung, Review und Übergabe. So bleiben Entscheidungen sauber und Risiken früh sichtbar.'],
                 ],
+            ], [
+                'id' => 'zusammenarbeit',
+                'anchor_id' => 'zusammenarbeit',
+                'enabled' => true,
+                'type' => 'collaboration',
+                'internal_name' => 'Zusammenarbeit',
+                'eyebrow' => 'Zusammenarbeit',
+                'title' => 'Expertinnen und Experten, mit denen ich bei dieser Dienstleistung zusammenarbeite',
+                'intro' => 'Für Spezialthemen kann die Dienstleistung durch ausgewählte Experts aus dem 365 Network ergänzt werden.',
+                'columns' => 3,
+                'card_design' => 'accent',
+                'expert_ids' => [],
+                'mvp_note_enabled' => true,
+                'mvp_note_text' => 'Darunter auch Microsoft MVPs aus dem 365 Network.',
+                'background_color' => '#ffffff',
+                'text_color' => '#111827',
+                'padding_top' => 56,
+                'padding_bottom' => 56,
+                'max_width' => 1160,
+                'text_align' => 'left',
             ], [
                 'id' => 'ablauf',
                 'anchor_id' => 'ablauf',
@@ -1092,6 +1128,48 @@ final class CMS_Beratung_Admin_Pages
         ];
         $json = (string) json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         echo '<script type="application/json" id="beratung-media-config">' . str_replace('</script', '<\/script', $json) . '</script>';
+    }
+
+    private static function render_expert_options_config(): void
+    {
+        $items = [];
+        if (class_exists('CMS_365NET_Experts_And_Companie_Database')) {
+            try {
+                foreach (CMS_365NET_Experts_And_Companie_Database::instance()->getExpertsPublic('', '', 500, 0) as $expert) {
+                    if (!is_object($expert)) {
+                        continue;
+                    }
+                    $id = (int) ($expert->id ?? 0);
+                    if ($id <= 0) {
+                        continue;
+                    }
+                    $first = trim((string) ($expert->first_name ?? ''));
+                    $last = trim((string) ($expert->last_name ?? ''));
+                    $name = trim($first . ' ' . $last);
+                    if ($name === '') {
+                        continue;
+                    }
+                    $position = trim((string) ($expert->position ?? ''));
+                    $company = trim((string) ($expert->company ?? ''));
+                    $awards = trim((string) ($expert->awards ?? ''));
+                    $items[] = [
+                        'id' => $id,
+                        'name' => $name,
+                        'label' => trim('Expert: ' . $name . ($position !== '' ? ' · ' . $position : '') . ($company !== '' ? ' · ' . $company : '')),
+                        'source' => 'experts',
+                        'position' => $position,
+                        'company' => $company,
+                        'photo_url' => trim((string) ($expert->photo_url ?? '')),
+                        'awards' => $awards,
+                        'is_mvp' => $awards !== '' && stripos($awards, 'mvp') !== false,
+                    ];
+                }
+            } catch (Throwable) {
+                $items = [];
+            }
+        }
+        $json = (string) json_encode(['experts' => $items], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        echo '<script type="application/json" id="beratung-expert-options">' . str_replace('</script', '<\/script', $json) . '</script>';
     }
 
     /** @param array<string,mixed> $payload */
