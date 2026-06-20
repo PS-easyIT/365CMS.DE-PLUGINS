@@ -1,13 +1,15 @@
 {
   "slug": "cms-beratung",
   "name": "CMS Beratung",
-  "version": "2.9.729",
+  "version": "2.9.731",
   "requires": "365CMS",
   "tested": "2026.06",
   "author": "365 Network",
   "description": "Spezialisierter 365CMS Landingpage Builder für Microsoft 365, Copilot, KI, Security, Compliance und IT Consulting Beratungsleistungen.",
   "download_url": "PLUGINS/cms-beratung/cms-beratung.zip",
   "changelog": {
+    "2.9.731": "Mobile-CSS-Finalisierung: Eine finale Override-Schicht erzwingt die Inhalte-Anker-Navigation unter 768px als horizontalen Snap-Scroller für alle Varianten, sichert 44px Tap Targets, full-width Hero-/Navy-CTAs und schützt Proof-, Booking-, Card- und Iframe-Bereiche gegen horizontales Überlaufen bei sehr kleinen Viewports.",
+    "2.9.730": "Finalisierung der Beratung-Landingpage: Social Proof wurde von erfundenen Platzhalter-Zitaten auf belegbare Proof-Cards mit Credentials, echten Projektzahlen-Feldern und Netzwerkhinweis umgestellt. Optionale echte Testimonials sind als separates leeres Array vorbereitet, die MS-Bookings-URL ist als klarer Einfügepunkt kommentiert.",
     "2.9.729": "Mobiler Responsive-Final-Polish: Die Inhalte-Anker-Navigation wird unter 768px als horizontaler Snap-Scroller mit verdeckter Scrollbar und Fade-Hinweis dargestellt. Mobile Tap Targets wurden auf mindestens 44px gehärtet, Hero-CTAs stapeln full-width mit klarer Primary-Führung und Booking-Iframe sowie Social-Proof/Booking-Abstände sind overflow-sicher nachgeschärft.",
     "2.9.728": "Finaler Landingpage-Polish: Hero- und Navy-CTA-Bänder haben jetzt eine klarere Primary/Outline-Hierarchie mit mehr Button-Abstand. Die Terminbuchung erhält Trust-Chips, das Microsoft-Bookings-Iframe wurde für Desktop und Mobile gehärtet und Social-Proof-Platzhalter sind im Template klar markiert.",
     "2.9.727": "Layout-Fix für den Content Header nachgeschärft: Links positionierte Header-Bilder entfernen jetzt auch den Basis-Grid-Gap und das komplette Hero-Padding, füllen den Bildcontainer per Cover und sitzen dadurch oben, unten und links nahtlos am Cardrand.",

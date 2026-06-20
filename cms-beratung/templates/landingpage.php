@@ -30,7 +30,7 @@ $primaryCtaUsed = false;
 $heroPortraitPath = CMS_BERATUNG_PLUGIN_DIR . 'assets/img/consultant-portrait.svg';
 $heroPortraitUrl = CMS_BERATUNG_PLUGIN_URL . 'assets/img/consultant-portrait.svg';
 
-// Platzhalter: Microsoft Bookings Link hier eintragen, wenn die Terminbuchung aktiv angezeigt werden soll.
+// MS Bookings Embed-URL hier eintragen.
 $bookingUrl = '';
 
 $serviceOutcomeTexts = [
@@ -48,25 +48,57 @@ $serviceOutcomeTexts = [
     'Projektbegleitung' => 'Du bekommst technische Begleitung während Umsetzung, Review und Übergabe. So bleiben Entscheidungen sauber und Risiken früh sichtbar.',
 ];
 
-// Editierbare Platzhalter für Social Proof. Für echte Referenzen nur dieses Array anpassen, kein Markup ändern.
-// Platzhalter-Hinweis: Diese Einträge später durch echte, freigegebene Referenzen oder anonymisierte Projektergebnisse ersetzen.
-// Wird das Array geleert, unterdrückt sich die Social-Proof-Sektion automatisch.
-$proofItems = [
+// Nur ECHTE, belegbare Angaben eintragen. Keine erfundenen Kundenzitate (UWG).
+// Projektzahlen wie [X] und [Y] erst durch belegbare echte Werte ersetzen, wenn sie freigegeben sind.
+$proof = [
     [
-        'quote' => 'Nach dem Tenant Check war klar, welche Risiken zuerst angegangen werden müssen. Die Empfehlungen waren verständlich genug für Management und Admin-Team.',
-        'attribution' => 'IT-Leiter, Fertigungsunternehmen, rund 250 MA',
-        'initials' => 'IT',
+        'type' => 'credential',
+        'label' => 'Erfahrung',
+        'title' => '20+ Jahre Microsoft-Infrastruktur',
+        'text' => 'Senior IT-Admin mit Schwerpunkt Microsoft 365, Azure, Exchange, PowerShell, IT-Security und Datenschutz/Compliance.',
+        'meta' => 'Fokus: stabile, nachvollziehbare und sichere Betriebsmodelle.',
     ],
     [
-        'quote' => 'Der Copilot Readiness Check hat unsere offenen SharePoint-Berechtigungen sichtbar gemacht. Danach konnten wir Pilotierung und Governance deutlich sicherer planen.',
-        'attribution' => 'Head of Digital Workplace, Dienstleister, rund 600 MA',
-        'initials' => 'DW',
+        'type' => 'credential',
+        'label' => 'Prüfung',
+        'title' => 'IHK-Prüfer',
+        'text' => 'Prüfungsperspektive aus Ausbildung und Praxis. Das hilft bei klaren Standards, verständlicher Übergabe und sauberer Dokumentation.',
+        'meta' => 'Technik wird so erklärt, dass Admins und Entscheider damit arbeiten können.',
     ],
     [
-        'quote' => 'Statt allgemeiner Folien gab es konkrete Maßnahmen für Entra ID, Defender und Conditional Access. Genau das hat uns in der Umsetzung geholfen.',
-        'attribution' => 'Senior Administrator, öffentliche Einrichtung',
-        'initials' => 'SA',
+        'type' => 'credential',
+        'label' => 'Zertifizierung',
+        'title' => 'Mehrfach zertifiziert',
+        'text' => 'LPIC 1 & 2 sowie Microsoft-Zertifizierungen ergänzen die praktische Erfahrung aus Microsoft-Infrastruktur, Security und Automatisierung.',
+        'meta' => 'Breite Basis für hybride Umgebungen und Microsoft-Cloud-Betrieb.',
     ],
+    [
+        'type' => 'outcome',
+        'label' => 'Projektbeleg',
+        'title' => 'Exchange-Migration zu Exchange Online',
+        'text' => 'Echte Projektzahl eintragen: [X] Postfächer. Nur verwenden, wenn die Zahl belegbar und zur Veröffentlichung freigegeben ist.',
+        'meta' => 'Editierbares Feld: [X] Postfächer.',
+    ],
+    [
+        'type' => 'outcome',
+        'label' => 'Projektbeleg',
+        'title' => 'Copilot-Readiness für Mittelstand',
+        'text' => 'Echte Projektgröße eintragen: [Y] MA. Geeignet für freigegebene, anonymisierte Projektergebnisse ohne Kundenzitat.',
+        'meta' => 'Editierbares Feld: [Y] MA.',
+    ],
+    [
+        'type' => 'network',
+        'label' => 'Netzwerk',
+        'title' => 'copilotberater.de Netzwerk',
+        'text' => 'Beratung kann im passenden Netzwerk-Kontext eingeordnet werden, wenn Copilot, Governance, Suche und Enterprise AI zusammen gedacht werden müssen.',
+        'meta' => 'Trust-Signal: fachlicher Austausch statt isolierter Einzelmeinung.',
+    ],
+];
+
+// Hier echte LinkedIn-Empfehlungen / Kundenzitate eintragen. Leer lassen, bis echte Referenzen vorliegen.
+$testimonials = [
+    // Beispiel-Schema für echte Referenzen:
+    // ['quote' => '', 'name' => '', 'role' => '', 'company' => ''],
 ];
 
 $hasText = static function (mixed $value): bool {
@@ -378,17 +410,41 @@ $renderDivider = static function (array $section) use ($renderer, $renderSection
     echo '</div>';
 };
 
-$renderProofSection = static function (array $items) use ($renderer): void {
-    $items = array_values(array_filter($items, static fn(array $item): bool => trim((string) ($item['quote'] ?? '')) !== '' && trim((string) ($item['attribution'] ?? '')) !== ''));
-    if ($items === []) {
+$renderProofSection = static function (array $proof, array $testimonials) use ($renderer): void {
+    $proof = array_values(array_filter($proof, static fn(array $item): bool => trim((string) ($item['title'] ?? '')) !== '' && trim((string) ($item['text'] ?? '')) !== ''));
+    $testimonials = array_values(array_filter($testimonials, static fn(array $item): bool => trim((string) ($item['quote'] ?? '')) !== '' && trim((string) ($item['name'] ?? '')) !== ''));
+    if ($proof === [] && $testimonials === []) {
         return;
     }
-    echo '<section class="cms-beratung-proof" aria-labelledby="beratung-proof-title"><div class="cms-beratung-proof__inner"><div class="cms-beratung-proof__head"><span>Stimmen aus der Praxis</span><h2 id="beratung-proof-title">Was nach Beratung greifbar wird</h2><p>Platzhalter für anonymisierte Ergebnisse und Referenzen. Später können hier echte Stimmen ergänzt werden.</p></div><div class="cms-beratung-proof__grid">';
-    foreach (array_slice($items, 0, 3) as $item) {
-        $initials = trim((string) ($item['initials'] ?? ''));
-        echo '<article class="cms-beratung-proof-card"><div class="cms-beratung-proof-card__mark" aria-hidden="true">“</div><blockquote>' . $renderer::esc((string) $item['quote']) . '</blockquote><footer>' . ($initials !== '' ? '<span class="cms-beratung-proof-card__avatar">' . $renderer::esc($initials) . '</span>' : '') . '<span>' . $renderer::esc((string) $item['attribution']) . '</span></footer></article>';
+    echo '<section class="cms-beratung-proof" aria-labelledby="beratung-proof-title"><div class="cms-beratung-proof__inner"><div class="cms-beratung-proof__head"><span>Belegbare Grundlagen</span><h2 id="beratung-proof-title">Was nach Beratung greifbar wird</h2><p>Keine erfundenen Kundenzitate. Hier stehen nur nachvollziehbare Erfahrung, klare Projektbelege und später echte freigegebene Referenzen.</p></div>';
+    if ($proof !== []) {
+        echo '<div class="cms-beratung-proof__grid">';
+        foreach ($proof as $item) {
+            $type = preg_replace('/[^a-z0-9_-]/i', '', (string) ($item['type'] ?? 'proof')) ?: 'proof';
+            echo '<article class="cms-beratung-proof-card cms-beratung-proof-card--' . $renderer::esc($type) . '">';
+            if (trim((string) ($item['label'] ?? '')) !== '') {
+                echo '<span class="cms-beratung-proof-card__label">' . $renderer::esc((string) $item['label']) . '</span>';
+            }
+            echo '<h3>' . $renderer::esc((string) $item['title']) . '</h3><p>' . $renderer::esc((string) $item['text']) . '</p>';
+            if (trim((string) ($item['meta'] ?? '')) !== '') {
+                echo '<small>' . $renderer::esc((string) $item['meta']) . '</small>';
+            }
+            echo '</article>';
+        }
+        echo '</div>';
     }
-    echo '</div></div></section>';
+    if ($testimonials !== []) {
+        echo '<div class="cms-beratung-proof__testimonials" aria-label="Echte Referenzen">';
+        foreach ($testimonials as $item) {
+            $person = trim((string) ($item['name'] ?? ''));
+            $role = trim((string) ($item['role'] ?? ''));
+            $company = trim((string) ($item['company'] ?? ''));
+            $caption = trim(implode(', ', array_filter([$person, $role, $company], static fn(string $value): bool => $value !== '')));
+            echo '<article class="cms-beratung-proof-testimonial"><blockquote>' . $renderer::esc((string) $item['quote']) . '</blockquote>' . ($caption !== '' ? '<footer>' . $renderer::esc($caption) . '</footer>' : '') . '</article>';
+        }
+        echo '</div>';
+    }
+    echo '</div></section>';
 };
 
 $renderBookingSection = static function (string $bookingUrl) use ($renderer): void {
@@ -443,7 +499,7 @@ $renderBookingSection = static function (string $bookingUrl) use ($renderer): vo
         </aside>
     <?php endif; ?>
 
-    <?php $renderProofSection($proofItems); ?>
+    <?php $renderProofSection($proof, $testimonials); ?>
 
     <?php $renderBookingSection($bookingUrl); ?>
 

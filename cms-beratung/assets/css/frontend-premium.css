@@ -353,6 +353,50 @@
   line-height: 1 !important;
 }
 
+.cms-beratung .cms-beratung-proof-card__label {
+  display: inline-flex !important;
+  align-self: flex-start !important;
+  border-radius: 999px !important;
+  background: #fff7df !important;
+  color: var(--gold-text) !important;
+  border: 1px solid color-mix(in srgb, var(--gold), transparent 46%) !important;
+  padding: .22rem .58rem !important;
+  font-size: .72rem !important;
+  font-weight: 950 !important;
+  letter-spacing: .04em !important;
+  line-height: 1.15 !important;
+  text-transform: uppercase !important;
+}
+
+.cms-beratung .cms-beratung-proof-card h3 {
+  margin: 0 !important;
+  color: var(--phinit-navy) !important;
+  font-size: 1.08rem !important;
+  line-height: 1.25 !important;
+}
+
+.cms-beratung .cms-beratung-proof-card p {
+  margin: 0 !important;
+  color: var(--phinit-muted) !important;
+  font-size: .9rem !important;
+}
+
+.cms-beratung .cms-beratung-proof-card small {
+  display: block !important;
+  margin-top: auto !important;
+  color: var(--phinit-navy) !important;
+  font-size: .78rem !important;
+  font-weight: 850 !important;
+}
+
+.cms-beratung .cms-beratung-proof-card--outcome {
+  border-top-color: var(--phinit-blue) !important;
+}
+
+.cms-beratung .cms-beratung-proof-card--network {
+  border-top-color: var(--phinit-navy) !important;
+}
+
 .cms-beratung .cms-beratung-proof-card blockquote {
   margin: 0 !important;
   color: var(--phinit-navy) !important;
@@ -382,6 +426,35 @@
   color: #ffffff !important;
   font-size: .72rem !important;
   font-weight: 950 !important;
+}
+
+.cms-beratung .cms-beratung-proof__testimonials {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: .9rem !important;
+}
+
+.cms-beratung .cms-beratung-proof-testimonial {
+  padding: 1rem !important;
+  border: 1px solid rgba(11, 31, 58, .1) !important;
+  border-left: 4px solid var(--gold) !important;
+  border-radius: 6px !important;
+  background: #ffffff !important;
+  color: var(--phinit-navy) !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, .07) !important;
+}
+
+.cms-beratung .cms-beratung-proof-testimonial blockquote {
+  margin: 0 !important;
+  font-weight: 760 !important;
+  line-height: 1.45 !important;
+}
+
+.cms-beratung .cms-beratung-proof-testimonial footer {
+  margin-top: .75rem !important;
+  color: var(--phinit-muted) !important;
+  font-size: .78rem !important;
+  font-weight: 850 !important;
 }
 
 .cms-beratung .cms-beratung-booking {
@@ -1390,6 +1463,11 @@
     gap: .85rem !important;
   }
 
+  .cms-beratung .cms-beratung-proof__testimonials {
+    grid-template-columns: 1fr !important;
+    gap: .85rem !important;
+  }
+
   .cms-beratung .cms-beratung__cards--3,
   .cms-beratung .cms-beratung__cards--4 {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -1581,5 +1659,136 @@
   .cms-beratung .cms-beratung__anchor-nav--pills a,
   .cms-beratung .cms-beratung__anchor-nav--goldbar a {
     flex: 0 0 auto !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .cms-beratung,
+  .cms-beratung * {
+    box-sizing: border-box !important;
+  }
+
+  .cms-beratung {
+    max-width: 100% !important;
+    overflow-x: clip !important;
+  }
+
+  .cms-beratung .cms-beratung__section,
+  .cms-beratung .cms-beratung-proof,
+  .cms-beratung .cms-beratung-booking,
+  .cms-beratung .cms-beratung__contact,
+  .cms-beratung .cms-beratung-card,
+  .cms-beratung .cms-beratung-proof-card,
+  .cms-beratung .cms-beratung-booking-card,
+  .cms-beratung .cms-beratung-booking-card__embed,
+  .cms-beratung .cms-beratung-comparison,
+  .cms-beratung .cms-beratung-collab {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .cms-beratung nav.cms-beratung__anchor-nav,
+  .cms-beratung nav.cms-beratung__anchor-nav.cms-beratung__anchor-nav--pills,
+  .cms-beratung nav.cms-beratung__anchor-nav.cms-beratung__anchor-nav--cards,
+  .cms-beratung nav.cms-beratung__anchor-nav.cms-beratung__anchor-nav--threegrid,
+  .cms-beratung nav.cms-beratung__anchor-nav.cms-beratung__anchor-nav--goldbar,
+  .cms-beratung nav.cms-beratung__anchor-nav.cms-beratung__anchor-nav--minimal {
+    position: static !important;
+    display: flex !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: .55rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-x: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    scroll-snap-type: x proximity !important;
+    scroll-padding-inline: .75rem !important;
+    padding: .62rem .75rem !important;
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 34px), transparent 100%) !important;
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 34px), transparent 100%) !important;
+  }
+
+  .cms-beratung nav.cms-beratung__anchor-nav::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .cms-beratung nav.cms-beratung__anchor-nav .cms-beratung__anchor-nav-title,
+  .cms-beratung nav.cms-beratung__anchor-nav a {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: max-content !important;
+    max-width: 82vw !important;
+    min-height: 44px !important;
+    scroll-snap-align: start !important;
+    white-space: nowrap !important;
+  }
+
+  .cms-beratung nav.cms-beratung__anchor-nav a {
+    padding: .58rem .78rem !important;
+  }
+
+  .cms-beratung .cms-beratung__hero-actions,
+  .cms-beratung .cms-beratung__section--cta .cms-beratung-module__actions,
+  .cms-beratung .cms-beratung__section--rhythm-accent .cms-beratung-module__actions {
+    align-items: stretch !important;
+    flex-direction: column !important;
+    gap: .6rem !important;
+    width: 100% !important;
+  }
+
+  .cms-beratung .cms-beratung__hero-actions .cms-beratung__btn,
+  .cms-beratung .cms-beratung-module__actions .cms-beratung__btn {
+    width: 100% !important;
+    min-height: 44px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .cms-beratung .cms-beratung__hero-actions .cms-beratung__btn--primary {
+    background: var(--phinit-blue) !important;
+    color: #ffffff !important;
+    border-color: var(--phinit-blue) !important;
+  }
+
+  .cms-beratung .cms-beratung__hero-actions .cms-beratung__btn--ghost,
+  .cms-beratung .cms-beratung__hero-actions .cms-beratung__btn--secondary,
+  .cms-beratung .cms-beratung__hero-actions .cms-beratung__btn--link {
+    background: transparent !important;
+    color: var(--phinit-blue) !important;
+    border: 1px solid rgba(37, 99, 235, .72) !important;
+    box-shadow: none !important;
+  }
+
+  .cms-beratung .cms-beratung-faq button,
+  .cms-beratung .cms-beratung-booking__trust li,
+  .cms-beratung .cms-beratung-form input,
+  .cms-beratung .cms-beratung-form select,
+  .cms-beratung .cms-beratung-form textarea,
+  .cms-beratung .cms-beratung-partner-band__links a {
+    min-height: 44px !important;
+  }
+
+  .cms-beratung .cms-beratung-booking-card__embed iframe {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 600px !important;
+    border: 0 !important;
+  }
+
+  .cms-beratung .cms-beratung-proof__grid,
+  .cms-beratung .cms-beratung-proof__testimonials,
+  .cms-beratung .cms-beratung-collab,
+  .cms-beratung .cms-beratung-comparison {
+    grid-template-columns: 1fr !important;
   }
 }
