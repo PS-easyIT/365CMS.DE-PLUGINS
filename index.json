@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "updated": "2026-05-31",
+  "updated": "2026-06-20",
   "plugins": [
     {
       "slug": "cms-365network",
@@ -51,6 +51,11 @@
       "slug": "cms-booking",
       "name": "CMS Booking",
       "manifest": "PLUGINS/cms-booking/update.json"
+    },
+    {
+      "slug": "cms-beratung",
+      "name": "CMS Beratung",
+      "manifest": "PLUGINS/cms-beratung/update.json"
     },
     {
       "slug": "cms-feed",
