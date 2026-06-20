@@ -1,8 +1,8 @@
 (() => {
-  const root = document.querySelector('.cms-beratung');
-  if (!root) return;
+  const roots = document.querySelectorAll('.cms-beratung');
+  if (!roots.length) return;
 
-  root.addEventListener('click', (event) => {
+  roots.forEach((root) => root.addEventListener('click', (event) => {
     try {
       const link = event.target instanceof Element ? event.target.closest('a[href^="#"]') : null;
       if (!link) return;
@@ -19,20 +19,23 @@
     } catch (_) {
       // Frontend-Enhancement darf die Seite nie blockieren.
     }
-  });
+  }));
 
-  root.addEventListener('click', (event) => {
+  roots.forEach((root) => root.addEventListener('click', (event) => {
     try {
       const button = event.target instanceof Element ? event.target.closest('.cms-beratung-faq button[aria-controls]') : null;
       if (!button) return;
       const faq = button.closest('.cms-beratung-faq');
-      const panel = document.getElementById(button.getAttribute('aria-controls'));
+      const panelId = button.getAttribute('aria-controls') || '';
+      const panel = panelId ? document.getElementById(panelId) : null;
       if (!faq || !panel) return;
+      event.preventDefault();
       const allowMultiple = faq.dataset.allowMultiple === '1';
       const willOpen = button.getAttribute('aria-expanded') !== 'true';
       if (!allowMultiple) {
         faq.querySelectorAll('button[aria-controls]').forEach((other) => {
-          const otherPanel = document.getElementById(other.getAttribute('aria-controls'));
+          const otherPanelId = other.getAttribute('aria-controls') || '';
+          const otherPanel = otherPanelId ? document.getElementById(otherPanelId) : null;
           other.setAttribute('aria-expanded', 'false');
           other.closest('.cms-beratung-faq__item')?.classList.remove('is-open');
           if (otherPanel) otherPanel.hidden = true;
@@ -44,5 +47,5 @@
     } catch (_) {
       // FAQ bleibt als HTML lesbar, auch wenn Enhancement fehlschlägt.
     }
-  });
+  }));
 })();

@@ -47,7 +47,18 @@ final class CMS_Beratung_Import_Export
         $statuses = CMS_Beratung_Settings::statuses();
         $templates = CMS_Beratung_Settings::templates();
         $hero = self::sanitize_hero($data['hero'] ?? $data['hero_json'] ?? []);
-        $contact = self::sanitize_contact($data['contact'] ?? $data['contact_json'] ?? $data);
+        $contactRaw = $data['contact'] ?? $data['contact_json'] ?? $data;
+        if (array_key_exists('contact_enabled', $data)) {
+            if (is_string($contactRaw)) {
+                $decodedContact = json_decode($contactRaw, true);
+                $contactRaw = is_array($decodedContact) ? $decodedContact : [];
+            }
+            if (!is_array($contactRaw)) {
+                $contactRaw = [];
+            }
+            $contactRaw['enabled'] = !empty($data['contact_enabled']);
+        }
+        $contact = self::sanitize_contact($contactRaw);
         $seo = self::sanitize_seo($data['seo'] ?? $data['seo_json'] ?? $data);
         $sections = self::sanitize_sections($data['sections'] ?? $data['sections_json'] ?? []);
         $design = self::sanitize_design($data['design'] ?? $data['design_json'] ?? []);

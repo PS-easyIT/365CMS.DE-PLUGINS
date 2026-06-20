@@ -441,6 +441,7 @@ final class CMS_Beratung_Admin_Pages
         CMS_Beratung_Installer::ensure_for_admin_save();
         $presets = CMS_Beratung_Storage::instance()->all_presets();
         $heroJson = json_encode($page['hero'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}';
+        $contactJson = json_encode($page['contact'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}';
         $editableSections = array_values(array_filter(is_array($page['sections'] ?? null) ? $page['sections'] : [], static fn($section): bool => is_array($section) && ($section['type'] ?? '') !== 'faq'));
         $sectionsJson = json_encode($editableSections, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
         $designJson = json_encode($page['design'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}';
@@ -462,11 +463,14 @@ final class CMS_Beratung_Admin_Pages
             echo '<p><a class="beratung-link" target="_blank" rel="noopener noreferrer" href="' . self::esc(self::admin_url('cms-beratung-preview', ['id' => (int) $page['id']])) . '">Entwurfs-Vorschau öffnen</a></p>';
         }
         echo '</section><section class="beratung-card"><h1>Anzeige Optionen</h1>';
-        foreach (['custom_design_enabled' => 'Individuelles Design aktivieren', 'use_global_settings' => 'Globale Plugin Einstellungen verwenden', 'show_header' => 'Header anzeigen', 'show_footer' => 'Footer anzeigen', 'show_breadcrumb' => 'Breadcrumb anzeigen', 'show_toc' => 'Inhaltsverzeichnis anzeigen', 'show_anchor_nav' => 'Anker Navigation anzeigen', 'noindex' => 'Noindex aktivieren', 'nofollow' => 'Nofollow aktivieren'] as $name => $label) {
+        foreach (['custom_design_enabled' => 'Individuelles Design aktivieren', 'use_global_settings' => 'Globale Plugin Einstellungen verwenden', 'show_header' => 'Header anzeigen', 'show_footer' => 'Footer anzeigen', 'show_breadcrumb' => 'Breadcrumb anzeigen', 'show_toc' => 'Inhaltsverzeichnis anzeigen', 'show_anchor_nav' => 'Anker Navigation unter dem Content Header anzeigen', 'noindex' => 'Noindex aktivieren', 'nofollow' => 'Nofollow aktivieren'] as $name => $label) {
             self::checkbox($label, $name, !empty($page[$name]));
         }
         echo '</section></div>';
         echo '<section class="beratung-card"><h1>Hero / Content Header</h1><p>Bild links oder rechts, nahtloser Bildrand, Badge, Titel, Text, bis zu 3 Buttons und Trust-Hinweis.</p><div id="beratung-hero-builder" data-target="hero_json"></div><textarea id="hero_json" name="hero_json" rows="12" class="beratung-code">' . self::esc($heroJson) . '</textarea></section>';
+        echo '<section class="beratung-card"><h1>Kontaktbereich</h1><p>Der Anfragebereich am Ende der Landingpage kann hier aktiv/deaktiviert und bei Bedarf per JSON feinjustiert werden.</p>';
+        self::checkbox('Kontaktbereich anzeigen', 'contact_enabled', ($page['contact']['enabled'] ?? true) !== false);
+        echo '<textarea id="contact_json" name="contact_json" rows="10" class="beratung-code">' . self::esc($contactJson) . '</textarea></section>';
         echo '<section class="beratung-card"><h1>Frei sortierbare Bereiche und Cards</h1><p>Komfort-Builder: Bereiche und Cards können per Drag and Drop sortiert, dupliziert, deaktiviert und gelöscht werden. Card-Typen zeigen passende Feldgruppen.</p><div id="beratung-builder" data-target="sections_json"></div><textarea id="sections_json" name="sections_json" rows="16" class="beratung-code">' . self::esc($sectionsJson) . '</textarea></section>';
         echo '<section class="beratung-card"><h1>Design Preset und individuelles Design</h1><p>Preset wählen, danach kann das JSON weiter angepasst werden.</p><label class="beratung-field"><span>Design Preset anwenden</span><select id="beratung-design-preset"><option value="">Bitte wählen</option>';
         foreach ($presets as $preset) { echo '<option value="' . self::esc((string) ($preset['slug'] ?? '')) . '" data-design="' . self::esc((string) ($preset['design_json'] ?? '{}')) . '">' . self::esc((string) ($preset['name'] ?? 'Preset')) . '</option>'; }

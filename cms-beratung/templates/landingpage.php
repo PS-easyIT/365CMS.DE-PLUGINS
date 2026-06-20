@@ -26,16 +26,22 @@ $hero = is_array($page['hero'] ?? null) ? $page['hero'] : [];
 $contact = is_array($page['contact'] ?? null) ? $page['contact'] : [];
 $formErrors = is_array($formResult['errors'] ?? null) ? $formResult['errors'] : [];
 $formValues = is_array($formResult['values'] ?? null) ? $formResult['values'] : [];
+$primaryCtaUsed = false;
 
 $buttonClass = static function (string $style): string {
     return 'cms-beratung__btn cms-beratung__btn--' . preg_replace('/[^a-z0-9_-]/i', '', $style ?: 'primary');
 };
 
-$renderLinkButton = static function (string $label, string $url, string $style = 'primary') use ($renderer, $buttonClass): void {
+$renderLinkButton = static function (string $label, string $url, string $style = 'primary') use ($renderer, $buttonClass, &$primaryCtaUsed): void {
     $label = trim($label);
     $url = trim($url);
     if ($label === '' || $url === '') {
         return;
+    }
+    $isMainCta = strcasecmp($label, 'Beratung anfragen') === 0 && !$primaryCtaUsed;
+    $style = $isMainCta ? 'primary' : 'ghost';
+    if ($isMainCta) {
+        $primaryCtaUsed = true;
     }
     $external = preg_match('#^https?://#i', $url) === 1;
     echo '<a class="' . $renderer::esc($buttonClass($style)) . '" href="' . $renderer::esc($url) . '"' . ($external ? ' target="_blank" rel="noopener noreferrer"' : '') . '>' . $renderer::esc($label) . '</a>';
@@ -219,9 +225,11 @@ $renderDivider = static function (array $section) use ($renderer, $renderSection
                 <?php if (!empty($hero['badge_show']) && !empty($hero['badge_text'])): ?><span class="cms-beratung__kicker"><?php echo $renderer::esc((string) $hero['badge_text']); ?></span><?php endif; ?>
                 <h1><?php echo $renderer::esc($heroTitle); ?></h1>
                 <?php if (!empty($hero['subtitle'])): ?><p class="cms-beratung-hero__subtitle"><?php echo $renderer::esc((string) $hero['subtitle']); ?></p><?php endif; ?>
+                <div class="cms-beratung-hero__trust-row" aria-label="Trust Signale"><span>Ex-Microsoft MVP</span><span>20+ Jahre</span><span>LPIC 1 &amp; 2</span><span>Microsoft zertifiziert</span></div>
                 <?php if (!empty($hero['description'])): ?><p class="cms-beratung-hero__description"><?php echo $renderer::esc((string) $hero['description']); ?></p><?php endif; ?>
                 <div class="cms-beratung__hero-actions"><?php $renderButton(is_array($hero['button_1'] ?? null) ? $hero['button_1'] : []); ?><?php $renderButton(is_array($hero['button_2'] ?? null) ? $hero['button_2'] : []); ?><?php $renderButton(is_array($hero['button_3'] ?? null) ? $hero['button_3'] : []); ?></div>
                 <?php if (!empty($hero['trust_text'])): ?><p class="cms-beratung-hero__trust"><?php echo $renderer::esc((string) $hero['trust_text']); ?></p><?php endif; ?>
+                <div class="cms-beratung-hero__portrait-slot" aria-hidden="true"><span>Portrait</span></div>
             </div>
         </header>
     <?php endif; ?>
@@ -233,11 +241,12 @@ $renderDivider = static function (array $section) use ($renderer, $renderSection
         </nav>
     <?php endif; ?>
 
-    <?php foreach ($sections as $section): ?>
+    <?php $sectionNumber = 0; foreach ($sections as $section): ?>
         <?php if (empty($section['enabled'])) { continue; } ?>
         <?php $columns = max(1, min(4, (int) ($section['columns'] ?? 3))); $sectionId = (string) ($section['anchor_id'] ?? $section['id'] ?? 'bereich'); $sectionType = (string) ($section['type'] ?? 'card_grid'); $cards = is_array($section['cards'] ?? null) ? $section['cards'] : []; ?>
         <?php if ($sectionType === 'faq') { continue; } ?>
-        <section class="cms-beratung__section cms-beratung__section--<?php echo $renderer::esc($sectionType); ?> cms-beratung__section--display-<?php echo $renderer::esc((string) ($section['display_style'] ?? 'cards')); ?> <?php echo !empty($section['equal_height']) ? 'has-equal-cards' : ''; ?>" id="<?php echo $renderer::esc($sectionId); ?>" style="--section-bg: <?php echo $renderer::esc((string) ($section['background_color'] ?? '#ffffff')); ?>; --section-text: <?php echo $renderer::esc((string) ($section['text_color'] ?? '#111827')); ?>; --section-pt: <?php echo (int) ($section['padding_top'] ?? 56); ?>px; --section-pb: <?php echo (int) ($section['padding_bottom'] ?? 56); ?>px; --section-width: <?php echo (int) ($section['max_width'] ?? 1200); ?>px; --section-align: <?php echo $renderer::esc((string) ($section['text_align'] ?? 'left')); ?>; <?php if (!empty($section['background_image_url'])): ?>--section-bg-image:url('<?php echo $renderer::esc((string) $section['background_image_url']); ?>');<?php endif; ?>">
+        <?php $sectionNumber++; $rhythmClass = $sectionType === 'cta' ? 'cms-beratung__section--rhythm-accent' : (($sectionNumber % 2 === 0) ? 'cms-beratung__section--rhythm-soft' : 'cms-beratung__section--rhythm-white'); ?>
+        <section class="cms-beratung__section cms-beratung__section--<?php echo $renderer::esc($sectionType); ?> cms-beratung__section--display-<?php echo $renderer::esc((string) ($section['display_style'] ?? 'cards')); ?> <?php echo $renderer::esc($rhythmClass); ?> <?php echo !empty($section['equal_height']) ? 'has-equal-cards' : ''; ?>" id="<?php echo $renderer::esc($sectionId); ?>" style="--section-bg: <?php echo $renderer::esc((string) ($section['background_color'] ?? '#ffffff')); ?>; --section-text: <?php echo $renderer::esc((string) ($section['text_color'] ?? '#111827')); ?>; --section-pt: <?php echo (int) ($section['padding_top'] ?? 56); ?>px; --section-pb: <?php echo (int) ($section['padding_bottom'] ?? 56); ?>px; --section-width: <?php echo (int) ($section['max_width'] ?? 1200); ?>px; --section-align: <?php echo $renderer::esc((string) ($section['text_align'] ?? 'left')); ?>; <?php if (!empty($section['background_image_url'])): ?>--section-bg-image:url('<?php echo $renderer::esc((string) $section['background_image_url']); ?>');<?php endif; ?>">
             <div class="cms-beratung__section-inner">
                 <?php if (!in_array($sectionType, ['divider'], true)): ?>
                     <div class="cms-beratung__section-head"><?php if (!empty($section['eyebrow'])): ?><span><?php echo $renderer::esc((string) $section['eyebrow']); ?></span><?php endif; ?><?php if (!empty($section['title'])): ?><h2><?php echo $renderer::esc((string) $section['title']); ?></h2><?php endif; ?><?php if (!empty($section['intro'])): ?><p><?php echo $renderer::esc((string) $section['intro']); ?></p><?php endif; ?></div>
@@ -284,7 +293,7 @@ $renderDivider = static function (array $section) use ($renderer, $renderSection
             <label for="beratung-service">Wunschleistung<select id="beratung-service" name="desired_service"><option value="">Bitte wählen</option><?php foreach (CMS_Beratung_Forms::desired_services() as $serviceKey => $serviceLabel): ?><option value="<?php echo $renderer::esc($serviceKey); ?>"<?php echo (($formValues['desired_service'] ?? '') === $serviceKey) ? ' selected' : ''; ?>><?php echo $renderer::esc($serviceLabel); ?></option><?php endforeach; ?></select></label>
             <label for="beratung-topic">Thema<input id="beratung-topic" name="topic" value="<?php echo $renderer::esc((string) ($formValues['topic'] ?? '')); ?>" placeholder="z. B. Copilot Readiness, Security Workshop, Purview Compliance"></label><label for="beratung-message">Nachricht*<textarea id="beratung-message" name="message" rows="5" required aria-invalid="<?php echo isset($formErrors['message']) ? 'true' : 'false'; ?>"><?php echo $renderer::esc((string) ($formValues['message'] ?? '')); ?></textarea><?php if (isset($formErrors['message'])): ?><small role="alert"><?php echo $renderer::esc((string) $formErrors['message']); ?></small><?php endif; ?></label><label class="cms-beratung-form__check"><input type="checkbox" name="consent" value="1" required aria-invalid="<?php echo isset($formErrors['consent']) ? 'true' : 'false'; ?>"> <span><?php echo $renderer::esc((string) ($contact['privacy_text'] ?? $settings['privacy_text'] ?? 'Ich stimme der Verarbeitung meiner Angaben zu.')); ?></span></label><?php if (isset($formErrors['consent'])): ?><small class="cms-beratung-form__error" role="alert"><?php echo $renderer::esc((string) $formErrors['consent']); ?></small><?php endif; ?>
             <?php if (($settings['sender_copy_enabled'] ?? '0') === '1'): ?><label class="cms-beratung-form__check"><input type="checkbox" name="copy_to_sender" value="1"> <span>Kopie an mich senden</span></label><?php endif; ?>
-            <button class="cms-beratung__btn" type="submit">Anfrage senden</button>
+            <button class="cms-beratung__btn cms-beratung__btn--form-submit" type="submit">Anfrage senden</button>
         </form>
         <?php endif; ?>
     </section>

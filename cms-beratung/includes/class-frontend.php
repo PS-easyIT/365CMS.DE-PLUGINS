@@ -16,6 +16,7 @@ final class CMS_Beratung_Frontend
     private static ?self $instance = null;
     private bool $routesRegistered = false;
     private ?array $currentPage = null;
+    private bool $publicScriptsPrinted = false;
 
     public static function instance(?\CMS\Router $router = null): self
     {
@@ -67,6 +68,10 @@ final class CMS_Beratung_Frontend
         if (is_file($themeSafeCss)) {
             echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_BERATUNG_PLUGIN_URL . 'assets/css/frontend-theme-safe.css', ENT_QUOTES, 'UTF-8') . '?v=' . filemtime($themeSafeCss) . '">' . "\n";
         }
+        $premiumCss = CMS_BERATUNG_PLUGIN_DIR . 'assets/css/frontend-premium.css';
+        if (is_file($premiumCss)) {
+            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_BERATUNG_PLUGIN_URL . 'assets/css/frontend-premium.css', ENT_QUOTES, 'UTF-8') . '?v=' . filemtime($premiumCss) . '">' . "\n";
+        }
     }
 
     public function output_seo_head(): void
@@ -83,6 +88,10 @@ final class CMS_Beratung_Frontend
         if ($this->resolve_current_page() === null) {
             return;
         }
+        if ($this->publicScriptsPrinted) {
+            return;
+        }
+        $this->publicScriptsPrinted = true;
         $js = CMS_BERATUNG_PLUGIN_DIR . 'assets/js/frontend.js';
         if (is_file($js)) {
             echo '<script src="' . htmlspecialchars(CMS_BERATUNG_PLUGIN_URL . 'assets/js/frontend.js', ENT_QUOTES, 'UTF-8') . '?v=' . filemtime($js) . '" defer></script>' . "\n";
@@ -132,6 +141,7 @@ final class CMS_Beratung_Frontend
         }
 
         CMS_Beratung_Renderer::render($page, $formResult);
+        $this->enqueue_public_scripts();
 
         if (!empty($page['show_footer']) && class_exists('CMS\\ThemeManager')) {
             \CMS\ThemeManager::instance()->getFooter();

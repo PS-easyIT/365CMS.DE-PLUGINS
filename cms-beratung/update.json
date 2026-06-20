@@ -1,13 +1,14 @@
 {
   "slug": "cms-beratung",
   "name": "CMS Beratung",
-  "version": "2.9.708",
+  "version": "2.9.709",
   "requires": "365CMS",
   "tested": "2026.06",
   "author": "365 Network",
   "description": "Spezialisierter 365CMS Landingpage Builder für Microsoft 365, Copilot, KI, Security, Compliance und IT Consulting Beratungsleistungen.",
   "download_url": "PLUGINS/cms-beratung/cms-beratung.zip",
   "changelog": {
+    "2.9.709": "Frontend der Beratung-Landingpages geschärft: FAQ-Accordion lädt unabhängig vom Footer, CTA-Hierarchie mit genau einer primären Beratung-anfragen-CTA, Premium Hero mit Trust-Signalen, Kontaktbereich-Aktivierung und mobile Timeline-Optimierung.",
     "2.9.708": "Landingpage-Editor um Bild-Upload und Mediathek-Auswahl erweitert: Hero-, Hintergrund-, Card- und Logo-Bildfelder erhalten Upload-Buttons, Vorschau, Leeren-Funktion und direkte Speicherung neuer Bilder im Ordner /uploads/beratung/.",
     "2.9.707": "Microsoft 365 FAQs zentralisiert: eigener Admin-Menüpunkt M365 FAQs mit vollständiger FAQ-Befüllung, zentrale Frontend-Ausgabe und FAQPage Schema aus den zentralen Daten; FAQ-Bearbeitung aus dem Landingpage-Builder entfernt.",
     "2.9.706": "Public Landingpages theme-kompatibel gemacht: kein eigener Seitenhintergrund, Inhaltsbreite auf 1160px begrenzt, Header/Footer-Abstände reduziert, kleinere Typografie, Card-Rundungen auf 2 bis 6px begrenzt, Kontaktbereich layoutstabilisiert, Landingpage-Vorschläge inhaltlich differenziert und Blankseite nach Speichern durch frühzeitige Redirect-Verarbeitung behoben.",
