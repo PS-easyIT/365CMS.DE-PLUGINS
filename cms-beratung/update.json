@@ -1,13 +1,14 @@
 {
   "slug": "cms-beratung",
   "name": "CMS Beratung",
-  "version": "2.9.701",
+  "version": "2.9.702",
   "requires": "365CMS",
   "tested": "2026.06",
   "author": "365 Network",
   "description": "Spezialisierter 365CMS Landingpage Builder für Microsoft 365, Copilot, KI, Security, Compliance und IT Consulting Beratungsleistungen.",
   "download_url": "PLUGINS/cms-beratung/cms-beratung.zip",
   "changelog": {
+    "2.9.702": "Spezialisierte Beratungs-Landingpage-Module für Leistungen, Ablauf, Vergleich, FAQ Accordion mit Schema, Trust, Technologie, CTA Band, Trenner und sicheren HTML Bereich ergänzt.",
     "2.9.701": "Erweiterter Landingpage Editor mit Hero Bereich, flexiblen Inhaltsbereichen, Drag-and-Drop Sections/Cards, Card-Typen und responsivem Layoutsystem.",
     "2.9.700": "Initiale Grundstruktur mit Backend-Verwaltung, Landingpage-Datenmodell, Frontend-Rendering, SEO, Formularen sowie JSON Import und Export."
   }
