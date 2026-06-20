@@ -61,7 +61,7 @@ final class CMS_Beratung_Installer
             focus_keyword VARCHAR(160) DEFAULT NULL,
             status VARCHAR(24) NOT NULL DEFAULT 'draft',
             template VARCHAR(64) NOT NULL DEFAULT 'standard',
-            max_content_width INT UNSIGNED NOT NULL DEFAULT 1200,
+            max_content_width INT UNSIGNED NOT NULL DEFAULT 1160,
             custom_design_enabled TINYINT(1) NOT NULL DEFAULT 0,
             use_global_settings TINYINT(1) NOT NULL DEFAULT 1,
             show_header TINYINT(1) NOT NULL DEFAULT 1,
@@ -74,8 +74,11 @@ final class CMS_Beratung_Installer
             canonical_url VARCHAR(500) DEFAULT NULL,
             custom_css_class VARCHAR(120) DEFAULT NULL,
             hero_json JSON DEFAULT NULL,
+            contact_json JSON DEFAULT NULL,
+            seo_json JSON DEFAULT NULL,
             design_json JSON DEFAULT NULL,
             sections_json JSON DEFAULT NULL,
+            tracking_enabled TINYINT(1) NOT NULL DEFAULT 1,
             created_by BIGINT UNSIGNED DEFAULT NULL,
             updated_by BIGINT UNSIGNED DEFAULT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -122,13 +125,15 @@ final class CMS_Beratung_Installer
             phone VARCHAR(80) DEFAULT NULL,
             company VARCHAR(255) DEFAULT NULL,
             topic VARCHAR(255) DEFAULT NULL,
+            desired_service VARCHAR(160) DEFAULT NULL,
             message TEXT DEFAULT NULL,
+            internal_note TEXT DEFAULT NULL,
             consent TINYINT(1) NOT NULL DEFAULT 0,
             copy_to_sender TINYINT(1) NOT NULL DEFAULT 0,
             payload_json JSON DEFAULT NULL,
             ip_address VARCHAR(45) DEFAULT NULL,
             user_agent VARCHAR(500) DEFAULT NULL,
-            status VARCHAR(24) NOT NULL DEFAULT 'unread',
+            status VARCHAR(24) NOT NULL DEFAULT 'new',
             is_spam TINYINT(1) NOT NULL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             KEY idx_landingpage (landingpage_id),
@@ -147,6 +152,7 @@ final class CMS_Beratung_Installer
         $settings = CMS_Beratung_Settings::defaults();
         CMS_Beratung_Settings::save_missing($settings);
         self::seed_presets();
+        CMS_Beratung_Storage::instance()->seed_m365_faqs_if_missing();
     }
 
     private static function ensure_landingpage_columns(\PDO $pdo, string $prefix): void
@@ -158,26 +164,46 @@ final class CMS_Beratung_Installer
             $quotedTable = self::quote_identifier(self::validated_table_name($table));
             $pdo->exec("ALTER TABLE {$quotedTable} ADD COLUMN hero_json JSON DEFAULT NULL AFTER custom_css_class");
         }
+        foreach ([
+            'contact_json' => 'JSON DEFAULT NULL AFTER hero_json',
+            'seo_json' => 'JSON DEFAULT NULL AFTER contact_json',
+            'tracking_enabled' => 'TINYINT(1) NOT NULL DEFAULT 1 AFTER sections_json',
+        ] as $column => $definition) {
+            $stmt->execute([$table, $column]);
+            if (!$stmt->fetch()) {
+                $quotedTable = self::quote_identifier(self::validated_table_name($table));
+                $pdo->exec("ALTER TABLE {$quotedTable} ADD COLUMN {$column} {$definition}");
+            }
+        }
+
+        $submissionTable = $prefix . 'beratung_form_submissions';
+        foreach ([
+            'desired_service' => 'VARCHAR(160) DEFAULT NULL AFTER topic',
+            'internal_note' => 'TEXT DEFAULT NULL AFTER message',
+        ] as $column => $definition) {
+            $stmt->execute([$submissionTable, $column]);
+            if (!$stmt->fetch()) {
+                $quotedTable = self::quote_identifier(self::validated_table_name($submissionTable));
+                $pdo->exec("ALTER TABLE {$quotedTable} ADD COLUMN {$column} {$definition}");
+            }
+        }
     }
 
     private static function seed_presets(): void
     {
         $storage = CMS_Beratung_Storage::instance();
         foreach ([
-            'standard' => ['Standard', '#2563eb', '#111827', '#f8fafc'],
-            'copilot' => ['Copilot', '#7c3aed', '#0f172a', '#f5f3ff'],
-            'security' => ['Security', '#dc2626', '#111827', '#fff7ed'],
-            'microsoft-365' => ['Microsoft 365', '#0078d4', '#102a43', '#eff6ff'],
-        ] as $slug => [$name, $primary, $heading, $background]) {
+            'microsoft-365-clean' => ['Microsoft 365 Clean', 'Heller Business Look mit blauer Akzentfarbe, weißen Cards und dezentem Schatten.', ['primary_color' => '#2563eb', 'secondary_color' => '#0f172a', 'accent_color' => '#0ea5e9', 'background_color' => '#f8fafc', 'text_color' => '#111827', 'heading_color' => '#0f172a', 'button_color' => '#2563eb', 'button_text_color' => '#ffffff', 'card_background_color' => '#ffffff', 'card_border_color' => '#dbeafe']],
+            'copilot-modern' => ['Copilot Modern', 'Moderner Copilot-Look mit kräftigen Akzenten, Icon-Reiter-Cards und auffälligen CTA-Flächen.', ['primary_color' => '#7c3aed', 'secondary_color' => '#0f172a', 'accent_color' => '#06b6d4', 'background_color' => '#f5f3ff', 'text_color' => '#1e1b4b', 'heading_color' => '#0f172a', 'button_color' => '#7c3aed', 'button_text_color' => '#ffffff', 'card_background_color' => '#ffffff', 'card_border_color' => '#ddd6fe']],
+            'security-dark' => ['Security Dark', 'Dunkle Akzente und kontraststarke Cards für Security-, Compliance- und Defender-Themen.', ['primary_color' => '#38bdf8', 'secondary_color' => '#020617', 'accent_color' => '#f97316', 'background_color' => '#0f172a', 'text_color' => '#e5e7eb', 'heading_color' => '#ffffff', 'button_color' => '#38bdf8', 'button_text_color' => '#082f49', 'card_background_color' => '#111827', 'card_border_color' => '#334155']],
+            'minimal-consulting' => ['Minimal Consulting', 'Reduziertes Design mit viel Weißraum, wenigen Farben und klaren Handlungsaufforderungen.', ['primary_color' => '#111827', 'secondary_color' => '#475569', 'accent_color' => '#64748b', 'background_color' => '#ffffff', 'text_color' => '#1f2937', 'heading_color' => '#111827', 'button_color' => '#111827', 'button_text_color' => '#ffffff', 'card_background_color' => '#ffffff', 'card_border_color' => '#e5e7eb']],
+            'phinit-style' => ['PHINIT Style', 'Sachlicher, technischer und moderner Stil für Microsoft 365 Admin- und Beratungsinhalte.', ['primary_color' => '#1d4ed8', 'secondary_color' => '#111827', 'accent_color' => '#f59e0b', 'background_color' => '#f9fafb', 'text_color' => '#111827', 'heading_color' => '#0f172a', 'button_color' => '#1d4ed8', 'button_text_color' => '#ffffff', 'card_background_color' => '#ffffff', 'card_border_color' => '#d1d5db']],
+        ] as $slug => [$name, $description, $design]) {
             $storage->create_preset_if_missing([
                 'name' => $name,
                 'slug' => $slug,
-                'description' => 'System-Preset für ' . $name . ' Beratungs-Landingpages.',
-                'design_json' => json_encode([
-                    'primary_color' => $primary,
-                    'heading_color' => $heading,
-                    'background_color' => $background,
-                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'description' => $description,
+                'design_json' => json_encode($design, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 'is_system' => 1,
             ]);
         }

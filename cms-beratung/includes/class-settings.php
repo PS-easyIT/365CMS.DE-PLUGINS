@@ -31,9 +31,9 @@ final class CMS_Beratung_Settings
             'card_background_color' => '#ffffff',
             'card_border_color' => '#dbeafe',
             'card_shadow_enabled' => '1',
-            'border_radius' => '18',
-            'spacing' => '24',
-            'content_width' => '1200',
+            'border_radius' => '4',
+            'spacing' => '20',
+            'content_width' => '1160',
             'use_default_font' => '1',
             'allow_custom_page_css_class' => '1',
             'contact_recipient_email' => '',
@@ -42,10 +42,15 @@ final class CMS_Beratung_Settings
             'success_message' => 'Vielen Dank. Ihre Anfrage wurde erfolgreich gesendet.',
             'error_message' => 'Die Anfrage konnte nicht gesendet werden. Bitte prüfen Sie Ihre Eingaben.',
             'form_storage_enabled' => '1',
+            'notification_enabled' => '1',
             'sender_copy_enabled' => '0',
             'honeypot_enabled' => '1',
             'captcha_prepared' => '0',
             'show_submissions_backend' => '1',
+            'store_ip_enabled' => '0',
+            'store_user_agent_enabled' => '0',
+            'auto_delete_submissions_enabled' => '0',
+            'retention_days' => '180',
             'seo_meta_title_enabled' => '1',
             'seo_meta_description_enabled' => '1',
             'seo_open_graph_enabled' => '1',
@@ -59,6 +64,9 @@ final class CMS_Beratung_Settings
             'tracking_button_clicks_enabled' => '0',
             'tracking_form_submit_enabled' => '0',
             'tracking_anchor_clicks_enabled' => '0',
+            'tracking_faq_enabled' => '0',
+            'tracking_download_enabled' => '0',
+            'tracking_bookings_enabled' => '0',
             'tracking_only_when_system_active' => '1',
         ];
     }
@@ -165,10 +173,14 @@ final class CMS_Beratung_Settings
                 $settings[$key] = $raw !== '' ? '1' : '0';
             } elseif (str_contains($key, 'color')) {
                 $settings[$key] = self::color($raw, $default);
-            } elseif (in_array($key, ['border_radius', 'spacing'], true)) {
-                $settings[$key] = (string) self::int_range($raw, (int) $default, 0, 96);
+            } elseif ($key === 'border_radius') {
+                $settings[$key] = (string) self::int_range($raw, 4, 2, 6);
+            } elseif ($key === 'spacing') {
+                $settings[$key] = (string) self::int_range($raw, 20, 12, 25);
+            } elseif ($key === 'retention_days') {
+                $settings[$key] = (string) self::int_range($raw, 180, 1, 3650);
             } elseif ($key === 'content_width') {
-                $settings[$key] = (string) self::int_range($raw, 1200, 720, 1800);
+                $settings[$key] = (string) self::int_range($raw, 1160, 720, 1160);
             } elseif (str_contains($key, 'email')) {
                 $settings[$key] = filter_var($raw, FILTER_VALIDATE_EMAIL) ? $raw : '';
             } else {

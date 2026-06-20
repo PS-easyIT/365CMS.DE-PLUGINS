@@ -10,7 +10,6 @@
     services: 'Meine Leistungen',
     offers: 'Angebotsbereich',
     comparison: 'Vergleich / Infografik',
-    faq: 'FAQ Accordion',
     steps: 'Ablauf Modul',
     cta: 'CTA Band',
     trust: 'Trust Bereich',
@@ -25,12 +24,18 @@
     services: 'Meine Leistungen',
     steps: 'So läuft die Zusammenarbeit ab',
     comparison: 'Vergleichsmodul',
-    faq: 'FAQ Modul',
     trust: 'Trust Bereich',
     technology: 'Technologie Bereich',
     cta: 'CTA Band',
     divider: 'Trenner',
     html: 'Freier HTML Bereich'
+  };
+
+  const LANDINGPAGE_PROPOSALS = {
+    copilot_readiness: 'Copilot Readiness Landingpage',
+    security_review: 'Microsoft 365 Security Review',
+    governance_workshop: 'SharePoint Governance Workshop',
+    admin_automation: 'Admin Workshop & PowerShell Automatisierung'
   };
 
   const CARD_TYPES = {
@@ -52,6 +57,22 @@
     download: 'Download Link'
   };
 
+  let mediaFieldCounter = 0;
+  let mediaPickerModal = null;
+  let activeMediaInput = null;
+  const mediaPickerState = { items: [], loaded: false, query: '' };
+
+  const mediaConfig = (() => {
+    const element = $('#beratung-media-config');
+    if (!element) return {};
+    try {
+      const parsed = JSON.parse(element.textContent || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  })();
+
   const parseJson = (textarea, fallback) => {
     try {
       const data = JSON.parse(textarea.value || '');
@@ -63,6 +84,221 @@
 
   const syncJson = (textarea, value) => { textarea.value = JSON.stringify(value, null, 2); };
   const optionHtml = (options, selected) => Object.entries(options).map(([value, label]) => `<option value="${value}"${String(value) === String(selected) ? ' selected' : ''}>${label}</option>`).join('');
+
+  const normalizeMediaUrl = (value) => {
+    const raw = text(value).trim();
+    if (!raw) return '';
+    if (/^https?:\/\//i.test(raw)) {
+      try {
+        const url = new URL(raw, window.location.origin);
+        if (url.origin === window.location.origin) return `${url.pathname}${url.search}${url.hash}`;
+      } catch (_) {
+        return raw;
+      }
+    }
+    if (/^(uploads|media|media-file)(\/|\?|$)/i.test(raw)) return `/${raw.replace(/^\/+/, '')}`;
+    return raw;
+  };
+
+  const showMediaMessage = (type, message) => {
+    if (typeof window.cmsAlert === 'function') {
+      window.cmsAlert(type === 'danger' ? 'danger' : 'success', message);
+      return;
+    }
+    console[type === 'danger' ? 'error' : 'log'](message);
+  };
+
+  const fetchMediaJson = (url, options = {}) => fetch(url, options).then((response) => response.json().catch(() => ({})).then((payload) => {
+    if (!response.ok || payload?.success === 0 || payload?.success === false) {
+      throw new Error(payload?.message || payload?.error || 'Media-Anfrage fehlgeschlagen.');
+    }
+    return payload;
+  }));
+
+  const updateMediaPreview = (input, preview) => {
+    if (!preview) return;
+    const value = normalizeMediaUrl(input.value);
+    preview.innerHTML = '';
+    if (!value) {
+      preview.hidden = true;
+      return;
+    }
+    const image = document.createElement('img');
+    image.src = value;
+    image.alt = 'Bildvorschau';
+    image.loading = 'lazy';
+    preview.append(image);
+    preview.hidden = false;
+  };
+
+  const setInputMediaValue = (input, value) => {
+    input.value = normalizeMediaUrl(value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  const closeMediaPicker = () => {
+    if (mediaPickerModal) mediaPickerModal.classList.remove('is-open');
+    activeMediaInput = null;
+  };
+
+  const ensureMediaPickerModal = () => {
+    if (mediaPickerModal) return mediaPickerModal;
+    const modal = document.createElement('div');
+    modal.className = 'beratung-media-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.innerHTML = `
+      <div class="beratung-media-modal__panel">
+        <div class="beratung-media-modal__head">
+          <div><h2>Bild aus der Mediathek auswählen</h2><p>Ein Klick übernimmt das Bild direkt in das aktive Feld.</p></div>
+          <button type="button" class="beratung-media-modal__close" data-media-close aria-label="Schließen">×</button>
+        </div>
+        <div class="beratung-media-modal__toolbar">
+          <input type="search" placeholder="Mediathek durchsuchen …" data-media-search>
+          <div class="beratung-media-modal__status" data-media-status>Lade Medien …</div>
+        </div>
+        <div class="beratung-media-modal__body"><div class="beratung-media-grid" data-media-grid></div></div>
+      </div>`;
+    document.body.append(modal);
+    $('[data-media-close]', modal)?.addEventListener('click', closeMediaPicker);
+    modal.addEventListener('click', (event) => { if (event.target === modal) closeMediaPicker(); });
+    $('[data-media-search]', modal)?.addEventListener('input', (event) => {
+      mediaPickerState.query = text(event.target.value).trim().toLowerCase();
+      renderMediaItems();
+    });
+    $('[data-media-grid]', modal)?.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-media-url]');
+      if (!button || !activeMediaInput) return;
+      setInputMediaValue(activeMediaInput, button.dataset.mediaUrl || '');
+      closeMediaPicker();
+    });
+    mediaPickerModal = modal;
+    return modal;
+  };
+
+  const renderMediaItems = () => {
+    const modal = ensureMediaPickerModal();
+    const grid = $('[data-media-grid]', modal);
+    const status = $('[data-media-status]', modal);
+    if (!grid) return;
+    const query = mediaPickerState.query;
+    const items = query ? mediaPickerState.items.filter((item) => `${item.name || ''} ${item.path || ''}`.toLowerCase().includes(query)) : mediaPickerState.items;
+    grid.innerHTML = '';
+    if (status) status.textContent = query ? `${items.length} Treffer` : `${items.length} Medien verfügbar`;
+    if (!items.length) {
+      grid.innerHTML = '<div class="beratung-media-empty">Keine passenden Bilder gefunden.</div>';
+      return;
+    }
+    items.forEach((item) => {
+      const url = normalizeMediaUrl(item.url || '');
+      if (!url) return;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'beratung-media-item';
+      button.dataset.mediaUrl = url;
+      button.innerHTML = `<span class="beratung-media-item__image"><img src="${esc(url)}" alt="${esc(item.name || 'Bild')}" loading="lazy"></span><span class="beratung-media-item__meta"><span class="beratung-media-item__name">${esc(item.name || 'Bild')}</span><span class="beratung-media-item__path">${esc(item.path || url)}</span></span>`;
+      grid.append(button);
+    });
+  };
+
+  const loadMediaItems = () => {
+    if (mediaPickerState.loaded) {
+      renderMediaItems();
+      return Promise.resolve();
+    }
+    const modal = ensureMediaPickerModal();
+    const status = $('[data-media-status]', modal);
+    const libraryUrl = mediaConfig.libraryUrl || '/api/media';
+    const csrfToken = mediaConfig.csrfToken || '';
+    if (status) status.textContent = 'Lade Medien …';
+    return fetchMediaJson(`${libraryUrl}?action=list_images`, {
+      method: 'GET',
+      headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+      credentials: 'same-origin'
+    }).then((payload) => {
+      mediaPickerState.items = Array.isArray(payload.items) ? payload.items : [];
+      mediaPickerState.loaded = true;
+      renderMediaItems();
+    }).catch((error) => {
+      if (status) status.textContent = 'Laden fehlgeschlagen';
+      const grid = $('[data-media-grid]', modal);
+      if (grid) grid.innerHTML = `<div class="beratung-media-empty">${esc(error.message || 'Medien konnten nicht geladen werden.')}</div>`;
+    });
+  };
+
+  const openMediaPicker = (input) => {
+    activeMediaInput = input;
+    const modal = ensureMediaPickerModal();
+    modal.classList.add('is-open');
+    loadMediaItems();
+    window.setTimeout(() => $('[data-media-search]', modal)?.focus(), 50);
+  };
+
+  const uploadMediaFile = (file, input, button) => {
+    if (!file) return;
+    const uploadUrl = mediaConfig.uploadUrl || '/api/cms-beratung/media-upload';
+    const csrfToken = mediaConfig.csrfToken || '';
+    const maxSizeMb = Number(mediaConfig.maxSizeMb || 10);
+    const maxSize = maxSizeMb * 1024 * 1024;
+    const extension = text(file.name).split('.').pop().toLowerCase();
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'ico'];
+    if (file.type && !file.type.startsWith('image/') && !allowedExtensions.includes(extension)) {
+      showMediaMessage('danger', 'Bitte eine Bilddatei auswählen.');
+      return;
+    }
+    if (file.size > maxSize) {
+      showMediaMessage('danger', `Das Bild ist größer als ${maxSizeMb} MB.`);
+      return;
+    }
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('csrf_token', csrfToken);
+    button.disabled = true;
+    button.textContent = 'Upload …';
+    fetchMediaJson(uploadUrl, {
+      method: 'POST',
+      headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+      body: formData,
+      credentials: 'same-origin'
+    }).then((payload) => {
+      const url = payload?.file?.url || payload?.url || '';
+      setInputMediaValue(input, url);
+      mediaPickerState.loaded = false;
+      showMediaMessage('success', `Bild wurde in ${mediaConfig.uploadFolder || '/uploads/beratung/'} hochgeladen.`);
+    }).catch((error) => {
+      showMediaMessage('danger', error.message || 'Upload fehlgeschlagen.');
+    }).finally(() => {
+      button.disabled = false;
+      button.textContent = 'Upload';
+    });
+  };
+
+  const enhanceMediaFields = (root) => {
+    $$('input[data-field="image_url"], input[data-field="background_image_url"], input[data-card-field="image_url"], input[data-card-field="logo_url"]', root).forEach((input) => {
+      if (input.dataset.beratungMediaEnhanced === '1') return;
+      input.dataset.beratungMediaEnhanced = '1';
+      input.id ||= `beratung-media-field-${++mediaFieldCounter}`;
+      input.placeholder ||= '/uploads/beratung/... oder https://...';
+      const label = input.closest('label');
+      if (label) label.classList.add('beratung-media-label');
+      const tools = document.createElement('div');
+      tools.className = 'beratung-media-tools';
+      tools.innerHTML = '<button type="button" class="beratung-media-btn" data-media-upload>Upload</button><button type="button" class="beratung-media-btn" data-media-library>Mediathek</button><button type="button" class="beratung-media-btn is-danger" data-media-clear>Leeren</button><input type="file" accept="image/*" hidden data-media-file><small class="beratung-media-note">Uploads werden im Ordner /uploads/beratung gespeichert.</small>';
+      const preview = document.createElement('div');
+      preview.className = 'beratung-media-preview';
+      preview.hidden = true;
+      input.insertAdjacentElement('afterend', tools);
+      tools.insertAdjacentElement('afterend', preview);
+      const fileInput = $('[data-media-file]', tools);
+      const uploadButton = $('[data-media-upload]', tools);
+      uploadButton?.addEventListener('click', () => fileInput?.click());
+      fileInput?.addEventListener('change', () => uploadMediaFile(fileInput.files?.[0] || null, input, uploadButton));
+      $('[data-media-library]', tools)?.addEventListener('click', () => openMediaPicker(input));
+      $('[data-media-clear]', tools)?.addEventListener('click', () => setInputMediaValue(input, ''));
+      input.addEventListener('input', () => updateMediaPreview(input, preview));
+      updateMediaPreview(input, preview);
+    });
+  };
 
   const bindInputs = (root, model, sync, callback = null) => {
     $$('[data-field]', root).forEach((input) => {
@@ -129,6 +365,7 @@
         <div class="beratung-builder__cards is-buttons"></div>
       </div>`;
     bindInputs(mount, hero, sync);
+    enhanceMediaFields(mount);
     renderButtons($('.is-buttons', mount), hero, sync, ['button_1', 'button_2', 'button_3']);
     sync();
   };
@@ -288,6 +525,87 @@
     ...overrides
   });
 
+  const proposalHero = (key) => ({
+    enabled: true,
+    image_url: '',
+    image_position: 'left',
+    image_flush: true,
+    image_height: 520,
+    image_width: 46,
+    image_fit: 'cover',
+    image_alt: LANDINGPAGE_PROPOSALS[key] || 'Microsoft 365 Beratung',
+    badge_text: key === 'security_review' ? 'Security · Entra ID · Defender' : key === 'governance_workshop' ? 'SharePoint · OneDrive · Governance' : key === 'admin_automation' ? 'Admin Workshop · PowerShell · Betrieb' : 'Copilot · Readiness · Governance',
+    badge_show: true,
+    title: LANDINGPAGE_PROPOSALS[key] || 'Microsoft 365 Beratung',
+    subtitle: 'Strukturierter Vorschlag mit Platzhaltertexten für eine hochwertige Beratungs-Landingpage.',
+    description: 'Nutze diesen Vorschlag als Startpunkt und passe Inhalte, Cards und CTA direkt im Builder an. FAQs werden zentral im Menüpunkt M365 FAQs gepflegt.',
+    button_1: { text: 'Beratung anfragen', target: '#kontakt', target_type: 'contact', style: 'primary' },
+    button_2: { text: 'Leistungen ansehen', target: '#leistungen', target_type: 'anchor', style: 'ghost' },
+    button_3: { text: 'Ablauf ansehen', target: '#ablauf', target_type: 'anchor', style: 'secondary' },
+    trust_text: 'Platzhalter: Praxisnahe Beratung mit Fokus auf Sicherheit, Governance und Betrieb.',
+    background_color: '#f8fafc',
+    text_color: '#111827',
+    vertical_align: 'center',
+    mobile_order: 'image-first'
+  });
+
+  const proposalSections = (key) => {
+    const services = newSection(0, 'services');
+    const steps = newSection(1, 'steps');
+    const comparison = newSection(2, 'comparison');
+    const trust = newSection(4, 'trust');
+    const cta = newSection(5, 'cta');
+
+    services.cards = [];
+    const serviceTitles = key === 'security_review'
+      ? ['Entra ID Security Review', 'Conditional Access Bewertung', 'Microsoft Defender Review', 'Secure Score Einordnung', 'Admin Rollen Check', 'Dokumentation und Maßnahmenplan']
+      : key === 'governance_workshop'
+        ? ['SharePoint Governance Check', 'OneDrive Freigaben Review', 'Site Lifecycle Konzept', 'Berechtigungsmodell', 'Vorlagen und Namenskonzept', 'Admin Workshop']
+        : key === 'admin_automation'
+          ? ['Admin Workshop', 'PowerShell Automatisierung', 'Tenant Dokumentation', 'Exchange Online Analyse', 'Betriebsübergabe', 'Projektbegleitung']
+          : ['Microsoft 365 Tenant Check', 'Copilot Readiness Check', 'SharePoint Governance', 'Microsoft Purview Beratung', 'Entra ID Security Review', 'Admin Workshop'];
+    services.cards = serviceTitles.map((title, index) => newCard('text', {
+      icon: ['🏢', '🤖', '🔐', '🧭', '🛡️', '⚙️'][index % 6],
+      category: index < 2 ? 'Analyse' : index < 4 ? 'Governance' : 'Umsetzung',
+      title,
+      text: 'Platzhaltertext: Beschreibe hier Nutzen, Vorgehen und Ergebnis dieser Leistung.'
+    }));
+
+    steps.cards = ['Erstgespräch', 'Zielklärung', 'Technische Analyse', 'Bewertung', 'Maßnahmenplan', 'Umsetzung'].map((title, index) => newCard('step', {
+      title,
+      text: 'Platzhaltertext: Kurze Beschreibung dieses Schrittes.',
+      auto_number: true,
+      connector: index < 5
+    }));
+
+    comparison.title_band_text = key === 'copilot_readiness' ? 'Copilot bereit vs. Copilot riskant eingeführt' : key === 'security_review' ? 'Ohne Security Review vs. mit klarer Maßnahmenliste' : 'Ist-Zustand vs. Zielbild';
+    comparison.cards = [
+      newCard('text', { icon: '⚠️', title: 'Ist Zustand', text: 'Platzhalter: Unklare Berechtigungen, gewachsene Strukturen und fehlende Governance.', extra_text: 'Typische Folge: Risiken bleiben unsichtbar.' }),
+      newCard('text', { icon: '✅', title: 'Zielbild', text: 'Platzhalter: Transparente Struktur, priorisierte Maßnahmen und klare Verantwortlichkeiten.', extra_text: 'Typische Folge: sicherer Betrieb und bessere Entscheidungsgrundlagen.' })
+    ];
+
+    trust.cards = ['Praxis aus echten Admin Umgebungen', 'Fokus auf Sicherheit und Betrieb', 'Verständliche Dokumentation'].map((title, index) => newCard('text', {
+      icon: ['🏢', '🛡️', '📘'][index],
+      metric: index === 0 ? '20+ Jahre' : '',
+      title,
+      text: 'Platzhaltertext: Erläutere hier den Vertrauensfaktor.'
+    }));
+
+    cta.eyebrow = 'Nächster Schritt';
+    cta.title = 'Bereit für den nächsten Schritt?';
+    cta.intro = 'Platzhaltertext: Lade Besucher zu einem unverbindlichen Gespräch oder einer Buchung ein.';
+    cta.button_1_text = 'Beratung anfragen';
+    cta.button_1_target = '#kontakt';
+    cta.button_1_target_type = 'contact';
+    cta.button_2_text = 'Leistungen ansehen';
+    cta.button_2_target = '#leistungen';
+    cta.button_2_target_type = 'anchor';
+    cta.background_color = '#1e3a8a';
+    cta.text_color = '#ffffff';
+
+    return [services, steps, comparison, trust, cta];
+  };
+
   const renderSectionBuilder = () => {
     const mount = $('#beratung-builder');
     const target = $('#' + (mount?.dataset?.target || ''));
@@ -295,6 +613,7 @@
 
     let sections = parseJson(target, []);
     if (!Array.isArray(sections)) sections = [];
+    sections = sections.filter((section) => section?.type !== 'faq');
 
     const sync = () => syncJson(target, sections);
     const rerender = () => { sync(); renderSectionBuilder(); };
@@ -303,8 +622,17 @@
     mount.innerHTML = '';
     const toolbar = document.createElement('div');
     toolbar.className = 'beratung-builder__toolbar';
-    toolbar.innerHTML = `<div><button type="button" class="beratung-btn" data-add-basic>Bereich hinzufügen</button></div><label>Spezialmodul hinzufügen <select data-add-module><option value="">Bitte wählen</option>${optionHtml(MODULE_PRESETS, '')}</select></label><span>Bereiche und Cards können per Drag and Drop sortiert werden.</span>`;
+    toolbar.innerHTML = `<div><button type="button" class="beratung-btn" data-add-basic>Bereich hinzufügen</button></div><label>Landingpage Vorschlag laden <select data-landingpage-proposal><option value="">Bitte wählen</option>${optionHtml(LANDINGPAGE_PROPOSALS, '')}</select></label><label>Spezialmodul hinzufügen <select data-add-module><option value="">Bitte wählen</option>${optionHtml(MODULE_PRESETS, '')}</select></label><span>Bereiche und Cards können per Drag and Drop sortiert werden.</span>`;
     $('[data-add-basic]', toolbar).addEventListener('click', () => { sections.push(newSection(sections.length)); rerender(); });
+    $('[data-landingpage-proposal]', toolbar).addEventListener('change', (event) => {
+      const value = event.target.value;
+      if (!value) return;
+      sections = proposalSections(value);
+      const heroTarget = $('#hero_json');
+      if (heroTarget) syncJson(heroTarget, proposalHero(value));
+      rerender();
+      renderHeroBuilder();
+    });
     $('[data-add-module]', toolbar).addEventListener('change', (event) => {
       const value = event.target.value;
       if (!value) return;
@@ -324,7 +652,8 @@
       box.dataset.index = String(index);
       box.innerHTML = sectionTemplate(section, index);
 
-      const updateVisibility = () => updateSectionVisibility(box, section);
+      const updatePreview = () => { const preview = $('.beratung-live-preview', box); if (preview) preview.innerHTML = sectionPreview(section); };
+      const updateVisibility = () => { updateSectionVisibility(box, section); updatePreview(); };
       bindInputs(box, section, sync, (field) => {
         if (field === 'type') {
           if (section.type === 'steps') section.card_type = 'step';
@@ -333,6 +662,7 @@
         }
         updateVisibility();
       });
+      enhanceMediaFields(box);
 
       const cardsWrap = $('.beratung-builder__cards', box);
       section.cards.forEach((card, cardIndex) => cardsWrap.append(renderCard(card, section, cardIndex, sync, rerender)));
@@ -362,6 +692,26 @@
       mount.append(box);
     });
     sync();
+  };
+
+  const esc = (value) => text(value).replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
+
+  const cardPreview = (card, index, sectionType) => {
+    if (card.enabled === false) return '';
+    if (sectionType === 'faq') return `<div class="beratung-preview-faq"><button type="button">${esc(card.question || card.title || 'FAQ Frage')}<span>+</span></button><p>${esc(card.answer || card.text || 'Antwort Platzhalter')}</p></div>`;
+    if (sectionType === 'steps') return `<article class="beratung-preview-card is-step"><b>${card.auto_number !== false ? index + 1 : esc(card.step_number || index + 1)}</b><h4>${esc(card.title || 'Schritt')}</h4><p>${esc(card.text || 'Platzhaltertext für diesen Schritt.')}</p></article>`;
+    if (sectionType === 'technology') return `<article class="beratung-preview-card is-tech"><i>${esc(card.icon || '☁️')}</i><h4>${esc(card.name || card.title || 'Technologie')}</h4><p>${esc(card.text || '')}</p></article>`;
+    if (sectionType === 'trust') return `<article class="beratung-preview-card is-trust">${card.metric ? `<strong>${esc(card.metric)}</strong>` : ''}<i>${esc(card.icon || '✓')}</i><h4>${esc(card.title || 'Trust Element')}</h4><p>${esc(card.text || 'Platzhaltertext')}</p></article>`;
+    return `<article class="beratung-preview-card"><span>${esc(card.category || card.badge || '')}</span><i>${esc(card.icon || '💡')}</i><h4>${esc(card.title || 'Card Titel')}</h4><p>${esc(card.text || card.extra_text || 'Platzhaltertext für diese Card.')}</p></article>`;
+  };
+
+  const sectionPreview = (section) => {
+    const cards = Array.isArray(section.cards) ? section.cards : [];
+    if (section.type === 'cta') return `<div class="beratung-preview-section is-cta" style="background:${esc(section.background_color || '#1e3a8a')};color:${esc(section.text_color || '#fff')}"><small>${esc(section.eyebrow || 'CTA')}</small><h3>${esc(section.title || 'CTA Titel')}</h3><p>${esc(section.intro || 'Beschreibung für den CTA Bereich.')}</p><div><button>${esc(section.button_1_text || 'Button 1')}</button>${section.button_2_text ? `<button class="ghost">${esc(section.button_2_text)}</button>` : ''}</div></div>`;
+    if (section.type === 'divider') return `<div class="beratung-preview-divider"><span>${esc(section.divider_icon || '—')}</span><strong>${esc(section.divider_title || 'Trenner')}</strong><p>${esc(section.divider_subtitle || '')}</p></div>`;
+    if (section.type === 'html') return `<div class="beratung-preview-section"><small>Freier HTML Bereich</small><h3>${esc(section.title || 'HTML Bereich')}</h3><p>HTML wird sicher gefiltert. Vorschau zeigt bewusst nur eine neutrale Darstellung.</p></div>`;
+    if (section.type === 'comparison') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Vergleich')}</small><h3>${esc(section.title || 'Vergleich')}</h3>${section.title_band_text ? `<div class="beratung-preview-band">${esc(section.title_band_text)}</div>` : ''}<div class="beratung-preview-grid cols-${Math.min(3, Math.max(1, Number(section.columns || 2)))}">${cards.map((card, index) => cardPreview(card, index, 'card_grid')).join('')}</div></div>`;
+    return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || SECTION_TYPES[section.type] || 'Bereich')}</small><h3>${esc(section.title || section.internal_name || 'Bereichstitel')}</h3><p>${esc(section.intro || 'Platzhalter Beschreibung für diesen Bereich.')}</p><div class="beratung-preview-grid cols-${Math.min(4, Math.max(1, Number(section.columns || 3)))}">${cards.slice(0, 8).map((card, index) => cardPreview(card, index, section.type)).join('')}</div>${section.note_text ? `<em>${esc(section.note_text)}</em>` : ''}</div>`;
   };
 
   const sectionTemplate = (section, index) => `
@@ -425,6 +775,8 @@
       <label class="field-divider">Mobile Verhalten <select data-field="divider_mobile_behavior"><option value="stack">Stapeln</option><option value="compact">Kompakt</option><option value="hide_visual">Visuelles Element ausblenden</option></select></label>
       <label class="field-html is-html">Freier HTML Bereich <textarea data-field="html" rows="6"></textarea><small>Nur Admin-Benutzer. Skripte werden serverseitig gefiltert.</small></label>
     </div>
+    <div class="beratung-preview-label">Live-nahe Vorschau</div>
+    <div class="beratung-live-preview">${sectionPreview(section)}</div>
     <div class="beratung-builder__cards"></div>
     <button type="button" data-action="add-card">Eintrag / Card hinzufügen</button>`;
 
@@ -519,6 +871,7 @@
       });
       input.addEventListener('change', () => input.dispatchEvent(new Event('input')));
     });
+    enhanceMediaFields(box);
 
     $$('[data-card-action]', box).forEach((button) => button.addEventListener('click', () => {
       if (button.dataset.cardAction === 'delete') section.cards.splice(cardIndex, 1);
@@ -543,6 +896,30 @@
     return box;
   };
 
+  const renderDesignPresetSelector = () => {
+    const select = $('#beratung-design-preset');
+    const target = $('#design_json');
+    if (!select || !target) return;
+    select.addEventListener('change', () => {
+      const option = select.selectedOptions?.[0];
+      const raw = option?.dataset?.design || '';
+      if (!raw) return;
+      try {
+        const design = JSON.parse(raw);
+        if (design && typeof design === 'object') {
+          target.value = JSON.stringify(design, null, 2);
+          const customToggle = $('input[name="custom_design_enabled"]');
+          const globalToggle = $('input[name="use_global_settings"]');
+          if (customToggle) customToggle.checked = true;
+          if (globalToggle) globalToggle.checked = false;
+        }
+      } catch (_) {
+        // Preset-Auswahl darf den Editor nie blockieren.
+      }
+    });
+  };
+
   renderHeroBuilder();
   renderSectionBuilder();
+  renderDesignPresetSelector();
 })();

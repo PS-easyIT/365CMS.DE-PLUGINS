@@ -59,6 +59,14 @@ final class CMS_Beratung_Frontend
         if (is_file($css)) {
             echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_BERATUNG_PLUGIN_URL . 'assets/css/frontend.css', ENT_QUOTES, 'UTF-8') . '?v=' . filemtime($css) . '">' . "\n";
         }
+        $extraCss = CMS_BERATUNG_PLUGIN_DIR . 'assets/css/frontend-extra.css';
+        if (is_file($extraCss)) {
+            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_BERATUNG_PLUGIN_URL . 'assets/css/frontend-extra.css', ENT_QUOTES, 'UTF-8') . '?v=' . filemtime($extraCss) . '">' . "\n";
+        }
+        $themeSafeCss = CMS_BERATUNG_PLUGIN_DIR . 'assets/css/frontend-theme-safe.css';
+        if (is_file($themeSafeCss)) {
+            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_BERATUNG_PLUGIN_URL . 'assets/css/frontend-theme-safe.css', ENT_QUOTES, 'UTF-8') . '?v=' . filemtime($themeSafeCss) . '">' . "\n";
+        }
     }
 
     public function output_seo_head(): void

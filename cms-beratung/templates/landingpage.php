@@ -7,6 +7,7 @@
  * @var array<string,string> $design
  * @var array<int,array<string,mixed>> $sections
  * @var array<int,array<string,mixed>> $anchors
+ * @var array<string,mixed> $m365Faq
  * @var array{success:bool,message:string} $formResult
  * @var string $csrfToken
  *
@@ -22,6 +23,9 @@ if (!defined('ABSPATH')) {
 $renderer = CMS_Beratung_Renderer::class;
 $customClass = trim((string) ($page['custom_css_class'] ?? ''));
 $hero = is_array($page['hero'] ?? null) ? $page['hero'] : [];
+$contact = is_array($page['contact'] ?? null) ? $page['contact'] : [];
+$formErrors = is_array($formResult['errors'] ?? null) ? $formResult['errors'] : [];
+$formValues = is_array($formResult['values'] ?? null) ? $formResult['values'] : [];
 
 $buttonClass = static function (string $style): string {
     return 'cms-beratung__btn cms-beratung__btn--' . preg_replace('/[^a-z0-9_-]/i', '', $style ?: 'primary');
@@ -232,6 +236,7 @@ $renderDivider = static function (array $section) use ($renderer, $renderSection
     <?php foreach ($sections as $section): ?>
         <?php if (empty($section['enabled'])) { continue; } ?>
         <?php $columns = max(1, min(4, (int) ($section['columns'] ?? 3))); $sectionId = (string) ($section['anchor_id'] ?? $section['id'] ?? 'bereich'); $sectionType = (string) ($section['type'] ?? 'card_grid'); $cards = is_array($section['cards'] ?? null) ? $section['cards'] : []; ?>
+        <?php if ($sectionType === 'faq') { continue; } ?>
         <section class="cms-beratung__section cms-beratung__section--<?php echo $renderer::esc($sectionType); ?> cms-beratung__section--display-<?php echo $renderer::esc((string) ($section['display_style'] ?? 'cards')); ?> <?php echo !empty($section['equal_height']) ? 'has-equal-cards' : ''; ?>" id="<?php echo $renderer::esc($sectionId); ?>" style="--section-bg: <?php echo $renderer::esc((string) ($section['background_color'] ?? '#ffffff')); ?>; --section-text: <?php echo $renderer::esc((string) ($section['text_color'] ?? '#111827')); ?>; --section-pt: <?php echo (int) ($section['padding_top'] ?? 56); ?>px; --section-pb: <?php echo (int) ($section['padding_bottom'] ?? 56); ?>px; --section-width: <?php echo (int) ($section['max_width'] ?? 1200); ?>px; --section-align: <?php echo $renderer::esc((string) ($section['text_align'] ?? 'left')); ?>; <?php if (!empty($section['background_image_url'])): ?>--section-bg-image:url('<?php echo $renderer::esc((string) $section['background_image_url']); ?>');<?php endif; ?>">
             <div class="cms-beratung__section-inner">
                 <?php if (!in_array($sectionType, ['divider'], true)): ?>
@@ -252,15 +257,36 @@ $renderDivider = static function (array $section) use ($renderer, $renderSection
         </section>
     <?php endforeach; ?>
 
-    <section class="cms-beratung__contact" id="kontakt" aria-labelledby="beratung-contact-title">
-        <div><span class="cms-beratung__kicker">Kontakt</span><h2 id="beratung-contact-title">Beratungsanfrage senden</h2><p>Beschreiben Sie kurz Ihr Anliegen rund um Microsoft 365, Copilot, KI, Security, Compliance, SharePoint, Entra ID, Purview oder Defender.</p></div>
-        <form method="post" class="cms-beratung-form">
+    <?php if (!empty($m365Faq['enabled'])): ?>
+        <?php $faqItems = is_array($m365Faq['items'] ?? null) ? $m365Faq['items'] : []; ?>
+        <?php if ($faqItems !== []): ?>
+            <?php $faqSection = ['faq_allow_multiple' => !empty($m365Faq['allow_multiple']), 'faq_icon_style' => (string) ($m365Faq['icon_style'] ?? 'plus'), 'faq_open_behavior' => (string) ($m365Faq['open_behavior'] ?? 'first'), 'faq_question_background_color' => '#ffffff', 'faq_question_text_color' => '#111827', 'faq_answer_background_color' => '#f8fafc']; ?>
+            <section class="cms-beratung__section cms-beratung__section--faq" id="<?php echo $renderer::esc((string) ($m365Faq['anchor_id'] ?? 'faq')); ?>" style="--section-bg: transparent; --section-text: var(--beratung-text); --section-pt: 25px; --section-pb: 25px; --section-width: 1160px; --section-align: left;">
+                <div class="cms-beratung__section-inner">
+                    <div class="cms-beratung__section-head"><span><?php echo $renderer::esc((string) ($m365Faq['eyebrow'] ?? 'FAQ')); ?></span><h2><?php echo $renderer::esc((string) ($m365Faq['title'] ?? 'Häufige Fragen')); ?></h2><?php if (!empty($m365Faq['intro'])): ?><p><?php echo $renderer::esc((string) $m365Faq['intro']); ?></p><?php endif; ?></div>
+                    <?php $renderFaq($faqSection, $faqItems, (string) ($m365Faq['anchor_id'] ?? 'faq')); ?>
+                </div>
+            </section>
+        <?php endif; ?>
+    <?php endif; ?>
+
+    <?php if (($contact['enabled'] ?? true) !== false): ?>
+    <?php $contactId = (string) ($contact['anchor_id'] ?? 'kontakt'); $contactMode = (string) ($contact['mode'] ?? 'form'); ?>
+    <section class="cms-beratung__contact" id="<?php echo $renderer::esc($contactId); ?>" aria-labelledby="beratung-contact-title" style="--contact-bg:<?php echo $renderer::esc((string) ($contact['background_color'] ?? '#ffffff')); ?>;--contact-text:<?php echo $renderer::esc((string) ($contact['text_color'] ?? '#111827')); ?>;">
+        <div class="cms-beratung__contact-content"><span class="cms-beratung__kicker"><?php echo $renderer::esc((string) ($contact['eyebrow'] ?? 'Kontakt')); ?></span><h2 id="beratung-contact-title"><?php echo $renderer::esc((string) ($contact['title'] ?? 'Beratungsanfrage senden')); ?></h2><p><?php echo $renderer::esc((string) ($contact['description'] ?? 'Beschreiben Sie kurz Ihr Anliegen rund um Microsoft 365, Copilot, KI, Security, Compliance, SharePoint, Entra ID, Purview oder Defender.')); ?></p><?php if (!empty($contact['image_url'])): ?><img src="<?php echo $renderer::esc((string) $contact['image_url']); ?>" alt="<?php echo $renderer::esc((string) ($contact['title'] ?? 'Kontakt')); ?>" loading="lazy"><?php endif; ?><?php if (!empty($contact['note_text'])): ?><p class="cms-beratung-module__note"><?php echo $renderer::esc((string) $contact['note_text']); ?></p><?php endif; ?></div>
+        <?php if ($contactMode === 'button'): ?>
+            <div class="cms-beratung-module__actions"><?php $renderLinkButton((string) ($contact['button_text'] ?? 'Kontakt aufnehmen'), (string) ($contact['button_target'] ?? '#kontakt'), (string) ($contact['button_style'] ?? 'primary')); ?><?php $renderLinkButton((string) ($contact['button_2_text'] ?? ''), (string) ($contact['button_2_target'] ?? ''), (string) ($contact['button_2_style'] ?? 'ghost')); ?></div>
+        <?php else: ?>
+        <form method="post" class="cms-beratung-form" novalidate>
             <input type="hidden" name="csrf_token" value="<?php echo $renderer::esc($csrfToken); ?>"><input type="hidden" name="beratung_form_action" value="submit_request"><label class="cms-beratung-form__hp">Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
-            <?php if ($formResult['message'] !== ''): ?><div class="cms-beratung-form__notice <?php echo $formResult['success'] ? 'is-success' : 'is-error'; ?>" role="status"><?php echo $renderer::esc($formResult['message']); ?></div><?php endif; ?>
-            <div class="cms-beratung-form__grid"><label>Name*<input name="sender_name" required></label><label>E-Mail*<input name="sender_email" type="email" required></label><label>Telefon<input name="phone"></label><label>Unternehmen<input name="company"></label></div>
-            <label>Thema<input name="topic" placeholder="z. B. Copilot Readiness, Security Workshop, Purview Compliance"></label><label>Nachricht*<textarea name="message" rows="5" required></textarea></label><label class="cms-beratung-form__check"><input type="checkbox" name="consent" value="1" required> <span><?php echo $renderer::esc((string) ($settings['privacy_text'] ?? 'Ich stimme der Verarbeitung meiner Angaben zu.')); ?></span></label>
+            <?php if (($formResult['message'] ?? '') !== ''): ?><div class="cms-beratung-form__notice <?php echo !empty($formResult['success']) ? 'is-success' : 'is-error'; ?>" role="status"><?php echo $renderer::esc((string) $formResult['message']); ?></div><?php endif; ?>
+            <div class="cms-beratung-form__grid"><label for="beratung-name">Name*<input id="beratung-name" name="sender_name" value="<?php echo $renderer::esc((string) ($formValues['sender_name'] ?? '')); ?>" required aria-invalid="<?php echo isset($formErrors['sender_name']) ? 'true' : 'false'; ?>"><?php if (isset($formErrors['sender_name'])): ?><small role="alert"><?php echo $renderer::esc((string) $formErrors['sender_name']); ?></small><?php endif; ?></label><label for="beratung-email">E-Mail*<input id="beratung-email" name="sender_email" type="email" value="<?php echo $renderer::esc((string) ($formValues['sender_email'] ?? '')); ?>" required aria-invalid="<?php echo isset($formErrors['sender_email']) ? 'true' : 'false'; ?>"><?php if (isset($formErrors['sender_email'])): ?><small role="alert"><?php echo $renderer::esc((string) $formErrors['sender_email']); ?></small><?php endif; ?></label><label for="beratung-phone">Telefon<input id="beratung-phone" name="phone" value="<?php echo $renderer::esc((string) ($formValues['phone'] ?? '')); ?>"></label><label for="beratung-company">Unternehmen<input id="beratung-company" name="company" value="<?php echo $renderer::esc((string) ($formValues['company'] ?? '')); ?>"></label></div>
+            <label for="beratung-service">Wunschleistung<select id="beratung-service" name="desired_service"><option value="">Bitte wählen</option><?php foreach (CMS_Beratung_Forms::desired_services() as $serviceKey => $serviceLabel): ?><option value="<?php echo $renderer::esc($serviceKey); ?>"<?php echo (($formValues['desired_service'] ?? '') === $serviceKey) ? ' selected' : ''; ?>><?php echo $renderer::esc($serviceLabel); ?></option><?php endforeach; ?></select></label>
+            <label for="beratung-topic">Thema<input id="beratung-topic" name="topic" value="<?php echo $renderer::esc((string) ($formValues['topic'] ?? '')); ?>" placeholder="z. B. Copilot Readiness, Security Workshop, Purview Compliance"></label><label for="beratung-message">Nachricht*<textarea id="beratung-message" name="message" rows="5" required aria-invalid="<?php echo isset($formErrors['message']) ? 'true' : 'false'; ?>"><?php echo $renderer::esc((string) ($formValues['message'] ?? '')); ?></textarea><?php if (isset($formErrors['message'])): ?><small role="alert"><?php echo $renderer::esc((string) $formErrors['message']); ?></small><?php endif; ?></label><label class="cms-beratung-form__check"><input type="checkbox" name="consent" value="1" required aria-invalid="<?php echo isset($formErrors['consent']) ? 'true' : 'false'; ?>"> <span><?php echo $renderer::esc((string) ($contact['privacy_text'] ?? $settings['privacy_text'] ?? 'Ich stimme der Verarbeitung meiner Angaben zu.')); ?></span></label><?php if (isset($formErrors['consent'])): ?><small class="cms-beratung-form__error" role="alert"><?php echo $renderer::esc((string) $formErrors['consent']); ?></small><?php endif; ?>
             <?php if (($settings['sender_copy_enabled'] ?? '0') === '1'): ?><label class="cms-beratung-form__check"><input type="checkbox" name="copy_to_sender" value="1"> <span>Kopie an mich senden</span></label><?php endif; ?>
             <button class="cms-beratung__btn" type="submit">Anfrage senden</button>
         </form>
+        <?php endif; ?>
     </section>
+    <?php endif; ?>
 </main>

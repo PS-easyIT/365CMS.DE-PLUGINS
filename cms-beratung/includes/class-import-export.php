@@ -18,6 +18,7 @@ final class CMS_Beratung_Import_Export
     {
         return [
             'schema' => 'cms-beratung-landingpage/v1',
+            'format_version' => 1,
             'exported_at' => date('c'),
             'plugin_version' => CMS_BERATUNG_VERSION,
             'landingpage' => self::sanitize_landingpage_payload($page),
@@ -46,6 +47,8 @@ final class CMS_Beratung_Import_Export
         $statuses = CMS_Beratung_Settings::statuses();
         $templates = CMS_Beratung_Settings::templates();
         $hero = self::sanitize_hero($data['hero'] ?? $data['hero_json'] ?? []);
+        $contact = self::sanitize_contact($data['contact'] ?? $data['contact_json'] ?? $data);
+        $seo = self::sanitize_seo($data['seo'] ?? $data['seo_json'] ?? $data);
         $sections = self::sanitize_sections($data['sections'] ?? $data['sections_json'] ?? []);
         $design = self::sanitize_design($data['design'] ?? $data['design_json'] ?? []);
 
@@ -60,7 +63,7 @@ final class CMS_Beratung_Import_Export
             'focus_keyword' => self::limit(CMS_Beratung_Settings::text((string) ($data['focus_keyword'] ?? '')), 160),
             'status' => array_key_exists((string) ($data['status'] ?? ''), $statuses) ? (string) $data['status'] : 'draft',
             'template' => array_key_exists((string) ($data['template'] ?? ''), $templates) ? (string) $data['template'] : 'standard',
-            'max_content_width' => max(720, min(1800, (int) ($data['max_content_width'] ?? 1200))),
+            'max_content_width' => max(720, min(1160, (int) ($data['max_content_width'] ?? 1160))),
             'custom_design_enabled' => !empty($data['custom_design_enabled']) ? 1 : 0,
             'use_global_settings' => array_key_exists('use_global_settings', $data) ? (!empty($data['use_global_settings']) ? 1 : 0) : 1,
             'show_header' => array_key_exists('show_header', $data) ? (!empty($data['show_header']) ? 1 : 0) : 1,
@@ -73,9 +76,14 @@ final class CMS_Beratung_Import_Export
             'canonical_url' => CMS_Beratung_Settings::public_url((string) ($data['canonical_url'] ?? '')),
             'custom_css_class' => self::css_class((string) ($data['custom_css_class'] ?? '')),
             'hero_json' => json_encode($hero, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'contact_json' => json_encode($contact, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'seo_json' => json_encode($seo, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'design_json' => json_encode($design, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'sections_json' => json_encode($sections, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'tracking_enabled' => array_key_exists('tracking_enabled', $data) ? (!empty($data['tracking_enabled']) ? 1 : 0) : 1,
             'hero' => $hero,
+            'contact' => $contact,
+            'seo' => $seo,
             'sections' => $sections,
             'design' => $design,
             'created_by' => !empty($data['created_by']) ? (int) $data['created_by'] : null,
@@ -133,6 +141,74 @@ final class CMS_Beratung_Import_Export
         ];
     }
 
+    /** @param mixed $raw @return array<string,mixed> */
+    public static function sanitize_contact(mixed $raw): array
+    {
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            $raw = is_array($decoded) ? $decoded : [];
+        }
+        if (!is_array($raw)) {
+            $raw = [];
+        }
+        $targetType = (string) ($raw['button_target_type'] ?? 'internal');
+        $target2Type = (string) ($raw['button_2_target_type'] ?? 'internal');
+        return [
+            'enabled' => array_key_exists('contact_enabled', $raw) ? !empty($raw['contact_enabled']) : (array_key_exists('enabled', $raw) ? !empty($raw['enabled']) : true),
+            'mode' => self::choice((string) ($raw['contact_mode'] ?? $raw['mode'] ?? 'form'), ['form', 'button'], 'form'),
+            'eyebrow' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_eyebrow'] ?? $raw['eyebrow'] ?? 'Kontakt')), 120),
+            'title' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_title'] ?? $raw['title'] ?? 'Beratungsanfrage senden')), 255),
+            'description' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_description'] ?? $raw['description'] ?? 'Beschreiben Sie kurz Ihr Anliegen.')), 1200),
+            'image_url' => CMS_Beratung_Settings::image_url((string) ($raw['contact_image_url'] ?? $raw['image_url'] ?? '')),
+            'background_color' => CMS_Beratung_Settings::color((string) ($raw['contact_background_color'] ?? $raw['background_color'] ?? '#ffffff'), '#ffffff'),
+            'text_color' => CMS_Beratung_Settings::color((string) ($raw['contact_text_color'] ?? $raw['text_color'] ?? '#111827'), '#111827'),
+            'button_text' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_button_text'] ?? $raw['button_text'] ?? 'Kontakt aufnehmen')), 90),
+            'button_target' => self::button_target((string) ($raw['contact_button_target'] ?? $raw['button_target'] ?? '#kontakt'), $targetType),
+            'button_target_type' => self::choice($targetType, ['internal', 'external', 'anchor', 'contact', 'email', 'phone', 'bookings', 'download'], 'internal'),
+            'button_style' => self::choice((string) ($raw['contact_button_style'] ?? $raw['button_style'] ?? 'primary'), ['primary', 'secondary', 'ghost', 'link'], 'primary'),
+            'button_2_text' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_button_2_text'] ?? $raw['button_2_text'] ?? '')), 90),
+            'button_2_target' => self::button_target((string) ($raw['contact_button_2_target'] ?? $raw['button_2_target'] ?? ''), $target2Type),
+            'button_2_target_type' => self::choice($target2Type, ['internal', 'external', 'anchor', 'contact', 'email', 'phone', 'bookings', 'download'], 'internal'),
+            'button_2_style' => self::choice((string) ($raw['contact_button_2_style'] ?? $raw['button_2_style'] ?? 'ghost'), ['primary', 'secondary', 'ghost', 'link'], 'ghost'),
+            'note_text' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_note_text'] ?? $raw['note_text'] ?? '')), 500),
+            'anchor_id' => CMS_Beratung_Settings::slug((string) ($raw['contact_anchor_id'] ?? $raw['anchor_id'] ?? 'kontakt'), 'kontakt'),
+            'privacy_text' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_privacy_text'] ?? $raw['privacy_text'] ?? '')), 1200),
+            'captcha_enabled' => !empty($raw['contact_captcha_enabled'] ?? $raw['captcha_enabled'] ?? false),
+        ];
+    }
+
+    /** @param mixed $raw @return array<string,mixed> */
+    public static function sanitize_seo(mixed $raw): array
+    {
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            $raw = is_array($decoded) ? $decoded : [];
+        }
+        if (!is_array($raw)) {
+            $raw = [];
+        }
+        return [
+            'og_title' => self::limit(CMS_Beratung_Settings::text((string) ($raw['seo_og_title'] ?? $raw['og_title'] ?? '')), 255),
+            'og_description' => self::limit(CMS_Beratung_Settings::text((string) ($raw['seo_og_description'] ?? $raw['og_description'] ?? '')), 500),
+            'og_image' => CMS_Beratung_Settings::image_url((string) ($raw['seo_og_image'] ?? $raw['og_image'] ?? '')),
+            'twitter_title' => self::limit(CMS_Beratung_Settings::text((string) ($raw['seo_twitter_title'] ?? $raw['twitter_title'] ?? '')), 255),
+            'twitter_description' => self::limit(CMS_Beratung_Settings::text((string) ($raw['seo_twitter_description'] ?? $raw['twitter_description'] ?? '')), 500),
+            'twitter_image' => CMS_Beratung_Settings::image_url((string) ($raw['seo_twitter_image'] ?? $raw['twitter_image'] ?? '')),
+            'faq_schema_enabled' => array_key_exists('seo_faq_schema_enabled_page', $raw) ? !empty($raw['seo_faq_schema_enabled_page']) : (array_key_exists('faq_schema_enabled', $raw) ? !empty($raw['faq_schema_enabled']) : true),
+            'breadcrumb_schema_enabled' => array_key_exists('seo_breadcrumb_schema_enabled_page', $raw) ? !empty($raw['seo_breadcrumb_schema_enabled_page']) : (array_key_exists('breadcrumb_schema_enabled', $raw) ? !empty($raw['breadcrumb_schema_enabled']) : true),
+            'organization_schema_enabled' => !empty($raw['seo_organization_schema_enabled'] ?? $raw['organization_schema_enabled'] ?? false),
+            'local_business_schema_enabled' => !empty($raw['seo_local_business_schema_enabled'] ?? $raw['local_business_schema_enabled'] ?? false),
+            'service_name' => self::limit(CMS_Beratung_Settings::text((string) ($raw['seo_service_name'] ?? $raw['service_name'] ?? '')), 255),
+            'service_description' => self::limit(CMS_Beratung_Settings::text((string) ($raw['seo_service_description'] ?? $raw['service_description'] ?? '')), 500),
+            'provider_name' => self::limit(CMS_Beratung_Settings::text((string) ($raw['seo_provider_name'] ?? $raw['provider_name'] ?? '365CMS')), 255),
+            'provider_url' => CMS_Beratung_Settings::public_url((string) ($raw['seo_provider_url'] ?? $raw['provider_url'] ?? '')),
+            'area_served' => self::limit(CMS_Beratung_Settings::text((string) ($raw['seo_area_served'] ?? $raw['area_served'] ?? 'DE')), 120),
+            'audience' => self::limit(CMS_Beratung_Settings::text((string) ($raw['seo_audience'] ?? $raw['audience'] ?? 'IT Administratoren und Unternehmen')), 160),
+            'region' => self::limit(CMS_Beratung_Settings::text((string) ($raw['seo_region'] ?? $raw['region'] ?? 'Deutschland')), 120),
+            'category' => self::limit(CMS_Beratung_Settings::text((string) ($raw['seo_category'] ?? $raw['category'] ?? 'Microsoft 365 Consulting')), 160),
+        ];
+    }
+
     /** @param mixed $raw @return array<int,array<string,mixed>> */
     public static function sanitize_sections(mixed $raw): array
     {
@@ -150,6 +226,9 @@ final class CMS_Beratung_Import_Export
             }
             $columns = (int) ($section['columns'] ?? 3);
             $type = self::choice((string) ($section['type'] ?? 'card_grid'), ['text', 'card_grid', 'image_cards', 'services', 'offers', 'comparison', 'faq', 'steps', 'cta', 'trust', 'technology', 'contact', 'divider', 'html', 'infographic', 'cards'], 'card_grid');
+            if ($type === 'faq') {
+                continue;
+            }
             $button1Type = (string) ($section['button_1_target_type'] ?? 'internal');
             $button2Type = (string) ($section['button_2_target_type'] ?? 'internal');
             $sections[] = [

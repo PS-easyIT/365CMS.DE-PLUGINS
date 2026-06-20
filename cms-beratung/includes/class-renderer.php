@@ -19,7 +19,11 @@ final class CMS_Beratung_Renderer
         $settings = CMS_Beratung_Settings::all();
         $design = self::design_tokens($page, $settings);
         $sections = is_array($page['sections'] ?? null) ? $page['sections'] : [];
+        $m365Faq = CMS_Beratung_Storage::instance()->m365_faq_config();
         $anchors = array_values(array_filter($sections, static fn(array $section): bool => !empty($section['enabled']) && trim((string) ($section['title'] ?? '')) !== '' && trim((string) ($section['anchor_id'] ?? $section['id'] ?? '')) !== ''));
+        if (!empty($m365Faq['enabled'])) {
+            $anchors[] = ['anchor_id' => (string) ($m365Faq['anchor_id'] ?? 'faq'), 'title' => (string) ($m365Faq['title'] ?? 'FAQ')];
+        }
         $csrfToken = class_exists('CMS\\Security') ? (string) \CMS\Security::instance()->generateToken('beratung_form_' . (int) ($page['id'] ?? 0)) : '';
 
         include CMS_BERATUNG_PLUGIN_DIR . 'templates/landingpage.php';
@@ -41,10 +45,11 @@ final class CMS_Beratung_Renderer
         foreach ($keys as $key) {
             $tokens[$key] = (string) ($design[$key] ?? $settings[$key] ?? CMS_Beratung_Settings::defaults()[$key] ?? '#ffffff');
         }
-        $tokens['border_radius'] = (string) max(0, min(96, (int) ($settings['border_radius'] ?? 18))) . 'px';
-        $tokens['spacing'] = (string) max(0, min(96, (int) ($settings['spacing'] ?? 24))) . 'px';
-        $tokens['content_width'] = (string) max(720, min(1800, (int) ($page['max_content_width'] ?? $settings['content_width'] ?? 1200))) . 'px';
-        $tokens['card_shadow'] = (($settings['card_shadow_enabled'] ?? '1') === '1') ? '0 18px 50px rgba(15, 23, 42, .10)' : 'none';
+        $tokens['background_color'] = 'transparent';
+        $tokens['border_radius'] = (string) max(2, min(6, (int) ($settings['border_radius'] ?? 4))) . 'px';
+        $tokens['spacing'] = (string) max(12, min(25, (int) ($settings['spacing'] ?? 20))) . 'px';
+        $tokens['content_width'] = (string) max(720, min(1160, (int) ($page['max_content_width'] ?? $settings['content_width'] ?? 1160))) . 'px';
+        $tokens['card_shadow'] = (($settings['card_shadow_enabled'] ?? '1') === '1') ? '0 8px 24px rgba(15, 23, 42, .08)' : 'none';
 
         return $tokens;
     }

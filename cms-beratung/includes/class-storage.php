@@ -91,7 +91,7 @@ final class CMS_Beratung_Storage
         $columns = [
             'tenant_id', 'internal_title', 'public_title', 'slug', 'meta_title', 'meta_description', 'focus_keyword', 'status', 'template',
             'max_content_width', 'custom_design_enabled', 'use_global_settings', 'show_header', 'show_footer', 'show_breadcrumb', 'show_toc',
-            'show_anchor_nav', 'noindex', 'nofollow', 'canonical_url', 'custom_css_class', 'hero_json', 'design_json', 'sections_json', 'created_by', 'updated_by',
+            'show_anchor_nav', 'noindex', 'nofollow', 'canonical_url', 'custom_css_class', 'hero_json', 'contact_json', 'seo_json', 'design_json', 'sections_json', 'tracking_enabled', 'created_by', 'updated_by',
         ];
 
         if ($id > 0) {
@@ -139,6 +139,11 @@ final class CMS_Beratung_Storage
         return $this->save_landingpage($page);
     }
 
+    public function suggest_unique_slug(string $slug, int $ignoreId = 0): string
+    {
+        return $this->unique_slug($slug, $ignoreId);
+    }
+
     public function delete_landingpage(int $id): bool
     {
         if ($this->pdo === null || $id <= 0) {
@@ -181,6 +186,179 @@ final class CMS_Beratung_Storage
         ]);
     }
 
+    /** @return array<string,mixed> */
+    public function m365_faq_config(): array
+    {
+        $defaults = self::default_m365_faq_config();
+        if ($this->pdo === null) {
+            return $defaults;
+        }
+
+        $config = $defaults;
+        foreach (['enabled', 'eyebrow', 'title', 'intro', 'anchor_id', 'allow_multiple', 'open_behavior', 'icon_style', 'schema_enabled'] as $key) {
+            $value = $this->setting_value('m365_faq_' . $key);
+            if ($value !== null) {
+                $config[$key] = in_array($key, ['enabled', 'allow_multiple', 'schema_enabled'], true) ? ($value === '1') : $value;
+            }
+        }
+        $itemsJson = $this->setting_value('m365_faq_items_json');
+        $items = is_string($itemsJson) ? json_decode($itemsJson, true) : null;
+        $config['items'] = self::sanitize_m365_faq_items(is_array($items) ? $items : $defaults['items']);
+        return $config;
+    }
+
+    /** @param array<string,mixed> $data */
+    public function save_m365_faq_config(array $data): void
+    {
+        if ($this->pdo === null) {
+            return;
+        }
+        CMS_Beratung_Installer::ensure_for_admin_save();
+        $config = [
+            'enabled' => !empty($data['enabled']),
+            'eyebrow' => CMS_Beratung_Settings::text((string) ($data['eyebrow'] ?? 'FAQ')),
+            'title' => CMS_Beratung_Settings::text((string) ($data['title'] ?? 'Häufige Fragen zu Microsoft 365 Beratung')),
+            'intro' => CMS_Beratung_Settings::text((string) ($data['intro'] ?? '')),
+            'anchor_id' => CMS_Beratung_Settings::slug((string) ($data['anchor_id'] ?? 'faq'), 'faq'),
+            'allow_multiple' => !empty($data['allow_multiple']),
+            'open_behavior' => in_array((string) ($data['open_behavior'] ?? 'first'), ['none', 'first', 'custom'], true) ? (string) $data['open_behavior'] : 'first',
+            'icon_style' => in_array((string) ($data['icon_style'] ?? 'plus'), ['plus', 'chevron', 'question'], true) ? (string) $data['icon_style'] : 'plus',
+            'schema_enabled' => !empty($data['schema_enabled']),
+            'items' => self::sanitize_m365_faq_items($this->faq_items_from_post($data)),
+        ];
+
+        foreach (['enabled', 'eyebrow', 'title', 'intro', 'anchor_id', 'allow_multiple', 'open_behavior', 'icon_style', 'schema_enabled'] as $key) {
+            $value = in_array($key, ['enabled', 'allow_multiple', 'schema_enabled'], true) ? (!empty($config[$key]) ? '1' : '0') : (string) $config[$key];
+            $this->save_setting('m365_faq_' . $key, $value);
+        }
+        $this->save_setting('m365_faq_items_json', json_encode($config['items'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]');
+    }
+
+    public function seed_m365_faqs_if_missing(): void
+    {
+        if ($this->pdo === null || $this->setting_value('m365_faq_items_json') !== null) {
+            return;
+        }
+        $this->save_m365_faq_config(self::default_m365_faq_config());
+    }
+
+    /** @return array<string,mixed> */
+    public static function default_m365_faq_config(): array
+    {
+        return [
+            'enabled' => true,
+            'eyebrow' => 'FAQ',
+            'title' => 'Häufige Fragen zu Microsoft 365, Copilot und Security Beratung',
+            'intro' => 'Antworten auf typische Fragen vor einem Microsoft 365 Beratungsprojekt, Copilot Readiness Check oder Security Review.',
+            'anchor_id' => 'faq',
+            'allow_multiple' => false,
+            'open_behavior' => 'first',
+            'icon_style' => 'plus',
+            'schema_enabled' => true,
+            'items' => [
+                ['enabled' => true, 'question' => 'Was ist Microsoft 365 Beratung?', 'answer' => 'Microsoft 365 Beratung unterstützt bei Planung, Bewertung, Konfiguration und Optimierung von Diensten wie Entra ID, Exchange Online, SharePoint, OneDrive, Teams, Purview, Defender und Copilot.', 'default_open' => true, 'sort_order' => 10],
+                ['enabled' => true, 'question' => 'Für wen eignet sich eine Microsoft 365 Beratung?', 'answer' => 'Sie eignet sich für Unternehmen, IT-Abteilungen und Admin-Teams, die Microsoft 365 sicherer, strukturierter und effizienter nutzen möchten oder vor größeren Änderungen wie Copilot, Security Reviews oder Governance-Projekten stehen.', 'default_open' => false, 'sort_order' => 20],
+                ['enabled' => true, 'question' => 'Was ist Microsoft 365 Copilot?', 'answer' => 'Microsoft 365 Copilot verbindet KI-Funktionen mit Microsoft 365 Apps und Unternehmensdaten. Der Nutzen hängt stark davon ab, ob Berechtigungen, Datenqualität, Compliance und Governance sauber vorbereitet sind.', 'default_open' => false, 'sort_order' => 30],
+                ['enabled' => true, 'question' => 'Warum ist ein Copilot Readiness Check sinnvoll?', 'answer' => 'Ein Readiness Check zeigt, ob Datenzugriffe, SharePoint-Strukturen, Sensitivity Labels, DLP, Audit, Identitäten und Pilotprozesse bereit für einen kontrollierten Copilot-Einsatz sind.', 'default_open' => false, 'sort_order' => 40],
+                ['enabled' => true, 'question' => 'Ist Microsoft Copilot DSGVO-konform einsetzbar?', 'answer' => 'Ein DSGVO-konformer Einsatz hängt von Konfiguration, Datenklassifizierung, Berechtigungen, Aufbewahrung, organisatorischen Regeln und rechtlicher Bewertung ab. Die Beratung liefert die technische Grundlage für diese Einordnung.', 'default_open' => false, 'sort_order' => 50],
+                ['enabled' => true, 'question' => 'Welche Voraussetzungen braucht ein Microsoft 365 Tenant für Copilot?', 'answer' => 'Wichtig sind saubere Identitäten, passende Lizenzen, kontrollierte Berechtigungen, gepflegte SharePoint- und OneDrive-Inhalte, Purview-Konfigurationen, Auditierbarkeit und klare Governance-Regeln.', 'default_open' => false, 'sort_order' => 60],
+                ['enabled' => true, 'question' => 'Was wird bei einem Microsoft 365 Security Review geprüft?', 'answer' => 'Geprüft werden unter anderem Entra ID, MFA, Conditional Access, Adminrollen, Break-Glass-Konten, Gastzugriffe, Defender-Konfigurationen, Secure Score, Mail-Schutz und relevante Betriebsprozesse.', 'default_open' => false, 'sort_order' => 70],
+                ['enabled' => true, 'question' => 'Was ist Entra ID und warum ist es wichtig?', 'answer' => 'Microsoft Entra ID ist der zentrale Identitätsdienst für Microsoft 365. Rollen, Anmeldeschutz, MFA, Conditional Access und Gastzugriffe beeinflussen direkt die Sicherheit der gesamten Umgebung.', 'default_open' => false, 'sort_order' => 80],
+                ['enabled' => true, 'question' => 'Was ist Conditional Access?', 'answer' => 'Conditional Access steuert Zugriffe anhand von Bedingungen wie Benutzer, Gerät, Standort, Risiko, App und Authentifizierungsstärke. Richtig konfiguriert ist es ein zentraler Sicherheitsbaustein.', 'default_open' => false, 'sort_order' => 90],
+                ['enabled' => true, 'question' => 'Was umfasst SharePoint und OneDrive Governance?', 'answer' => 'Governance umfasst Struktur, Site- und Team-Erstellung, Berechtigungen, externe Freigaben, Namenskonzepte, Lifecycle, Verantwortlichkeiten und Regeln für den Umgang mit Dateien und Informationen.', 'default_open' => false, 'sort_order' => 100],
+                ['enabled' => true, 'question' => 'Warum sind Berechtigungen vor Copilot besonders wichtig?', 'answer' => 'Copilot berücksichtigt vorhandene Berechtigungen. Wenn zu viele Personen Zugriff auf sensible Inhalte haben, können diese Inhalte auch leichter in Antworten und Suchergebnissen sichtbar werden.', 'default_open' => false, 'sort_order' => 110],
+                ['enabled' => true, 'question' => 'Was ist Microsoft Purview?', 'answer' => 'Microsoft Purview bündelt Funktionen für Informationsschutz, Sensitivity Labels, DLP, Aufbewahrung, eDiscovery, Audit und Compliance. Es hilft, Daten in Microsoft 365 kontrolliert zu schützen.', 'default_open' => false, 'sort_order' => 120],
+                ['enabled' => true, 'question' => 'Was ist Microsoft Defender im Microsoft 365 Umfeld?', 'answer' => 'Microsoft Defender umfasst Schutzfunktionen für Identitäten, Endpunkte, E-Mail, Cloud Apps und Bedrohungserkennung. Die konkrete Ausprägung hängt von Lizenzen und Konfiguration ab.', 'default_open' => false, 'sort_order' => 130],
+                ['enabled' => true, 'question' => 'Kann die Beratung remote durchgeführt werden?', 'answer' => 'Ja, viele Reviews, Workshops und Readiness Checks können remote durchgeführt werden. Je nach Umfang werden Ergebnisse, Empfehlungen und nächste Schritte dokumentiert.', 'default_open' => false, 'sort_order' => 140],
+                ['enabled' => true, 'question' => 'Wie läuft ein typisches Beratungsprojekt ab?', 'answer' => 'Typisch sind Erstgespräch, Zielklärung, technische Analyse, Bewertung, priorisierter Maßnahmenplan, optional begleitete Umsetzung sowie Dokumentation und Übergabe an das Admin-Team.', 'default_open' => false, 'sort_order' => 150],
+                ['enabled' => true, 'question' => 'Gibt es nach der Beratung eine Dokumentation?', 'answer' => 'Ja, Ergebnisse, Findings, Entscheidungen, Risiken und empfohlene Maßnahmen werden verständlich dokumentiert, damit Admin- und Projektteams damit weiterarbeiten können.', 'default_open' => false, 'sort_order' => 160],
+                ['enabled' => true, 'question' => 'Können Admin-Workshops durchgeführt werden?', 'answer' => 'Ja, Workshops für Admin-Teams können Themen wie Entra ID, Security, SharePoint Governance, Exchange Online, Teams, Purview, Copilot Readiness und PowerShell-Automatisierung abdecken.', 'default_open' => false, 'sort_order' => 170],
+                ['enabled' => true, 'question' => 'Was kostet eine Microsoft 365 Beratung?', 'answer' => 'Die Kosten hängen von Umfang, Ziel, gewünschter Tiefe und Anzahl der betroffenen Microsoft 365 Bereiche ab. Nach einem Erstgespräch lässt sich der Aufwand realistisch eingrenzen.', 'default_open' => false, 'sort_order' => 180],
+            ],
+        ];
+    }
+
+    /** @param array<int,array<string,mixed>> $items @return array<int,array<string,mixed>> */
+    public static function sanitize_m365_faq_items(array $items): array
+    {
+        $clean = [];
+        foreach (array_values($items) as $index => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $question = CMS_Beratung_Settings::text((string) ($item['question'] ?? ''));
+            $answer = CMS_Beratung_Settings::text((string) ($item['answer'] ?? ''));
+            if ($question === '' || $answer === '') {
+                continue;
+            }
+            $clean[] = [
+                'enabled' => array_key_exists('enabled', $item) ? !empty($item['enabled']) : true,
+                'question' => substr($question, 0, 255),
+                'answer' => substr($answer, 0, 1800),
+                'default_open' => !empty($item['default_open']),
+                'sort_order' => (int) ($item['sort_order'] ?? (($index + 1) * 10)),
+            ];
+        }
+        usort($clean, static fn(array $a, array $b): int => ((int) ($a['sort_order'] ?? 0)) <=> ((int) ($b['sort_order'] ?? 0)));
+        return $clean;
+    }
+
+    /** @param array<string,mixed> $data @return array<int,array<string,mixed>> */
+    private function faq_items_from_post(array $data): array
+    {
+        $questions = is_array($data['faq_question'] ?? null) ? $data['faq_question'] : [];
+        $answers = is_array($data['faq_answer'] ?? null) ? $data['faq_answer'] : [];
+        $orders = is_array($data['faq_sort_order'] ?? null) ? $data['faq_sort_order'] : [];
+        $enabled = is_array($data['faq_enabled'] ?? null) ? $data['faq_enabled'] : [];
+        $defaultOpen = is_array($data['faq_default_open'] ?? null) ? $data['faq_default_open'] : [];
+        $items = [];
+        foreach (array_keys($questions) as $index) {
+            $items[] = [
+                'enabled' => array_key_exists((string) $index, $enabled) || array_key_exists((int) $index, $enabled),
+                'question' => is_scalar($questions[$index] ?? null) ? (string) $questions[$index] : '',
+                'answer' => is_scalar($answers[$index] ?? null) ? (string) $answers[$index] : '',
+                'default_open' => array_key_exists((string) $index, $defaultOpen) || array_key_exists((int) $index, $defaultOpen),
+                'sort_order' => is_scalar($orders[$index] ?? null) ? (int) $orders[$index] : 0,
+            ];
+        }
+        return $items;
+    }
+
+    private function setting_value(string $key): ?string
+    {
+        if ($this->pdo === null) {
+            return null;
+        }
+        try {
+            $stmt = $this->pdo->prepare("SELECT setting_value FROM {$this->prefix}beratung_settings WHERE tenant_id IS NULL AND setting_key = ? LIMIT 1");
+            $stmt->execute([$key]);
+            $value = $stmt->fetchColumn();
+            return is_scalar($value) ? (string) $value : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function save_setting(string $key, string $value): void
+    {
+        if ($this->pdo === null) {
+            return;
+        }
+        try {
+            $exists = $this->pdo->prepare("SELECT id FROM {$this->prefix}beratung_settings WHERE tenant_id IS NULL AND setting_key = ? LIMIT 1");
+            $exists->execute([$key]);
+            if ($exists->fetch()) {
+                $stmt = $this->pdo->prepare("UPDATE {$this->prefix}beratung_settings SET setting_value = ? WHERE tenant_id IS NULL AND setting_key = ?");
+                $stmt->execute([$value, $key]);
+                return;
+            }
+            $stmt = $this->pdo->prepare("INSERT INTO {$this->prefix}beratung_settings (tenant_id, setting_key, setting_value) VALUES (NULL, ?, ?)");
+            $stmt->execute([$key, $value]);
+        } catch (\Throwable $e) {
+            error_log('CMS Beratung FAQ setting save failed: ' . $e->getMessage());
+        }
+    }
+
     /** @return array<int,array<string,mixed>> */
     public function submissions(int $limit = 100): array
     {
@@ -193,13 +371,25 @@ final class CMS_Beratung_Storage
         return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
     }
 
+    public function submission(int $id): ?array
+    {
+        if ($this->pdo === null || $id <= 0) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare("SELECT s.*, l.public_title AS landingpage_title, l.slug AS landingpage_slug FROM {$this->prefix}beratung_form_submissions s LEFT JOIN {$this->prefix}beratung_landingpages l ON l.id = s.landingpage_id WHERE s.id = ? LIMIT 1");
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return is_array($row) ? $row : null;
+    }
+
     /** @param array<string,mixed> $data */
     public function create_submission(array $data): int
     {
         if ($this->pdo === null) {
             return 0;
         }
-        $stmt = $this->pdo->prepare("INSERT INTO {$this->prefix}beratung_form_submissions (landingpage_id, tenant_id, sender_name, sender_email, phone, company, topic, message, consent, copy_to_sender, payload_json, ip_address, user_agent, status, is_spam) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unread', ?)");
+        $settings = CMS_Beratung_Settings::all();
+        $stmt = $this->pdo->prepare("INSERT INTO {$this->prefix}beratung_form_submissions (landingpage_id, tenant_id, sender_name, sender_email, phone, company, topic, desired_service, message, internal_note, consent, copy_to_sender, payload_json, ip_address, user_agent, status, is_spam) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?, ?, ?, 'new', ?)");
         $stmt->execute([
             (int) ($data['landingpage_id'] ?? 0) ?: null,
             CMS_Beratung_Settings::text((string) ($data['sender_name'] ?? '')),
@@ -207,21 +397,71 @@ final class CMS_Beratung_Storage
             CMS_Beratung_Settings::text((string) ($data['phone'] ?? '')),
             CMS_Beratung_Settings::text((string) ($data['company'] ?? '')),
             CMS_Beratung_Settings::text((string) ($data['topic'] ?? '')),
+            CMS_Beratung_Settings::text((string) ($data['desired_service'] ?? '')),
             CMS_Beratung_Settings::text((string) ($data['message'] ?? '')),
             !empty($data['consent']) ? 1 : 0,
             !empty($data['copy_to_sender']) ? 1 : 0,
             json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45),
-            substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 500),
+            ($settings['store_ip_enabled'] ?? '0') === '1' ? substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45) : '',
+            ($settings['store_user_agent_enabled'] ?? '0') === '1' ? substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 500) : '',
             !empty($data['is_spam']) ? 1 : 0,
         ]);
         return (int) $this->pdo->lastInsertId();
     }
 
+    public function update_submission(int $id, string $status, string $note): bool
+    {
+        if ($this->pdo === null || $id <= 0 || !array_key_exists($status, self::submission_statuses())) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare("UPDATE {$this->prefix}beratung_form_submissions SET status = ?, internal_note = ? WHERE id = ?");
+        return $stmt->execute([$status, CMS_Beratung_Settings::text($note), $id]);
+    }
+
+    /** @param array<int,int> $ids */
+    public function delete_submissions(array $ids): int
+    {
+        if ($this->pdo === null) {
+            return 0;
+        }
+        $ids = array_values(array_filter(array_map('intval', $ids), static fn(int $id): bool => $id > 0));
+        if ($ids === []) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare("DELETE FROM {$this->prefix}beratung_form_submissions WHERE id IN ({$placeholders})");
+        $stmt->execute($ids);
+        return $stmt->rowCount();
+    }
+
+    public function purge_old_submissions(int $days): int
+    {
+        if ($this->pdo === null) {
+            return 0;
+        }
+        $days = max(1, min(3650, $days));
+        $stmt = $this->pdo->prepare("DELETE FROM {$this->prefix}beratung_form_submissions WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)");
+        $stmt->execute([$days]);
+        return $stmt->rowCount();
+    }
+
+    /** @return array<string,string> */
+    public static function submission_statuses(): array
+    {
+        return [
+            'new' => 'Neu',
+            'read' => 'Gelesen',
+            'in_progress' => 'In Bearbeitung',
+            'answered' => 'Beantwortet',
+            'done' => 'Erledigt',
+            'archived' => 'Archiviert',
+        ];
+    }
+
     /** @param array<string,mixed> $row @return array<string,mixed> */
     private function decode_landingpage(array $row): array
     {
-        foreach (['hero_json', 'design_json', 'sections_json'] as $key) {
+        foreach (['hero_json', 'contact_json', 'seo_json', 'design_json', 'sections_json'] as $key) {
             $decoded = json_decode((string) ($row[$key] ?? ''), true);
             $row[str_replace('_json', '', $key)] = is_array($decoded) ? $decoded : [];
         }

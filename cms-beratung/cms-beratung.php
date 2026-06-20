@@ -3,7 +3,7 @@
  * Plugin Name: CMS Beratung
  * Plugin URI:  https://365network.de/cms-beratung
  * Description: Spezialisierter 365CMS Landingpage Builder für Microsoft 365, Copilot, KI, Security, Compliance und IT Consulting Beratungsleistungen.
- * Version:     2.9.702
+ * Version:     2.9.708
  * Author:      365 Network
  * Author URI:  https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-defined('CMS_BERATUNG_VERSION') || define('CMS_BERATUNG_VERSION', '2.9.702');
+defined('CMS_BERATUNG_VERSION') || define('CMS_BERATUNG_VERSION', '2.9.708');
 defined('CMS_BERATUNG_DB_VERSION') || define('CMS_BERATUNG_DB_VERSION', '2');
 defined('CMS_BERATUNG_PLUGIN_DIR') || define('CMS_BERATUNG_PLUGIN_DIR', dirname(__FILE__) . '/');
 defined('CMS_BERATUNG_PLUGIN_URL') || define('CMS_BERATUNG_PLUGIN_URL', '/plugins/cms-beratung/');

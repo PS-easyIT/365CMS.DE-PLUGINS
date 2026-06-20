@@ -1,13 +1,19 @@
 {
   "slug": "cms-beratung",
   "name": "CMS Beratung",
-  "version": "2.9.702",
+  "version": "2.9.708",
   "requires": "365CMS",
   "tested": "2026.06",
   "author": "365 Network",
   "description": "Spezialisierter 365CMS Landingpage Builder für Microsoft 365, Copilot, KI, Security, Compliance und IT Consulting Beratungsleistungen.",
   "download_url": "PLUGINS/cms-beratung/cms-beratung.zip",
   "changelog": {
+    "2.9.708": "Landingpage-Editor um Bild-Upload und Mediathek-Auswahl erweitert: Hero-, Hintergrund-, Card- und Logo-Bildfelder erhalten Upload-Buttons, Vorschau, Leeren-Funktion und direkte Speicherung neuer Bilder im Ordner /uploads/beratung/.",
+    "2.9.707": "Microsoft 365 FAQs zentralisiert: eigener Admin-Menüpunkt M365 FAQs mit vollständiger FAQ-Befüllung, zentrale Frontend-Ausgabe und FAQPage Schema aus den zentralen Daten; FAQ-Bearbeitung aus dem Landingpage-Builder entfernt.",
+    "2.9.706": "Public Landingpages theme-kompatibel gemacht: kein eigener Seitenhintergrund, Inhaltsbreite auf 1160px begrenzt, Header/Footer-Abstände reduziert, kleinere Typografie, Card-Rundungen auf 2 bis 6px begrenzt, Kontaktbereich layoutstabilisiert, Landingpage-Vorschläge inhaltlich differenziert und Blankseite nach Speichern durch frühzeitige Redirect-Verarbeitung behoben.",
+    "2.9.705": "Frontend Design finalisiert, fünf Design Presets ergänzt, Import/Export erweitert, Admin-Entwurfs-Vorschau, vollständige Beispiel-Landingpage, SEO/Schema-Ausbau, robuste Frontend-Skripte und Qualitätssicherungs-Checkliste hinzugefügt.",
+    "2.9.704": "Sichtbare Landingpage-Vorlagen im Adminbereich ergänzt: fünf Vorschlagsseiten können beim Erstellen direkt als vollständige Platzhalter-Landingpage geladen werden.",
+    "2.9.703": "Adminbereich mit live-naher Modulvorschau, verbessertem Builder-Design und vier Landingpage-Vorschlägen für Beratungsseiten erweitert.",
     "2.9.702": "Spezialisierte Beratungs-Landingpage-Module für Leistungen, Ablauf, Vergleich, FAQ Accordion mit Schema, Trust, Technologie, CTA Band, Trenner und sicheren HTML Bereich ergänzt.",
     "2.9.701": "Erweiterter Landingpage Editor mit Hero Bereich, flexiblen Inhaltsbereichen, Drag-and-Drop Sections/Cards, Card-Typen und responsivem Layoutsystem.",
     "2.9.700": "Initiale Grundstruktur mit Backend-Verwaltung, Landingpage-Datenmodell, Frontend-Rendering, SEO, Formularen sowie JSON Import und Export."
