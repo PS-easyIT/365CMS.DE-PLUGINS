@@ -72,6 +72,10 @@ final class CMS_Beratung_Frontend
         if (is_file($premiumCss)) {
             echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_BERATUNG_PLUGIN_URL . 'assets/css/frontend-premium.css', ENT_QUOTES, 'UTF-8') . '?v=' . filemtime($premiumCss) . '">' . "\n";
         }
+        $globalDesignCss = CMS_BERATUNG_PLUGIN_DIR . 'assets/css/frontend-global-design.css';
+        if (is_file($globalDesignCss)) {
+            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_BERATUNG_PLUGIN_URL . 'assets/css/frontend-global-design.css', ENT_QUOTES, 'UTF-8') . '?v=' . filemtime($globalDesignCss) . '">' . "\n";
+        }
     }
 
     public function output_seo_head(): void

@@ -1,0 +1,831 @@
+.cms-beratung.cms-beratung{
+	font-size:var(--beratung-font-base,16px)!important;
+	padding-top:var(--beratung-header-spacing,48px)!important;
+	padding-bottom:var(--beratung-footer-spacing,48px)!important;
+}
+
+.cms-beratung.cms-beratung p,
+.cms-beratung.cms-beratung li,
+.cms-beratung.cms-beratung small,
+.cms-beratung.cms-beratung input,
+.cms-beratung.cms-beratung select,
+.cms-beratung.cms-beratung textarea,
+.cms-beratung.cms-beratung .cms-beratung-hero__subtitle,
+.cms-beratung.cms-beratung .cms-beratung-hero__description,
+.cms-beratung.cms-beratung .cms-beratung-card p,
+.cms-beratung.cms-beratung .cms-beratung__section-head p,
+.cms-beratung.cms-beratung .cms-beratung__contact p{
+	font-size:var(--beratung-font-base,16px)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-right{
+	display:grid!important;
+	grid-template-columns:auto minmax(0,1fr)!important;
+	align-content:start!important;
+	align-items:start!important;
+	column-gap:1rem!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-right .cms-beratung-card__category,
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-right .cms-beratung-card__badge,
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-right .cms-beratung-card__metric{
+	grid-column:1/-1!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-right .cms-beratung-card__icon,
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-right .cms-beratung-card__tab,
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-right .cms-beratung-card__media,
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-right .cms-beratung-card__logo{
+	grid-column:1!important;
+	grid-row:2 / span 4!important;
+	margin-top:.1rem!important;
+	margin-bottom:0!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-right h3,
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-right p,
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-right .cms-beratung-card__extra,
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-right .cms-beratung__btn{
+	grid-column:2!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-below .cms-beratung-card__icon,
+.cms-beratung.cms-beratung .cms-beratung-card--icon-text-below .cms-beratung-card__tab{
+	margin-bottom:.75rem!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left{
+	display:grid!important;
+	grid-template-columns:auto minmax(0,1fr)!important;
+	align-content:start!important;
+	align-items:start!important;
+	column-gap:1rem!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left .cms-beratung-card__badge,
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left .cms-beratung-card__category,
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left .cms-beratung-card__metric,
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left .cms-beratung-card__image,
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left .cms-beratung-card__label{
+	grid-column:1/-1!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left .cms-beratung-card__icon,
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left .cms-beratung-card__tab,
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left .cms-beratung-card__media,
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left .cms-beratung-card__logo{
+	grid-column:1!important;
+	grid-row:2 / span 5!important;
+	margin-top:.15rem!important;
+	margin-bottom:0!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left h3,
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left p,
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left .cms-beratung-card__extra,
+.cms-beratung.cms-beratung .cms-beratung-card--layout-media-left .cms-beratung__btn{
+	grid-column:2!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card__media{
+	display:grid!important;
+	place-items:center!important;
+	width:min(100%,5.5rem)!important;
+	height:var(--card-image-height,5.5rem)!important;
+	max-height:8rem!important;
+	margin:0 0 .9rem!important;
+	padding:.45rem!important;
+	border-radius:18px!important;
+	background:rgba(255,255,255,.72)!important;
+	border:1px solid color-mix(in srgb,var(--card-border,var(--beratung-card-border,#dbeafe)),transparent 20%)!important;
+	box-shadow:0 12px 30px rgba(15,23,42,.06)!important;
+	overflow:hidden!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card__media img{
+	display:block!important;
+	width:100%!important;
+	height:100%!important;
+	object-fit:var(--card-image-fit,contain)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--theme-experience{--card-bg:#fffdf7;--card-border:#f3d28f;border-left:4px solid #d69e2e!important;}
+.cms-beratung.cms-beratung .cms-beratung-card--theme-consulting{--card-bg:#f8fbff;--card-border:#bfdbfe;border-left:4px solid #2563eb!important;}
+.cms-beratung.cms-beratung .cms-beratung-card--theme-exchange{--card-bg:#f7fcfb;--card-border:#b7e4dc;border-left:4px solid #0f766e!important;}
+.cms-beratung.cms-beratung .cms-beratung-card--theme-iamcp{--card-bg:#f8f7ff;--card-border:#c7d2fe;border-left:4px solid #4f46e5!important;}
+.cms-beratung.cms-beratung .cms-beratung-card--theme-projects{--card-bg:#f9fafb;--card-border:#cbd5e1;border-left:4px solid #475569!important;}
+.cms-beratung.cms-beratung .cms-beratung-card--theme-security{--card-bg:#fff8f8;--card-border:#fecaca;border-left:4px solid #dc2626!important;}
+.cms-beratung.cms-beratung .cms-beratung-card--theme-governance{--card-bg:#f9fbf5;--card-border:#d9f99d;border-left:4px solid #65a30d!important;}
+.cms-beratung.cms-beratung .cms-beratung-card--theme-microsoft{--card-bg:#f8fbff;--card-border:#bae6fd;border-left:4px solid #0284c7!important;}
+.cms-beratung.cms-beratung .cms-beratung-card--theme-network{--card-bg:#fffaf3;--card-border:#fed7aa;border-left:4px solid #ea580c!important;}
+
+.cms-beratung.cms-beratung .cms-beratung-card[class*="cms-beratung-card--theme-"] .cms-beratung-card__badge,
+.cms-beratung.cms-beratung .cms-beratung-card[class*="cms-beratung-card--theme-"] .cms-beratung-card__category{
+	background:color-mix(in srgb,var(--card-border,var(--beratung-card-border,#dbeafe)),transparent 68%)!important;
+	color:#334155!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--layout-compact{
+	gap:.45rem!important;
+	padding:calc(var(--beratung-card-spacing,24px) * .7)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--layout-compact .cms-beratung-card__icon,
+.cms-beratung.cms-beratung .cms-beratung-card--layout-compact .cms-beratung-card__tab{
+	width:2.35rem!important;
+	height:2.35rem!important;
+	border-radius:.75rem!important;
+	font-size:1.1rem!important;
+	margin-bottom:.45rem!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--layout-compact h3{
+	margin-bottom:.25rem!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--layout-spotlight{
+	border-top:4px solid var(--beratung-accent,#f59e0b)!important;
+	background:linear-gradient(135deg,color-mix(in srgb,var(--beratung-accent,#f59e0b),transparent 90%),var(--card-bg,var(--beratung-card-bg)))!important;
+	box-shadow:0 22px 60px rgba(15,23,42,.14)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card--layout-spotlight .cms-beratung-card__badge,
+.cms-beratung.cms-beratung .cms-beratung-card--layout-spotlight .cms-beratung-card__category{
+	background:color-mix(in srgb,var(--beratung-accent,#f59e0b),transparent 82%)!important;
+	color:#92400e!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__section--technology .cms-beratung-card__logo{
+	display:block!important;
+	width:min(100%,96px)!important;
+	height:64px!important;
+	max-width:96px!important;
+	max-height:64px!important;
+	object-fit:contain!important;
+	margin:0 auto 1rem!important;
+	padding:.35rem!important;
+	border-radius:14px!important;
+	background:#fff!important;
+}
+
+.cms-beratung.cms-beratung h1,
+.cms-beratung.cms-beratung .cms-beratung-hero h1,
+.cms-beratung.cms-beratung .cms-beratung__hero h1{
+	font-size:var(--beratung-font-hero,52px)!important;
+}
+
+.cms-beratung.cms-beratung h2,
+.cms-beratung.cms-beratung .cms-beratung__section-head h2,
+.cms-beratung.cms-beratung .cms-beratung__contact h2,
+.cms-beratung.cms-beratung .cms-beratung-proof__head h2,
+.cms-beratung.cms-beratung .cms-beratung-booking__head h2{
+	font-size:var(--beratung-font-section-title,32px)!important;
+}
+
+.cms-beratung.cms-beratung h3,
+.cms-beratung.cms-beratung .cms-beratung-card h3,
+.cms-beratung.cms-beratung .cms-beratung-proof-card h3,
+.cms-beratung.cms-beratung .cms-beratung-collab-card h3,
+.cms-beratung.cms-beratung .cms-beratung-booking-card__fallback h3{
+	font-size:var(--beratung-font-card-title,21px)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__cards,
+.cms-beratung.cms-beratung .cms-beratung-proof__grid,
+.cms-beratung.cms-beratung .cms-beratung-proof__testimonials,
+.cms-beratung.cms-beratung .cms-beratung-collab,
+.cms-beratung.cms-beratung .cms-beratung-form,
+.cms-beratung.cms-beratung .cms-beratung__contact{
+	gap:var(--beratung-card-spacing,24px)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-card,
+.cms-beratung.cms-beratung .cms-beratung-proof-card,
+.cms-beratung.cms-beratung .cms-beratung-booking-card__fallback,
+.cms-beratung.cms-beratung .cms-beratung-collab-card,
+.cms-beratung.cms-beratung .cms-beratung-form{
+	padding:var(--beratung-card-spacing,24px)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__section{
+	margin-bottom:var(--beratung-footer-spacing,48px)!important;
+	padding-left:0!important;
+	padding-right:0!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__section-inner{
+	width:100%!important;
+	max-width:100%!important;
+	box-sizing:border-box!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__section-inner > .cms-beratung__cards,
+.cms-beratung.cms-beratung .cms-beratung__section-inner > .cms-beratung-comparison,
+.cms-beratung.cms-beratung .cms-beratung__section-inner > .cms-beratung-collab,
+.cms-beratung.cms-beratung .cms-beratung__section-inner > .cms-beratung-collab__mvp-note,
+.cms-beratung.cms-beratung .cms-beratung__section-inner > .cms-beratung-cta,
+.cms-beratung.cms-beratung .cms-beratung__section-inner > .cms-beratung__html,
+.cms-beratung.cms-beratung .cms-beratung__section-inner > .cms-beratung-module__actions,
+.cms-beratung.cms-beratung .cms-beratung__section-inner > .cms-beratung-module__note{
+	width:calc(100% - 40px)!important;
+	max-width:none!important;
+	margin-left:20px!important;
+	margin-right:20px!important;
+	box-sizing:border-box!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__section-inner > .cms-beratung-module__actions{
+	justify-content:flex-start!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__section-inner > .cms-beratung__section-head{
+	width:calc(100% - 40px)!important;
+	max-width:none!important;
+	margin-left:20px!important;
+	margin-right:20px!important;
+	margin-bottom:var(--beratung-section-content-spacing,24px)!important;
+	padding-left:0!important;
+	padding-right:0!important;
+	box-sizing:border-box!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__section-inner > .cms-beratung-collab__mvp-note{
+	justify-self:start!important;
+	max-width:calc(100% - 40px)!important;
+	margin-top:var(--beratung-section-content-spacing,24px)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-proof__inner,
+.cms-beratung.cms-beratung .cms-beratung-booking__inner{
+	width:100%!important;
+	max-width:100%!important;
+	box-sizing:border-box!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-proof__inner > .cms-beratung-proof__head,
+.cms-beratung.cms-beratung .cms-beratung-proof__inner > .cms-beratung-proof__grid,
+.cms-beratung.cms-beratung .cms-beratung-proof__inner > .cms-beratung-proof__testimonials,
+.cms-beratung.cms-beratung .cms-beratung-booking__inner > .cms-beratung-booking__head,
+.cms-beratung.cms-beratung .cms-beratung-booking__inner > .cms-beratung-booking-card{
+	width:calc(100% - 40px)!important;
+	max-width:none!important;
+	margin-left:20px!important;
+	margin-right:20px!important;
+	box-sizing:border-box!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-proof__inner > .cms-beratung-proof__head,
+.cms-beratung.cms-beratung .cms-beratung-booking__inner > .cms-beratung-booking__head{
+	margin-bottom:var(--beratung-section-content-spacing,24px)!important;
+	padding-left:0!important;
+	padding-right:0!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact{
+	margin-top:var(--beratung-footer-spacing,48px)!important;
+	padding:var(--beratung-card-spacing,24px)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-split-form{
+	display:grid!important;
+	grid-template-columns:minmax(0,.88fr) minmax(320px,1.12fr)!important;
+	align-items:start!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-form-left{
+	display:grid!important;
+	grid-template-columns:minmax(320px,1.12fr) minmax(0,.88fr)!important;
+	align-items:start!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-form-left .cms-beratung__contact-content{
+	order:2!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-form-left .cms-beratung-form,
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-form-left > .cms-beratung-module__actions{
+	order:1!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-centered-card{
+	display:grid!important;
+	grid-template-columns:1fr!important;
+	justify-items:center!important;
+	text-align:center!important;
+	max-width:min(920px,calc(100vw - 32px))!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-centered-card .cms-beratung__contact-content,
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-centered-card .cms-beratung-form,
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-centered-card > .cms-beratung-module__actions{
+	width:100%!important;
+	max-width:720px!important;
+	margin-inline:auto!important;
+	text-align:center!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-centered-card .cms-beratung__contact-content,
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-centered-card .cms-beratung__contact-content h2,
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-centered-card .cms-beratung__contact-content p{
+	text-align:center!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-centered-card .cms-beratung__kicker,
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-centered-card .cms-beratung-module__actions{
+	justify-content:center!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-compact-band{
+	display:grid!important;
+	grid-template-columns:minmax(0,1fr) minmax(280px,.9fr)!important;
+	align-items:center!important;
+	padding:calc(var(--beratung-card-spacing,24px) * .75)!important;
+	border-radius:calc(var(--beratung-radius,4px) + 6px)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-compact-band .cms-beratung__contact-content{
+	gap:.45rem!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-compact-band .cms-beratung-form{
+	padding:calc(var(--beratung-card-spacing,24px) * .65)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-compact-band .cms-beratung-form__grid{
+	grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-image-left-flush.cms-beratung__contact--has-image{
+	display:grid!important;
+	grid-template-columns:minmax(220px,var(--contact-image-width,38%)) minmax(0,1fr)!important;
+	grid-template-areas:"contact-image contact-content" "contact-image contact-form"!important;
+	align-items:stretch!important;
+	gap:0!important;
+	padding:0!important;
+	overflow:hidden!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact-image-panel{
+	grid-area:contact-image!important;
+	min-height:100%!important;
+	background:#e5e7eb!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact-image-panel img{
+	display:block!important;
+	width:100%!important;
+	height:100%!important;
+	min-height:100%!important;
+	object-fit:cover!important;
+	border-radius:0!important;
+	margin:0!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-image-left-flush.cms-beratung__contact--has-image .cms-beratung__contact-content{
+	grid-area:contact-content!important;
+	padding:var(--beratung-card-spacing,24px) var(--beratung-card-spacing,24px) calc(var(--beratung-card-spacing,24px) * .55)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-image-left-flush.cms-beratung__contact--has-image .cms-beratung-form,
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-image-left-flush.cms-beratung__contact--has-image > .cms-beratung-module__actions{
+	grid-area:contact-form!important;
+	margin:0 var(--beratung-card-spacing,24px) var(--beratung-card-spacing,24px)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact--layout-image-left-flush:not(.cms-beratung__contact--has-image){
+	grid-template-columns:minmax(0,.88fr) minmax(320px,1.12fr)!important;
+}
+
+@media (max-width:900px){
+	.cms-beratung.cms-beratung .cms-beratung__contact--layout-split-form,
+	.cms-beratung.cms-beratung .cms-beratung__contact--layout-form-left,
+	.cms-beratung.cms-beratung .cms-beratung__contact--layout-compact-band,
+	.cms-beratung.cms-beratung .cms-beratung__contact--layout-image-left-flush.cms-beratung__contact--has-image{
+		grid-template-columns:1fr!important;
+		grid-template-areas:"contact-image" "contact-content" "contact-form"!important;
+	}
+	.cms-beratung.cms-beratung .cms-beratung__contact-image-panel img{
+		max-height:360px!important;
+	}
+	.cms-beratung.cms-beratung .cms-beratung__contact--layout-image-left-flush.cms-beratung__contact--has-image .cms-beratung-form,
+	.cms-beratung.cms-beratung .cms-beratung__contact--layout-image-left-flush.cms-beratung__contact--has-image > .cms-beratung-module__actions{
+		margin:0 var(--beratung-card-spacing,24px) var(--beratung-card-spacing,24px)!important;
+	}
+	.cms-beratung.cms-beratung .cms-beratung__contact--layout-form-left .cms-beratung__contact-content,
+	.cms-beratung.cms-beratung .cms-beratung__contact--layout-form-left .cms-beratung-form,
+	.cms-beratung.cms-beratung .cms-beratung__contact--layout-form-left > .cms-beratung-module__actions{
+		order:initial!important;
+	}
+}
+
+.cms-beratung.cms-beratung .cms-beratung__section-head,
+.cms-beratung.cms-beratung .cms-beratung-proof__head,
+.cms-beratung.cms-beratung .cms-beratung-booking__head,
+.cms-beratung.cms-beratung .cms-beratung__contact-content,
+.cms-beratung.cms-beratung .cms-beratung-divider,
+.cms-beratung.cms-beratung .cms-beratung-partner-band{
+	width:100%!important;
+	max-width:100%!important;
+	box-sizing:border-box!important;
+	padding-inline:20px!important;
+	margin-left:0!important;
+	margin-right:0!important;
+	text-align:left!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__section-head p,
+.cms-beratung.cms-beratung .cms-beratung-proof__head p,
+.cms-beratung.cms-beratung .cms-beratung-booking__head p,
+.cms-beratung.cms-beratung .cms-beratung__contact-content p,
+.cms-beratung.cms-beratung .cms-beratung-divider p,
+.cms-beratung.cms-beratung .cms-beratung-partner-band__description{
+	width:100%!important;
+	max-width:none!important;
+	box-sizing:border-box!important;
+	margin-inline:0!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__section-head span,
+.cms-beratung.cms-beratung .cms-beratung__section-head h2,
+.cms-beratung.cms-beratung .cms-beratung__section-head p,
+.cms-beratung.cms-beratung .cms-beratung-proof__head span,
+.cms-beratung.cms-beratung .cms-beratung-proof__head h2,
+.cms-beratung.cms-beratung .cms-beratung-proof__head p,
+.cms-beratung.cms-beratung .cms-beratung-booking__head span,
+.cms-beratung.cms-beratung .cms-beratung-booking__head h2,
+.cms-beratung.cms-beratung .cms-beratung-booking__head p,
+.cms-beratung.cms-beratung .cms-beratung__contact-content .cms-beratung__kicker,
+.cms-beratung.cms-beratung .cms-beratung__contact-content h2,
+.cms-beratung.cms-beratung .cms-beratung__contact-content p,
+.cms-beratung.cms-beratung .cms-beratung-divider h2,
+.cms-beratung.cms-beratung .cms-beratung-divider p,
+.cms-beratung.cms-beratung .cms-beratung-partner-band__eyebrow,
+.cms-beratung.cms-beratung .cms-beratung-partner-band strong,
+.cms-beratung.cms-beratung .cms-beratung-partner-band__description{
+	text-align:left!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact-content{
+	padding-left:20px!important;
+	padding-right:20px!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung__contact-content h2,
+.cms-beratung.cms-beratung .cms-beratung__contact-content p,
+.cms-beratung.cms-beratung .cms-beratung-divider h2,
+.cms-beratung.cms-beratung .cms-beratung-divider p{
+	max-width:none!important;
+	margin-left:0!important;
+	margin-right:0!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-divider{
+	justify-items:start!important;
+	place-items:start!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-faq{
+	width:calc(100% - 40px)!important;
+	max-width:none!important;
+	margin-inline:20px!important;
+	box-sizing:border-box!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-hero__portrait-image{
+	object-fit:contain!important;
+	background:#fff!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band{
+	position:relative!important;
+	display:grid!important;
+	grid-template-areas:"content links" "description description"!important;
+	grid-template-columns:minmax(0,1fr) auto!important;
+	align-items:center!important;
+	gap:.9rem 1.25rem!important;
+	max-width:var(--beratung-width,1160px)!important;
+	margin:4px auto 24px!important;
+	padding:20px!important;
+	border:1px solid color-mix(in srgb,var(--beratung-accent,#f59e0b),transparent 50%)!important;
+	border-radius:20px!important;
+	background:linear-gradient(135deg,#ffffff,#fffaf0 78%,#ffffff)!important;
+	color:var(--beratung-text,#111827)!important;
+	box-shadow:0 14px 36px rgba(15,23,42,.08)!important;
+	overflow:hidden!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band__content{
+	display:grid!important;
+	grid-area:content!important;
+	gap:.28rem!important;
+	min-width:0!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band__eyebrow{
+	color:var(--beratung-accent,#f59e0b)!important;
+	font-size:.72rem!important;
+	font-weight:900!important;
+	letter-spacing:.08em!important;
+	line-height:1.1!important;
+	text-transform:uppercase!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band strong{
+	display:block!important;
+	color:var(--beratung-heading,#0f172a)!important;
+	font-size:clamp(1rem,1.8vw,1.28rem)!important;
+	font-weight:900!important;
+	line-height:1.18!important;
+	letter-spacing:-.02em!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band__links{
+	grid-area:links!important;
+	display:flex!important;
+	align-items:center!important;
+	justify-content:flex-end!important;
+	gap:.55rem!important;
+	flex-wrap:wrap!important;
+	min-width:0!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band__links a{
+	display:inline-flex!important;
+	align-items:center!important;
+	justify-content:center!important;
+	gap:.38rem!important;
+	min-height:38px!important;
+	padding:.55rem .9rem!important;
+	border:1px solid color-mix(in srgb,var(--beratung-primary,#2563eb),transparent 56%)!important;
+	border-radius:999px!important;
+	background:#ffffff!important;
+	color:var(--beratung-primary,#2563eb)!important;
+	font-size:.86rem!important;
+	font-weight:900!important;
+	line-height:1.1!important;
+	text-decoration:none!important;
+	box-shadow:0 8px 18px rgba(15,23,42,.06)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band__links a::after{
+	content:"→"!important;
+	font-weight:900!important;
+	line-height:1!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band__description{
+	grid-area:description!important;
+	grid-column:auto!important;
+	width:100%!important;
+	max-width:none!important;
+	margin:0!important;
+	color:color-mix(in srgb,var(--beratung-text,#111827),transparent 22%)!important;
+	font-size:var(--beratung-font-base,16px)!important;
+	line-height:1.55!important;
+	padding:0!important;
+	box-sizing:border-box!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--network-card{
+	grid-template-areas:"content links" "description links"!important;
+	grid-template-columns:minmax(0,1fr) minmax(210px,auto)!important;
+	align-items:center!important;
+	border-radius:22px!important;
+	background:radial-gradient(circle at 0 0,color-mix(in srgb,var(--beratung-accent,#f59e0b),transparent 74%),transparent 32%),linear-gradient(135deg,#fffaf0 0%,#ffffff 52%,#f8fafc 100%)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--network-card::before{
+	content:""!important;
+	position:absolute!important;
+	inset:0 auto 0 0!important;
+	width:5px!important;
+	background:linear-gradient(180deg,var(--beratung-accent,#f59e0b),var(--beratung-primary,#2563eb))!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--network-card .cms-beratung-partner-band__links{
+	align-self:stretch!important;
+	align-content:center!important;
+	justify-content:flex-end!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--split-panel{
+	grid-template-areas:"content links" "description links"!important;
+	grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr)!important;
+	align-items:stretch!important;
+	gap:0!important;
+	padding:0!important;
+	border-radius:24px!important;
+	background:linear-gradient(135deg,#ffffff,#f8fafc)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--split-panel .cms-beratung-partner-band__content,
+.cms-beratung.cms-beratung .cms-beratung-partner-band--split-panel .cms-beratung-partner-band__description{
+	padding-left:20px!important;
+	padding-right:20px!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--split-panel .cms-beratung-partner-band__content{
+	align-self:end!important;
+	padding-top:20px!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--split-panel .cms-beratung-partner-band__description{
+	align-self:start!important;
+	padding-bottom:20px!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--split-panel .cms-beratung-partner-band__links{
+	grid-area:links!important;
+	display:grid!important;
+	align-content:center!important;
+	justify-content:stretch!important;
+	gap:.65rem!important;
+	padding:20px!important;
+	border-left:1px solid color-mix(in srgb,var(--beratung-card-border,#e5e7eb),transparent 20%)!important;
+	background:linear-gradient(135deg,color-mix(in srgb,var(--beratung-primary,#2563eb),transparent 90%),#ffffff)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--split-panel .cms-beratung-partner-band__links a{
+	width:100%!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--centered-badge{
+	grid-template-areas:"content" "description" "links"!important;
+	grid-template-columns:1fr!important;
+	justify-items:center!important;
+	text-align:center!important;
+	padding:24px 20px!important;
+	border-radius:28px!important;
+	background:radial-gradient(circle at 50% 0,color-mix(in srgb,var(--beratung-accent,#f59e0b),transparent 76%),transparent 34%),linear-gradient(180deg,#ffffff,#fffaf0)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--centered-badge .cms-beratung-partner-band__content{
+	justify-items:center!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--centered-badge .cms-beratung-partner-band__links{
+	justify-content:center!important;
+	grid-area:links!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--centered-badge .cms-beratung-partner-band__description{
+	text-align:center!important;
+	max-width:980px!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--centered-badge .cms-beratung-partner-band__eyebrow,
+.cms-beratung.cms-beratung .cms-beratung-partner-band--centered-badge strong,
+.cms-beratung.cms-beratung .cms-beratung-partner-band--centered-badge .cms-beratung-partner-band__description{
+	text-align:center!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--compact-strip{
+	grid-template-areas:"content description links"!important;
+	grid-template-columns:minmax(180px,auto) minmax(0,1fr) auto!important;
+	align-items:center!important;
+	gap:.85rem!important;
+	padding:14px 20px!important;
+	border-radius:999px!important;
+	background:linear-gradient(90deg,#fffaf0,#ffffff 46%,#f8fafc)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--compact-strip .cms-beratung-partner-band__content{
+	display:flex!important;
+	align-items:center!important;
+	gap:.6rem!important;
+	grid-area:content!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--compact-strip .cms-beratung-partner-band__description{
+	grid-area:description!important;
+	padding-inline:0!important;
+	font-size:calc(var(--beratung-font-base,16px) * .9)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-partner-band--compact-strip .cms-beratung-partner-band__links{
+	grid-area:links!important;
+	justify-content:flex-end!important;
+}
+
+@media (max-width:768px){
+	.cms-beratung.cms-beratung .cms-beratung-partner-band{
+		grid-template-areas:"content" "description" "links"!important;
+		grid-template-columns:1fr!important;
+		align-items:start!important;
+		border-radius:20px!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung-partner-band__links{
+		justify-content:flex-start!important;
+		width:100%!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung-partner-band__links a{
+		flex:1 1 180px!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung-partner-band--split-panel{
+		padding:20px!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung-partner-band--split-panel .cms-beratung-partner-band__content,
+	.cms-beratung.cms-beratung .cms-beratung-partner-band--split-panel .cms-beratung-partner-band__description,
+	.cms-beratung.cms-beratung .cms-beratung-partner-band--split-panel .cms-beratung-partner-band__links{
+		padding:0!important;
+		border-left:0!important;
+		background:transparent!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung-partner-band--centered-badge .cms-beratung-partner-band__links,
+	.cms-beratung.cms-beratung .cms-beratung-partner-band--compact-strip .cms-beratung-partner-band__links{
+		justify-content:center!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung-partner-band--compact-strip{
+		border-radius:18px!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung-partner-band--compact-strip .cms-beratung-partner-band__content{
+		display:grid!important;
+		justify-items:center!important;
+		grid-area:content!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung-partner-band--compact-strip .cms-beratung-partner-band__description,
+	.cms-beratung.cms-beratung .cms-beratung-partner-band--compact-strip .cms-beratung-partner-band__links{
+		grid-area:auto!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung-partner-band--compact-strip .cms-beratung-partner-band__description{
+		grid-area:description!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung-partner-band--compact-strip .cms-beratung-partner-band__links{
+		grid-area:links!important;
+	}
+}
+
+.cms-beratung.cms-beratung .cms-beratung-hero,
+.cms-beratung.cms-beratung .cms-beratung-hero--image-left:not(.is-flush),
+.cms-beratung.cms-beratung .cms-beratung-hero--image-right:not(.is-flush){
+	min-height:var(--hero-image-height,520px)!important;
+	align-items:stretch!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-hero.is-flush{
+	padding:0!important;
+	gap:0!important;
+	background:var(--hero-bg,#f8fafc)!important;
+	border-radius:calc(var(--beratung-radius,4px) + 14px)!important;
+	overflow:hidden!important;
+	min-height:var(--hero-image-height,520px)!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-hero.is-flush .cms-beratung-hero__image{
+	min-height:var(--hero-image-height,520px)!important;
+	height:100%!important;
+	align-self:stretch!important;
+	margin:0!important;
+	border-radius:0!important;
+	overflow:hidden!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-hero.is-flush .cms-beratung-hero__image img{
+	display:block!important;
+	width:100%!important;
+	height:100%!important;
+	min-height:var(--hero-image-height,520px)!important;
+	object-fit:var(--hero-image-fit,cover)!important;
+	margin:0!important;
+	border-radius:0!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-hero__image,
+.cms-beratung.cms-beratung .cms-beratung-hero--image-left:not(.is-flush) .cms-beratung-hero__image,
+.cms-beratung.cms-beratung .cms-beratung-hero--image-right:not(.is-flush) .cms-beratung-hero__image{
+	min-height:var(--hero-image-height,520px)!important;
+	height:auto!important;
+	align-self:stretch!important;
+}
+
+.cms-beratung.cms-beratung .cms-beratung-hero__image img,
+.cms-beratung.cms-beratung .cms-beratung-hero--image-left:not(.is-flush) .cms-beratung-hero__image img,
+.cms-beratung.cms-beratung .cms-beratung-hero--image-right:not(.is-flush) .cms-beratung-hero__image img{
+	height:100%!important;
+	min-height:var(--hero-image-height,520px)!important;
+	object-fit:var(--hero-image-fit,cover)!important;
+}
+
+@media (max-width:1024px){
+	.cms-beratung.cms-beratung .cms-beratung-hero__image,
+	.cms-beratung.cms-beratung .cms-beratung-hero__image img{
+		min-height:var(--hero-image-height,520px)!important;
+	}
+}
+
+@media (max-width:640px){
+	.cms-beratung.cms-beratung .cms-beratung-hero__image,
+	.cms-beratung.cms-beratung .cms-beratung-hero__image img{
+		min-height:clamp(220px,var(--hero-image-height,520px),900px)!important;
+	}
+}

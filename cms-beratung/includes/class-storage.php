@@ -90,7 +90,7 @@ final class CMS_Beratung_Storage
 
         $columns = [
             'tenant_id', 'internal_title', 'public_title', 'slug', 'meta_title', 'meta_description', 'focus_keyword', 'status', 'template',
-            'max_content_width', 'custom_design_enabled', 'use_global_settings', 'show_header', 'show_footer', 'show_breadcrumb', 'show_toc',
+            'max_content_width', 'custom_design_enabled', 'use_global_settings', 'use_global_design', 'show_header', 'show_footer', 'show_breadcrumb', 'show_toc',
             'show_anchor_nav', 'noindex', 'nofollow', 'canonical_url', 'custom_css_class', 'hero_json', 'contact_json', 'seo_json', 'design_json', 'sections_json', 'tracking_enabled', 'created_by', 'updated_by',
         ];
 

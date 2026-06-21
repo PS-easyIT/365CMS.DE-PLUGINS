@@ -34,6 +34,14 @@ final class CMS_Beratung_Settings
             'border_radius' => '4',
             'spacing' => '20',
             'content_width' => '1160',
+            'font_size_base' => '16',
+            'font_size_hero' => '52',
+            'font_size_section_title' => '32',
+            'font_size_card_title' => '21',
+            'header_spacing' => '48',
+            'footer_spacing' => '48',
+            'card_spacing' => '24',
+            'section_content_spacing' => '24',
             'use_default_font' => '1',
             'allow_custom_page_css_class' => '1',
             'contact_recipient_email' => '',
@@ -181,6 +189,10 @@ final class CMS_Beratung_Settings
                 $settings[$key] = (string) self::int_range($raw, 180, 1, 3650);
             } elseif ($key === 'content_width') {
                 $settings[$key] = (string) self::int_range($raw, 1160, 720, 1160);
+            } elseif (str_starts_with($key, 'font_size_')) {
+                $settings[$key] = (string) self::int_range($raw, (int) $default, 12, 96);
+            } elseif (in_array($key, ['header_spacing', 'footer_spacing', 'card_spacing', 'section_content_spacing'], true)) {
+                $settings[$key] = (string) self::int_range($raw, (int) $default, 0, 160);
             } elseif (str_contains($key, 'email')) {
                 $settings[$key] = filter_var($raw, FILTER_VALIDATE_EMAIL) ? $raw : '';
             } else {

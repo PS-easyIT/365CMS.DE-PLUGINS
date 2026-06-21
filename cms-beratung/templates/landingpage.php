@@ -29,24 +29,11 @@ $formValues = is_array($formResult['values'] ?? null) ? $formResult['values'] : 
 $primaryCtaUsed = false;
 $heroPortraitPath = CMS_BERATUNG_PLUGIN_DIR . 'assets/img/consultant-portrait.svg';
 $heroPortraitUrl = CMS_BERATUNG_PLUGIN_URL . 'assets/img/consultant-portrait.svg';
+$heroTrustImageUrl = trim((string) ($hero['trust_image_url'] ?? ''));
+$heroTrustImageAlt = trim((string) ($hero['trust_image_alt'] ?? '')) ?: 'Portrait eines Microsoft 365 Beraters';
 
 // MS Bookings Embed-URL hier eintragen.
 $bookingUrl = '';
-
-$serviceOutcomeTexts = [
-    'Microsoft 365 Tenant Check' => 'Du bekommst eine klare Risiko- und Lizenzeinschätzung deines Tenants und weißt, wo Governance fehlt.',
-    'Copilot Readiness Check' => 'Du erkennst, ob Datenzugriffe, Inhalte und Compliance für Copilot belastbar vorbereitet sind. So startest du kontrolliert statt mit blinden Flecken.',
-    'Entra ID Security Review' => 'Du siehst, welche Identitätsrisiken deinen Tenant wirklich betreffen. Daraus entstehen konkrete Schritte für MFA, Rollen und Zugriffsschutz.',
-    'Microsoft Purview Beratung' => 'Du weißt, welche Purview-Funktionen für deine Daten sinnvoll sind und wie Schutz, DLP und Aufbewahrung zusammenwirken.',
-    'SharePoint und OneDrive Governance' => 'Du bekommst klare Regeln für Sites, Freigaben und Berechtigungen. So reduzierst du Wildwuchs und schaffst eine bessere Grundlage für Copilot.',
-    'Exchange Online Analyse' => 'Du erkennst Risiken in Mailfluss, Postfächern und Schutzfunktionen. Danach weißt du, welche Anpassungen Betrieb und Sicherheit verbessern.',
-    'Microsoft Defender Review' => 'Du bekommst priorisierte Findings zu Defender und Secure Score. So weißt du, welche Schutzmaßnahmen zuerst Wirkung bringen.',
-    'Conditional Access Bewertung' => 'Du erkennst unsichere Ausnahmen, Lücken und Konflikte in deinen Richtlinien. Daraus entsteht ein belastbarer Zugriffsschutz für Benutzer und Admins.',
-    'Admin Workshops' => 'Dein Admin-Team versteht die Entscheidungen und kann sie selbstständig weiterführen. Die Inhalte richten sich an euren echten Aufgaben aus.',
-    'PowerShell Automatisierung' => 'Du reduzierst wiederkehrende Admin-Arbeit und bekommst nachvollziehbare Skripte für stabile Abläufe.',
-    'Dokumentation und Übergabe' => 'Du erhältst verständliche Ergebnisse, Entscheidungen und nächste Schritte. Damit bleiben Wissen und Verantwortung im Team nutzbar.',
-    'Projektbegleitung' => 'Du bekommst technische Begleitung während Umsetzung, Review und Übergabe. So bleiben Entscheidungen sauber und Risiken früh sichtbar.',
-];
 
 // Nur ECHTE, belegbare Angaben eintragen. Keine erfundenen Kundenzitate (UWG).
 // Projektzahlen wie [X] und [Y] erst durch belegbare echte Werte ersetzen, wenn sie freigegeben sind.
@@ -161,18 +148,33 @@ $renderCardButton = static function (array $card) use ($renderLinkButton): void 
     $renderLinkButton((string) ($card['button_label'] ?? ''), (string) ($card['button_url'] ?? ''), 'link');
 };
 
-$renderCard = static function (array $card, int $index, string $sectionType = 'card_grid') use ($renderer, $renderCardButton, $serviceOutcomeTexts, $hasText): void {
+$renderCard = static function (array $card, int $index, string $sectionType = 'card_grid') use ($renderer, $renderCardButton, $hasText): void {
     if (array_key_exists('enabled', $card) && empty($card['enabled'])) {
         return;
     }
-    if ($sectionType === 'services') {
-        $serviceTitle = (string) ($card['title'] ?? '');
-        if (isset($serviceOutcomeTexts[$serviceTitle])) {
-            $card['text'] = $serviceOutcomeTexts[$serviceTitle];
-        }
-    }
     $type = $sectionType === 'steps' ? 'step' : (string) ($card['card_type'] ?? 'text');
+    $hasButton = $hasText($card['button_label'] ?? '') && $hasText($card['button_url'] ?? '');
+    $cardHasContent = match ($sectionType) {
+        'technology' => $hasText($card['logo_url'] ?? '') || $hasText($card['icon'] ?? '') || $hasText($card['name'] ?? '') || $hasText($card['title'] ?? '') || $hasText($card['text'] ?? '') || $hasButton,
+        'trust' => $hasText($card['metric'] ?? '') || $hasText($card['image_url'] ?? '') || $hasText($card['icon'] ?? '') || $hasText($card['title'] ?? '') || $hasText($card['text'] ?? '') || $hasButton,
+        default => match ($type) {
+            'image_label' => $hasText($card['image_url'] ?? '') || $hasText($card['icon'] ?? '') || $hasText($card['label'] ?? '') || $hasText($card['title'] ?? '') || $hasText($card['text'] ?? '') || $hasButton,
+            'offer_icon_tab' => (!empty($card['tab_enabled']) && $hasText($card['icon'] ?? '')) || $hasText($card['title'] ?? '') || $hasText($card['text'] ?? '') || $hasButton,
+            'step' => $hasText($card['icon'] ?? '') || $hasText($card['title'] ?? '') || $hasText($card['text'] ?? '') || $hasButton,
+            'problem_solution' => $hasText($card['problem_title'] ?? '') || $hasText($card['problem_text'] ?? '') || $hasText($card['solution_title'] ?? '') || $hasText($card['solution_text'] ?? '') || $hasText($card['extra_text'] ?? '') || $hasText($card['recommendation'] ?? '') || $hasButton,
+            default => $hasText($card['category'] ?? '') || $hasText($card['badge'] ?? '') || $hasText($card['image_url'] ?? '') || $hasText($card['icon'] ?? '') || $hasText($card['title'] ?? '') || $hasText($card['text'] ?? '') || ($sectionType !== 'proof' && $hasText($card['extra_text'] ?? '')) || $hasButton,
+        },
+    };
+    if (!$cardHasContent) {
+        return;
+    }
     $classes = ['cms-beratung-card', 'cms-beratung-card--' . $type, 'cms-beratung-card--module-' . $sectionType];
+    $cardLayout = in_array((string) ($card['card_layout'] ?? 'classic'), ['classic', 'media-left', 'compact', 'spotlight'], true) ? (string) ($card['card_layout'] ?? 'classic') : 'classic';
+    $classes[] = 'cms-beratung-card--layout-' . $cardLayout;
+    $cardTheme = in_array((string) ($card['card_theme'] ?? 'default'), ['default', 'experience', 'consulting', 'exchange', 'iamcp', 'projects', 'security', 'governance', 'microsoft', 'network'], true) ? (string) ($card['card_theme'] ?? 'default') : 'default';
+    if ($cardTheme !== 'default') { $classes[] = 'cms-beratung-card--theme-' . $cardTheme; }
+    $iconTextLayout = in_array((string) ($card['icon_text_layout'] ?? 'below'), ['below', 'right'], true) ? (string) ($card['icon_text_layout'] ?? 'below') : 'below';
+    $classes[] = 'cms-beratung-card--icon-text-' . $iconTextLayout;
     foreach (['featured' => 'is-featured', 'hover_enabled' => 'has-hover'] as $key => $class) {
         if (!empty($card[$key])) {
             $classes[] = $class;
@@ -189,12 +191,13 @@ $renderCard = static function (array $card, int $index, string $sectionType = 'c
     }
 
     if ($sectionType === 'technology') {
+        $technologyTitle = trim((string) ($card['name'] ?? $card['title'] ?? ''));
         if (!empty($card['logo_url'])) {
-            echo '<img class="cms-beratung-card__logo" src="' . $renderer::esc((string) $card['logo_url']) . '" alt="' . $renderer::esc((string) ($card['name'] ?? $card['title'] ?? 'Technologie')) . '" loading="lazy">';
+            echo '<img class="cms-beratung-card__logo" src="' . $renderer::esc((string) $card['logo_url']) . '" alt="' . $renderer::esc($technologyTitle) . '" loading="lazy">';
         } elseif (!empty($card['icon'])) {
             echo '<div class="cms-beratung-card__icon" aria-hidden="true">' . $renderer::esc((string) $card['icon']) . '</div>';
         }
-        echo '<h3>' . $renderer::esc((string) ($card['name'] ?? $card['title'] ?? 'Technologie')) . '</h3>';
+        if ($technologyTitle !== '') { echo '<h3>' . $renderer::esc($technologyTitle) . '</h3>'; }
         if ($hasText($card['text'] ?? '')) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
         echo '</article>';
         return;
@@ -229,8 +232,8 @@ $renderCard = static function (array $card, int $index, string $sectionType = 'c
         $renderCardButton($card);
         echo '</div>';
     } elseif ($type === 'offer_icon_tab') {
-        if (!empty($card['tab_enabled'])) {
-            echo '<div class="cms-beratung-card__tab" style="--icon-bg:' . $renderer::esc((string) ($card['icon_background'] ?? '#eff6ff')) . ';--icon-color:' . $renderer::esc((string) ($card['icon_color'] ?? '#2563eb')) . '" aria-hidden="true">' . $renderer::esc((string) ($card['icon'] ?? '💡')) . '</div>';
+        if (!empty($card['tab_enabled']) && !empty($card['icon'])) {
+            echo '<div class="cms-beratung-card__tab" style="--icon-bg:' . $renderer::esc((string) ($card['icon_background'] ?? '#eff6ff')) . ';--icon-color:' . $renderer::esc((string) ($card['icon_color'] ?? '#2563eb')) . '" aria-hidden="true">' . $renderer::esc((string) $card['icon']) . '</div>';
         }
         if (!empty($card['title'])) { echo '<h3>' . $renderer::esc((string) $card['title']) . '</h3>'; }
         if ($hasText($card['text'] ?? '')) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
@@ -243,17 +246,21 @@ $renderCard = static function (array $card, int $index, string $sectionType = 'c
         if ($hasText($card['text'] ?? '')) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
         $renderCardButton($card);
     } elseif ($type === 'problem_solution') {
-        echo '<div class="cms-beratung-problem-solution"><div><span>Spalte 1</span><h3>' . $renderer::esc((string) ($card['problem_title'] ?? 'Problem')) . '</h3>' . ($hasText($card['problem_text'] ?? '') ? '<p>' . $renderer::nl((string) $card['problem_text']) . '</p>' : '') . '</div><div><span>Spalte 2</span><h3>' . $renderer::esc((string) ($card['solution_title'] ?? 'Lösung')) . '</h3>' . ($hasText($card['solution_text'] ?? '') ? '<p>' . $renderer::nl((string) $card['solution_text']) . '</p>' : '') . '</div></div>';
+        echo '<div class="cms-beratung-problem-solution"><div><span>Spalte 1</span>' . ($hasText($card['problem_title'] ?? '') ? '<h3>' . $renderer::esc((string) $card['problem_title']) . '</h3>' : '') . ($hasText($card['problem_text'] ?? '') ? '<p>' . $renderer::nl((string) $card['problem_text']) . '</p>' : '') . '</div><div><span>Spalte 2</span>' . ($hasText($card['solution_title'] ?? '') ? '<h3>' . $renderer::esc((string) $card['solution_title']) . '</h3>' : '') . ($hasText($card['solution_text'] ?? '') ? '<p>' . $renderer::nl((string) $card['solution_text']) . '</p>' : '') . '</div></div>';
         if ($hasText($card['extra_text'] ?? '') || $hasText($card['recommendation'] ?? '')) {
             echo '<div class="cms-beratung-card__risk"><p>' . $renderer::nl((string) ($card['extra_text'] ?? $card['recommendation'] ?? '')) . '</p></div>';
         }
         $renderCardButton($card);
     } else {
         if (!empty($card['badge'])) { echo '<span class="cms-beratung-card__badge">' . $renderer::esc((string) $card['badge']) . '</span>'; }
-        if (!empty($card['icon'])) { echo '<div class="cms-beratung-card__icon" aria-hidden="true">' . $renderer::esc((string) $card['icon']) . '</div>'; }
+        if (!empty($card['image_url'])) {
+            echo '<div class="cms-beratung-card__media" style="--card-image-height:' . (int) ($card['image_height'] ?? 160) . 'px;--card-image-fit:' . $renderer::esc((string) ($card['image_fit'] ?? 'cover')) . '"><img src="' . $renderer::esc((string) $card['image_url']) . '" alt="' . $renderer::esc((string) ($card['image_alt'] ?? $card['title'] ?? '')) . '" loading="lazy"></div>';
+        } elseif (!empty($card['icon'])) {
+            echo '<div class="cms-beratung-card__icon" aria-hidden="true">' . $renderer::esc((string) $card['icon']) . '</div>';
+        }
         if (!empty($card['title'])) { echo '<h3>' . $renderer::esc((string) $card['title']) . '</h3>'; }
         if ($hasText($card['text'] ?? '')) { echo '<p>' . $renderer::nl((string) $card['text']) . '</p>'; }
-        if ($hasText($card['extra_text'] ?? '')) { echo '<p class="cms-beratung-card__extra">' . $renderer::nl((string) $card['extra_text']) . '</p>'; }
+        if ($sectionType !== 'proof' && $hasText($card['extra_text'] ?? '')) { echo '<p class="cms-beratung-card__extra">' . $renderer::nl((string) $card['extra_text']) . '</p>'; }
         $renderCardButton($card);
     }
     echo '</article>';
@@ -372,11 +379,15 @@ $renderComparison = static function (array $section, array $cards, int $columns)
     echo '<div class="cms-beratung-comparison cms-beratung-comparison--' . $columns . ' ' . (!empty($section['border_enabled']) ? 'has-border' : '') . ' ' . (!empty($section['shadow_enabled']) ? 'has-shadow' : '') . '">';
     foreach ($cards as $card) {
         if (!is_array($card) || empty($card['enabled'])) { continue; }
+        $title = trim((string) ($card['title'] ?? $card['problem_title'] ?? ''));
+        $text = trim((string) ($card['text'] ?? $card['problem_text'] ?? ''));
+        $extra = trim((string) ($card['extra_text'] ?? ''));
+        if (trim((string) ($card['icon'] ?? '')) === '' && $title === '' && $text === '' && $extra === '') { continue; }
         echo '<article class="cms-beratung-comparison__column">';
         if (!empty($card['icon'])) { echo '<div aria-hidden="true">' . $renderer::esc((string) $card['icon']) . '</div>'; }
-        echo '<h3>' . $renderer::esc((string) ($card['title'] ?? $card['problem_title'] ?? 'Vergleich')) . '</h3>';
-        if ($hasText($card['text'] ?? $card['problem_text'] ?? '')) { echo '<p>' . $renderer::nl((string) ($card['text'] ?? $card['problem_text'] ?? '')) . '</p>'; }
-        if ($hasText($card['extra_text'] ?? '')) { echo '<small>' . $renderer::nl((string) $card['extra_text']) . '</small>'; }
+        if ($title !== '') { echo '<h3>' . $renderer::esc($title) . '</h3>'; }
+        if ($text !== '') { echo '<p>' . $renderer::nl($text) . '</p>'; }
+        if ($extra !== '') { echo '<small>' . $renderer::nl($extra) . '</small>'; }
         echo '</article>';
     }
     echo '</div>';
@@ -387,11 +398,14 @@ $renderFaq = static function (array $section, array $cards, string $sectionId) u
     $openBehavior = (string) ($section['faq_open_behavior'] ?? 'none');
     foreach ($cards as $index => $card) {
         if (!is_array($card) || empty($card['enabled'])) { continue; }
+        $question = trim((string) ($card['question'] ?? $card['title'] ?? ''));
+        $answer = trim((string) ($card['answer'] ?? $card['text'] ?? ''));
+        if ($question === '' && $answer === '') { continue; }
         $isOpen = ($openBehavior === 'first' && $index === 0) || ($openBehavior === 'custom' && !empty($card['default_open']));
         $buttonId = $sectionId . '-faq-button-' . $index;
         $panelId = $sectionId . '-faq-panel-' . $index;
         $icon = (string) ($section['faq_icon_style'] ?? 'plus');
-        echo '<article class="cms-beratung-faq__item ' . ($isOpen ? 'is-open' : '') . '"><h3><button type="button" id="' . $renderer::esc($buttonId) . '" aria-controls="' . $renderer::esc($panelId) . '" aria-expanded="' . ($isOpen ? 'true' : 'false') . '"><span>' . $renderer::esc((string) ($card['question'] ?? $card['title'] ?? 'Frage')) . '</span><i data-icon-style="' . $renderer::esc($icon) . '" aria-hidden="true"></i></button></h3><div id="' . $renderer::esc($panelId) . '" role="region" aria-labelledby="' . $renderer::esc($buttonId) . '"' . ($isOpen ? '' : ' hidden') . '>' . ($hasText($card['answer'] ?? $card['text'] ?? '') ? '<p>' . $renderer::nl((string) ($card['answer'] ?? $card['text'] ?? '')) . '</p>' : '') . '</div></article>';
+        echo '<article class="cms-beratung-faq__item ' . ($isOpen ? 'is-open' : '') . '"><h3><button type="button" id="' . $renderer::esc($buttonId) . '" aria-controls="' . $renderer::esc($panelId) . '" aria-expanded="' . ($isOpen ? 'true' : 'false') . '"><span>' . $renderer::esc($question) . '</span><i data-icon-style="' . $renderer::esc($icon) . '" aria-hidden="true"></i></button></h3><div id="' . $renderer::esc($panelId) . '" role="region" aria-labelledby="' . $renderer::esc($buttonId) . '"' . ($isOpen ? '' : ' hidden') . '>' . ($answer !== '' ? '<p>' . $renderer::nl($answer) . '</p>' : '') . '</div></article>';
     }
     echo '</div>';
 };
@@ -410,26 +424,41 @@ $renderDivider = static function (array $section) use ($renderer, $renderSection
     echo '</div>';
 };
 
-$renderProofSection = static function (array $proof, array $testimonials) use ($renderer): void {
+$renderProofSection = static function (array $proof, array $testimonials, array $section = []) use ($renderer, $renderCard): void {
+    $sectionCards = is_array($section['cards'] ?? null) ? array_values(array_filter($section['cards'], 'is_array')) : [];
+    $proof = $sectionCards !== [] ? $sectionCards : array_map(static function (array $item): array {
+        return [
+            'enabled' => true,
+            'card_type' => 'text',
+            'card_layout' => 'classic',
+            'badge' => (string) ($item['label'] ?? ''),
+            'title' => (string) ($item['title'] ?? ''),
+            'text' => (string) ($item['text'] ?? ''),
+            'extra_text' => '',
+            'border_enabled' => true,
+            'shadow_enabled' => true,
+            'hover_enabled' => true,
+            'background_color' => '#ffffff',
+            'text_color' => '#111827',
+            'border_color' => '#dbeafe',
+        ];
+    }, $proof);
     $proof = array_values(array_filter($proof, static fn(array $item): bool => trim((string) ($item['title'] ?? '')) !== '' && trim((string) ($item['text'] ?? '')) !== ''));
     $testimonials = array_values(array_filter($testimonials, static fn(array $item): bool => trim((string) ($item['quote'] ?? '')) !== '' && trim((string) ($item['name'] ?? '')) !== ''));
     if ($proof === [] && $testimonials === []) {
         return;
     }
-    echo '<section class="cms-beratung-proof" aria-labelledby="beratung-proof-title"><div class="cms-beratung-proof__inner"><div class="cms-beratung-proof__head"><span>Belegbare Grundlagen</span><h2 id="beratung-proof-title">Was nach Beratung greifbar wird</h2><p>Keine erfundenen Kundenzitate. Hier stehen nur nachvollziehbare Erfahrung, klare Projektbelege und später echte freigegebene Referenzen.</p></div>';
+    $eyebrow = trim((string) ($section['eyebrow'] ?? ''));
+    $title = trim((string) ($section['title'] ?? ''));
+    $intro = trim((string) ($section['intro'] ?? ''));
+    $sectionId = trim((string) ($section['anchor_id'] ?? $section['id'] ?? 'belegbare-grundlagen')) ?: 'belegbare-grundlagen';
+    echo '<section class="cms-beratung-proof" id="' . $renderer::esc($sectionId) . '" aria-labelledby="beratung-proof-title"><div class="cms-beratung-proof__inner">' . ($eyebrow !== '' || $title !== '' || $intro !== '' ? '<div class="cms-beratung-proof__head">' . ($eyebrow !== '' ? '<span>' . $renderer::esc($eyebrow) . '</span>' : '') . ($title !== '' ? '<h2 id="beratung-proof-title">' . $renderer::esc($title) . '</h2>' : '') . ($intro !== '' ? '<p>' . $renderer::esc($intro) . '</p>' : '') . '</div>' : '');
     if ($proof !== []) {
-        echo '<div class="cms-beratung-proof__grid">';
-        foreach ($proof as $item) {
-            $type = preg_replace('/[^a-z0-9_-]/i', '', (string) ($item['type'] ?? 'proof')) ?: 'proof';
-            echo '<article class="cms-beratung-proof-card cms-beratung-proof-card--' . $renderer::esc($type) . '">';
-            if (trim((string) ($item['label'] ?? '')) !== '') {
-                echo '<span class="cms-beratung-proof-card__label">' . $renderer::esc((string) $item['label']) . '</span>';
-            }
-            echo '<h3>' . $renderer::esc((string) $item['title']) . '</h3><p>' . $renderer::esc((string) $item['text']) . '</p>';
-            if (trim((string) ($item['meta'] ?? '')) !== '') {
-                echo '<small>' . $renderer::esc((string) $item['meta']) . '</small>';
-            }
-            echo '</article>';
+        $columns = max(1, min(4, (int) ($section['columns'] ?? 3)));
+        $cardDesign = preg_replace('/[^a-z0-9_-]/i', '', (string) ($section['card_design'] ?? 'accent')) ?: 'accent';
+        echo '<div class="cms-beratung-proof__grid cms-beratung__cards cms-beratung__cards--' . $columns . ' cms-beratung__cards--design-' . $renderer::esc($cardDesign) . '">';
+        foreach ($proof as $index => $item) {
+            $renderCard($item, $index, 'proof');
         }
         echo '</div>';
     }
@@ -447,12 +476,16 @@ $renderProofSection = static function (array $proof, array $testimonials) use ($
     echo '</div></section>';
 };
 
-$renderBookingSection = static function (string $bookingUrl) use ($renderer): void {
+$renderBookingSection = static function (string $bookingUrl, array $section = []) use ($renderer): void {
     $bookingUrl = trim($bookingUrl);
     if ($bookingUrl !== '' && preg_match('#^https://#i', $bookingUrl) !== 1) {
         $bookingUrl = '';
     }
-    echo '<section class="cms-beratung-booking" id="termin-buchen" aria-labelledby="beratung-booking-title"><div class="cms-beratung-booking__inner"><div class="cms-beratung-booking__head"><span>Termin</span><h2 id="beratung-booking-title">Direkt einen Termin buchen</h2><p>Wähle einen passenden Slot für ein erstes Gespräch zu Microsoft 365, Copilot oder Security. Danach klären wir Ziel, Ausgangslage und den nächsten sinnvollen Schritt.</p><ul class="cms-beratung-booking__trust" aria-label="Termin Vorteile"><li>Kostenloses Erstgespräch</li><li>Antwort in 24h</li><li>Remote oder vor Ort</li></ul></div><div class="cms-beratung-booking-card">';
+    $eyebrow = trim((string) ($section['eyebrow'] ?? ''));
+    $title = trim((string) ($section['title'] ?? ''));
+    $intro = trim((string) ($section['intro'] ?? ''));
+    $sectionId = trim((string) ($section['anchor_id'] ?? $section['id'] ?? 'termin-buchen')) ?: 'termin-buchen';
+    echo '<section class="cms-beratung-booking" id="' . $renderer::esc($sectionId) . '" aria-labelledby="beratung-booking-title"><div class="cms-beratung-booking__inner">' . ($eyebrow !== '' || $title !== '' || $intro !== '' ? '<div class="cms-beratung-booking__head">' . ($eyebrow !== '' ? '<span>' . $renderer::esc($eyebrow) . '</span>' : '') . ($title !== '' ? '<h2 id="beratung-booking-title">' . $renderer::esc($title) . '</h2>' : '') . ($intro !== '' ? '<p>' . $renderer::esc($intro) . '</p>' : '') . '<ul class="cms-beratung-booking__trust" aria-label="Termin Vorteile"><li>Kostenloses Erstgespräch</li><li>Antwort in 24h</li><li>Remote oder vor Ort</li></ul></div>' : '') . '<div class="cms-beratung-booking-card">';
     if ($bookingUrl !== '') {
         echo '<div class="cms-beratung-booking-card__embed"><iframe src="' . $renderer::esc($bookingUrl) . '" title="Microsoft Bookings Terminbuchung für Beratung" loading="lazy" allow="clipboard-write; fullscreen" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"></iframe></div>';
     } else {
@@ -461,26 +494,28 @@ $renderBookingSection = static function (string $bookingUrl) use ($renderer): vo
     echo '</div></div></section>';
 };
 ?>
-<main class="cms-beratung cms-beratung--<?php echo $renderer::esc((string) ($page['template'] ?? 'standard')); ?> <?php echo $renderer::esc($customClass); ?>" style="--beratung-primary: <?php echo $renderer::esc($design['primary_color']); ?>; --beratung-secondary: <?php echo $renderer::esc($design['secondary_color']); ?>; --beratung-accent: <?php echo $renderer::esc($design['accent_color']); ?>; --beratung-bg: <?php echo $renderer::esc($design['background_color']); ?>; --beratung-text: <?php echo $renderer::esc($design['text_color']); ?>; --beratung-heading: <?php echo $renderer::esc($design['heading_color']); ?>; --beratung-button: <?php echo $renderer::esc($design['button_color']); ?>; --beratung-button-text: <?php echo $renderer::esc($design['button_text_color']); ?>; --beratung-card-bg: <?php echo $renderer::esc($design['card_background_color']); ?>; --beratung-card-border: <?php echo $renderer::esc($design['card_border_color']); ?>; --beratung-radius: <?php echo $renderer::esc($design['border_radius']); ?>; --beratung-spacing: <?php echo $renderer::esc($design['spacing']); ?>; --beratung-width: <?php echo $renderer::esc($design['content_width']); ?>; --beratung-card-shadow: <?php echo $renderer::esc($design['card_shadow']); ?>;">
+<main class="cms-beratung cms-beratung--<?php echo $renderer::esc((string) ($page['template'] ?? 'standard')); ?> <?php echo $renderer::esc($customClass); ?>" data-use-global-design="<?php echo $renderer::esc($design['use_global_design'] ?? '1'); ?>" style="--beratung-primary: <?php echo $renderer::esc($design['primary_color']); ?>; --beratung-secondary: <?php echo $renderer::esc($design['secondary_color']); ?>; --beratung-accent: <?php echo $renderer::esc($design['accent_color']); ?>; --beratung-bg: <?php echo $renderer::esc($design['background_color']); ?>; --beratung-text: <?php echo $renderer::esc($design['text_color']); ?>; --beratung-heading: <?php echo $renderer::esc($design['heading_color']); ?>; --beratung-button: <?php echo $renderer::esc($design['button_color']); ?>; --beratung-button-text: <?php echo $renderer::esc($design['button_text_color']); ?>; --beratung-card-bg: <?php echo $renderer::esc($design['card_background_color']); ?>; --beratung-card-border: <?php echo $renderer::esc($design['card_border_color']); ?>; --beratung-radius: <?php echo $renderer::esc($design['border_radius']); ?>; --beratung-spacing: <?php echo $renderer::esc($design['spacing']); ?>; --beratung-width: <?php echo $renderer::esc($design['content_width']); ?>; --beratung-card-shadow: <?php echo $renderer::esc($design['card_shadow']); ?>; --beratung-font-base: <?php echo $renderer::esc($design['font_size_base']); ?>; --beratung-font-hero: <?php echo $renderer::esc($design['font_size_hero']); ?>; --beratung-font-section-title: <?php echo $renderer::esc($design['font_size_section_title']); ?>; --beratung-font-card-title: <?php echo $renderer::esc($design['font_size_card_title']); ?>; --beratung-header-spacing: <?php echo $renderer::esc($design['header_spacing']); ?>; --beratung-footer-spacing: <?php echo $renderer::esc($design['footer_spacing']); ?>; --beratung-card-spacing: <?php echo $renderer::esc($design['card_spacing']); ?>; --beratung-section-content-spacing: <?php echo $renderer::esc($design['section_content_spacing']); ?>;">
     <?php if (!empty($page['show_breadcrumb'])): ?>
         <nav class="cms-beratung__breadcrumb" aria-label="Breadcrumb"><a href="/">Startseite</a><span aria-hidden="true">/</span><span><?php echo $renderer::esc((string) ($page['public_title'] ?? 'Beratung')); ?></span></nav>
     <?php endif; ?>
 
     <?php if (!empty($hero['enabled'])): ?>
-        <?php $heroTitle = trim((string) ($hero['title'] ?? '')) ?: (string) ($page['public_title'] ?? 'CMS Beratung'); ?>
+        <?php $heroTitle = trim((string) ($hero['title'] ?? '')); $heroButtons = array_values(array_filter([is_array($hero['button_1'] ?? null) ? $hero['button_1'] : [], is_array($hero['button_2'] ?? null) ? $hero['button_2'] : [], is_array($hero['button_3'] ?? null) ? $hero['button_3'] : []], static fn(array $button): bool => trim((string) ($button['text'] ?? '')) !== '' && trim((string) ($button['target'] ?? '')) !== '')); ?>
         <header class="cms-beratung-hero cms-beratung-hero--image-<?php echo $renderer::esc((string) ($hero['image_position'] ?? 'left')); ?> cms-beratung-hero--mobile-<?php echo $renderer::esc((string) ($hero['mobile_order'] ?? 'image-first')); ?> <?php echo !empty($hero['image_flush']) ? 'is-flush' : ''; ?>" style="--hero-bg:<?php echo $renderer::esc((string) ($hero['background_color'] ?? '#f8fafc')); ?>;--hero-text:<?php echo $renderer::esc((string) ($hero['text_color'] ?? '#111827')); ?>;--hero-image-height:<?php echo (int) ($hero['image_height'] ?? 520); ?>px;--hero-image-width:<?php echo (int) ($hero['image_width'] ?? 46); ?>%;--hero-image-fit:<?php echo $renderer::esc((string) ($hero['image_fit'] ?? 'cover')); ?>;--hero-align:<?php echo $renderer::esc((string) ($hero['vertical_align'] ?? 'center')); ?>;">
             <div class="cms-beratung-hero__image"><?php if (!empty($hero['image_url'])): ?><img src="<?php echo $renderer::esc((string) $hero['image_url']); ?>" alt="<?php echo $renderer::esc((string) ($hero['image_alt'] ?? $heroTitle)); ?>" loading="eager"><?php else: ?><div class="cms-beratung-hero__placeholder" aria-hidden="true">365</div><?php endif; ?></div>
             <div class="cms-beratung-hero__content">
                 <?php if (!empty($hero['badge_show']) && !empty($hero['badge_text'])): ?><span class="cms-beratung__kicker"><?php echo $renderer::esc((string) $hero['badge_text']); ?></span><?php endif; ?>
-                <h1><?php echo $renderer::esc($heroTitle); ?></h1>
+                <?php if ($heroTitle !== ''): ?><h1><?php echo $renderer::esc($heroTitle); ?></h1><?php endif; ?>
                 <?php if (!empty($hero['subtitle'])): ?><p class="cms-beratung-hero__subtitle"><?php echo $renderer::esc((string) $hero['subtitle']); ?></p><?php endif; ?>
                 <?php if ($heroTrustBadges !== []): ?><div class="cms-beratung-hero__trust-row" aria-label="Trust Signale"><?php foreach ($heroTrustBadges as $trustBadge): ?><span><?php echo $renderer::esc($trustBadge); ?></span><?php endforeach; ?></div><?php endif; ?>
                 <?php if (!empty($hero['description'])): ?><p class="cms-beratung-hero__description"><?php echo $renderer::esc((string) $hero['description']); ?></p><?php endif; ?>
-                <div class="cms-beratung__hero-actions"><?php $renderButton(is_array($hero['button_1'] ?? null) ? $hero['button_1'] : []); ?><?php $renderButton(is_array($hero['button_2'] ?? null) ? $hero['button_2'] : []); ?><?php $renderButton(is_array($hero['button_3'] ?? null) ? $hero['button_3'] : []); ?></div>
+                <?php if ($heroButtons !== []): ?><div class="cms-beratung__hero-actions"><?php foreach ($heroButtons as $heroButton) { $renderButton($heroButton); } ?></div><?php endif; ?>
                 <?php if (!empty($hero['trust_text'])): ?><p class="cms-beratung-hero__trust"><?php echo $renderer::esc((string) $hero['trust_text']); ?></p><?php endif; ?>
                 <figure class="cms-beratung-hero__portrait-slot">
-                    <?php if (is_file($heroPortraitPath)): ?>
-                        <img class="cms-beratung-hero__portrait-image" src="<?php echo $renderer::esc($heroPortraitUrl); ?>" alt="Portrait eines Microsoft 365 Beraters" loading="lazy" decoding="async">
+                    <?php if ($heroTrustImageUrl !== ''): ?>
+                        <img class="cms-beratung-hero__portrait-image" src="<?php echo $renderer::esc($heroTrustImageUrl); ?>" alt="<?php echo $renderer::esc($heroTrustImageAlt); ?>" loading="lazy" decoding="async">
+                    <?php elseif (is_file($heroPortraitPath)): ?>
+                        <img class="cms-beratung-hero__portrait-image" src="<?php echo $renderer::esc($heroPortraitUrl); ?>" alt="<?php echo $renderer::esc($heroTrustImageAlt); ?>" loading="lazy" decoding="async">
                     <?php else: ?>
                         <span aria-label="Portrait Platzhalter">M365</span>
                     <?php endif; ?>
@@ -489,25 +524,12 @@ $renderBookingSection = static function (string $bookingUrl) use ($renderer): vo
         </header>
     <?php endif; ?>
 
-    <?php if ($partnerBandHasContent): ?>
-        <aside class="cms-beratung-partner-band" aria-label="Partner Netzwerk">
-            <?php if ($partnerBandText !== ''): ?><strong><?php echo $renderer::esc($partnerBandText); ?></strong><?php endif; ?>
-            <span class="cms-beratung-partner-band__links">
-                <?php if ($partnerBandWebsiteLabel !== '' && $partnerBandWebsiteUrl !== ''): ?><a href="<?php echo $renderer::esc($partnerBandWebsiteUrl); ?>" target="_blank" rel="noopener noreferrer"><?php echo $renderer::esc($partnerBandWebsiteLabel); ?></a><?php endif; ?>
-                <?php if ($partnerBandMapLabel !== '' && $partnerBandMapUrl !== ''): ?><a href="<?php echo $renderer::esc($partnerBandMapUrl); ?>" target="_blank" rel="noopener noreferrer"><?php echo $renderer::esc($partnerBandMapLabel); ?></a><?php endif; ?>
-            </span>
-        </aside>
-    <?php endif; ?>
-
-    <?php $renderProofSection($proof, $testimonials); ?>
-
-    <?php $renderBookingSection($bookingUrl); ?>
-
-    <?php if (!empty($page['show_anchor_nav']) && $anchors !== []): ?>
+    <?php $visibleAnchors = array_values(array_filter($anchors, static fn(array $section): bool => trim((string) ($section['title'] ?? '')) !== '')); ?>
+    <?php if (!empty($page['show_anchor_nav']) && $visibleAnchors !== []): ?>
         <nav class="cms-beratung__anchor-nav cms-beratung__anchor-nav--<?php echo $renderer::esc($anchorNavLayout); ?>" aria-label="Anker Navigation" id="beratung-inhalte">
             <span class="cms-beratung__anchor-nav-title">Inhalte</span>
-            <?php foreach ($anchors as $navIndex => $section): ?><a href="#<?php echo $renderer::esc((string) ($section['anchor_id'] ?? $section['id'] ?? 'bereich')); ?>"><span class="cms-beratung__anchor-nav-index"><?php echo $renderer::esc(str_pad((string) ($navIndex + 1), 2, '0', STR_PAD_LEFT)); ?></span><span class="cms-beratung__anchor-nav-text"><?php echo $renderer::esc((string) ($section['title'] ?? $section['internal_name'] ?? 'Bereich')); ?></span></a><?php endforeach; ?>
-            <a href="#kontakt"><span class="cms-beratung__anchor-nav-index"><?php echo $renderer::esc(str_pad((string) (count($anchors) + 1), 2, '0', STR_PAD_LEFT)); ?></span><span class="cms-beratung__anchor-nav-text">Kontakt</span></a>
+            <?php foreach ($visibleAnchors as $navIndex => $section): ?><a href="#<?php echo $renderer::esc((string) ($section['anchor_id'] ?? $section['id'] ?? 'bereich')); ?>"><span class="cms-beratung__anchor-nav-index"><?php echo $renderer::esc(str_pad((string) ($navIndex + 1), 2, '0', STR_PAD_LEFT)); ?></span><span class="cms-beratung__anchor-nav-text"><?php echo $renderer::esc((string) $section['title']); ?></span></a><?php endforeach; ?>
+            <a href="#kontakt"><span class="cms-beratung__anchor-nav-index"><?php echo $renderer::esc(str_pad((string) (count($visibleAnchors) + 1), 2, '0', STR_PAD_LEFT)); ?></span><span class="cms-beratung__anchor-nav-text">Kontakt</span></a>
         </nav>
     <?php endif; ?>
 
@@ -515,11 +537,31 @@ $renderBookingSection = static function (string $bookingUrl) use ($renderer): vo
         <?php if (empty($section['enabled'])) { continue; } ?>
         <?php $columns = max(1, min(4, (int) ($section['columns'] ?? 3))); $sectionId = (string) ($section['anchor_id'] ?? $section['id'] ?? 'bereich'); $sectionType = (string) ($section['type'] ?? 'card_grid'); $cards = is_array($section['cards'] ?? null) ? $section['cards'] : []; ?>
         <?php if ($sectionType === 'faq') { continue; } ?>
+        <?php if ($sectionType === 'partner_band'): ?>
+            <?php $partnerTitle = trim((string) ($section['title'] ?? '')); $partnerIntro = trim((string) ($section['intro'] ?? '')); $partnerEyebrow = trim((string) ($section['eyebrow'] ?? '')); $partnerButton1Text = trim((string) ($section['button_1_text'] ?? '')); $partnerButton1Target = trim((string) ($section['button_1_target'] ?? '')); $partnerButton2Text = trim((string) ($section['button_2_text'] ?? '')); $partnerButton2Target = trim((string) ($section['button_2_target'] ?? '')); $partnerLayout = in_array((string) ($section['partner_layout'] ?? 'network-card'), ['network-card', 'split-panel', 'centered-badge', 'compact-strip'], true) ? (string) ($section['partner_layout'] ?? 'network-card') : 'network-card'; ?>
+            <?php if ($partnerTitle !== '' || $partnerIntro !== '' || ($partnerButton1Text !== '' && $partnerButton1Target !== '') || ($partnerButton2Text !== '' && $partnerButton2Target !== '')): ?>
+                <aside class="cms-beratung-partner-band cms-beratung-partner-band--<?php echo $renderer::esc($partnerLayout); ?>" id="<?php echo $renderer::esc($sectionId); ?>" aria-label="Partner Netzwerk">
+                    <div class="cms-beratung-partner-band__content">
+                        <?php if ($partnerEyebrow !== ''): ?><span class="cms-beratung-partner-band__eyebrow"><?php echo $renderer::esc($partnerEyebrow); ?></span><?php endif; ?>
+                        <?php if ($partnerTitle !== ''): ?><strong><?php echo $renderer::esc($partnerTitle); ?></strong><?php endif; ?>
+                    </div>
+                    <span class="cms-beratung-partner-band__links">
+                        <?php if ($partnerButton1Text !== '' && $partnerButton1Target !== ''): ?><a href="<?php echo $renderer::esc($partnerButton1Target); ?>" target="_blank" rel="noopener noreferrer"><?php echo $renderer::esc($partnerButton1Text); ?></a><?php endif; ?>
+                        <?php if ($partnerButton2Text !== '' && $partnerButton2Target !== ''): ?><a href="<?php echo $renderer::esc($partnerButton2Target); ?>" target="_blank" rel="noopener noreferrer"><?php echo $renderer::esc($partnerButton2Text); ?></a><?php endif; ?>
+                    </span>
+                    <?php if ($partnerIntro !== ''): ?><p class="cms-beratung-partner-band__description"><?php echo $renderer::esc($partnerIntro); ?></p><?php endif; ?>
+                </aside>
+            <?php endif; ?>
+            <?php continue; ?>
+        <?php endif; ?>
+        <?php if ($sectionType === 'proof') { $renderProofSection($proof, $testimonials, $section); continue; } ?>
+        <?php if ($sectionType === 'booking') { $renderBookingSection($bookingUrl, $section); continue; } ?>
         <?php if ($sectionType === 'collaboration' && empty($section['expert_ids'])) { continue; } ?>
         <?php $sectionNumber++; $rhythmClass = $sectionType === 'cta' ? 'cms-beratung__section--rhythm-accent' : (($sectionNumber % 2 === 0) ? 'cms-beratung__section--rhythm-soft' : 'cms-beratung__section--rhythm-white'); ?>
         <section class="cms-beratung__section cms-beratung__section--<?php echo $renderer::esc($sectionType); ?> cms-beratung__section--display-<?php echo $renderer::esc((string) ($section['display_style'] ?? 'cards')); ?> <?php echo $renderer::esc($rhythmClass); ?> <?php echo !empty($section['equal_height']) ? 'has-equal-cards' : ''; ?>" id="<?php echo $renderer::esc($sectionId); ?>" style="--section-bg: <?php echo $renderer::esc((string) ($section['background_color'] ?? '#ffffff')); ?>; --section-text: <?php echo $renderer::esc((string) ($section['text_color'] ?? '#111827')); ?>; --section-pt: <?php echo (int) ($section['padding_top'] ?? 56); ?>px; --section-pb: <?php echo (int) ($section['padding_bottom'] ?? 56); ?>px; --section-width: <?php echo (int) ($section['max_width'] ?? 1200); ?>px; --section-align: <?php echo $renderer::esc((string) ($section['text_align'] ?? 'left')); ?>; <?php if (!empty($section['background_image_url'])): ?>--section-bg-image:url('<?php echo $renderer::esc((string) $section['background_image_url']); ?>');<?php endif; ?>">
             <div class="cms-beratung__section-inner">
-                <?php if (!in_array($sectionType, ['divider'], true)): ?>
+                <?php $sectionHasHeader = $hasText($section['eyebrow'] ?? '') || $hasText($section['title'] ?? '') || $hasText($section['intro'] ?? ''); ?>
+                <?php if (!in_array($sectionType, ['divider'], true) && $sectionHasHeader): ?>
                     <div class="cms-beratung__section-head"><?php if ($hasText($section['eyebrow'] ?? '')): ?><span><?php echo $renderer::esc((string) $section['eyebrow']); ?></span><?php endif; ?><?php if ($hasText($section['title'] ?? '')): ?><h2><?php echo $renderer::esc((string) $section['title']); ?></h2><?php endif; ?><?php if ($hasText($section['intro'] ?? '')): ?><p><?php echo $renderer::esc((string) $section['intro']); ?></p><?php endif; ?></div>
                 <?php endif; ?>
 
@@ -541,10 +583,11 @@ $renderBookingSection = static function (string $bookingUrl) use ($renderer): vo
     <?php if (!empty($m365Faq['enabled'])): ?>
         <?php $faqItems = is_array($m365Faq['items'] ?? null) ? $m365Faq['items'] : []; ?>
         <?php if ($faqItems !== []): ?>
+            <?php $faqEyebrow = trim((string) ($m365Faq['eyebrow'] ?? '')); $faqTitle = trim((string) ($m365Faq['title'] ?? '')); $faqIntro = trim((string) ($m365Faq['intro'] ?? '')); ?>
             <?php $faqSection = ['faq_allow_multiple' => !empty($m365Faq['allow_multiple']), 'faq_icon_style' => (string) ($m365Faq['icon_style'] ?? 'plus'), 'faq_open_behavior' => (string) ($m365Faq['open_behavior'] ?? 'first'), 'faq_question_background_color' => '#ffffff', 'faq_question_text_color' => '#111827', 'faq_answer_background_color' => '#f8fafc']; ?>
-            <section class="cms-beratung__section cms-beratung__section--faq" id="<?php echo $renderer::esc((string) ($m365Faq['anchor_id'] ?? 'faq')); ?>" style="--section-bg: transparent; --section-text: var(--beratung-text); --section-pt: 25px; --section-pb: 25px; --section-width: 1160px; --section-align: left;">
+            <section class="cms-beratung__section cms-beratung__section--faq" id="<?php echo $renderer::esc((string) ($m365Faq['anchor_id'] ?? 'faq')); ?>" aria-labelledby="beratung-faq-title" style="--section-bg: transparent; --section-text: var(--beratung-text); --section-pt: 25px; --section-pb: 25px; --section-width: 1160px; --section-align: left;">
                 <div class="cms-beratung__section-inner">
-                    <div class="cms-beratung__section-head"><?php if ($hasText($m365Faq['eyebrow'] ?? 'FAQ')): ?><span><?php echo $renderer::esc((string) ($m365Faq['eyebrow'] ?? 'FAQ')); ?></span><?php endif; ?><?php if ($hasText($m365Faq['title'] ?? 'Häufige Fragen')): ?><h2><?php echo $renderer::esc((string) ($m365Faq['title'] ?? 'Häufige Fragen')); ?></h2><?php endif; ?><?php if ($hasText($m365Faq['intro'] ?? '')): ?><p><?php echo $renderer::esc((string) $m365Faq['intro']); ?></p><?php endif; ?></div>
+                    <?php if ($faqEyebrow !== '' || $faqTitle !== '' || $faqIntro !== ''): ?><div class="cms-beratung__section-head"><?php if ($faqEyebrow !== ''): ?><span><?php echo $renderer::esc($faqEyebrow); ?></span><?php endif; ?><?php if ($faqTitle !== ''): ?><h2 id="beratung-faq-title"><?php echo $renderer::esc($faqTitle); ?></h2><?php endif; ?><?php if ($faqIntro !== ''): ?><p><?php echo $renderer::esc($faqIntro); ?></p><?php endif; ?></div><?php endif; ?>
                     <?php $renderFaq($faqSection, $faqItems, (string) ($m365Faq['anchor_id'] ?? 'faq')); ?>
                 </div>
             </section>
@@ -552,11 +595,12 @@ $renderBookingSection = static function (string $bookingUrl) use ($renderer): vo
     <?php endif; ?>
 
     <?php if (($contact['enabled'] ?? true) !== false): ?>
-    <?php $contactId = (string) ($contact['anchor_id'] ?? 'kontakt'); $contactMode = (string) ($contact['mode'] ?? 'form'); ?>
-    <section class="cms-beratung__contact" id="<?php echo $renderer::esc($contactId); ?>" aria-labelledby="beratung-contact-title" style="--contact-bg:<?php echo $renderer::esc((string) ($contact['background_color'] ?? '#ffffff')); ?>;--contact-text:<?php echo $renderer::esc((string) ($contact['text_color'] ?? '#111827')); ?>;">
-        <div class="cms-beratung__contact-content"><?php if ($hasText($contact['eyebrow'] ?? 'Kontakt')): ?><span class="cms-beratung__kicker"><?php echo $renderer::esc((string) ($contact['eyebrow'] ?? 'Kontakt')); ?></span><?php endif; ?><h2 id="beratung-contact-title"><?php echo $renderer::esc((string) ($contact['title'] ?? 'Beratungsanfrage senden')); ?></h2><?php if ($hasText($contact['description'] ?? '')): ?><p><?php echo $renderer::esc((string) $contact['description']); ?></p><?php endif; ?><?php if (!empty($contact['image_url'])): ?><img src="<?php echo $renderer::esc((string) $contact['image_url']); ?>" alt="<?php echo $renderer::esc((string) ($contact['title'] ?? 'Kontakt')); ?>" loading="lazy"><?php endif; ?><?php if ($hasText($contact['note_text'] ?? '')): ?><p class="cms-beratung-module__note"><?php echo $renderer::esc((string) $contact['note_text']); ?></p><?php endif; ?></div>
+    <?php $contactId = (string) ($contact['anchor_id'] ?? 'kontakt'); $contactMode = (string) ($contact['mode'] ?? 'form'); $contactLayout = in_array((string) ($contact['layout'] ?? 'split-form'), ['split-form', 'form-left', 'centered-card', 'compact-band', 'image-left-flush'], true) ? (string) ($contact['layout'] ?? 'split-form') : 'split-form'; $contactHasImage = !empty($contact['image_url']); ?>
+    <section class="cms-beratung__contact cms-beratung__contact--layout-<?php echo $renderer::esc($contactLayout); ?> <?php echo $contactHasImage ? 'cms-beratung__contact--has-image' : ''; ?>" id="<?php echo $renderer::esc($contactId); ?>" aria-labelledby="beratung-contact-title" style="--contact-bg:<?php echo $renderer::esc((string) ($contact['background_color'] ?? '#ffffff')); ?>;--contact-text:<?php echo $renderer::esc((string) ($contact['text_color'] ?? '#111827')); ?>;--contact-image-width:<?php echo max(25, min(60, (int) ($contact['image_width'] ?? 38))); ?>%;">
+        <?php if ($contactLayout === 'image-left-flush' && $contactHasImage): ?><div class="cms-beratung__contact-image-panel"><img src="<?php echo $renderer::esc((string) $contact['image_url']); ?>" alt="<?php echo $renderer::esc((string) ($contact['title'] ?? '')); ?>" loading="lazy"></div><?php endif; ?>
+        <div class="cms-beratung__contact-content"><?php if ($hasText($contact['eyebrow'] ?? '')): ?><span class="cms-beratung__kicker"><?php echo $renderer::esc((string) $contact['eyebrow']); ?></span><?php endif; ?><?php if ($hasText($contact['title'] ?? '')): ?><h2 id="beratung-contact-title"><?php echo $renderer::esc((string) $contact['title']); ?></h2><?php endif; ?><?php if ($hasText($contact['description'] ?? '')): ?><p><?php echo $renderer::esc((string) $contact['description']); ?></p><?php endif; ?><?php if ($contactLayout !== 'image-left-flush' && $contactHasImage): ?><img src="<?php echo $renderer::esc((string) $contact['image_url']); ?>" alt="<?php echo $renderer::esc((string) ($contact['title'] ?? '')); ?>" loading="lazy"><?php endif; ?><?php if ($hasText($contact['note_text'] ?? '')): ?><p class="cms-beratung-module__note"><?php echo $renderer::esc((string) $contact['note_text']); ?></p><?php endif; ?></div>
         <?php if ($contactMode === 'button'): ?>
-            <div class="cms-beratung-module__actions"><?php $renderLinkButton((string) ($contact['button_text'] ?? 'Kontakt aufnehmen'), (string) ($contact['button_target'] ?? '#kontakt'), (string) ($contact['button_style'] ?? 'primary')); ?><?php $renderLinkButton((string) ($contact['button_2_text'] ?? ''), (string) ($contact['button_2_target'] ?? ''), (string) ($contact['button_2_style'] ?? 'ghost')); ?></div>
+            <div class="cms-beratung-module__actions"><?php $renderLinkButton((string) ($contact['button_text'] ?? ''), (string) ($contact['button_target'] ?? ''), (string) ($contact['button_style'] ?? 'primary')); ?><?php $renderLinkButton((string) ($contact['button_2_text'] ?? ''), (string) ($contact['button_2_target'] ?? ''), (string) ($contact['button_2_style'] ?? 'ghost')); ?></div>
         <?php else: ?>
         <form method="post" class="cms-beratung-form" novalidate>
             <input type="hidden" name="csrf_token" value="<?php echo $renderer::esc($csrfToken); ?>"><input type="hidden" name="beratung_form_action" value="submit_request"><label class="cms-beratung-form__hp">Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label>

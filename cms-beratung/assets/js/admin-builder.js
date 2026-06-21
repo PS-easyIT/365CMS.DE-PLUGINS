@@ -6,6 +6,9 @@
   let builderSectionOpenStateReady = false;
 
   const SECTION_TYPES = {
+    partner_band: 'Partnerband',
+    proof: 'Belegbare Grundlagen',
+    booking: 'Terminbuchung',
     text: 'Textbereich',
     card_grid: 'Card Grid',
     image_cards: 'Bildkarten Bereich',
@@ -23,6 +26,10 @@
   };
 
   const MODULE_PRESETS = {
+    partner_band: 'Partnerband',
+    proof: 'Belegbare Grundlagen',
+    booking: 'Terminbuchung',
+    collaboration: 'Zusammenarbeit Band',
     services: 'Meine Leistungen',
     steps: 'So läuft die Zusammenarbeit ab',
     comparison: 'Vergleichsmodul',
@@ -32,6 +39,21 @@
     divider: 'Trenner',
     html: 'Freier HTML Bereich'
   };
+
+  const CARD_THEMES = {
+    default: 'Standard / neutral',
+    experience: 'Erfahrung',
+    consulting: 'Beratung',
+    exchange: 'Austausch',
+    iamcp: 'IAMCP Mitglied',
+    projects: 'Projekte',
+    security: 'Security',
+    governance: 'Governance',
+    microsoft: 'Microsoft Cloud',
+    network: 'Netzwerk'
+  };
+
+  const SINGLETON_SECTION_TYPES = ['partner_band', 'proof', 'booking', 'collaboration'];
 
   const LANDINGPAGE_PROPOSALS = {
     copilot_readiness: 'Copilot Readiness Landingpage',
@@ -295,7 +317,7 @@
   };
 
   const enhanceMediaFields = (root) => {
-    $$('input[data-field="image_url"], input[data-field="background_image_url"], input[data-card-field="image_url"], input[data-card-field="logo_url"]', root).forEach((input) => {
+    $$('input[data-field="image_url"], input[data-field="trust_image_url"], input[data-field="background_image_url"], input[data-card-field="image_url"], input[data-card-field="logo_url"]', root).forEach((input) => {
       if (input.dataset.beratungMediaEnhanced === '1') return;
       input.dataset.beratungMediaEnhanced = '1';
       input.id ||= `beratung-media-field-${++mediaFieldCounter}`;
@@ -339,6 +361,12 @@
 
   const buttonDefaults = (textValue = '', target = '', style = 'primary') => ({ text: textValue, target, target_type: 'internal', style });
 
+  const proofDefaultCards = () => [
+    newCard('text', { badge: 'Erfahrung', title: '20+ Jahre Microsoft-Infrastruktur', text: 'Senior IT-Admin mit Schwerpunkt Microsoft 365, Azure, Exchange, PowerShell, IT-Security und Datenschutz/Compliance.', card_layout: 'classic', card_theme: 'experience' }),
+    newCard('text', { badge: 'Prüfung', title: 'IHK-Prüfer', text: 'Prüfungsperspektive aus Ausbildung und Praxis. Das hilft bei klaren Standards, verständlicher Übergabe und sauberer Dokumentation.', card_layout: 'media-left', card_theme: 'consulting' }),
+    newCard('text', { badge: 'Zertifizierung', title: 'Mehrfach zertifiziert', text: 'LPIC 1 & 2 sowie Microsoft-Zertifizierungen ergänzen die praktische Erfahrung aus Microsoft-Infrastruktur, Security und Automatisierung.', card_layout: 'spotlight', card_theme: 'microsoft' })
+  ];
+
   const setCollapsibleState = (section, content, toggle, open) => {
     section.classList.toggle('is-open', open);
     section.classList.toggle('is-collapsed', !open);
@@ -354,7 +382,6 @@
     if (!editor || editor.dataset.collapsibleReady === '1') return;
     editor.dataset.collapsibleReady = '1';
     const sections = $$('.beratung-card', editor).filter((section) => section.querySelector(':scope > h1'));
-    let openedFirstCollapsible = false;
     sections.forEach((section, index) => {
       if (section.dataset.collapsibleReady === '1') return;
       section.dataset.collapsibleReady = '1';
@@ -383,8 +410,7 @@
         setCollapsibleState(section, content, null, true);
         return;
       }
-      const open = !openedFirstCollapsible;
-      openedFirstCollapsible = true;
+      const open = section.dataset.defaultOpen === '1';
       setCollapsibleState(section, content, toggle, open);
       toggle.addEventListener('click', () => setCollapsibleState(section, content, toggle, content.hidden));
     });
@@ -441,6 +467,8 @@
     hero.partner_band_map_label ??= 'Copilotberater Deutschland Karte';
     hero.partner_band_map_url ??= 'https://copilotberater.de/copilotberater-deutschland-karte/';
     hero.anchor_nav_layout ??= 'pills';
+    hero.trust_image_url ??= '';
+    hero.trust_image_alt ??= 'Portrait eines Microsoft 365 Beraters';
     if (!Array.isArray(hero.trust_badges)) hero.trust_badges = DEFAULT_HERO_TRUST_BADGES.slice();
     [0, 1, 2, 3].forEach((index) => { hero[`trust_badge_${index + 1}`] = text(hero.trust_badges[index]); });
 
@@ -473,6 +501,8 @@
           <label>Untertitel <input data-field="subtitle"></label>
           <label>Beschreibungstext <textarea data-field="description" rows="3"></textarea></label>
           <label>Trust Hinweis <input data-field="trust_text"></label>
+          <label>Trust Hinweis Bild / SVG <input data-field="trust_image_url" placeholder="/uploads/beratung/... oder https://..."></label>
+          <label>Trust Hinweis Bild Alt Text <input data-field="trust_image_alt"></label>
           <label>Hintergrundfarbe <input data-field="background_color" type="color"></label>
           <label>Textfarbe <input data-field="text_color" type="color"></label>
         </div>
@@ -481,35 +511,6 @@
     bindInputs(mount, hero, sync);
     enhanceMediaFields(mount);
     renderButtons($('.is-buttons', mount), hero, sync, ['button_1', 'button_2', 'button_3']);
-    sync();
-  };
-
-  const renderPartnerBandBuilder = () => {
-    const mount = $('#beratung-partner-band-builder');
-    const target = $('#' + (mount?.dataset?.target || ''));
-    if (!mount || !target) return;
-    const hero = parseJson(target, {});
-    hero.partner_band_enabled ??= false;
-    hero.partner_band_text ??= 'Zugehörig zum copilotberater.de Netzwerk';
-    hero.partner_band_website_label ??= 'copilotberater.de';
-    hero.partner_band_website_url ??= 'https://copilotberater.de';
-    hero.partner_band_map_label ??= 'Copilotberater Deutschland Karte';
-    hero.partner_band_map_url ??= 'https://copilotberater.de/copilotberater-deutschland-karte/';
-    const sync = () => syncJson(target, hero);
-    mount.className = 'beratung-builder beratung-partner-band-builder';
-    mount.innerHTML = `
-      <div class="beratung-builder__section is-partner-band">
-        <div class="beratung-builder__section-head"><strong>Partnerband</strong><span>Public eigener Bereich</span></div>
-        <div class="beratung-builder__grid">
-          <label><input data-field="partner_band_enabled" type="checkbox"> Partnerband anzeigen</label>
-          <label>Partnerband Text <input data-field="partner_band_text" placeholder="Zugehörig zum copilotberater.de Netzwerk"></label>
-          <label>Website Link Text <input data-field="partner_band_website_label" placeholder="copilotberater.de"></label>
-          <label>Website URL <input data-field="partner_band_website_url" placeholder="https://copilotberater.de"></label>
-          <label>Karten Link Text <input data-field="partner_band_map_label" placeholder="Copilotberater Deutschland Karte"></label>
-          <label>Karten URL <input data-field="partner_band_map_url" placeholder="https://..."></label>
-        </div>
-      </div>`;
-    bindInputs(mount, hero, sync);
     sync();
   };
 
@@ -540,10 +541,12 @@
     const contact = Object.assign({
       enabled: true,
       mode: 'form',
+      layout: 'split-form',
       eyebrow: 'Kontakt',
       title: 'Beratungsanfrage senden',
       description: 'Beschreiben Sie kurz Ihr Anliegen.',
       image_url: '',
+      image_width: 38,
       background_color: '#ffffff',
       text_color: '#111827',
       button_text: 'Kontakt aufnehmen',
@@ -554,9 +557,9 @@
       button_2_target: '',
       button_2_target_type: 'internal',
       button_2_style: 'ghost',
-      note_text: '',
+      note_text: 'Hinweis: Ich melde mich in der Regel innerhalb von 1 bis 2 Werktagen mit einer ersten Einschätzung zurück.',
       anchor_id: 'kontakt',
-      privacy_text: '',
+      privacy_text: 'Ich stimme der Verarbeitung meiner Angaben zur Bearbeitung der Anfrage zu.',
       captcha_enabled: false
     }, parseJson(target, {}));
     const sync = () => syncJson(target, contact);
@@ -568,10 +571,12 @@
           <label><input data-field="enabled" type="checkbox"> Kontaktmodul aktiv</label>
           <label><input data-field="captcha_enabled" type="checkbox"> Captcha aktivieren</label>
           <label>Modus <select data-field="mode"><option value="form">Formular anzeigen</option><option value="button">Nur Button anzeigen</option></select></label>
+          <label>Kontakt Layout <select data-field="layout"><option value="split-form">Split: Text links, Formular rechts</option><option value="form-left">Formular links, Text rechts</option><option value="centered-card">Zentrierte Kontakt-Card</option><option value="compact-band">Kompaktes Kontaktband</option><option value="image-left-flush">Bild links nahtlos, Formular rechts</option></select></label>
           <label>Anker ID <input data-field="anchor_id" placeholder="kontakt"></label>
           <label>Oberzeile <input data-field="eyebrow"></label>
           <label>Überschrift <input data-field="title"></label>
           <label>Bild URL / Mediathek <input data-field="image_url" placeholder="/uploads/beratung/... oder https://..."></label>
+          <label>Bildbreite in % <input data-field="image_width" type="number" min="25" max="60"></label>
           <label>Hintergrundfarbe <input data-field="background_color" type="color"></label>
           <label>Textfarbe <input data-field="text_color" type="color"></label>
           <label>Button Text <input data-field="button_text"></label>
@@ -618,13 +623,31 @@
       button_color: '#1e3a8a',
       button_text_color: '#ffffff',
       card_background_color: '#ffffff',
-      card_border_color: '#e5e7eb'
+      card_border_color: '#e5e7eb',
+      font_size_base: 16,
+      font_size_hero: 52,
+      font_size_section_title: 32,
+      font_size_card_title: 21,
+      header_spacing: 48,
+      footer_spacing: 48,
+      card_spacing: 24,
+      section_content_spacing: 24
+    };
+    const spacingLabels = {
+      font_size_base: 'Basis-Schriftgröße (px)',
+      font_size_hero: 'Content Header Titelgröße (px)',
+      font_size_section_title: 'Bereichstitel Größe (px)',
+      font_size_card_title: 'Card-Titel Größe (px)',
+      header_spacing: 'Abstand oben Landingpage (px)',
+      footer_spacing: 'Abstand unten / Bereiche (px)',
+      card_spacing: 'Card Innenabstand / Grid-Abstand (px)',
+      section_content_spacing: 'Abstand Bereichstitel zu Inhalt (px)'
     };
     let design = {};
     const render = () => {
       design = Object.assign({}, defaults, parseJson(target, {}));
       mount.className = 'beratung-builder beratung-design-builder';
-      mount.innerHTML = `<div class="beratung-builder__section is-design"><div class="beratung-builder__section-head"><strong>Design direkt bearbeiten</strong><span>Farben ohne JSON anpassen</span></div><div class="beratung-builder__grid">${Object.entries(labels).map(([field, label]) => `<label>${label} <input data-field="${field}" type="color"></label>`).join('')}<div class="beratung-builder__wide"><button type="button" class="beratung-btn beratung-btn--secondary" data-design-reset>Design-Felder leeren / globale Werte nutzen</button></div></div></div>`;
+      mount.innerHTML = `<div class="beratung-builder__section is-design"><div class="beratung-builder__section-head"><strong>Design direkt bearbeiten</strong><span>Farben, Schriftgrößen und Abstände ohne JSON anpassen</span></div><div class="beratung-builder__grid">${Object.entries(labels).map(([field, label]) => `<label>${label} <input data-field="${field}" type="color"></label>`).join('')}${Object.entries(spacingLabels).map(([field, label]) => `<label>${label} <input data-field="${field}" type="number" min="0" max="160" step="1"></label>`).join('')}<div class="beratung-builder__wide"><button type="button" class="beratung-btn beratung-btn--secondary" data-design-reset>Design-Felder leeren / globale Werte nutzen</button></div></div></div>`;
       bindInputs(mount, design, () => syncJson(target, design));
       $('[data-design-reset]', mount)?.addEventListener('click', () => {
         design = {};
@@ -720,6 +743,81 @@
     cards: []
   });
 
+  const normalizeFlatSections = (sections) => {
+    const list = (Array.isArray(sections) ? sections : []).filter((section) => section && typeof section === 'object' && section.type !== 'faq');
+    const legacyHeroTarget = $('#hero_json');
+    const legacyHero = legacyHeroTarget ? parseJson(legacyHeroTarget, {}) : {};
+    const ensure = (type, position, defaults = {}) => {
+      let section = list.find((item) => item?.type === type);
+      if (!section) {
+        section = Object.assign(baseSection(list.length, type), defaults, { type });
+        list.splice(Math.min(position, list.length), 0, section);
+      }
+      section.type = type;
+      section.enabled = section.enabled !== false;
+      Object.entries(defaults).forEach(([key, value]) => { section[key] ??= value; });
+      if (['partner_band', 'booking', 'collaboration', 'cta', 'divider', 'html'].includes(type)) {
+        section.cards = [];
+      } else {
+        section.cards = Array.isArray(section.cards) ? section.cards : [];
+      }
+    };
+    ensure('partner_band', 0, {
+      id: 'partnerband',
+      anchor_id: 'partnerband',
+      enabled: Boolean(legacyHero.partner_band_enabled),
+      internal_name: 'Partnerband',
+      eyebrow: 'Netzwerk',
+      title: text(legacyHero.partner_band_text || 'Zugehörig zum copilotberater.de Netzwerk'),
+      intro: text(legacyHero.partner_band_description || legacyHero.partner_band_intro || 'Einordnung, Netzwerkbezug und weiterführende Links zum Partnerangebot.'),
+      partner_layout: 'network-card',
+      button_1_text: text(legacyHero.partner_band_website_label || 'copilotberater.de'),
+      button_1_target: text(legacyHero.partner_band_website_url || 'https://copilotberater.de'),
+      button_1_target_type: 'external',
+      button_1_style: 'primary',
+      button_2_text: text(legacyHero.partner_band_map_label || 'Copilotberater Deutschland Karte'),
+      button_2_target: text(legacyHero.partner_band_map_url || 'https://copilotberater.de/copilotberater-deutschland-karte/'),
+      button_2_target_type: 'external',
+      button_2_style: 'ghost'
+    });
+    ensure('proof', 1, {
+      id: 'belegbare-grundlagen',
+      anchor_id: 'belegbare-grundlagen',
+      internal_name: 'Belegbare Grundlagen',
+      eyebrow: 'Belegbare Grundlagen',
+      title: 'Was nach Beratung greifbar wird',
+      intro: 'Keine erfundenen Kundenzitate. Hier stehen nur nachvollziehbare Erfahrung, klare Projektbelege und später echte freigegebene Referenzen.',
+      cards: proofDefaultCards()
+    });
+    const proofSection = list.find((item) => item?.type === 'proof');
+    if (proofSection) {
+      proofSection.card_type ??= 'text';
+      proofSection.card_design ??= 'accent';
+      proofSection.columns = Math.max(1, Math.min(4, Number(proofSection.columns || 3)));
+      proofSection.cards = Array.isArray(proofSection.cards) && proofSection.cards.length > 0 ? proofSection.cards : proofDefaultCards();
+    }
+    ensure('booking', 2, {
+      id: 'termin-buchen',
+      anchor_id: 'termin-buchen',
+      internal_name: 'Terminbuchung',
+      eyebrow: 'Termin',
+      title: 'Direkt einen Termin buchen',
+      intro: 'Wähle einen passenden Slot für ein erstes Gespräch zu Microsoft 365, Copilot oder Security. Danach klären wir Ziel, Ausgangslage und den nächsten sinnvollen Schritt.'
+    });
+    ensure('collaboration', 3, {
+      id: 'zusammenarbeit',
+      anchor_id: 'zusammenarbeit',
+      internal_name: 'Zusammenarbeit',
+      eyebrow: 'Zusammenarbeit',
+      title: 'Expertinnen und Experten, mit denen ich bei dieser Dienstleistung zusammenarbeite',
+      intro: 'Für spezialisierte Microsoft 365, Copilot, Security und Governance Themen arbeite ich mit ausgewählten Experts aus dem Netzwerk zusammen.',
+      columns: 3,
+      mvp_note_enabled: true,
+      mvp_note_text: 'Darunter auch Microsoft MVPs aus dem 365 Network.'
+    });
+    return list;
+  };
+
   const newSection = (index, type = 'card_grid') => {
     const section = baseSection(index, type);
     if (type === 'services') {
@@ -756,104 +854,50 @@
       section.mvp_note_enabled = true;
       section.mvp_note_text = 'Darunter auch Microsoft MVPs aus dem 365 Network.';
     }
-    return section;
-  };
-
-  const findOrCreateCollaborationSection = (sections) => {
-    let section = sections.find((item) => item && item.type === 'collaboration');
-    if (!section) {
-      section = newSection(sections.length, 'collaboration');
-      section.id = 'zusammenarbeit';
-      section.anchor_id = 'zusammenarbeit';
-      section.enabled = true;
-      sections.push(section);
+    if (type === 'partner_band') {
+      section.id = 'partnerband';
+      section.anchor_id = 'partnerband';
+      section.internal_name = 'Partnerband';
+      section.eyebrow = 'Netzwerk';
+      section.title = 'Zugehörig zum copilotberater.de Netzwerk';
+      section.intro = 'Einordnung, Netzwerkbezug und weiterführende Links zum Partnerangebot.';
+      section.button_1_text = 'copilotberater.de';
+      section.button_1_target = 'https://copilotberater.de';
+      section.button_1_target_type = 'external';
+      section.button_1_style = 'primary';
+      section.button_2_text = 'Copilotberater Deutschland Karte';
+      section.button_2_target = 'https://copilotberater.de/copilotberater-deutschland-karte/';
+      section.button_2_target_type = 'external';
+      section.button_2_style = 'ghost';
     }
-    section.type = 'collaboration';
-    section.id ||= 'zusammenarbeit';
-    section.anchor_id ||= 'zusammenarbeit';
-    section.internal_name ||= 'Zusammenarbeit';
-    section.eyebrow ||= 'Zusammenarbeit';
-    section.title ||= 'Expertinnen und Experten, mit denen ich bei dieser Dienstleistung zusammenarbeite';
-    section.intro ||= 'Für spezialisierte Microsoft 365, Copilot, Security und Governance Themen arbeite ich mit ausgewählten Experts aus dem Netzwerk zusammen.';
-    section.columns = Math.min(4, Math.max(2, Number(section.columns || 3)));
-    section.expert_ids = Array.isArray(section.expert_ids) ? section.expert_ids.map((id) => Number(id)).filter(Boolean) : [];
-    section.mvp_note_enabled ??= true;
-    section.mvp_note_text ||= 'Darunter auch Microsoft MVPs aus dem 365 Network.';
-    section.background_color ||= '#ffffff';
-    section.text_color ||= '#111827';
-    section.padding_top ||= 56;
-    section.padding_bottom ||= 56;
-    section.max_width ||= 1160;
-    section.text_align ||= 'left';
+    if (type === 'proof') {
+      section.id = 'belegbare-grundlagen';
+      section.anchor_id = 'belegbare-grundlagen';
+      section.internal_name = 'Belegbare Grundlagen';
+      section.eyebrow = 'Belegbare Grundlagen';
+      section.title = 'Was nach Beratung greifbar wird';
+      section.intro = 'Keine erfundenen Kundenzitate. Hier stehen nur nachvollziehbare Erfahrung, klare Projektbelege und später echte freigegebene Referenzen.';
+      section.columns = 3;
+      section.card_type = 'text';
+      section.card_design = 'accent';
+      section.cards = proofDefaultCards();
+    }
+    if (type === 'booking') {
+      section.id = 'termin-buchen';
+      section.anchor_id = 'termin-buchen';
+      section.internal_name = 'Terminbuchung';
+      section.eyebrow = 'Termin';
+      section.title = 'Direkt einen Termin buchen';
+      section.intro = 'Wähle einen passenden Slot für ein erstes Gespräch zu Microsoft 365, Copilot oder Security. Danach klären wir Ziel, Ausgangslage und den nächsten sinnvollen Schritt.';
+    }
     return section;
-  };
-
-  const renderCollaborationBandBuilder = () => {
-    const mount = $('#beratung-collaboration-builder');
-    const target = $('#' + (mount?.dataset?.target || ''));
-    if (!mount || !target) return;
-    let sections = parseJson(target, []);
-    if (!Array.isArray(sections)) sections = [];
-    const section = findOrCreateCollaborationSection(sections);
-    const sync = () => {
-      section.columns = Math.min(4, Math.max(2, Number(section.columns || 3)));
-      section.expert_ids = Array.isArray(section.expert_ids) ? section.expert_ids.map((id) => Number(id)).filter(Boolean) : [];
-      syncJson(target, sections);
-    };
-    mount.className = 'beratung-builder beratung-collaboration-band-builder';
-    mount.innerHTML = `
-      <div class="beratung-builder__section is-collaboration-band">
-        <div class="beratung-builder__section-head"><strong>Zusammenarbeit</strong><span>Eigenes Public Band</span></div>
-        <div class="beratung-builder__grid">
-          <label><input data-field="enabled" type="checkbox"> Zusammenarbeit Band anzeigen</label>
-          <label>Interner Name <input data-field="internal_name"></label>
-          <label>Oberzeile <input data-field="eyebrow"></label>
-          <label>Anker ID <input data-field="anchor_id"></label>
-          <label>Öffentliche Überschrift <input data-field="title"></label>
-          <label>Spaltenanzahl <select data-field="columns"><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
-          <label>Hintergrundfarbe <input data-field="background_color" type="color"></label>
-          <label>Textfarbe <input data-field="text_color" type="color"></label>
-          <label>Innenabstand oben <input data-field="padding_top" type="number" min="0" max="180"></label>
-          <label>Innenabstand unten <input data-field="padding_bottom" type="number" min="0" max="180"></label>
-          <label>Maximale Inhaltsbreite <input data-field="max_width" type="number" min="720" max="1800"></label>
-          <label>Textausrichtung <select data-field="text_align"><option value="left">links</option><option value="center">zentriert</option><option value="right">rechts</option></select></label>
-          <label class="beratung-builder__wide">Beschreibung <textarea data-field="intro" rows="2"></textarea></label>
-          <label class="beratung-builder__wide beratung-expert-select-label">Expert-Profile auswählen <select data-expert-ids multiple size="8">${expertOptionHtml(section.expert_ids)}</select><small>Mehrfachauswahl mit Strg/⌘ oder Shift. Quelle: aktive Expert-Profile aus CMS-Expertsandcompanie, keine Speaker-Liste.</small></label>
-          <label><input data-field="mvp_note_enabled" type="checkbox"> MVP Hinweis unter dem Band anzeigen</label>
-          <label class="beratung-builder__wide">MVP Hinweistext <textarea data-field="mvp_note_text" rows="2"></textarea></label>
-        </div>
-        <div class="beratung-builder__toolbar is-compact">
-          <button type="button" class="beratung-btn beratung-btn--secondary" data-collab-position="after-services">Nach Leistungen platzieren</button>
-          <button type="button" class="beratung-btn beratung-btn--secondary" data-collab-position="after-steps">Nach Ablauf platzieren</button>
-          <button type="button" class="beratung-btn beratung-btn--secondary" data-collab-position="end">Ans Ende der Inhaltsbereiche</button>
-        </div>
-        <div class="beratung-live-preview">${sectionPreview(section)}</div>
-      </div>`;
-    const updatePreview = () => { const preview = $('.beratung-live-preview', mount); if (preview) preview.innerHTML = sectionPreview(section); };
-    bindInputs(mount, section, sync, () => { sync(); updatePreview(); });
-    $('[data-expert-ids]', mount)?.addEventListener('change', (event) => {
-      section.expert_ids = [...event.target.selectedOptions].map((option) => Number(option.value)).filter(Boolean);
-      sync();
-      updatePreview();
-    });
-    $$('[data-collab-position]', mount).forEach((button) => button.addEventListener('click', () => {
-      const currentIndex = sections.indexOf(section);
-      if (currentIndex >= 0) sections.splice(currentIndex, 1);
-      const position = button.dataset.collabPosition || 'end';
-      let targetIndex = -1;
-      if (position === 'after-services') targetIndex = sections.findIndex((item) => ['services', 'offers'].includes(item?.type) || item?.anchor_id === 'leistungen');
-      if (position === 'after-steps') targetIndex = sections.findIndex((item) => item?.type === 'steps' || item?.anchor_id === 'ablauf');
-      if (targetIndex >= 0) sections.splice(targetIndex + 1, 0, section);
-      else sections.push(section);
-      sync();
-      renderSectionBuilder();
-    }));
-    sync();
   };
 
   const newCard = (type = 'text', overrides = {}) => ({
     enabled: true,
     card_type: type,
+    card_layout: 'classic',
+    card_theme: 'default',
     title: 'Neue Card',
     text: '',
     extra_text: '',
@@ -885,6 +929,7 @@
     tab_enabled: true,
     icon_background: '#eff6ff',
     icon_color: '#2563eb',
+    icon_text_layout: 'below',
     card_size: 'medium',
     step_number: '',
     auto_number: true,
@@ -992,49 +1037,47 @@
     const target = $('#' + (mount?.dataset?.target || ''));
     if (!mount || !target) return;
 
-    let sections = parseJson(target, []);
-    if (!Array.isArray(sections)) sections = [];
-    sections = sections.filter((section) => section?.type !== 'faq');
-    const visibleSections = sections.filter((section) => section?.type !== 'collaboration');
+    let sections = normalizeFlatSections(parseJson(target, []));
 
     const sync = () => syncJson(target, sections);
     const rerender = () => { sync(); renderSectionBuilder(); };
 
-    mount.className = 'beratung-builder';
+    mount.className = 'beratung-builder beratung-root-builder';
     mount.innerHTML = '';
     const toolbar = document.createElement('div');
-    toolbar.className = 'beratung-builder__toolbar';
-    toolbar.innerHTML = `<div><button type="button" class="beratung-btn" data-add-basic>Bereich hinzufügen</button></div><label>Landingpage Vorschlag laden <select data-landingpage-proposal><option value="">Bitte wählen</option>${optionHtml(LANDINGPAGE_PROPOSALS, '')}</select></label><label>Spezialmodul hinzufügen <select data-add-module><option value="">Bitte wählen</option>${optionHtml(MODULE_PRESETS, '')}</select></label><span>Bereiche und Cards können per Drag and Drop sortiert werden.</span>`;
+    toolbar.className = 'beratung-builder__toolbar beratung-card beratung-root-builder__toolbar';
+    toolbar.innerHTML = `<div><button type="button" class="beratung-btn" data-add-basic>Bereich hinzufügen</button></div><label>Landingpage Vorschlag laden <select data-landingpage-proposal><option value="">Bitte wählen</option>${optionHtml(LANDINGPAGE_PROPOSALS, '')}</select></label><label>Root-Bereich hinzufügen <select data-add-module><option value="">Bitte wählen</option>${optionHtml(MODULE_PRESETS, '')}</select></label><span>Alles nach dem Content Header liegt flach in sections[] und kann per Drag and Drop sortiert werden.</span>`;
     $('[data-add-basic]', toolbar).addEventListener('click', () => { sections.push(newSection(sections.length)); rerender(); });
     $('[data-landingpage-proposal]', toolbar).addEventListener('change', (event) => {
       const value = event.target.value;
       if (!value) return;
-      sections = proposalSections(value);
-      findOrCreateCollaborationSection(sections);
+      sections = normalizeFlatSections(proposalSections(value));
       const heroTarget = $('#hero_json');
       if (heroTarget) syncJson(heroTarget, proposalHero(value));
       rerender();
       renderHeroBuilder();
-      renderPartnerBandBuilder();
       renderAnchorNavigationBuilder();
-      renderCollaborationBandBuilder();
     });
     $('[data-add-module]', toolbar).addEventListener('change', (event) => {
       const value = event.target.value;
       if (!value) return;
+      if (SINGLETON_SECTION_TYPES.includes(value) && sections.some((section) => section?.type === value)) {
+        event.target.value = '';
+        return;
+      }
       sections.push(newSection(sections.length, value));
       rerender();
     });
     mount.append(toolbar);
 
-    visibleSections.forEach((section, visibleIndex) => {
+    sections.forEach((section, visibleIndex) => {
       const index = sections.indexOf(section);
       section.cards = Array.isArray(section.cards) ? section.cards : [];
       section.type ??= 'card_grid';
       section.card_type ??= 'text';
       section.anchor_id ??= section.id ?? `bereich-${index + 1}`;
       const box = document.createElement('section');
-      box.className = 'beratung-builder__section';
+      box.className = 'beratung-builder__section beratung-card beratung-root-builder__section';
       box.draggable = true;
       box.dataset.index = String(index);
       box.innerHTML = sectionTemplate(section, index);
@@ -1098,7 +1141,7 @@
       });
 
       updateVisibility();
-      enhanceBuilderSectionCollapsible(box, builderSectionOpenStateReady ? builderOpenSectionIndexes.has(visibleIndex) : visibleIndex === 0, visibleIndex);
+      enhanceBuilderSectionCollapsible(box, builderSectionOpenStateReady ? builderOpenSectionIndexes.has(visibleIndex) : false, visibleIndex);
       mount.append(box);
     });
     builderSectionOpenStateReady = true;
@@ -1111,13 +1154,19 @@
     if (card.enabled === false) return '';
     if (sectionType === 'faq') return `<div class="beratung-preview-faq"><button type="button">${esc(card.question || card.title || 'FAQ Frage')}<span>+</span></button><p>${esc(card.answer || card.text || 'Antwort Platzhalter')}</p></div>`;
     if (sectionType === 'steps') return `<article class="beratung-preview-card is-step"><b>${card.auto_number !== false ? index + 1 : esc(card.step_number || index + 1)}</b><h4>${esc(card.title || 'Schritt')}</h4><p>${esc(card.text || 'Platzhaltertext für diesen Schritt.')}</p></article>`;
-    if (sectionType === 'technology') return `<article class="beratung-preview-card is-tech"><i>${esc(card.icon || '☁️')}</i><h4>${esc(card.name || card.title || 'Technologie')}</h4><p>${esc(card.text || '')}</p></article>`;
-    if (sectionType === 'trust') return `<article class="beratung-preview-card is-trust">${card.metric ? `<strong>${esc(card.metric)}</strong>` : ''}<i>${esc(card.icon || '✓')}</i><h4>${esc(card.title || 'Trust Element')}</h4><p>${esc(card.text || 'Platzhaltertext')}</p></article>`;
-    return `<article class="beratung-preview-card"><span>${esc(card.category || card.badge || '')}</span><i>${esc(card.icon || '💡')}</i><h4>${esc(card.title || 'Card Titel')}</h4><p>${esc(card.text || card.extra_text || 'Platzhaltertext für diese Card.')}</p></article>`;
+    const layoutClass = card.icon_text_layout === 'right' ? ' is-icon-right' : '';
+    const themeClass = card.card_theme && card.card_theme !== 'default' ? ` is-theme-${esc(card.card_theme)}` : '';
+    const visual = card.image_url ? `<img class="beratung-preview-card__logo" src="${esc(normalizeMediaUrl(card.image_url))}" alt="${esc(card.image_alt || card.title || '')}" loading="lazy">` : `<i>${esc(card.icon || '')}</i>`;
+    if (sectionType === 'technology') return `<article class="beratung-preview-card is-tech${layoutClass}">${card.logo_url ? `<img class="beratung-preview-card__logo" src="${esc(normalizeMediaUrl(card.logo_url))}" alt="${esc(card.name || card.title || 'Technologie Logo')}" loading="lazy">` : `<i>${esc(card.icon || '☁️')}</i>`}<h4>${esc(card.name || card.title || 'Technologie')}</h4><p>${esc(card.text || '')}</p></article>`;
+    if (sectionType === 'trust') return `<article class="beratung-preview-card is-trust${layoutClass}${themeClass}">${card.metric ? `<strong>${esc(card.metric)}</strong>` : ''}${visual}<h4>${esc(card.title || 'Trust Element')}</h4><p>${esc(card.text || 'Platzhaltertext')}</p></article>`;
+    return `<article class="beratung-preview-card${layoutClass}${themeClass}"><span>${esc(card.category || card.badge || '')}</span>${visual}<h4>${esc(card.title || 'Card Titel')}</h4><p>${esc(card.text || card.extra_text || 'Platzhaltertext für diese Card.')}</p></article>`;
   };
 
   const sectionPreview = (section) => {
     const cards = Array.isArray(section.cards) ? section.cards : [];
+    if (section.type === 'partner_band') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Netzwerk')}</small><h3>${esc(section.title || 'Partnerband')}</h3><p>${esc(section.intro || 'Beschreibungstext unter Partnerband Text und Buttons.')}</p><em>Layout: ${esc(section.partner_layout || 'network-card')}</em><div><button>${esc(section.button_1_text || 'Website')}</button>${section.button_2_text ? `<button class="ghost">${esc(section.button_2_text)}</button>` : ''}</div></div>`;
+    if (section.type === 'proof') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Belegbare Grundlagen')}</small><h3>${esc(section.title || 'Was nach Beratung greifbar wird')}</h3><p>${esc(section.intro || '')}</p><div class="beratung-preview-grid cols-${Math.min(4, Math.max(1, Number(section.columns || 3)))}">${cards.slice(0, 8).map((card, index) => cardPreview(card, index, 'proof')).join('')}</div></div>`;
+    if (section.type === 'booking') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Termin')}</small><h3>${esc(section.title || 'Direkt einen Termin buchen')}</h3><p>${esc(section.intro || '')}</p><div><button>Beratung anfragen</button></div></div>`;
     if (section.type === 'cta') return `<div class="beratung-preview-section is-cta" style="background:${esc(section.background_color || '#1e3a8a')};color:${esc(section.text_color || '#fff')}"><small>${esc(section.eyebrow || 'CTA')}</small><h3>${esc(section.title || 'CTA Titel')}</h3><p>${esc(section.intro || 'Beschreibung für den CTA Bereich.')}</p><div><button>${esc(section.button_1_text || 'Button 1')}</button>${section.button_2_text ? `<button class="ghost">${esc(section.button_2_text)}</button>` : ''}</div></div>`;
     if (section.type === 'divider') return `<div class="beratung-preview-divider"><span>${esc(section.divider_icon || '—')}</span><strong>${esc(section.divider_title || 'Trenner')}</strong><p>${esc(section.divider_subtitle || '')}</p></div>`;
     if (section.type === 'html') return `<div class="beratung-preview-section"><small>Freier HTML Bereich</small><h3>${esc(section.title || 'HTML Bereich')}</h3><p>HTML wird sicher gefiltert. Vorschau zeigt bewusst nur eine neutrale Darstellung.</p></div>`;
@@ -1156,6 +1205,7 @@
       <label>Öffentliche Überschrift / Titel <input data-field="title"></label>
       <label>Anker ID <input data-field="anchor_id"></label>
       <label>Beschreibung <textarea data-field="intro" rows="2"></textarea></label>
+      <label class="field-partner_band">Partnerband Layout <select data-field="partner_layout"><option value="network-card">Netzwerk Card</option><option value="split-panel">Split Panel</option><option value="centered-badge">Zentriertes Badge</option><option value="compact-strip">Kompakte Leiste</option></select></label>
       <label>Spaltenanzahl <select data-field="columns"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
       <label>Card Design <select data-field="card_design"><option value="standard">Standard</option><option value="compact">Kompakt</option><option value="bordered">Rahmen</option><option value="filled">Gefüllt</option><option value="minimal">Minimal</option><option value="accent">Akzent</option></select></label>
       <label class="field-steps field-technology field-cta">Darstellung <select data-field="display_style"><option value="cards">Cards</option><option value="horizontal">Horizontal</option><option value="vertical">Vertikal</option><option value="icon_grid">Icon Grid</option><option value="logo_strip">Logo Leiste</option><option value="compact">Kompakt</option><option value="large">Groß</option></select></label>
@@ -1178,14 +1228,14 @@
       <label class="field-faq">Frage Hintergrund <input data-field="faq_question_background_color" type="color"></label>
       <label class="field-faq">Frage Textfarbe <input data-field="faq_question_text_color" type="color"></label>
       <label class="field-faq">Antwort Hintergrund <input data-field="faq_answer_background_color" type="color"></label>
-      <label class="field-cta field-services field-steps field-trust">Button 1 Text <input data-field="button_1_text"></label>
-      <label class="field-cta field-services field-steps field-trust">Button 1 Zieltyp <select data-field="button_1_target_type">${optionHtml(TARGET_TYPES, section.button_1_target_type || 'internal')}</select></label>
-      <label class="field-cta field-services field-steps field-trust">Button 1 Ziel <input data-field="button_1_target"></label>
-      <label class="field-cta field-services field-steps field-trust">Button 1 Stil <select data-field="button_1_style"><option value="primary">Primär</option><option value="secondary">Sekundär</option><option value="ghost">Ghost</option><option value="link">Link</option></select></label>
-      <label class="field-cta">Button 2 Text <input data-field="button_2_text"></label>
-      <label class="field-cta">Button 2 Zieltyp <select data-field="button_2_target_type">${optionHtml(TARGET_TYPES, section.button_2_target_type || 'internal')}</select></label>
-      <label class="field-cta">Button 2 Ziel <input data-field="button_2_target"></label>
-      <label class="field-cta">Button 2 Stil <select data-field="button_2_style"><option value="primary">Primär</option><option value="secondary">Sekundär</option><option value="ghost">Ghost</option><option value="link">Link</option></select></label>
+      <label class="field-cta field-services field-steps field-trust field-partner_band">Button 1 Text <input data-field="button_1_text"></label>
+      <label class="field-cta field-services field-steps field-trust field-partner_band">Button 1 Zieltyp <select data-field="button_1_target_type">${optionHtml(TARGET_TYPES, section.button_1_target_type || 'internal')}</select></label>
+      <label class="field-cta field-services field-steps field-trust field-partner_band">Button 1 Ziel <input data-field="button_1_target"></label>
+      <label class="field-cta field-services field-steps field-trust field-partner_band">Button 1 Stil <select data-field="button_1_style"><option value="primary">Primär</option><option value="secondary">Sekundär</option><option value="ghost">Ghost</option><option value="link">Link</option></select></label>
+      <label class="field-cta field-partner_band">Button 2 Text <input data-field="button_2_text"></label>
+      <label class="field-cta field-partner_band">Button 2 Zieltyp <select data-field="button_2_target_type">${optionHtml(TARGET_TYPES, section.button_2_target_type || 'internal')}</select></label>
+      <label class="field-cta field-partner_band">Button 2 Ziel <input data-field="button_2_target"></label>
+      <label class="field-cta field-partner_band">Button 2 Stil <select data-field="button_2_style"><option value="primary">Primär</option><option value="secondary">Sekundär</option><option value="ghost">Ghost</option><option value="link">Link</option></select></label>
       <label class="field-divider">Trenner Typ <select data-field="divider_type"><option value="line">Einfacher Strich</option><option value="title_band">Titelband</option><option value="icon">Icon Trenner</option><option value="color_block">Farbblock</option><option value="wave">Wellenform</option><option value="quote">Zitatband</option><option value="cta">CTA Trenner</option><option value="numbered">Nummerierter Abschnittstrenner</option><option value="spacer">Abstand ohne sichtbaren Trenner</option></select></label>
       <label class="field-divider">Trenner Titel <input data-field="divider_title"></label>
       <label class="field-divider">Trenner Untertitel <textarea data-field="divider_subtitle" rows="2"></textarea></label>
@@ -1201,10 +1251,10 @@
     <button type="button" data-action="add-card">Eintrag / Card hinzufügen</button>`;
 
   const updateSectionVisibility = (box, section) => {
-    const groups = ['services', 'steps', 'comparison', 'faq', 'trust', 'technology', 'collaboration', 'cta', 'divider', 'html'];
+    const groups = ['partner_band', 'proof', 'booking', 'services', 'steps', 'comparison', 'faq', 'trust', 'technology', 'collaboration', 'cta', 'divider', 'html'];
     groups.forEach((group) => $$(`.field-${group}`, box).forEach((field) => { field.hidden = section.type !== group; }));
-    $('.beratung-builder__cards', box).hidden = ['cta', 'divider', 'html', 'contact', 'collaboration'].includes(section.type);
-    $('[data-action="add-card"]', box).hidden = ['cta', 'divider', 'html', 'contact', 'collaboration'].includes(section.type);
+    $('.beratung-builder__cards', box).hidden = ['partner_band', 'booking', 'cta', 'divider', 'html', 'contact', 'collaboration'].includes(section.type);
+    $('[data-action="add-card"]', box).hidden = ['partner_band', 'booking', 'cta', 'divider', 'html', 'contact', 'collaboration'].includes(section.type);
   };
 
   const renderCard = (card, section, cardIndex, sync, rerender) => {
@@ -1225,23 +1275,27 @@
         <label><input data-card-field="shadow_enabled" type="checkbox"> Schatten aktivieren</label>
         <label><input data-card-field="hover_enabled" type="checkbox"> Hover Effekt</label>
         <label class="card-general">Card Typ <select data-card-field="card_type">${optionHtml(CARD_TYPES, card.card_type)}</select></label>
-        <label class="card-general card-service card-tech card-trust card-comparison">Icon <input data-card-field="icon"></label>
+        <label class="card-general">Card Layout <select data-card-field="card_layout"><option value="classic">Klassisch</option><option value="media-left">Icon/Text links-rechts</option><option value="compact">Kompakt</option><option value="spotlight">Spotlight</option></select></label>
+        <label class="card-general card-service card-trust">Card Theme / Farbstil <select data-card-field="card_theme">${optionHtml(CARD_THEMES, card.card_theme || 'default')}</select><small>Dezente Farbwelt je Card, passend untereinander kombinierbar.</small></label>
+        <label class="card-general card-service card-trust card-comparison">Icon <input data-card-field="icon"></label>
+        <label class="card-tech">Fallback Icon <input data-card-field="icon"><small>Nur sichtbar, wenn kein Logo aus der Mediathek hinterlegt ist.</small></label>
+        <label class="card-general card-service card-tech card-trust field-offer">Icon/Text Layout <select data-card-field="icon_text_layout"><option value="below">Text unter dem Icon</option><option value="right">Text rechts vom Icon</option></select></label>
         <label class="card-service">Kategorie <input data-card-field="category"></label>
         <label class="card-general card-service card-tech card-trust card-step">Titel / Name <input data-card-field="title"></label>
         <label class="card-tech">Technologie Name <input data-card-field="name"></label>
         <label class="card-general card-service card-tech card-trust card-step">Text / Kurzbeschreibung <textarea data-card-field="text" rows="2"></textarea></label>
         <label class="card-service card-comparison">Zusatztext / Typischer Einsatz <textarea data-card-field="extra_text" rows="2"></textarea></label>
         <label class="card-trust">Kennzahl optional <input data-card-field="metric"></label>
-        <label class="card-tech">Logo URL <input data-card-field="logo_url"></label>
+        <label class="card-tech">Logo aus Mediathek / Upload <input data-card-field="logo_url" placeholder="Logo hochladen oder aus der Mediathek wählen"><small>Empfohlen für Microsoft-Technologien: SVG/PNG/WebP mit transparentem Hintergrund.</small></label>
         <label class="card-faq">Frage <input data-card-field="question"></label>
         <label class="card-faq">Antwort <textarea data-card-field="answer" rows="4"></textarea></label>
         <label class="card-faq"><input data-card-field="default_open" type="checkbox"> Standardmäßig geöffnet</label>
         <label class="field-offer">Icon Hintergrund <input data-card-field="icon_background" type="color"></label>
         <label class="field-offer">Icon Farbe <input data-card-field="icon_color" type="color"></label>
-        <label class="field-image">Bild <input data-card-field="image_url"></label>
-        <label class="field-image">Bild Alt Text <input data-card-field="image_alt"></label>
-        <label class="field-image">Bildhöhe <input data-card-field="image_height" type="number" min="120" max="520"></label>
-        <label class="field-image">Bild Zuschnitt <select data-card-field="image_fit"><option value="cover">Cover</option><option value="contain">Contain</option></select></label>
+        <label class="field-image card-general card-service card-trust">Bild / Logo aus Mediathek oder Upload <input data-card-field="image_url" placeholder="Bild hochladen oder aus der Mediathek wählen"></label>
+        <label class="field-image card-general card-service card-trust">Bild Alt Text <input data-card-field="image_alt"></label>
+        <label class="field-image card-general card-service card-trust">Bildhöhe <input data-card-field="image_height" type="number" min="120" max="520"></label>
+        <label class="field-image card-general card-service card-trust">Bild Zuschnitt <select data-card-field="image_fit"><option value="cover">Cover</option><option value="contain">Contain</option></select></label>
         <label class="field-image field-text">Badge / Label <input data-card-field="label"></label>
         <label class="field-image">Label Position <select data-card-field="label_position"><option value="left">links</option><option value="center">mittig</option><option value="right">rechts</option></select></label>
         <label class="field-image">Label Stil <select data-card-field="label_style"><option value="border">Rahmen</option><option value="filled">gefüllt</option><option value="transparent">transparent</option></select></label>
@@ -1269,13 +1323,14 @@
       ['field-text', 'field-image', 'field-offer', 'field-step', 'field-problem', 'card-service', 'card-tech', 'card-trust', 'card-faq', 'card-comparison', 'card-step'].forEach((cls) => $$(`.${cls}`, box).forEach((field) => { field.hidden = true; }));
       $$('.card-general', box).forEach((field) => { field.hidden = false; });
       if (section.type === 'services') $$('.card-service', box).forEach((field) => { field.hidden = false; });
+      if (section.type === 'proof') $$('.field-text', box).forEach((field) => { field.hidden = false; });
       if (section.type === 'technology') $$('.card-tech', box).forEach((field) => { field.hidden = false; });
       if (section.type === 'trust') $$('.card-trust', box).forEach((field) => { field.hidden = false; });
       if (section.type === 'faq') $$('.card-faq', box).forEach((field) => { field.hidden = false; });
       if (section.type === 'comparison') $$('.card-comparison', box).forEach((field) => { field.hidden = false; });
       if (section.type === 'steps') $$('.card-step', box).forEach((field) => { field.hidden = false; });
       const map = { text: '.field-text', image_label: '.field-image', offer_icon_tab: '.field-offer', step: '.field-step', problem_solution: '.field-problem' };
-      if (!['services', 'technology', 'trust', 'faq', 'comparison', 'steps'].includes(section.type)) $$(map[card.card_type] || '.field-text', box).forEach((field) => { field.hidden = false; });
+      if (!['services', 'proof', 'technology', 'trust', 'faq', 'comparison', 'steps'].includes(section.type)) $$(map[card.card_type] || '.field-text', box).forEach((field) => { field.hidden = false; });
     };
 
     $$('[data-card-field]', box).forEach((input) => {
@@ -1341,10 +1396,8 @@
   };
 
   renderHeroBuilder();
-  renderPartnerBandBuilder();
   renderAnchorNavigationBuilder();
   renderContactBuilder();
-  renderCollaborationBandBuilder();
   renderSectionBuilder();
   enhanceEditorCollapsibleSections();
   renderDesignEditor();

@@ -77,6 +77,8 @@ final class CMS_Beratung_Import_Export
             'max_content_width' => max(720, min(1160, (int) ($data['max_content_width'] ?? 1160))),
             'custom_design_enabled' => !empty($data['custom_design_enabled']) ? 1 : 0,
             'use_global_settings' => array_key_exists('use_global_settings', $data) ? (!empty($data['use_global_settings']) ? 1 : 0) : 1,
+            'use_global_design' => array_key_exists('useGlobalDesign', $data) ? (!empty($data['useGlobalDesign']) ? 1 : 0) : (array_key_exists('use_global_design', $data) ? (!empty($data['use_global_design']) ? 1 : 0) : 1),
+            'useGlobalDesign' => array_key_exists('useGlobalDesign', $data) ? !empty($data['useGlobalDesign']) : (array_key_exists('use_global_design', $data) ? !empty($data['use_global_design']) : true),
             'show_header' => array_key_exists('show_header', $data) ? (!empty($data['show_header']) ? 1 : 0) : 1,
             'show_footer' => array_key_exists('show_footer', $data) ? (!empty($data['show_footer']) ? 1 : 0) : 1,
             'show_breadcrumb' => array_key_exists('show_breadcrumb', $data) ? (!empty($data['show_breadcrumb']) ? 1 : 0) : 1,
@@ -162,6 +164,8 @@ final class CMS_Beratung_Import_Export
             'button_2' => $button(2),
             'button_3' => $button(3),
             'trust_badges' => $trustBadges,
+            'trust_image_url' => CMS_Beratung_Settings::image_url((string) ($raw['trust_image_url'] ?? '')),
+            'trust_image_alt' => self::limit(CMS_Beratung_Settings::text((string) ($raw['trust_image_alt'] ?? 'Portrait eines Microsoft 365 Beraters')), 180),
             'partner_band_enabled' => !empty($raw['partner_band_enabled']),
             'partner_band_text' => self::limit(CMS_Beratung_Settings::text((string) ($raw['partner_band_text'] ?? 'Zugehörig zum copilotberater.de Netzwerk')), 180),
             'partner_band_website_label' => self::limit(CMS_Beratung_Settings::text((string) ($raw['partner_band_website_label'] ?? 'copilotberater.de')), 80),
@@ -192,10 +196,12 @@ final class CMS_Beratung_Import_Export
         return [
             'enabled' => array_key_exists('contact_enabled', $raw) ? !empty($raw['contact_enabled']) : (array_key_exists('enabled', $raw) ? !empty($raw['enabled']) : true),
             'mode' => self::choice((string) ($raw['contact_mode'] ?? $raw['mode'] ?? 'form'), ['form', 'button'], 'form'),
+            'layout' => self::choice((string) ($raw['contact_layout'] ?? $raw['layout'] ?? 'split-form'), ['split-form', 'form-left', 'centered-card', 'compact-band', 'image-left-flush'], 'split-form'),
             'eyebrow' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_eyebrow'] ?? $raw['eyebrow'] ?? 'Kontakt')), 120),
             'title' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_title'] ?? $raw['title'] ?? 'Beratungsanfrage senden')), 255),
             'description' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_description'] ?? $raw['description'] ?? 'Beschreiben Sie kurz Ihr Anliegen.')), 1200),
             'image_url' => CMS_Beratung_Settings::image_url((string) ($raw['contact_image_url'] ?? $raw['image_url'] ?? '')),
+            'image_width' => max(25, min(60, (int) ($raw['contact_image_width'] ?? $raw['image_width'] ?? 38))),
             'background_color' => CMS_Beratung_Settings::color((string) ($raw['contact_background_color'] ?? $raw['background_color'] ?? '#ffffff'), '#ffffff'),
             'text_color' => CMS_Beratung_Settings::color((string) ($raw['contact_text_color'] ?? $raw['text_color'] ?? '#111827'), '#111827'),
             'button_text' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_button_text'] ?? $raw['button_text'] ?? 'Kontakt aufnehmen')), 90),
@@ -206,9 +212,9 @@ final class CMS_Beratung_Import_Export
             'button_2_target' => self::button_target((string) ($raw['contact_button_2_target'] ?? $raw['button_2_target'] ?? ''), $target2Type),
             'button_2_target_type' => self::choice($target2Type, ['internal', 'external', 'anchor', 'contact', 'email', 'phone', 'bookings', 'download'], 'internal'),
             'button_2_style' => self::choice((string) ($raw['contact_button_2_style'] ?? $raw['button_2_style'] ?? 'ghost'), ['primary', 'secondary', 'ghost', 'link'], 'ghost'),
-            'note_text' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_note_text'] ?? $raw['note_text'] ?? '')), 500),
+            'note_text' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_note_text'] ?? $raw['note_text'] ?? 'Hinweis: Ich melde mich in der Regel innerhalb von 1 bis 2 Werktagen mit einer ersten Einschätzung zurück.')), 500),
             'anchor_id' => CMS_Beratung_Settings::slug((string) ($raw['contact_anchor_id'] ?? $raw['anchor_id'] ?? 'kontakt'), 'kontakt'),
-            'privacy_text' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_privacy_text'] ?? $raw['privacy_text'] ?? '')), 1200),
+            'privacy_text' => self::limit(CMS_Beratung_Settings::text((string) ($raw['contact_privacy_text'] ?? $raw['privacy_text'] ?? 'Ich stimme der Verarbeitung meiner Angaben zur Bearbeitung der Anfrage zu.')), 1200),
             'captcha_enabled' => !empty($raw['contact_captcha_enabled'] ?? $raw['captcha_enabled'] ?? false),
         ];
     }
@@ -261,7 +267,7 @@ final class CMS_Beratung_Import_Export
                 continue;
             }
             $columns = (int) ($section['columns'] ?? 3);
-            $type = self::choice((string) ($section['type'] ?? 'card_grid'), ['text', 'card_grid', 'image_cards', 'services', 'offers', 'comparison', 'faq', 'steps', 'cta', 'trust', 'technology', 'collaboration', 'contact', 'divider', 'html', 'infographic', 'cards'], 'card_grid');
+            $type = self::choice((string) ($section['type'] ?? 'card_grid'), ['partner_band', 'proof', 'booking', 'text', 'card_grid', 'image_cards', 'services', 'offers', 'comparison', 'faq', 'steps', 'cta', 'trust', 'technology', 'collaboration', 'contact', 'divider', 'html', 'infographic', 'cards'], 'card_grid');
             if ($type === 'faq') {
                 continue;
             }
@@ -275,6 +281,7 @@ final class CMS_Beratung_Import_Export
                 'eyebrow' => self::limit(CMS_Beratung_Settings::text((string) ($section['eyebrow'] ?? '')), 120),
                 'title' => self::limit(CMS_Beratung_Settings::text((string) ($section['title'] ?? '')), 255),
                 'intro' => self::limit(CMS_Beratung_Settings::text((string) ($section['intro'] ?? $section['text'] ?? '')), 1200),
+                'partner_layout' => self::choice((string) ($section['partner_layout'] ?? 'network-card'), ['network-card', 'split-panel', 'centered-badge', 'compact-strip'], 'network-card'),
                 'anchor_id' => CMS_Beratung_Settings::slug((string) ($section['anchor_id'] ?? $section['anchor'] ?? $section['id'] ?? 'bereich-' . ($index + 1)), 'bereich-' . ($index + 1)),
                 'background_color' => CMS_Beratung_Settings::color((string) ($section['background_color'] ?? $section['background'] ?? '#ffffff'), '#ffffff'),
                 'background_image_url' => CMS_Beratung_Settings::image_url((string) ($section['background_image_url'] ?? '')),
@@ -326,7 +333,7 @@ final class CMS_Beratung_Import_Export
                 'divider_line_color' => CMS_Beratung_Settings::color((string) ($section['divider_line_color'] ?? '#dbeafe'), '#dbeafe'),
                 'divider_width' => max(20, min(100, (int) ($section['divider_width'] ?? 100))),
                 'divider_mobile_behavior' => self::choice((string) ($section['divider_mobile_behavior'] ?? 'stack'), ['stack', 'compact', 'hide_visual'], 'stack'),
-                'cards' => self::sanitize_cards($section['cards'] ?? []),
+                'cards' => in_array($type, ['partner_band', 'booking', 'collaboration', 'cta', 'divider', 'html'], true) ? [] : self::sanitize_cards($section['cards'] ?? []),
                 'html' => self::limit(self::safe_html((string) ($section['html'] ?? '')), 12000),
             ];
         }
@@ -348,9 +355,12 @@ final class CMS_Beratung_Import_Export
             $cards[] = [
                 'enabled' => array_key_exists('enabled', $card) ? !empty($card['enabled']) : true,
                 'card_type' => $cardType,
+                'card_layout' => self::choice((string) ($card['card_layout'] ?? 'classic'), ['classic', 'media-left', 'compact', 'spotlight'], 'classic'),
+                'card_theme' => self::choice((string) ($card['card_theme'] ?? 'default'), ['default', 'experience', 'consulting', 'exchange', 'iamcp', 'projects', 'security', 'governance', 'microsoft', 'network'], 'default'),
                 'icon' => self::limit(CMS_Beratung_Settings::text((string) ($card['icon'] ?? '')), 40),
                 'icon_background' => CMS_Beratung_Settings::color((string) ($card['icon_background'] ?? '#eff6ff'), '#eff6ff'),
                 'icon_color' => CMS_Beratung_Settings::color((string) ($card['icon_color'] ?? '#2563eb'), '#2563eb'),
+                'icon_text_layout' => self::choice((string) ($card['icon_text_layout'] ?? 'below'), ['below', 'right'], 'below'),
                 'image_url' => CMS_Beratung_Settings::image_url((string) ($card['image_url'] ?? '')),
                 'image_alt' => self::limit(CMS_Beratung_Settings::text((string) ($card['image_alt'] ?? '')), 160),
                 'image_height' => max(120, min(520, (int) ($card['image_height'] ?? 230))),
@@ -444,7 +454,7 @@ final class CMS_Beratung_Import_Export
         return CMS_Beratung_Settings::public_url($value);
     }
 
-    /** @param mixed $raw @return array<string,string> */
+    /** @param mixed $raw @return array<string,mixed> */
     private static function sanitize_design(mixed $raw): array
     {
         if (is_string($raw)) {
@@ -459,6 +469,29 @@ final class CMS_Beratung_Import_Export
         foreach ($allowed as $key) {
             if (isset($raw[$key])) {
                 $design[$key] = CMS_Beratung_Settings::color((string) $raw[$key], CMS_Beratung_Settings::defaults()[$key] ?? '#ffffff');
+            }
+        }
+        $fontSizes = is_array($raw['fontSizes'] ?? null) ? $raw['fontSizes'] : [];
+        foreach ([
+            'font_size_base' => ['base', 16, 12, 24],
+            'font_size_hero' => ['hero', 52, 28, 96],
+            'font_size_section_title' => ['sectionTitle', 32, 20, 72],
+            'font_size_card_title' => ['cardTitle', 21, 16, 40],
+        ] as $key => [$camelKey, $fallback, $min, $max]) {
+            $rawValue = $raw[$key] ?? $fontSizes[$camelKey] ?? null;
+            if (is_numeric($rawValue)) {
+                $design[$key] = max((int) $min, min((int) $max, (int) $rawValue));
+            }
+        }
+        foreach ([
+            'header_spacing' => ['headerSpacing', 48, 0, 160],
+            'footer_spacing' => ['footerSpacing', 48, 0, 160],
+            'card_spacing' => ['cardSpacing', 24, 0, 96],
+            'section_content_spacing' => ['sectionContentSpacing', 24, 0, 160],
+        ] as $key => [$camelKey, $fallback, $min, $max]) {
+            $rawValue = $raw[$key] ?? $raw[$camelKey] ?? null;
+            if (is_numeric($rawValue)) {
+                $design[$key] = max((int) $min, min((int) $max, (int) $rawValue));
             }
         }
         return $design;

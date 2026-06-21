@@ -64,6 +64,7 @@ final class CMS_Beratung_Installer
             max_content_width INT UNSIGNED NOT NULL DEFAULT 1160,
             custom_design_enabled TINYINT(1) NOT NULL DEFAULT 0,
             use_global_settings TINYINT(1) NOT NULL DEFAULT 1,
+            use_global_design TINYINT(1) NOT NULL DEFAULT 1,
             show_header TINYINT(1) NOT NULL DEFAULT 1,
             show_footer TINYINT(1) NOT NULL DEFAULT 1,
             show_breadcrumb TINYINT(1) NOT NULL DEFAULT 1,
@@ -167,6 +168,7 @@ final class CMS_Beratung_Installer
         foreach ([
             'contact_json' => 'JSON DEFAULT NULL AFTER hero_json',
             'seo_json' => 'JSON DEFAULT NULL AFTER contact_json',
+            'use_global_design' => 'TINYINT(1) NOT NULL DEFAULT 1 AFTER use_global_settings',
             'tracking_enabled' => 'TINYINT(1) NOT NULL DEFAULT 1 AFTER sections_json',
         ] as $column => $definition) {
             $stmt->execute([$table, $column]);

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://365network.de/schemas/cms-beratung/global-design.schema.json",
+  "title": "CMS Beratung Global Design Config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["fontSizes", "headerSpacing", "footerSpacing", "cardSpacing", "sectionContentSpacing"],
+  "properties": {
+    "fontSizes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base", "hero", "sectionTitle", "cardTitle"],
+      "properties": {
+        "base": { "type": "integer", "minimum": 12, "maximum": 24 },
+        "hero": { "type": "integer", "minimum": 28, "maximum": 96 },
+        "sectionTitle": { "type": "integer", "minimum": 20, "maximum": 72 },
+        "cardTitle": { "type": "integer", "minimum": 16, "maximum": 40 }
+      }
+    },
+    "headerSpacing": { "type": "integer", "minimum": 0, "maximum": 160 },
+    "footerSpacing": { "type": "integer", "minimum": 0, "maximum": 160 },
+    "cardSpacing": { "type": "integer", "minimum": 0, "maximum": 96 },
+    "sectionContentSpacing": { "type": "integer", "minimum": 0, "maximum": 160 }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "../src/theme/global-design.schema.json",
+  "fontSizes": {
+    "base": 16,
+    "hero": 52,
+    "sectionTitle": 32,
+    "cardTitle": 21
+  },
+  "headerSpacing": 48,
+  "footerSpacing": 48,
+  "cardSpacing": 24,
+  "sectionContentSpacing": 24
+}
