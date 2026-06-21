@@ -1,13 +1,16 @@
 {
   "slug": "cms-beratung",
   "name": "CMS Beratung",
-  "version": "2.9.771",
+  "version": "2.9.774",
   "requires": "365CMS",
   "tested": "2026.06",
   "author": "365 Network",
   "description": "Spezialisierter 365CMS Landingpage Builder für Microsoft 365, Copilot, KI, Security, Compliance und IT Consulting Beratungsleistungen.",
   "download_url": "PLUGINS/cms-beratung/cms-beratung.zip",
   "changelog": {
+    "2.9.774": "Beratung-Landingpages nachgeschärft: Das Trust-Hinweis-Bild inklusive SVG-Fallback ist im Admin ausblendbar, das Kontaktformular sendet wieder kompatible Core-form_guard- und Plugin-CSRF-Tokens, echte Bilder in Meine-Leistungen-Cards werden trotz finalem Icon-Override wieder angezeigt und Zitat-/Divider-Trenner erhalten getrennt einstellbaren linken und rechten Innenabstand.",
+    "2.9.773": "Grundlagen-Cards erhalten ein dezentes, kühles Accent-System: Erfahrung, Migration und Netzwerk werden datengetrieben über Modifier-Klassen mit blauverwandten Tokens unterschieden. Die Akzente beschränken sich auf linken Card-Rand und Badge-/Kategorie-Text, während Card-Flächen neutral bleiben und die Label-Kontraste WCAG-AA erfüllen.",
+    "2.9.772": "Frontend-Farb- und Typografie-System final konsolidiert: Accessibility-sichere Texttokens für Überschriften, Fließtext und Labels, letzte Orange-/Gold-Akzente per finaler Blue/Grey-Override-Schicht ersetzt, Service-Card-Medien visuell vereinheitlicht und Hero-CTAs auf eine dominante Primäraktion mit sekundären Outline-Aktionen reduziert.",
     "2.9.771": "Standalone-Publicsite Routing repariert: Die Standalone-Route wird wieder korrekt aus hero_json gelesen und registriert. Eine versehentlich in die normale POST-Route gerutschte Header-Ausgabe wurde entfernt, sodass /beratung/{standalone-slug} nicht mehr als 404 endet.",
     "2.9.770": "Standalone-Publicsite Header final nachgeschärft: Der aktivierte und befüllte eigene Header wird nun technisch außerhalb des Landingpage-Main unmittelbar nach dem öffnenden body-Tag und noch vor body_start ausgegeben. Damit steht er wirklich ganz oben über Breadcrumb, Content Header, Hero und allen weiteren Landingpage-Inhalten. Die Header-Styles greifen zusätzlich auf den Top-Level-Header im Standalone-Dokument.",
     "2.9.769": "Standalone-Publicsite Header präzisiert: Wenn der eigene Header aktiviert und mit Inhalt befüllt ist, erscheint er immer ganz oben vor dem Content Header als Full-Width-Band über die komplette Seitenbreite. Leere Header-Konfigurationen erzeugen keinen Platzhalter mehr; Blog-/Partner-Logo, Titel, Untertitel und Menüband werden nur ausgegeben, wenn entsprechende Inhalte gepflegt sind.",

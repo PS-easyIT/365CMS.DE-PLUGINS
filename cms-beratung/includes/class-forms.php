@@ -41,7 +41,8 @@ final class CMS_Beratung_Forms
         $values = self::posted_values($_POST);
         $errors = [];
 
-        if (!class_exists('CMS\\Security') || !\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'beratung_form_' . (int) ($page['id'] ?? 0))) {
+        $beratungToken = (string) ($_POST['beratung_csrf_token'] ?? $_POST['csrf_token'] ?? '');
+        if (!class_exists('CMS\\Security') || !\CMS\Security::instance()->verifyToken($beratungToken, 'beratung_form_' . (int) ($page['id'] ?? 0))) {
             return ['success' => false, 'message' => 'Die Sitzung ist abgelaufen. Bitte laden Sie die Seite neu und senden Sie das Formular erneut.', 'errors' => ['csrf' => 'Sicherheitsprüfung fehlgeschlagen.'], 'values' => $values];
         }
 

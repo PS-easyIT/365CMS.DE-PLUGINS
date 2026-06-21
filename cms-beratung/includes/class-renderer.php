@@ -30,6 +30,7 @@ final class CMS_Beratung_Renderer
             $anchors[] = ['anchor_id' => (string) ($m365Faq['anchor_id'] ?? 'faq'), 'title' => (string) ($m365Faq['title'] ?? 'FAQ')];
         }
         $csrfToken = class_exists('CMS\\Security') ? (string) \CMS\Security::instance()->generateToken('beratung_form_' . (int) ($page['id'] ?? 0)) : '';
+        $formGuardToken = class_exists('CMS\\Security') ? (string) \CMS\Security::instance()->generateToken('form_guard') : '';
 
         include CMS_BERATUNG_PLUGIN_DIR . 'templates/landingpage.php';
     }

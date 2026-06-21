@@ -666,6 +666,7 @@ final class CMS_Beratung_Admin_Pages
                 'button_2' => ['text' => 'Leistungen ansehen', 'target' => '#leistungen', 'target_type' => 'anchor', 'style' => 'ghost'],
                 'button_3' => ['text' => 'Copilot Readiness prüfen', 'target' => '#copilot-readiness', 'target_type' => 'anchor', 'style' => 'secondary'],
                 'trust_badges' => ['Ex-Microsoft MVP', '20+ Jahre', 'LPIC 1 & 2', 'Microsoft zertifiziert'],
+                'trust_image_enabled' => true,
                 'trust_image_url' => '',
                 'trust_image_alt' => 'Portrait eines Microsoft 365 Beraters',
                 'partner_band_enabled' => false,
@@ -931,6 +932,8 @@ final class CMS_Beratung_Admin_Pages
                 'text_color' => '#111827',
                 'divider_line_color' => '#93c5fd',
                 'divider_width' => 80,
+                'divider_padding_left' => 20,
+                'divider_padding_right' => 20,
             ], [
                 'id' => 'html-hinweis',
                 'anchor_id' => 'html-hinweis',

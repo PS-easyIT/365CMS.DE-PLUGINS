@@ -520,6 +520,7 @@
     hero.toc_right_display ??= 'card';
     hero.toc_right_layout ??= 'card';
     hero.trust_image_url ??= '';
+    hero.trust_image_enabled ??= true;
     hero.trust_image_alt ??= 'Portrait eines Microsoft 365 Beraters';
     if (!Array.isArray(hero.trust_badges)) hero.trust_badges = DEFAULT_HERO_TRUST_BADGES.slice();
     [0, 1, 2, 3].forEach((index) => { hero[`trust_badge_${index + 1}`] = text(hero.trust_badges[index]); });
@@ -553,6 +554,7 @@
           <label>Untertitel <input data-field="subtitle"></label>
           <label>Beschreibungstext <textarea data-field="description" rows="3"></textarea></label>
           <label>Trust Hinweis <input data-field="trust_text"></label>
+          <label><input data-field="trust_image_enabled" type="checkbox"> Trust Hinweis Bild / SVG anzeigen</label>
           <label>Trust Hinweis Bild / SVG <input data-field="trust_image_url" placeholder="/uploads/beratung/... oder https://..."></label>
           <label>Trust Hinweis Bild Alt Text <input data-field="trust_image_alt"></label>
           <label>Hintergrundfarbe <input data-field="background_color" type="color"></label>
@@ -795,6 +797,8 @@
     divider_icon: '',
     divider_line_color: '#dbeafe',
     divider_width: 100,
+    divider_padding_left: 20,
+    divider_padding_right: 20,
     divider_mobile_behavior: 'stack',
     booking_url: '',
     booking_display: 'embed',
@@ -1398,6 +1402,8 @@
       <label class="field-divider">Trenner Icon <input data-field="divider_icon"></label>
       <label class="field-divider">Linienfarbe <input data-field="divider_line_color" type="color"></label>
       <label class="field-divider">Breite in % <input data-field="divider_width" type="number" min="20" max="100"></label>
+      <label class="field-divider">Innenabstand links <input data-field="divider_padding_left" type="number" min="0" max="180"></label>
+      <label class="field-divider">Innenabstand rechts <input data-field="divider_padding_right" type="number" min="0" max="180"></label>
       <label class="field-divider">Mobile Verhalten <select data-field="divider_mobile_behavior"><option value="stack">Stapeln</option><option value="compact">Kompakt</option><option value="hide_visual">Visuelles Element ausblenden</option></select></label>
       <label class="field-booking">Microsoft Bookings Link / Embed URL <input data-field="booking_url" placeholder="https://outlook.office.com/book/... oder https://.../bookings/..."></label>
       <label class="field-booking">Booking Darstellung <select data-field="booking_display"><option value="embed">Eingebettet als Kalender</option><option value="link">Als Booking Card mit Button</option></select></label>
