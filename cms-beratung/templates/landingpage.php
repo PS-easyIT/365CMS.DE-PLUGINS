@@ -32,8 +32,8 @@ $heroPortraitUrl = CMS_BERATUNG_PLUGIN_URL . 'assets/img/consultant-portrait.svg
 $heroTrustImageUrl = trim((string) ($hero['trust_image_url'] ?? ''));
 $heroTrustImageAlt = trim((string) ($hero['trust_image_alt'] ?? '')) ?: 'Portrait eines Microsoft 365 Beraters';
 
-// MS Bookings Embed-URL hier eintragen.
-$bookingUrl = '';
+// Optionaler globaler Fallback. Primär wird die URL aus der Terminbuchung-Section genutzt.
+$bookingUrl = trim((string) ($page['booking_url'] ?? ''));
 
 // Nur ECHTE, belegbare Angaben eintragen. Keine erfundenen Kundenzitate (UWG).
 // Projektzahlen wie [X] und [Y] erst durch belegbare echte Werte ersetzen, wenn sie freigegeben sind.
@@ -112,6 +112,7 @@ $partnerBandHasContent = $partnerBandEnabled && ($partnerBandText !== '' || ($pa
 $anchorNavLayout = in_array((string) ($hero['anchor_nav_layout'] ?? 'pills'), ['pills', 'cards', 'goldbar', 'minimal', 'threegrid'], true) ? (string) ($hero['anchor_nav_layout'] ?? 'pills') : 'pills';
 $tocRightDisplay = in_array((string) ($hero['toc_right_display'] ?? 'card'), ['off', 'card'], true) ? (string) ($hero['toc_right_display'] ?? 'card') : 'card';
 $tocRightLayout = in_array((string) ($hero['toc_right_layout'] ?? 'card'), ['card', 'compact', 'outline'], true) ? (string) ($hero['toc_right_layout'] ?? 'card') : 'card';
+$standaloneHeaderEnabled = $renderer::standalone_header_enabled($page);
 
 $buttonClass = static function (string $style): string {
     return 'cms-beratung__btn cms-beratung__btn--' . preg_replace('/[^a-z0-9_-]/i', '', $style ?: 'primary');
@@ -505,24 +506,32 @@ $renderProofSection = static function (array $proof, array $testimonials, array 
 };
 
 $renderBookingSection = static function (string $bookingUrl, array $section = []) use ($renderer): void {
-    $bookingUrl = trim($bookingUrl);
+    $bookingUrl = trim((string) ($section['booking_url'] ?? $bookingUrl));
     if ($bookingUrl !== '' && preg_match('#^https://#i', $bookingUrl) !== 1) {
         $bookingUrl = '';
     }
+    $bookingDisplay = (string) ($section['booking_display'] ?? 'embed');
+    if (!in_array($bookingDisplay, ['embed', 'link'], true)) {
+        $bookingDisplay = 'embed';
+    }
+    $bookingButtonText = trim((string) ($section['booking_button_text'] ?? 'Termin buchen')) ?: 'Termin buchen';
     $eyebrow = trim((string) ($section['eyebrow'] ?? ''));
     $title = trim((string) ($section['title'] ?? ''));
     $intro = trim((string) ($section['intro'] ?? ''));
     $sectionId = trim((string) ($section['anchor_id'] ?? $section['id'] ?? 'termin-buchen')) ?: 'termin-buchen';
     echo '<section class="cms-beratung-booking" id="' . $renderer::esc($sectionId) . '" aria-labelledby="beratung-booking-title"><div class="cms-beratung-booking__inner">' . ($eyebrow !== '' || $title !== '' || $intro !== '' ? '<div class="cms-beratung-booking__head">' . ($eyebrow !== '' ? '<span>' . $renderer::esc($eyebrow) . '</span>' : '') . ($title !== '' ? '<h2 id="beratung-booking-title">' . $renderer::esc($title) . '</h2>' : '') . ($intro !== '' ? '<p>' . $renderer::esc($intro) . '</p>' : '') . '<ul class="cms-beratung-booking__trust" aria-label="Termin Vorteile"><li>Kostenloses Erstgespräch</li><li>Antwort in 24h</li><li>Remote oder vor Ort</li></ul></div>' : '') . '<div class="cms-beratung-booking-card">';
-    if ($bookingUrl !== '') {
+    if ($bookingUrl !== '' && $bookingDisplay === 'embed') {
         echo '<div class="cms-beratung-booking-card__embed"><iframe src="' . $renderer::esc($bookingUrl) . '" title="Microsoft Bookings Terminbuchung für Beratung" loading="lazy" allow="clipboard-write; fullscreen" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"></iframe></div>';
+    } elseif ($bookingUrl !== '') {
+        echo '<div class="cms-beratung-booking-card__fallback is-connected"><span>Microsoft Bookings</span><h3>Direkt einen passenden Termin auswählen.</h3><p>Der Kalender ist verbunden. Öffne Microsoft Bookings und wähle den Slot, der am besten passt.</p><a class="cms-beratung__btn cms-beratung__btn--primary" href="' . $renderer::esc($bookingUrl) . '" target="_blank" rel="noopener noreferrer">' . $renderer::esc($bookingButtonText) . '</a></div>';
     } else {
         echo '<div class="cms-beratung-booking-card__fallback"><span>Terminbuchung wird vorbereitet</span><h3>Der direkte Kalender ist noch nicht verbunden.</h3><p>Bis der Microsoft Bookings Link hinterlegt ist, kannst du deine Anfrage über das Kontaktformular senden. Ich melde mich mit passenden Terminvorschlägen zurück.</p><a class="cms-beratung__btn cms-beratung__btn--primary" href="#kontakt">Beratung anfragen</a></div>';
     }
     echo '</div></div></section>';
 };
 ?>
-<main class="cms-beratung cms-beratung--<?php echo $renderer::esc((string) ($page['template'] ?? 'standard')); ?> <?php echo $renderer::esc($customClass); ?>" data-use-global-design="<?php echo $renderer::esc($design['use_global_design'] ?? '1'); ?>" style="--beratung-primary: <?php echo $renderer::esc($design['primary_color']); ?>; --beratung-secondary: <?php echo $renderer::esc($design['secondary_color']); ?>; --beratung-accent: <?php echo $renderer::esc($design['accent_color']); ?>; --beratung-bg: <?php echo $renderer::esc($design['background_color']); ?>; --beratung-text: <?php echo $renderer::esc($design['text_color']); ?>; --beratung-heading: <?php echo $renderer::esc($design['heading_color']); ?>; --beratung-button: <?php echo $renderer::esc($design['button_color']); ?>; --beratung-button-text: <?php echo $renderer::esc($design['button_text_color']); ?>; --beratung-card-bg: <?php echo $renderer::esc($design['card_background_color']); ?>; --beratung-card-border: <?php echo $renderer::esc($design['card_border_color']); ?>; --beratung-radius: <?php echo $renderer::esc($design['border_radius']); ?>; --beratung-spacing: <?php echo $renderer::esc($design['spacing']); ?>; --beratung-width: <?php echo $renderer::esc($design['content_width']); ?>; --beratung-card-shadow: <?php echo $renderer::esc($design['card_shadow']); ?>; --beratung-font-base: <?php echo $renderer::esc($design['font_size_base']); ?>; --beratung-font-hero: <?php echo $renderer::esc($design['font_size_hero']); ?>; --beratung-font-section-title: <?php echo $renderer::esc($design['font_size_section_title']); ?>; --beratung-font-card-title: <?php echo $renderer::esc($design['font_size_card_title']); ?>; --beratung-header-spacing: <?php echo $renderer::esc($design['header_spacing']); ?>; --beratung-footer-spacing: <?php echo $renderer::esc($design['footer_spacing']); ?>; --beratung-card-spacing: <?php echo $renderer::esc($design['card_spacing']); ?>; --beratung-section-content-spacing: <?php echo $renderer::esc($design['section_content_spacing']); ?>;">
+<main class="cms-beratung cms-beratung--<?php echo $renderer::esc((string) ($page['template'] ?? 'standard')); ?> <?php echo $standaloneHeaderEnabled ? 'cms-beratung--standalone-header' : ''; ?> <?php echo $renderer::esc($customClass); ?>" data-use-global-design="<?php echo $renderer::esc($design['use_global_design'] ?? '1'); ?>" style="--beratung-primary: <?php echo $renderer::esc($design['primary_color']); ?>; --beratung-secondary: <?php echo $renderer::esc($design['secondary_color']); ?>; --beratung-accent: <?php echo $renderer::esc($design['accent_color']); ?>; --beratung-bg: <?php echo $renderer::esc($design['background_color']); ?>; --beratung-text: <?php echo $renderer::esc($design['text_color']); ?>; --beratung-heading: <?php echo $renderer::esc($design['heading_color']); ?>; --beratung-button: <?php echo $renderer::esc($design['button_color']); ?>; --beratung-button-text: <?php echo $renderer::esc($design['button_text_color']); ?>; --beratung-card-bg: <?php echo $renderer::esc($design['card_background_color']); ?>; --beratung-card-border: <?php echo $renderer::esc($design['card_border_color']); ?>; --beratung-radius: <?php echo $renderer::esc($design['border_radius']); ?>; --beratung-spacing: <?php echo $renderer::esc($design['spacing']); ?>; --beratung-width: <?php echo $renderer::esc($design['content_width']); ?>; --beratung-card-shadow: <?php echo $renderer::esc($design['card_shadow']); ?>; --beratung-font-base: <?php echo $renderer::esc($design['font_size_base']); ?>; --beratung-font-hero: <?php echo $renderer::esc($design['font_size_hero']); ?>; --beratung-font-section-title: <?php echo $renderer::esc($design['font_size_section_title']); ?>; --beratung-font-card-title: <?php echo $renderer::esc($design['font_size_card_title']); ?>; --beratung-header-spacing: <?php echo $renderer::esc($design['header_spacing']); ?>; --beratung-footer-spacing: <?php echo $renderer::esc($design['footer_spacing']); ?>; --beratung-card-spacing: <?php echo $renderer::esc($design['card_spacing']); ?>; --beratung-section-content-spacing: <?php echo $renderer::esc($design['section_content_spacing']); ?>;">
+    <?php if ($standaloneHeaderEnabled && empty($page['standalone_header_rendered_above_content'])): ?><?php $renderer::render_standalone_header($page); ?><?php endif; ?>
     <?php if (!empty($page['show_breadcrumb'])): ?>
         <nav class="cms-beratung__breadcrumb" aria-label="Breadcrumb"><a href="/">Startseite</a><span aria-hidden="true">/</span><span><?php echo $renderer::esc((string) ($page['public_title'] ?? 'Beratung')); ?></span></nav>
     <?php endif; ?>

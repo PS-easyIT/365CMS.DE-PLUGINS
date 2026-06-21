@@ -218,6 +218,85 @@ final class CMS_Beratung_Renderer
         return nl2br(self::esc($value));
     }
 
+    /** @param array<string,mixed> $page */
+    public static function standalone_header_enabled(array $page): bool
+    {
+        return self::standalone_header_state($page)['enabled'];
+    }
+
+    /** @param array<string,mixed> $page */
+    public static function render_standalone_header(array $page): void
+    {
+        $state = self::standalone_header_state($page);
+        if (!$state['enabled']) {
+            return;
+        }
+
+        echo '<header class="cms-beratung-standalone-header" aria-label="Publicsite Header">';
+        if ($state['has_main_content']) {
+            echo '<div class="cms-beratung-standalone-header__inner">';
+            if ($state['blog_logo_url'] !== '' || $state['partner_logo_url'] !== '') {
+                echo '<div class="cms-beratung-standalone-header__logos" aria-label="Logos">';
+                if ($state['blog_logo_url'] !== '') {
+                    echo '<img src="' . self::esc($state['blog_logo_url']) . '" alt="Blog Logo" loading="eager" decoding="async">';
+                }
+                if ($state['blog_logo_url'] !== '' && $state['partner_logo_url'] !== '') {
+                    echo '<span class="cms-beratung-standalone-header__logo-separator" aria-hidden="true">×</span>';
+                }
+                if ($state['partner_logo_url'] !== '') {
+                    echo '<img src="' . self::esc($state['partner_logo_url']) . '" alt="Partner Logo" loading="eager" decoding="async">';
+                }
+                echo '</div>';
+            }
+            echo '<div class="cms-beratung-standalone-header__title">';
+            if ($state['title'] !== '') {
+                echo '<strong>' . self::esc($state['title']) . '</strong>';
+            }
+            if ($state['subtitle'] !== '') {
+                echo '<span>' . self::esc($state['subtitle']) . '</span>';
+            }
+            echo '</div></div>';
+        }
+        if ($state['menu_enabled'] && $state['menu_items'] !== []) {
+            echo '<nav class="cms-beratung-standalone-header__menu" aria-label="Publicsite Menüband">';
+            foreach ($state['menu_items'] as $menuItem) {
+                echo '<a href="' . self::esc((string) $menuItem['target']) . '">' . self::esc((string) $menuItem['label']) . '</a>';
+            }
+            echo '</nav>';
+        }
+        echo '</header>';
+    }
+
+    /** @param array<string,mixed> $page @return array{enabled:bool,has_main_content:bool,blog_logo_url:string,partner_logo_url:string,title:string,subtitle:string,menu_enabled:bool,menu_items:array<int,array<string,string>>} */
+    private static function standalone_header_state(array $page): array
+    {
+        $hero = is_array($page['hero'] ?? null) ? $page['hero'] : [];
+        $blogLogoUrl = trim((string) ($hero['standalone_header_blog_logo_url'] ?? ''));
+        $partnerLogoUrl = trim((string) ($hero['standalone_header_partner_logo_url'] ?? ''));
+        $title = trim((string) ($hero['standalone_header_title'] ?? ''));
+        $subtitle = trim((string) ($hero['standalone_header_subtitle'] ?? ''));
+        $menuItems = array_values(array_filter(is_array($hero['standalone_header_menu_items'] ?? null) ? $hero['standalone_header_menu_items'] : [], static fn(mixed $item): bool => is_array($item) && trim((string) ($item['label'] ?? '')) !== '' && trim((string) ($item['target'] ?? '')) !== ''));
+        $menuItems = array_map(static fn(array $item): array => [
+            'label' => trim((string) ($item['label'] ?? '')),
+            'target' => trim((string) ($item['target'] ?? '')),
+        ], $menuItems);
+        $menuEnabled = !empty($hero['standalone_header_menu_enabled']);
+        $hasMainContent = $blogLogoUrl !== '' || $partnerLogoUrl !== '' || $title !== '' || $subtitle !== '';
+        $hasContent = $hasMainContent || ($menuEnabled && $menuItems !== []);
+        $enabled = (!empty($page['is_standalone_variant']) || empty($page['show_header'])) && !empty($hero['standalone_header_enabled']) && $hasContent;
+
+        return [
+            'enabled' => $enabled,
+            'has_main_content' => $hasMainContent,
+            'blog_logo_url' => $blogLogoUrl,
+            'partner_logo_url' => $partnerLogoUrl,
+            'title' => $title,
+            'subtitle' => $subtitle,
+            'menu_enabled' => $menuEnabled,
+            'menu_items' => $menuItems,
+        ];
+    }
+
     public static function safe_html(string $value): string
     {
         $value = preg_replace('#<(script|style|iframe|object|embed|form|input|button|textarea|select)\\b[^>]*>.*?</\\1>#is', '', $value) ?? '';

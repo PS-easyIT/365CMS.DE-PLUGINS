@@ -40,6 +40,22 @@
     html: 'Freier HTML Bereich'
   };
 
+  const TARGET_SECTION_ORDER = ['proof', 'partner_band', 'comparison', 'services', 'steps', 'collaboration', 'trust', 'technology', 'html', 'booking', 'divider', 'cta'];
+  const TARGET_SECTION_NAMES = {
+    proof: 'Grundlagen',
+    partner_band: 'Partnerband',
+    comparison: 'Vergleich GenAI Agentic AI',
+    services: 'Meine Leistungen',
+    steps: 'Beratungsablauf',
+    collaboration: 'Zusammenarbeit',
+    trust: 'Trust Bereich',
+    technology: 'Technologie Bereich',
+    html: 'Freier HTML Bereich',
+    booking: 'Terminbuchung',
+    divider: 'Zitat Trenner',
+    cta: 'CTA Band Copilot Readiness'
+  };
+
   const CARD_THEMES = {
     default: 'Standard / neutral',
     experience: 'Erfahrung',
@@ -53,7 +69,7 @@
     network: 'Netzwerk'
   };
 
-  const SINGLETON_SECTION_TYPES = ['partner_band', 'proof', 'booking', 'collaboration'];
+  const SINGLETON_SECTION_TYPES = ['partner_band', 'proof', 'booking', 'collaboration', 'comparison', 'services', 'steps', 'trust', 'technology', 'html', 'divider', 'cta'];
 
   const LANDINGPAGE_PROPOSALS = {
     copilot_readiness: 'Copilot Readiness Landingpage',
@@ -143,6 +159,24 @@
 
   const syncJson = (textarea, value) => { textarea.value = JSON.stringify(value, null, 2); };
   const optionHtml = (options, selected) => Object.entries(options).map(([value, label]) => `<option value="${value}"${String(value) === String(selected) ? ' selected' : ''}>${label}</option>`).join('');
+
+  const sectionOrderRank = (section, fallbackIndex = 0) => {
+    const stored = Number(section?.sort_order || 0);
+    if (Number.isFinite(stored) && stored > 0) return stored;
+    const targetIndex = TARGET_SECTION_ORDER.indexOf(section?.type || '');
+    return targetIndex >= 0 ? targetIndex + 1 : 1000 + fallbackIndex;
+  };
+
+  const updateSectionSortOrders = (sections) => {
+    sections.forEach((section, index) => { if (section && typeof section === 'object') section.sort_order = index + 1; });
+  };
+
+  const sortSectionsByOrder = (sections) => {
+    const originalIndexes = new Map(sections.map((section, index) => [section, index]));
+    sections.sort((a, b) => sectionOrderRank(a, originalIndexes.get(a) || 0) - sectionOrderRank(b, originalIndexes.get(b) || 0));
+    updateSectionSortOrders(sections);
+    return sections;
+  };
 
   const normalizeMediaUrl = (value) => {
     const raw = text(value).trim();
@@ -333,7 +367,7 @@
   };
 
   const enhanceMediaFields = (root) => {
-    $$('input[data-field="image_url"], input[data-field="trust_image_url"], input[data-field="background_image_url"], input[data-card-field="image_url"], input[data-card-field="logo_url"]', root).forEach((input) => {
+    $$('input[data-field="image_url"], input[data-field="trust_image_url"], input[data-field="background_image_url"], input[data-card-field="image_url"], input[data-card-field="logo_url"], input[data-media-field]', root).forEach((input) => {
       if (input.dataset.beratungMediaEnhanced === '1') return;
       input.dataset.beratungMediaEnhanced = '1';
       input.id ||= `beratung-media-field-${++mediaFieldCounter}`;
@@ -706,6 +740,7 @@
   const baseSection = (index, type = 'card_grid') => ({
     id: `${type}-${index + 1}`,
     anchor_id: `${type}-${index + 1}`,
+    sort_order: index + 1,
     enabled: true,
     type,
     internal_name: MODULE_PRESETS[type] || 'Neuer Bereich',
@@ -761,12 +796,16 @@
     divider_line_color: '#dbeafe',
     divider_width: 100,
     divider_mobile_behavior: 'stack',
+    booking_url: '',
+    booking_display: 'embed',
+    booking_button_text: 'Termin buchen',
     html: '',
     cards: []
   });
 
   const normalizeFlatSections = (sections) => {
-    const list = (Array.isArray(sections) ? sections : []).filter((section) => section && typeof section === 'object' && section.type !== 'faq');
+    const legacyDefaultSectionIds = new Set(['intro', 'herausforderungen']);
+    const list = (Array.isArray(sections) ? sections : []).filter((section) => section && typeof section === 'object' && section.type !== 'faq' && !legacyDefaultSectionIds.has(text(section.id)));
     const legacyHeroTarget = $('#hero_json');
     const legacyHero = legacyHeroTarget ? parseJson(legacyHeroTarget, {}) : {};
     const ensure = (type, position, defaults = {}) => {
@@ -777,14 +816,25 @@
       }
       section.type = type;
       section.enabled = section.enabled !== false;
+      section.sort_order = Number(section.sort_order || position + 1);
       Object.entries(defaults).forEach(([key, value]) => { section[key] ??= value; });
+      if (TARGET_SECTION_NAMES[type]) section.internal_name = TARGET_SECTION_NAMES[type];
       if (['partner_band', 'booking', 'collaboration', 'cta', 'divider', 'html'].includes(type)) {
         section.cards = [];
       } else {
         section.cards = Array.isArray(section.cards) ? section.cards : [];
       }
     };
-    ensure('partner_band', 0, {
+    ensure('proof', 0, {
+      id: 'belegbare-grundlagen',
+      anchor_id: 'belegbare-grundlagen',
+      internal_name: 'Grundlagen',
+      eyebrow: 'Belegbare Grundlagen',
+      title: 'Was nach Beratung greifbar wird',
+      intro: 'Keine erfundenen Kundenzitate. Hier stehen nur nachvollziehbare Erfahrung, klare Projektbelege und später echte freigegebene Referenzen.',
+      cards: proofDefaultCards()
+    });
+    ensure('partner_band', 1, {
       id: 'partnerband',
       anchor_id: 'partnerband',
       enabled: Boolean(legacyHero.partner_band_enabled),
@@ -802,15 +852,6 @@
       button_2_target_type: 'external',
       button_2_style: 'ghost'
     });
-    ensure('proof', 1, {
-      id: 'belegbare-grundlagen',
-      anchor_id: 'belegbare-grundlagen',
-      internal_name: 'Belegbare Grundlagen',
-      eyebrow: 'Belegbare Grundlagen',
-      title: 'Was nach Beratung greifbar wird',
-      intro: 'Keine erfundenen Kundenzitate. Hier stehen nur nachvollziehbare Erfahrung, klare Projektbelege und später echte freigegebene Referenzen.',
-      cards: proofDefaultCards()
-    });
     const proofSection = list.find((item) => item?.type === 'proof');
     if (proofSection) {
       proofSection.card_type ??= 'text';
@@ -818,15 +859,42 @@
       proofSection.columns = Math.max(1, Math.min(4, Number(proofSection.columns || 3)));
       proofSection.cards = Array.isArray(proofSection.cards) && proofSection.cards.length > 0 ? proofSection.cards : proofDefaultCards();
     }
-    ensure('booking', 2, {
-      id: 'termin-buchen',
-      anchor_id: 'termin-buchen',
-      internal_name: 'Terminbuchung',
-      eyebrow: 'Termin',
-      title: 'Direkt einen Termin buchen',
-      intro: 'Wähle einen passenden Slot für ein erstes Gespräch zu Microsoft 365, Copilot oder Security. Danach klären wir Ziel, Ausgangslage und den nächsten sinnvollen Schritt.'
+    ensure('comparison', 2, {
+      id: 'vergleich-genai-agentic-ai',
+      anchor_id: 'vergleich',
+      internal_name: 'Vergleich GenAI Agentic AI',
+      eyebrow: 'Einordnung',
+      title: 'Vergleich GenAI Agentic AI',
+      intro: 'GenAI und Agentic AI verständlich gegenüberstellen und für Microsoft 365 Szenarien einordnen.',
+      columns: 2,
+      card_type: 'problem_solution',
+      comparison_variant: 'genai_agentic',
+      title_band_enabled: true,
+      title_band_text: 'GenAI vs. Agentic AI: Die wichtigsten Unterschiede',
+      cards: [
+        newCard('text', { icon: '✨', title: 'Generative KI', text: 'Erstellt Inhalte wie Texte, Bilder oder Code auf Basis großer Sprachmodelle.', extra_text: 'Typischer Einsatz: Content Erstellung, Ideenfindung, Automatisierung einfacher Aufgaben' }),
+        newCard('text', { icon: '🧠', title: 'Agentic AI', text: 'Handelt zielorientierter, integriert Systeme und führt Aufgaben je nach Kontext teilautonom aus.', extra_text: 'Typischer Einsatz: Prozessautomatisierung, intelligente Assistenz, datenbasierte Entscheidungsunterstützung' })
+      ]
     });
-    ensure('collaboration', 3, {
+    ensure('services', 3, {
+      id: 'leistungen',
+      anchor_id: 'leistungen',
+      internal_name: 'Meine Leistungen',
+      eyebrow: 'Meine Leistungen',
+      title: 'Microsoft 365 und Copilot Beratung aus der Praxis',
+      intro: 'Frei sortierbare Leistungen für Tenant, Security, Compliance, Governance, Automatisierung und Workshops.'
+    });
+    ensure('steps', 4, {
+      id: 'ablauf',
+      anchor_id: 'ablauf',
+      internal_name: 'Beratungsablauf',
+      eyebrow: 'Vorgehen',
+      title: 'So läuft die Zusammenarbeit ab',
+      intro: 'Ein klarer Ablauf macht Beratung planbar, nachvollziehbar und technisch belastbar.',
+      card_type: 'step',
+      display_style: 'horizontal'
+    });
+    ensure('collaboration', 5, {
       id: 'zusammenarbeit',
       anchor_id: 'zusammenarbeit',
       internal_name: 'Zusammenarbeit',
@@ -837,7 +905,65 @@
       mvp_note_enabled: true,
       mvp_note_text: 'Darunter auch Microsoft MVPs aus dem 365 Network.'
     });
-    return list;
+    ensure('trust', 6, {
+      id: 'trust',
+      anchor_id: 'vertrauen',
+      internal_name: 'Trust Bereich',
+      eyebrow: 'Vertrauen',
+      title: 'Technische Beratung statt reines Folien Consulting',
+      intro: 'Praxis, Betrieb und Sicherheit stehen im Mittelpunkt.'
+    });
+    ensure('technology', 7, {
+      id: 'technologien',
+      anchor_id: 'technologien',
+      internal_name: 'Technologie Bereich',
+      eyebrow: 'Technologien',
+      title: 'Relevante Microsoft Technologien',
+      intro: 'Beratung entlang der Plattformen, die im Microsoft 365 Betrieb wirklich zusammenspielen.',
+      columns: 4,
+      display_style: 'icon_grid'
+    });
+    ensure('html', 8, {
+      id: 'html-hinweis',
+      anchor_id: 'html-hinweis',
+      internal_name: 'Freier HTML Bereich',
+      eyebrow: 'Optional',
+      title: 'Freier HTML Bereich',
+      intro: 'Nur für berechtigte Benutzer. Unsichere Skripte werden gefiltert.'
+    });
+    ensure('booking', 9, {
+      id: 'termin-buchen',
+      anchor_id: 'termin-buchen',
+      internal_name: 'Terminbuchung',
+      eyebrow: 'Termin',
+      title: 'Direkt einen Termin buchen',
+      intro: 'Wähle einen passenden Slot für ein erstes Gespräch zu Microsoft 365, Copilot oder Security. Danach klären wir Ziel, Ausgangslage und den nächsten sinnvollen Schritt.',
+      booking_url: '',
+      booking_display: 'embed',
+      booking_button_text: 'Termin buchen'
+    });
+    ensure('divider', 10, {
+      id: 'trenner',
+      anchor_id: 'trenner',
+      internal_name: 'Zitat Trenner',
+      divider_type: 'quote',
+      divider_title: 'Gute Copilot Einführung beginnt nicht beim Prompt, sondern bei Daten, Identitäten und Governance.',
+      divider_icon: '💬'
+    });
+    ensure('cta', 11, {
+      id: 'cta-copilot-readiness',
+      anchor_id: 'copilot-readiness',
+      internal_name: 'CTA Band Copilot Readiness',
+      eyebrow: 'Copilot Readiness',
+      title: 'Du möchtest wissen, ob dein Microsoft 365 Tenant bereit für Copilot ist?',
+      intro: 'Dann lass uns gemeinsam prüfen, wo Berechtigungen, Datenstruktur, Governance und Compliance wirklich stehen.',
+      display_style: 'large',
+      button_1_text: 'Beratung anfragen',
+      button_1_target: '#kontakt',
+      button_1_target_type: 'contact',
+      button_1_style: 'primary'
+    });
+    return sortSectionsByOrder(list);
   };
 
   const newSection = (index, type = 'card_grid') => {
@@ -911,6 +1037,9 @@
       section.eyebrow = 'Termin';
       section.title = 'Direkt einen Termin buchen';
       section.intro = 'Wähle einen passenden Slot für ein erstes Gespräch zu Microsoft 365, Copilot oder Security. Danach klären wir Ziel, Ausgangslage und den nächsten sinnvollen Schritt.';
+      section.booking_url ||= '';
+      section.booking_display ||= 'embed';
+      section.booking_button_text ||= 'Termin buchen';
     }
     return section;
   };
@@ -1068,7 +1197,7 @@
     mount.innerHTML = '';
     const toolbar = document.createElement('div');
     toolbar.className = 'beratung-builder__toolbar beratung-card beratung-root-builder__toolbar';
-    toolbar.innerHTML = `<div><button type="button" class="beratung-btn" data-add-basic>Bereich hinzufügen</button></div><label>Landingpage Vorschlag laden <select data-landingpage-proposal><option value="">Bitte wählen</option>${optionHtml(LANDINGPAGE_PROPOSALS, '')}</select></label><label>Root-Bereich hinzufügen <select data-add-module><option value="">Bitte wählen</option>${optionHtml(MODULE_PRESETS, '')}</select></label><span>Alles nach dem Content Header liegt flach in sections[] und kann per Drag and Drop sortiert werden.</span>`;
+    toolbar.innerHTML = `<div><button type="button" class="beratung-btn" data-add-basic>Bereich hinzufügen</button></div><label>Landingpage Vorschlag laden <select data-landingpage-proposal><option value="">Bitte wählen</option>${optionHtml(LANDINGPAGE_PROPOSALS, '')}</select></label><label>Root-Bereich hinzufügen <select data-add-module><option value="">Bitte wählen</option>${optionHtml(MODULE_PRESETS, '')}</select></label><span>Alles nach dem Content Header liegt flach in sections[] und kann per Hoch/Runter oder Drag and Drop sortiert werden.</span>`;
     $('[data-add-basic]', toolbar).addEventListener('click', () => { sections.push(newSection(sections.length)); rerender(); });
     $('[data-landingpage-proposal]', toolbar).addEventListener('change', (event) => {
       const value = event.target.value;
@@ -1097,6 +1226,7 @@
       section.cards = Array.isArray(section.cards) ? section.cards : [];
       section.type ??= 'card_grid';
       section.card_type ??= 'text';
+      section.sort_order = index + 1;
       section.anchor_id ??= section.id ?? `bereich-${index + 1}`;
       const box = document.createElement('section');
       box.className = 'beratung-builder__section beratung-card beratung-root-builder__section';
@@ -1145,7 +1275,10 @@
         const action = button.dataset.action;
         if (action === 'delete') sections.splice(index, 1);
         if (action === 'duplicate') sections.splice(index + 1, 0, JSON.parse(JSON.stringify(section)));
+        if (action === 'move-up' && index > 0) [sections[index - 1], sections[index]] = [sections[index], sections[index - 1]];
+        if (action === 'move-down' && index < sections.length - 1) [sections[index + 1], sections[index]] = [sections[index], sections[index + 1]];
         if (action === 'add-card') section.cards.push(newCard(section.card_type));
+        updateSectionSortOrders(sections);
         rerender();
       }));
 
@@ -1159,6 +1292,7 @@
         if (Number.isNaN(from) || from === index) return;
         const [moved] = sections.splice(from, 1);
         sections.splice(index, 0, moved);
+        updateSectionSortOrders(sections);
         rerender();
       });
 
@@ -1188,7 +1322,7 @@
     const cards = Array.isArray(section.cards) ? section.cards : [];
     if (section.type === 'partner_band') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Netzwerk')}</small><h3>${esc(section.title || 'Partnerband')}</h3><p>${esc(section.intro || 'Beschreibungstext unter Partnerband Text und Buttons.')}</p><em>Layout: ${esc(section.partner_layout || 'network-card')}</em><div><button>${esc(section.button_1_text || 'Website')}</button>${section.button_2_text ? `<button class="ghost">${esc(section.button_2_text)}</button>` : ''}</div></div>`;
     if (section.type === 'proof') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Belegbare Grundlagen')}</small><h3>${esc(section.title || 'Was nach Beratung greifbar wird')}</h3><p>${esc(section.intro || '')}</p><div class="beratung-preview-grid cols-${Math.min(4, Math.max(1, Number(section.columns || 3)))}">${cards.slice(0, 8).map((card, index) => cardPreview(card, index, 'proof')).join('')}</div></div>`;
-    if (section.type === 'booking') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Termin')}</small><h3>${esc(section.title || 'Direkt einen Termin buchen')}</h3><p>${esc(section.intro || '')}</p><div><button>Beratung anfragen</button></div></div>`;
+    if (section.type === 'booking') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Termin')}</small><h3>${esc(section.title || 'Direkt einen Termin buchen')}</h3><p>${esc(section.intro || '')}</p><em>${section.booking_url ? `Microsoft Bookings ${section.booking_display === 'link' ? 'als Link/Card' : 'als Embed'}: ${esc(section.booking_url)}` : 'Noch kein Microsoft Bookings Link hinterlegt.'}</em><div><button>${esc(section.booking_button_text || 'Termin buchen')}</button></div></div>`;
     if (section.type === 'cta') return `<div class="beratung-preview-section is-cta" style="background:${esc(section.background_color || '#1e3a8a')};color:${esc(section.text_color || '#fff')}"><small>${esc(section.eyebrow || 'CTA')}</small><h3>${esc(section.title || 'CTA Titel')}</h3><p>${esc(section.intro || 'Beschreibung für den CTA Bereich.')}</p><div><button>${esc(section.button_1_text || 'Button 1')}</button>${section.button_2_text ? `<button class="ghost">${esc(section.button_2_text)}</button>` : ''}</div></div>`;
     if (section.type === 'divider') return `<div class="beratung-preview-divider"><span>${esc(section.divider_icon || '—')}</span><strong>${esc(section.divider_title || 'Trenner')}</strong><p>${esc(section.divider_subtitle || '')}</p></div>`;
     if (section.type === 'html') return `<div class="beratung-preview-section"><small>Freier HTML Bereich</small><h3>${esc(section.title || 'HTML Bereich')}</h3><p>HTML wird sicher gefiltert. Vorschau zeigt bewusst nur eine neutrale Darstellung.</p></div>`;
@@ -1205,7 +1339,7 @@
   const sectionTemplate = (section, index) => `
     <div class="beratung-builder__section-head">
       <strong>☰ Bereich ${index + 1}: ${text(section.internal_name || section.title || SECTION_TYPES[section.type] || 'Ohne Titel')}</strong>
-      <div class="beratung-builder__actions"><button type="button" data-action="duplicate">Duplizieren</button><button type="button" data-action="delete">Löschen</button></div>
+      <div class="beratung-builder__actions"><button type="button" data-action="move-up" aria-label="Bereich nach oben verschieben">↑ Hoch</button><button type="button" data-action="move-down" aria-label="Bereich nach unten verschieben">↓ Runter</button><button type="button" data-action="duplicate">Duplizieren</button><button type="button" data-action="delete">Löschen</button></div>
     </div>
     <div class="beratung-builder__grid">
       <label><input data-field="enabled" type="checkbox"> Modul aktivieren</label>
@@ -1265,6 +1399,9 @@
       <label class="field-divider">Linienfarbe <input data-field="divider_line_color" type="color"></label>
       <label class="field-divider">Breite in % <input data-field="divider_width" type="number" min="20" max="100"></label>
       <label class="field-divider">Mobile Verhalten <select data-field="divider_mobile_behavior"><option value="stack">Stapeln</option><option value="compact">Kompakt</option><option value="hide_visual">Visuelles Element ausblenden</option></select></label>
+      <label class="field-booking">Microsoft Bookings Link / Embed URL <input data-field="booking_url" placeholder="https://outlook.office.com/book/... oder https://.../bookings/..."></label>
+      <label class="field-booking">Booking Darstellung <select data-field="booking_display"><option value="embed">Eingebettet als Kalender</option><option value="link">Als Booking Card mit Button</option></select></label>
+      <label class="field-booking">Booking Button Text <input data-field="booking_button_text" placeholder="Termin buchen"></label>
       <label class="field-html is-html">Freier HTML Bereich <textarea data-field="html" rows="6"></textarea><small>Nur Admin-Benutzer. Skripte werden serverseitig gefiltert.</small></label>
     </div>
     <div class="beratung-preview-label">Live-nahe Vorschau</div>

@@ -87,6 +87,30 @@ final class CMS_Beratung_Storage
             $payload['slug'] = CMS_Beratung_Settings::slug($payload['public_title'] ?: $payload['internal_title'], 'beratung');
         }
         $payload['slug'] = $this->unique_slug((string) $payload['slug'], $id);
+        $hero = is_array($payload['hero'] ?? null) ? $payload['hero'] : [];
+        if (!empty($hero['standalone_header_enabled'])) {
+            $standaloneSlug = trim((string) ($hero['standalone_header_slug'] ?? ''));
+            if ($standaloneSlug === '') {
+                throw new \InvalidArgumentException('Für die zusätzliche Standalone-Publicsite muss ein eigener Slug hinterlegt werden.');
+            }
+            if ($standaloneSlug === (string) $payload['slug']) {
+                throw new \InvalidArgumentException('Der Standalone-Slug muss sich vom normalen Publicsite-Slug unterscheiden.');
+            }
+            $slugStmt = $this->pdo->prepare("SELECT id FROM {$this->prefix}beratung_landingpages WHERE slug = ? AND id <> ? LIMIT 1");
+            $slugStmt->execute([$standaloneSlug, $id]);
+            if ($slugStmt->fetch()) {
+                throw new \InvalidArgumentException('Der Standalone-Slug wird bereits als normaler Publicsite-Slug verwendet.');
+            }
+            foreach ($this->all_landingpages() as $existingPage) {
+                if ((int) ($existingPage['id'] ?? 0) === $id) {
+                    continue;
+                }
+                $existingHero = json_decode((string) ($existingPage['hero_json'] ?? '{}'), true);
+                if (is_array($existingHero) && !empty($existingHero['standalone_header_enabled']) && (string) ($existingHero['standalone_header_slug'] ?? '') === $standaloneSlug) {
+                    throw new \InvalidArgumentException('Der Standalone-Slug wird bereits von einer anderen Standalone-Publicsite verwendet.');
+                }
+            }
+        }
 
         $columns = [
             'tenant_id', 'internal_title', 'public_title', 'slug', 'meta_title', 'meta_description', 'focus_keyword', 'status', 'template',

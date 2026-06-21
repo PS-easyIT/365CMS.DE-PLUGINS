@@ -32,6 +32,17 @@
 .beratung-general-settings__links{display:flex!important;align-items:center!important;gap:.75rem!important;flex-wrap:wrap!important;margin:.15rem 0 0!important}
 @media (max-width:900px){.beratung-general-settings .beratung-editor-section__body{grid-template-columns:1fr!important}}
 
+.beratung-publicsite-card{border-color:#93c5fd!important;background:linear-gradient(135deg,#eff6ff,#ffffff)!important}
+.beratung-publicsite-card h2{margin:.15rem 0 .65rem!important;color:#1e3a8a!important;font-size:1rem!important;line-height:1.2!important}
+.beratung-publicsite-card .beratung-grid-2{margin-top:1rem!important}
+.beratung-publicsite-card .beratung-grid-2>div{border:1px solid #dbeafe;border-radius:16px;background:#fff;padding:1rem;box-shadow:0 10px 24px rgba(15,23,42,.05)}
+.beratung-publicsite-card .description{margin:.5rem 0 0!important;color:#64748b!important;font-size:.86rem!important;line-height:1.45!important}
+.beratung-publicsite-card code{border:1px solid #dbeafe;border-radius:999px;background:#f8fafc;color:#1e3a8a;padding:.08rem .38rem}
+.beratung-publicsite-standalone{display:grid;gap:.85rem;margin-top:1rem;border:1px solid #bfdbfe;border-radius:18px;background:#fff;padding:1rem;box-shadow:0 12px 30px rgba(37,99,235,.08)}
+.beratung-publicsite-standalone>p{margin:0;color:#475569}.beratung-publicsite-standalone .beratung-grid-2{margin-top:0!important}.beratung-publicsite-standalone .beratung-grid-2>label,.beratung-publicsite-standalone .beratung-grid-2>div{box-shadow:none!important}
+.beratung-publicsite-menu-items{display:grid;gap:.65rem;border-top:1px solid #dbeafe;padding-top:.85rem}.beratung-publicsite-menu-items h3{margin:0;color:#1e3a8a;font-size:.95rem}.beratung-publicsite-menu-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}.beratung-publicsite-menu-row .beratung-field{margin:0!important}
+@media (max-width:900px){.beratung-publicsite-menu-row{grid-template-columns:1fr}}
+
 .beratung-preview-card__logo{display:block;width:4rem;height:4rem;object-fit:contain;margin:0 auto .45rem;padding:.35rem;border:1px solid #dbeafe;border-radius:16px;background:#fff;box-shadow:0 8px 20px rgba(15,23,42,.06)}.beratung-builder__card .card-tech .beratung-media-tools{margin-top:.35rem}.beratung-builder__card .card-tech .beratung-media-preview img{object-fit:contain;background:#fff}
 .beratung-preview-card.is-theme-experience{background:#fffdf7;border-color:#f3d28f;border-left:4px solid #d69e2e}.beratung-preview-card.is-theme-consulting{background:#f8fbff;border-color:#bfdbfe;border-left:4px solid #2563eb}.beratung-preview-card.is-theme-exchange{background:#f7fcfb;border-color:#b7e4dc;border-left:4px solid #0f766e}.beratung-preview-card.is-theme-iamcp{background:#f8f7ff;border-color:#c7d2fe;border-left:4px solid #4f46e5}.beratung-preview-card.is-theme-projects{background:#f9fafb;border-color:#cbd5e1;border-left:4px solid #475569}.beratung-preview-card.is-theme-security{background:#fff8f8;border-color:#fecaca;border-left:4px solid #dc2626}.beratung-preview-card.is-theme-governance{background:#f9fbf5;border-color:#d9f99d;border-left:4px solid #65a30d}.beratung-preview-card.is-theme-microsoft{background:#f8fbff;border-color:#bae6fd;border-left:4px solid #0284c7}.beratung-preview-card.is-theme-network{background:#fffaf3;border-color:#fed7aa;border-left:4px solid #ea580c}
 

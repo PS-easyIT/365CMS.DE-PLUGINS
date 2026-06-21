@@ -125,10 +125,24 @@ final class CMS_Beratung_Frontend
                     $this->render_page($slug);
                 });
             }
+            $hero = json_decode((string) ($row['hero_json'] ?? '{}'), true);
+            $hero = is_array($hero) ? $hero : [];
+            $standaloneSlug = trim((string) ($hero['standalone_header_slug'] ?? ''), '/');
+            if (empty($hero['standalone_header_enabled']) || $standaloneSlug === '' || $standaloneSlug === $slug) {
+                continue;
+            }
+            foreach (['/beratung/' . $standaloneSlug, '/de/beratung/' . $standaloneSlug, '/en/beratung/' . $standaloneSlug] as $route) {
+                $router->addRoute('GET', $route, function () use ($slug): void {
+                    $this->render_page($slug, true);
+                });
+                $router->addRoute('POST', $route, function () use ($slug): void {
+                    $this->render_page($slug, true);
+                });
+            }
         }
     }
 
-    private function render_page(string $slug): void
+    private function render_page(string $slug, bool $standaloneVariant = false): void
     {
             $page = CMS_Beratung_Storage::instance()->get_landingpage_by_slug($slug, true);
         if ($page === null) {
@@ -137,8 +151,28 @@ final class CMS_Beratung_Frontend
             exit;
         }
 
+        $hero = is_array($page['hero'] ?? null) ? $page['hero'] : [];
+        if ($standaloneVariant) {
+            if (empty($hero['standalone_header_enabled'])) {
+                http_response_code(404);
+                echo 'Standalone Publicsite nicht aktiviert.';
+                exit;
+            }
+            $page['show_header'] = 0;
+            $page['show_footer'] = 0;
+            $page['is_standalone_variant'] = 1;
+        } else {
+            $page['show_header'] = 1;
+            $page['show_footer'] = 1;
+        }
+
         $this->currentPage = $page;
         $formResult = CMS_Beratung_Forms::handle_submission($page);
+
+        if ($standaloneVariant) {
+            $this->render_standalone_document($page, $formResult);
+            exit;
+        }
 
         if (!empty($page['show_header']) && class_exists('CMS\\ThemeManager')) {
             \CMS\ThemeManager::instance()->getHeader(['title' => (string) ($page['public_title'] ?? 'CMS Beratung')]);
@@ -153,6 +187,40 @@ final class CMS_Beratung_Frontend
         exit;
     }
 
+    /** @param array<string,mixed> $page @param array{success:bool,message:string} $formResult */
+    private function render_standalone_document(array $page, array $formResult): void
+    {
+        if (class_exists('CMS\\ThemeManager')) {
+            \CMS\ThemeManager::instance()->loadTheme();
+        }
+        $title = htmlspecialchars((string) ($page['meta_title'] ?? $page['public_title'] ?? 'CMS Beratung'), ENT_QUOTES, 'UTF-8');
+        $bodyClass = 'cms-beratung-page cms-beratung-standalone-page';
+        if (class_exists('CMS\\Hooks')) {
+            $bodyClass = (string) \CMS\Hooks::applyFilters('body_class', $bodyClass);
+        }
+        echo '<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . $title . '</title>';
+        if (class_exists('CMS\\Hooks')) {
+            \CMS\Hooks::doAction('head');
+        } else {
+            $this->enqueue_public_assets();
+            $this->output_seo_head();
+        }
+        echo '</head><body class="' . htmlspecialchars($bodyClass, ENT_QUOTES, 'UTF-8') . '">';
+        if (class_exists('CMS\\Hooks')) {
+            \CMS\Hooks::doAction('body_start');
+        }
+        CMS_Beratung_Renderer::render_standalone_header($page);
+        $page['standalone_header_rendered_above_content'] = 1;
+        CMS_Beratung_Renderer::render($page, $formResult);
+        if (class_exists('CMS\\Hooks')) {
+            \CMS\Hooks::doAction('before_footer');
+            \CMS\Hooks::doAction('body_end');
+        } else {
+            $this->enqueue_public_scripts();
+        }
+        echo '</body></html>';
+    }
+
     private function resolve_current_page(): ?array
     {
         if ($this->currentPage !== null) {
@@ -163,7 +231,27 @@ final class CMS_Beratung_Frontend
         if (preg_match('#^(?:[a-z]{2}/)?beratung/([a-z0-9_-]+)$#', $path, $matches) !== 1) {
             return null;
         }
-        $this->currentPage = CMS_Beratung_Storage::instance()->get_landingpage_by_slug((string) $matches[1], true);
+        $requestSlug = (string) $matches[1];
+        $this->currentPage = CMS_Beratung_Storage::instance()->get_landingpage_by_slug($requestSlug, true);
+        if ($this->currentPage === null) {
+            foreach (CMS_Beratung_Storage::instance()->all_landingpages() as $row) {
+                if (($row['status'] ?? '') !== 'published') {
+                    continue;
+                }
+                $hero = json_decode((string) ($row['hero_json'] ?? '{}'), true);
+                if (!is_array($hero) || empty($hero['standalone_header_enabled']) || (string) ($hero['standalone_header_slug'] ?? '') !== $requestSlug) {
+                    continue;
+                }
+                $page = CMS_Beratung_Storage::instance()->get_landingpage_by_slug((string) ($row['slug'] ?? ''), true);
+                if ($page !== null) {
+                    $page['show_header'] = 0;
+                    $page['show_footer'] = 0;
+                    $page['is_standalone_variant'] = 1;
+                    $this->currentPage = $page;
+                }
+                break;
+            }
+        }
         return $this->currentPage;
     }
 }

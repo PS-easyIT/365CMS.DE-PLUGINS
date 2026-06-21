@@ -23,7 +23,7 @@ final class CMS_Beratung_Admin_Menu
 
         add_menu_page(
             'CMS Beratung',
-            'CMS Beratung',
+            '365 | Beratung',
             'manage_options',
             CMS_Beratung_Admin_Pages::MENU_SLUG,
             CMS_Beratung_Admin_Pages::dispatch_callback_for_slug(CMS_Beratung_Admin_Pages::DEFAULT_PAGE_SLUG),
@@ -66,7 +66,7 @@ final class CMS_Beratung_Admin_Menu
         $menuItems[] = [
             'type' => 'item',
             'slug' => $parentSlug,
-            'label' => 'CMS Beratung',
+            'label' => '365 | Beratung',
             'icon' => '💼',
             'url' => self::admin_url(CMS_Beratung_Admin_Pages::DEFAULT_PAGE_SLUG),
             'active' => $isPluginPath && $activeSlug === CMS_Beratung_Admin_Pages::DEFAULT_PAGE_SLUG,

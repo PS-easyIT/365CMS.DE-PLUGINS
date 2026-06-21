@@ -46,7 +46,28 @@ final class CMS_Beratung_Import_Export
     {
         $statuses = CMS_Beratung_Settings::statuses();
         $templates = CMS_Beratung_Settings::templates();
-        $hero = self::sanitize_hero($data['hero'] ?? $data['hero_json'] ?? []);
+        $heroRaw = $data['hero'] ?? $data['hero_json'] ?? [];
+        if (is_string($heroRaw)) {
+            $decodedHero = json_decode($heroRaw, true);
+            $heroRaw = is_array($decodedHero) ? $decodedHero : [];
+        }
+        if (!is_array($heroRaw)) {
+            $heroRaw = [];
+        }
+        foreach (['standalone_header_enabled', 'standalone_header_slug', 'standalone_header_blog_logo_url', 'standalone_header_partner_logo_url', 'standalone_header_title', 'standalone_header_subtitle', 'standalone_header_menu_enabled'] as $standaloneKey) {
+            if (array_key_exists($standaloneKey, $data)) {
+                $heroRaw[$standaloneKey] = $data[$standaloneKey];
+            }
+        }
+        for ($i = 1; $i <= 4; $i++) {
+            foreach (['label', 'target'] as $menuField) {
+                $key = 'standalone_header_menu_' . $menuField . '_' . $i;
+                if (array_key_exists($key, $data)) {
+                    $heroRaw[$key] = $data[$key];
+                }
+            }
+        }
+        $hero = self::sanitize_hero($heroRaw);
         $contactRaw = $data['contact'] ?? $data['contact_json'] ?? $data;
         if (array_key_exists('contact_enabled', $data)) {
             if (is_string($contactRaw)) {
@@ -146,8 +167,27 @@ final class CMS_Beratung_Import_Export
             }
         }
 
+        $standaloneMenuItems = [];
+        $rawStandaloneMenuItems = is_array($raw['standalone_header_menu_items'] ?? null) ? $raw['standalone_header_menu_items'] : [];
+        for ($i = 1; $i <= 4; $i++) {
+            $rawItem = is_array($rawStandaloneMenuItems[$i - 1] ?? null) ? $rawStandaloneMenuItems[$i - 1] : [];
+            $label = self::limit(CMS_Beratung_Settings::text((string) ($raw['standalone_header_menu_label_' . $i] ?? $rawItem['label'] ?? '')), 80);
+            $target = self::menu_target((string) ($raw['standalone_header_menu_target_' . $i] ?? $rawItem['target'] ?? ''));
+            if ($label !== '' && $target !== '') {
+                $standaloneMenuItems[] = ['label' => $label, 'target' => $target];
+            }
+        }
+
         return [
             'enabled' => array_key_exists('enabled', $raw) ? !empty($raw['enabled']) : true,
+            'standalone_header_enabled' => !empty($raw['standalone_header_enabled']),
+            'standalone_header_slug' => CMS_Beratung_Settings::slug((string) ($raw['standalone_header_slug'] ?? ''), ''),
+            'standalone_header_blog_logo_url' => CMS_Beratung_Settings::image_url((string) ($raw['standalone_header_blog_logo_url'] ?? '')),
+            'standalone_header_partner_logo_url' => CMS_Beratung_Settings::image_url((string) ($raw['standalone_header_partner_logo_url'] ?? '')),
+            'standalone_header_title' => self::limit(CMS_Beratung_Settings::text((string) ($raw['standalone_header_title'] ?? '')), 180),
+            'standalone_header_subtitle' => self::limit(CMS_Beratung_Settings::text((string) ($raw['standalone_header_subtitle'] ?? '')), 260),
+            'standalone_header_menu_enabled' => array_key_exists('standalone_header_menu_enabled', $raw) ? !empty($raw['standalone_header_menu_enabled']) : true,
+            'standalone_header_menu_items' => $standaloneMenuItems,
             'image_url' => CMS_Beratung_Settings::image_url((string) ($raw['image_url'] ?? '')),
             'image_position' => self::choice((string) ($raw['image_position'] ?? 'left'), ['left', 'right'], 'left'),
             'image_flush' => array_key_exists('image_flush', $raw) ? !empty($raw['image_flush']) : true,
@@ -277,6 +317,7 @@ final class CMS_Beratung_Import_Export
             $button2Type = (string) ($section['button_2_target_type'] ?? 'internal');
             $sections[] = [
                 'id' => self::section_id((string) ($section['id'] ?? 'section-' . ($index + 1))),
+                'sort_order' => max(1, min(999, (int) ($section['sort_order'] ?? ($index + 1)))),
                 'enabled' => array_key_exists('enabled', $section) ? !empty($section['enabled']) : true,
                 'type' => $type === 'cards' ? 'card_grid' : $type,
                 'internal_name' => self::limit(CMS_Beratung_Settings::text((string) ($section['internal_name'] ?? $section['title'] ?? 'Bereich ' . ($index + 1))), 160),
@@ -335,10 +376,18 @@ final class CMS_Beratung_Import_Export
                 'divider_line_color' => CMS_Beratung_Settings::color((string) ($section['divider_line_color'] ?? '#dbeafe'), '#dbeafe'),
                 'divider_width' => max(20, min(100, (int) ($section['divider_width'] ?? 100))),
                 'divider_mobile_behavior' => self::choice((string) ($section['divider_mobile_behavior'] ?? 'stack'), ['stack', 'compact', 'hide_visual'], 'stack'),
+                'booking_url' => self::https_url((string) ($section['booking_url'] ?? $section['booking_link'] ?? $section['booking_embed_url'] ?? '')),
+                'booking_display' => self::choice((string) ($section['booking_display'] ?? 'embed'), ['embed', 'link'], 'embed'),
+                'booking_button_text' => self::limit(CMS_Beratung_Settings::text((string) ($section['booking_button_text'] ?? 'Termin buchen')), 90),
                 'cards' => in_array($type, ['partner_band', 'booking', 'collaboration', 'cta', 'divider', 'html'], true) ? [] : self::sanitize_cards($section['cards'] ?? []),
                 'html' => self::limit(self::safe_html((string) ($section['html'] ?? '')), 12000),
             ];
         }
+        usort($sections, static fn(array $a, array $b): int => ((int) ($a['sort_order'] ?? 999)) <=> ((int) ($b['sort_order'] ?? 999)));
+        foreach ($sections as $index => &$section) {
+            $section['sort_order'] = $index + 1;
+        }
+        unset($section);
         return $sections;
     }
 
@@ -459,6 +508,24 @@ final class CMS_Beratung_Import_Export
             return $phone !== '' ? 'tel:' . $phone : '';
         }
         return CMS_Beratung_Settings::public_url($value);
+    }
+
+    private static function menu_target(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+        if (str_starts_with($value, '#')) {
+            return '#' . CMS_Beratung_Settings::slug(ltrim($value, '#'), 'bereich');
+        }
+        return CMS_Beratung_Settings::public_url($value);
+    }
+
+    private static function https_url(string $value): string
+    {
+        $value = CMS_Beratung_Settings::public_url(trim($value));
+        return preg_match('#^https://#i', $value) === 1 ? self::limit($value, 900) : '';
     }
 
     /** @param mixed $raw @return array<string,mixed> */

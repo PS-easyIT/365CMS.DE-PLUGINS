@@ -215,6 +215,9 @@ final class CMS_Beratung_Admin_Pages
                 $status = (string) ($page['status'] ?? 'draft');
                 $publicUrl = $status === 'published' ? self::public_landingpage_url((string) ($page['slug'] ?? '')) : '';
                 $publicLink = $publicUrl !== '' ? '<a target="_blank" rel="noopener noreferrer" href="' . self::esc($publicUrl) . '">Publicseite</a>' : '';
+                $hero = is_array($page['hero'] ?? null) ? $page['hero'] : [];
+                $standaloneUrl = $status === 'published' && !empty($hero['standalone_header_enabled']) && !empty($hero['standalone_header_slug']) ? self::public_landingpage_url((string) $hero['standalone_header_slug']) : '';
+                $standaloneLink = $standaloneUrl !== '' ? '<a target="_blank" rel="noopener noreferrer" href="' . self::esc($standaloneUrl) . '">Standalone</a>' : '';
                 $template = CMS_Beratung_Settings::templates()[(string) ($page['template'] ?? 'standard')] ?? (string) ($page['template'] ?? 'standard');
                 echo '<article class="beratung-landingpage-item" role="listitem">';
                 echo '<div class="beratung-landingpage-item__main"><div class="beratung-landingpage-item__title"><strong>' . self::esc((string) ($page['internal_title'] ?? 'Ohne internen Titel')) . '</strong><span class="beratung-status beratung-status--' . self::esc($status) . '">' . self::esc($statuses[$status] ?? $status) . '</span></div>';
@@ -223,6 +226,7 @@ final class CMS_Beratung_Admin_Pages
                     . '<a class="is-primary" href="' . self::esc(self::admin_url('cms-beratung-new', ['id' => $id])) . '">Bearbeiten</a>'
                     . '<a target="_blank" rel="noopener noreferrer" href="' . self::esc(self::admin_url('cms-beratung-preview', ['id' => $id])) . '">Vorschau</a>'
                     . $publicLink
+                    . $standaloneLink
                     . '<a href="' . self::esc(self::admin_url('cms-beratung-import-export', ['export' => $id])) . '">Export</a>'
                     . self::action_form($id, 'duplicate', 'Duplizieren')
                     . ($status === 'published' ? self::action_form($id, 'deactivate', 'Deaktivieren') : self::action_form($id, 'publish', 'Veröffentlichen'))
@@ -455,6 +459,7 @@ final class CMS_Beratung_Admin_Pages
         CMS_Beratung_Installer::ensure_for_admin_save();
         $presets = CMS_Beratung_Storage::instance()->all_presets();
         $heroJson = json_encode($page['hero'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}';
+        $heroSettings = is_array($page['hero'] ?? null) ? $page['hero'] : [];
         $contactJson = json_encode($page['contact'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}';
         $editableSections = array_values(array_filter(is_array($page['sections'] ?? null) ? $page['sections'] : [], static fn($section): bool => is_array($section) && ($section['type'] ?? '') !== 'faq'));
         $sectionsJson = json_encode($editableSections, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
@@ -469,21 +474,47 @@ final class CMS_Beratung_Admin_Pages
         self::field('Meta Title', 'meta_title', (string) ($page['meta_title'] ?? ''), 'text', 'Optionaler SEO-Titel. Leer lassen, wenn der öffentliche Website-Titel auch als Meta-/Browser-Titel ausgegeben werden soll.');
         self::textarea('Meta Description', 'meta_description', (string) ($page['meta_description'] ?? ''), 3);
         self::field('Fokus Keyword', 'focus_keyword', (string) ($page['focus_keyword'] ?? ''));
-        self::select('Status', 'status', (string) ($page['status'] ?? 'draft'), $statuses);
         self::select('Template Auswahl', 'template', (string) ($page['template'] ?? 'standard'), $templates);
         self::field('Maximale Inhaltsbreite', 'max_content_width', (string) ($page['max_content_width'] ?? '1160'), 'number');
         self::field('Canonical URL', 'canonical_url', (string) ($page['canonical_url'] ?? ''));
         self::field('Eigene CSS Klasse', 'custom_css_class', (string) ($page['custom_css_class'] ?? ''));
         if ((int) ($page['id'] ?? 0) > 0) {
             $publicUrl = ((string) ($page['status'] ?? 'draft')) === 'published' ? self::public_landingpage_url((string) ($page['slug'] ?? '')) : '';
+            $standaloneUrl = ((string) ($page['status'] ?? 'draft')) === 'published' && !empty($heroSettings['standalone_header_enabled']) && !empty($heroSettings['standalone_header_slug']) ? self::public_landingpage_url((string) $heroSettings['standalone_header_slug']) : '';
             echo '<p class="beratung-general-settings__links"><a class="beratung-link" target="_blank" rel="noopener noreferrer" href="' . self::esc(self::admin_url('cms-beratung-preview', ['id' => (int) $page['id']])) . '">Entwurfs-Vorschau öffnen</a>';
             if ($publicUrl !== '') {
-                echo '<a class="beratung-btn" target="_blank" rel="noopener noreferrer" href="' . self::esc($publicUrl) . '">Publicseite öffnen</a>';
+                echo '<a class="beratung-btn" target="_blank" rel="noopener noreferrer" href="' . self::esc($publicUrl) . '">Publicseite mit Theme öffnen</a>';
+            }
+            if ($standaloneUrl !== '') {
+                echo '<a class="beratung-link" target="_blank" rel="noopener noreferrer" href="' . self::esc($standaloneUrl) . '">Standalone Publicsite öffnen</a>';
             }
             echo '</p>';
         }
-        echo '</section><section class="beratung-card"><h1>Anzeige Optionen</h1>';
-        foreach (['custom_design_enabled' => 'Individuelles Design aktivieren', 'use_global_settings' => 'Globale Plugin Einstellungen verwenden', 'use_global_design' => 'Globales Design Modul verwenden', 'show_header' => 'Header anzeigen', 'show_footer' => 'Footer anzeigen', 'show_breadcrumb' => 'Breadcrumb anzeigen', 'show_toc' => 'Inhaltsverzeichnis anzeigen', 'noindex' => 'Noindex aktivieren', 'nofollow' => 'Nofollow aktivieren'] as $name => $label) {
+        echo '</section><section class="beratung-card beratung-publicsite-card"><h1>Publicsite Anzeige</h1><p>Hier steuerst du pro Landingpage die normale Publicsite mit Theme-Rahmen und optional eine zusätzliche Standalone-Publicsite ohne Theme Header und Footer.</p><div class="beratung-grid-2"><div><h2>Aktivierung</h2>';
+        self::select('Publicsite Status', 'status', (string) ($page['status'] ?? 'draft'), $statuses);
+        echo '<p class="description">Nur veröffentlichte Publicsites sind unter <code>/beratung/{slug}</code> erreichbar. Entwürfe bleiben im Admin und in der Vorschau.</p></div><div><h2>Standard Publicsite</h2><input type="hidden" name="show_header" value="1"><input type="hidden" name="show_footer" value="1">';
+        $standaloneSlug = (string) ($heroSettings['standalone_header_slug'] ?? '');
+        echo '<p class="description">Der normale Publicsite-Slug <code>/beratung/' . self::esc((string) ($page['slug'] ?? 'slug')) . '</code> rendert immer mit Theme Header und Theme Footer. Die zusätzliche Standalone-Variante nutzt einen eigenen Slug, z. B. <code>/beratung/' . self::esc($standaloneSlug !== '' ? $standaloneSlug : 'eigener-standalone-slug') . '</code>.</p></div></div><div class="beratung-publicsite-standalone"><h2>Zusätzliche Standalone-Publicsite</h2><p>Diese zweite Publicsite nutzt keinen Theme Header und keinen Theme Footer, lädt aber weiterhin die Standard-Assets des aktiven Themes und alle Plugin-Styles. Der eigene Slug ist Pflicht und muss sich vom normalen Publicsite-Slug unterscheiden.</p>';
+        self::checkbox('Zusätzliche Standalone-Publicsite aktivieren', 'standalone_header_enabled', !empty($heroSettings['standalone_header_enabled']));
+        self::field('Eigener Standalone Slug', 'standalone_header_slug', $standaloneSlug, 'text', 'Pflicht bei aktiver Standalone-Publicsite. Beispiel: microsoft-365-beratung-clean. Erreichbar unter /beratung/{standalone-slug}.');
+        echo '<div class="beratung-grid-2"><label class="beratung-field"><span>Blog Logo</span><input data-media-field name="standalone_header_blog_logo_url" value="' . self::esc((string) ($heroSettings['standalone_header_blog_logo_url'] ?? '')) . '" placeholder="/uploads/beratung/... oder https://..."></label><label class="beratung-field"><span>Partner Logo</span><input data-media-field name="standalone_header_partner_logo_url" value="' . self::esc((string) ($heroSettings['standalone_header_partner_logo_url'] ?? '')) . '" placeholder="/uploads/beratung/... oder https://..."></label></div>';
+        self::field('Header Titel', 'standalone_header_title', (string) ($heroSettings['standalone_header_title'] ?? ''), 'text', 'Wird nur angezeigt, wenn ein eigener Titel hinterlegt ist.');
+        self::textarea('Header Untertitel', 'standalone_header_subtitle', (string) ($heroSettings['standalone_header_subtitle'] ?? ''), 2);
+        self::checkbox('Menüband im eigenen Header anzeigen', 'standalone_header_menu_enabled', array_key_exists('standalone_header_menu_enabled', $heroSettings) ? !empty($heroSettings['standalone_header_menu_enabled']) : true);
+        $standaloneMenuItems = is_array($heroSettings['standalone_header_menu_items'] ?? null) ? array_values($heroSettings['standalone_header_menu_items']) : [];
+        echo '<div class="beratung-publicsite-menu-items"><h3>Menüband Links</h3>';
+        for ($i = 1; $i <= 4; $i++) {
+            $item = is_array($standaloneMenuItems[$i - 1] ?? null) ? $standaloneMenuItems[$i - 1] : [];
+            echo '<div class="beratung-publicsite-menu-row"><label class="beratung-field"><span>Menü Label ' . $i . '</span><input name="standalone_header_menu_label_' . $i . '" value="' . self::esc((string) ($item['label'] ?? '')) . '" placeholder="z. B. Leistungen"></label><label class="beratung-field"><span>Menü Ziel ' . $i . '</span><input name="standalone_header_menu_target_' . $i . '" value="' . self::esc((string) ($item['target'] ?? '')) . '" placeholder="#leistungen oder https://..."></label></div>';
+        }
+        echo '</div></div><div class="beratung-grid-2"><div><h2>Navigation</h2>';
+        self::checkbox('Breadcrumb anzeigen', 'show_breadcrumb', !empty($page['show_breadcrumb']));
+        self::checkbox('Inhaltsverzeichnis anzeigen', 'show_toc', !empty($page['show_toc']));
+        echo '</div><div><h2>Suchmaschinen</h2>';
+        self::checkbox('Noindex aktivieren', 'noindex', !empty($page['noindex']));
+        self::checkbox('Nofollow aktivieren', 'nofollow', !empty($page['nofollow']));
+        echo '</div></div></section><section class="beratung-card"><h1>Design und System Optionen</h1>';
+        foreach (['custom_design_enabled' => 'Individuelles Design aktivieren', 'use_global_settings' => 'Globale Plugin Einstellungen verwenden', 'use_global_design' => 'Globales Design Modul verwenden'] as $name => $label) {
             self::checkbox($label, $name, !empty($page[$name]));
         }
         echo '</section>';
@@ -615,6 +646,19 @@ final class CMS_Beratung_Admin_Pages
                 'image_alt' => 'Microsoft 365 Beratung',
                 'badge_text' => 'Microsoft 365 und Copilot Beratung',
                 'badge_show' => true,
+                'standalone_header_enabled' => false,
+                'standalone_header_slug' => 'microsoft-365-und-copilot-beratung-standalone',
+                'standalone_header_blog_logo_url' => '',
+                'standalone_header_partner_logo_url' => '',
+                'standalone_header_title' => 'Microsoft 365 und Copilot Beratung',
+                'standalone_header_subtitle' => 'Standalone Publicsite ohne Theme Header und Footer.',
+                'standalone_header_menu_enabled' => true,
+                'standalone_header_menu_items' => [
+                    ['label' => 'Leistungen', 'target' => '#leistungen'],
+                    ['label' => 'Ablauf', 'target' => '#ablauf'],
+                    ['label' => 'Termin', 'target' => '#termin-buchen'],
+                    ['label' => 'Kontakt', 'target' => '#kontakt'],
+                ],
                 'title' => 'Microsoft 365 und Copilot sauber einführen, statt einfach nur Lizenzen zu verteilen',
                 'subtitle' => 'Microsoft 365, Copilot, Security und Governance technisch sauber bewerten und praxisnah umsetzen.',
                 'description' => 'Ich unterstütze Dich dabei, Microsoft 365, Copilot, Security und Governance technisch sauber zu bewerten, sinnvoll zu strukturieren und praxisnah umzusetzen.',
@@ -1064,7 +1108,92 @@ final class CMS_Beratung_Admin_Pages
             ]]);
         }
 
-        $page['sections'] = array_values(array_filter($page['sections'], static fn(array $section): bool => ($section['type'] ?? '') !== 'faq'));
+        $targetSectionOrder = ['proof', 'partner_band', 'comparison', 'services', 'steps', 'collaboration', 'trust', 'technology', 'html', 'booking', 'divider', 'cta'];
+        $targetSectionNames = [
+            'proof' => 'Grundlagen',
+            'partner_band' => 'Partnerband',
+            'comparison' => 'Vergleich GenAI Agentic AI',
+            'services' => 'Meine Leistungen',
+            'steps' => 'Beratungsablauf',
+            'collaboration' => 'Zusammenarbeit',
+            'trust' => 'Trust Bereich',
+            'technology' => 'Technologie Bereich',
+            'html' => 'Freier HTML Bereich',
+            'booking' => 'Terminbuchung',
+            'divider' => 'Zitat Trenner',
+            'cta' => 'CTA Band Copilot Readiness',
+        ];
+        $ensureSection = static function (array &$sections, string $type, array $defaults): void {
+            foreach ($sections as $section) {
+                if (($section['type'] ?? '') === $type) {
+                    return;
+                }
+            }
+            $sections[] = $defaults + ['enabled' => true, 'type' => $type, 'cards' => []];
+        };
+        $ensureSection($page['sections'], 'proof', [
+            'id' => 'belegbare-grundlagen',
+            'anchor_id' => 'belegbare-grundlagen',
+            'internal_name' => 'Grundlagen',
+            'eyebrow' => 'Belegbare Grundlagen',
+            'title' => 'Was nach Beratung greifbar wird',
+            'intro' => 'Keine erfundenen Kundenzitate. Hier stehen nur nachvollziehbare Erfahrung, klare Projektbelege und später echte freigegebene Referenzen.',
+            'columns' => 3,
+            'card_type' => 'text',
+            'card_design' => 'accent',
+            'background_color' => '#ffffff',
+            'text_color' => '#111827',
+            'cards' => [
+                ['enabled' => true, 'badge' => 'Erfahrung', 'title' => '20+ Jahre Microsoft-Infrastruktur', 'text' => 'Senior IT-Admin mit Schwerpunkt Microsoft 365, Azure, Exchange, PowerShell, IT-Security und Datenschutz/Compliance.'],
+                ['enabled' => true, 'badge' => 'Prüfung', 'title' => 'IHK-Prüfer', 'text' => 'Prüfungsperspektive aus Ausbildung und Praxis. Das hilft bei klaren Standards, verständlicher Übergabe und sauberer Dokumentation.'],
+                ['enabled' => true, 'badge' => 'Zertifizierung', 'title' => 'Mehrfach zertifiziert', 'text' => 'LPIC 1 & 2 sowie Microsoft-Zertifizierungen ergänzen die praktische Erfahrung.'],
+            ],
+        ]);
+        $ensureSection($page['sections'], 'partner_band', [
+            'id' => 'partnerband',
+            'anchor_id' => 'partnerband',
+            'enabled' => false,
+            'internal_name' => 'Partnerband',
+            'eyebrow' => 'Netzwerk',
+            'title' => 'Zugehörig zum copilotberater.de Netzwerk',
+            'intro' => 'Einordnung, Netzwerkbezug und weiterführende Links zum Partnerangebot.',
+            'partner_layout' => 'network-card',
+            'button_1_text' => 'copilotberater.de',
+            'button_1_target' => 'https://copilotberater.de',
+            'button_1_target_type' => 'external',
+            'button_1_style' => 'primary',
+            'button_2_text' => 'Copilotberater Deutschland Karte',
+            'button_2_target' => 'https://copilotberater.de/copilotberater-deutschland-karte/',
+            'button_2_target_type' => 'external',
+            'button_2_style' => 'ghost',
+        ]);
+        $ensureSection($page['sections'], 'booking', [
+            'id' => 'termin-buchen',
+            'anchor_id' => 'termin-buchen',
+            'internal_name' => 'Terminbuchung',
+            'eyebrow' => 'Termin',
+            'title' => 'Direkt einen Termin buchen',
+            'intro' => 'Wähle einen passenden Slot für ein erstes Gespräch zu Microsoft 365, Copilot oder Security. Danach klären wir Ziel, Ausgangslage und den nächsten sinnvollen Schritt.',
+            'booking_url' => '',
+            'booking_display' => 'embed',
+            'booking_button_text' => 'Termin buchen',
+            'background_color' => '#ffffff',
+            'text_color' => '#111827',
+        ]);
+        $page['sections'] = array_values(array_filter($page['sections'], static fn(array $section): bool => in_array((string) ($section['type'] ?? ''), $targetSectionOrder, true)));
+        usort($page['sections'], static function (array $a, array $b) use ($targetSectionOrder): int {
+            $rankA = array_search((string) ($a['type'] ?? ''), $targetSectionOrder, true);
+            $rankB = array_search((string) ($b['type'] ?? ''), $targetSectionOrder, true);
+            return ($rankA === false ? 999 : $rankA) <=> ($rankB === false ? 999 : $rankB);
+        });
+        foreach ($page['sections'] as $index => &$section) {
+            $section['sort_order'] = $index + 1;
+            $type = (string) ($section['type'] ?? '');
+            if (isset($targetSectionNames[$type])) {
+                $section['internal_name'] = $targetSectionNames[$type];
+            }
+        }
+        unset($section);
         return $page;
     }
 
