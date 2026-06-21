@@ -1,13 +1,17 @@
 {
   "slug": "cms-beratung",
   "name": "CMS Beratung",
-  "version": "2.9.755",
+  "version": "2.9.759",
   "requires": "365CMS",
   "tested": "2026.06",
   "author": "365 Network",
   "description": "Spezialisierter 365CMS Landingpage Builder für Microsoft 365, Copilot, KI, Security, Compliance und IT Consulting Beratungsleistungen.",
   "download_url": "PLUGINS/cms-beratung/cms-beratung.zip",
   "changelog": {
+    "2.9.759": "Zusammenarbeit-Bereich stabilisiert: Mehrfach ausgewählte Experts werden im Admin-Builder und im Public Rendering robust normalisiert, unabhängig davon ob sie als Array, JSON-String oder kommagetrennte Werte gespeichert wurden. Das Public Rendering lädt ausgewählte Expert-Profile einzeln fehlertolerant, sodass ein problematischer Datensatz nicht mehr den gesamten Zusammenarbeit-Bereich verschwinden lässt.",
+    "2.9.758": "Rechte TOC-Rail optisch verfeinert: Die Einträge erscheinen desktopseitig als kompaktes zweispaltiges Linkraster statt als Button-Liste, Hover und aktive Zustände nutzen nur einen dezenten Unterstrich. Die Rail behält eine stabile Breite rechts neben dem zentrierten Content und startet bei vorhandener Breadcrumb-Zeile bündig mit dem Contentheader/Hero.",
+    "2.9.757": "TOC-Rail korrigiert: Wenn das rechte Inhaltsverzeichnis auf Desktop angezeigt wird, wird die obere Anker-Navigation unter dem Contentheader ausgeblendet. Die TOC-Rail ist desktopseitig dauerhaft geöffnet und nicht einklappbar. Der Content bleibt in seiner zentrierten Hauptspalte und verschiebt sich nicht mehr nach links, weil die Rail in einer separaten rechten Seitenfläche liegt.",
+    "2.9.756": "Public Landingpages erweitert: Ab Desktop-Breite gibt es ein kollabierbares, sticky Inhaltsverzeichnis als rechte Rail mit bestehender Abschnittsanker-Struktur, In-Memory-Toggle und Scrollspy-Aktivmarkierung. Die Card-, Proof- und Collaboration-Grids nutzen wieder responsive auto-fit/minmax-Spalten, sodass breite Viewports sinnvoll mit 3 beziehungsweise bei Rail-Breite mit 2 Spalten gefüllt werden.",
     "2.9.755": "Mobile Landingpage UX verbessert: Unterhalb von 768px bleibt die Abschnittsnavigation sticky, einzeilig, kompakt und horizontal scrollbar mit ausgeblendeter Scrollbar. Hero-CTAs zeigen mobil genau eine dominante Full-Width-Primäraktion, weitere Buttons als kleinere Outline-Aktionen. Muted Texte werden kontrastreicher, die mobile Basis-Schrift leicht größer und wichtige Tap Targets auf mindestens 44px abgesichert.",
     "2.9.754": "Public Landingpage CSS verfeinert: Die Abschnittsnavigation bleibt kompakt sticky am oberen Rand und wird mobil horizontal scrollbar. Service-Card-Icons erhalten eine einheitliche B2B-Darstellung, Hero-CTAs haben genau eine dominante Primäraktion, muted Texte nutzen einen kontraststärkeren Token und Sections wechseln für bessere Lesbarkeit zwischen Weiß und einer dezenten Tönung.",
     "2.9.753": "Kontaktlayout-Fix: Beim neuen Layout mit nahtlosem Bild links respektiert der Formularbereich rechts wieder den konfigurierten Card-Abstand zum rechten Rand. Ein globales Formular-width:100%-Override wird dafür layout-spezifisch überschrieben.",

@@ -8,7 +8,8 @@
       if (!link) return;
       const href = link.getAttribute('href') || '';
       if (href.length < 2) return;
-      const target = document.querySelector(href);
+      const targetId = href.startsWith('#') ? decodeURIComponent(href.slice(1)) : '';
+      const target = targetId ? document.getElementById(targetId) : null;
       if (!target) return;
       event.preventDefault();
       target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
@@ -48,4 +49,71 @@
       // FAQ bleibt als HTML lesbar, auch wenn Enhancement fehlschlägt.
     }
   }));
+
+  roots.forEach((root) => {
+    try {
+      const tocRail = root.querySelector('.cms-beratung__toc-rail');
+      if (!tocRail) return;
+      const toggle = tocRail.querySelector('.cms-beratung__toc-toggle');
+      const links = Array.from(tocRail.querySelectorAll('.cms-beratung__toc-link'));
+      const isLockedOpen = tocRail.dataset.tocLock === 'expanded';
+      let expanded = isLockedOpen || root.classList.contains('is-toc-expanded') || tocRail.dataset.tocState === 'expanded';
+
+      const setExpanded = (next) => {
+        expanded = Boolean(next);
+        root.classList.toggle('is-toc-expanded', expanded);
+        tocRail.dataset.tocState = expanded ? 'expanded' : 'collapsed';
+        if (toggle) {
+          toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+          toggle.setAttribute('aria-label', expanded ? 'Inhaltsverzeichnis schließen' : 'Inhaltsverzeichnis öffnen');
+        }
+      };
+
+      setExpanded(expanded);
+
+      if (toggle) {
+        toggle.addEventListener('click', (event) => {
+          event.preventDefault();
+          if (isLockedOpen) return;
+          setExpanded(!expanded);
+        });
+      }
+
+      const sections = links.map((link) => {
+        const href = link.getAttribute('href') || '';
+        const id = href.startsWith('#') ? decodeURIComponent(href.slice(1)) : '';
+        const target = id ? document.getElementById(id) : null;
+        return target ? { link, target } : null;
+      }).filter(Boolean);
+
+      const setActive = (id) => {
+        links.forEach((link) => {
+          const href = link.getAttribute('href') || '';
+          link.classList.toggle('is-active', href === `#${id}`);
+        });
+      };
+
+      if ('IntersectionObserver' in window && sections.length) {
+        const observer = new IntersectionObserver((entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top));
+          if (visible[0]?.target?.id) setActive(visible[0].target.id);
+        }, { rootMargin: '-25% 0px -60% 0px', threshold: [0, 0.1, 0.35] });
+        sections.forEach(({ target }) => observer.observe(target));
+      } else if (sections.length) {
+        const updateActive = () => {
+          const current = sections.reduce((best, item) => {
+            const top = Math.abs(item.target.getBoundingClientRect().top - 120);
+            return !best || top < best.top ? { id: item.target.id, top } : best;
+          }, null);
+          if (current?.id) setActive(current.id);
+        };
+        window.addEventListener('scroll', updateActive, { passive: true });
+        updateActive();
+      }
+    } catch (_) {
+      // TOC ist reine Verbesserung; die Seite bleibt ohne JS vollständig nutzbar.
+    }
+  });
 })();

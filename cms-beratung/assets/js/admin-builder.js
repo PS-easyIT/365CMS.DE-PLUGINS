@@ -110,8 +110,24 @@
     }
   })();
 
+  const normalizeIds = (value) => {
+    let raw = value;
+    if (typeof raw === 'string') {
+      try {
+        const parsed = JSON.parse(raw);
+        raw = Array.isArray(parsed) ? parsed : raw.split(/[\s,;]+/);
+      } catch (_) {
+        raw = raw.split(/[\s,;]+/);
+      }
+    } else if (typeof raw === 'number') {
+      raw = [raw];
+    }
+    if (!Array.isArray(raw)) return [];
+    return [...new Set(raw.map((entry) => Number(typeof entry === 'object' && entry !== null ? (entry.id || entry.value || 0) : entry)).filter(Boolean))].slice(0, 24);
+  };
+
   const expertOptionHtml = (selectedIds = []) => {
-    const selected = new Set((Array.isArray(selectedIds) ? selectedIds : []).map((id) => Number(id)));
+    const selected = new Set(normalizeIds(selectedIds));
     if (!expertOptions.length) return '<option value="" disabled>Keine Experts aus CMS-Expertsandcompanie gefunden</option>';
     return expertOptions.map((expert) => `<option value="${Number(expert.id || 0)}"${selected.has(Number(expert.id || 0)) ? ' selected' : ''}>${esc(expert.label || expert.name || `Expert #${expert.id}`)}${expert.is_mvp ? ' · MVP' : ''}</option>`).join('');
   };
@@ -1107,9 +1123,9 @@
       });
       const expertSelect = $('[data-expert-ids]', box);
       if (expertSelect) {
-        section.expert_ids = Array.isArray(section.expert_ids) ? section.expert_ids.map((id) => Number(id)).filter(Boolean) : [];
+        section.expert_ids = normalizeIds(section.expert_ids);
         expertSelect.addEventListener('change', () => {
-          section.expert_ids = [...expertSelect.selectedOptions].map((option) => Number(option.value)).filter(Boolean);
+          section.expert_ids = normalizeIds([...expertSelect.selectedOptions].map((option) => option.value));
           sync();
           updatePreview();
         });
@@ -1172,7 +1188,7 @@
     if (section.type === 'html') return `<div class="beratung-preview-section"><small>Freier HTML Bereich</small><h3>${esc(section.title || 'HTML Bereich')}</h3><p>HTML wird sicher gefiltert. Vorschau zeigt bewusst nur eine neutrale Darstellung.</p></div>`;
     if (section.type === 'comparison') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Vergleich')}</small><h3>${esc(section.title || 'Vergleich')}</h3>${section.title_band_text ? `<div class="beratung-preview-band">${esc(section.title_band_text)}</div>` : ''}<div class="beratung-preview-grid cols-${Math.min(3, Math.max(1, Number(section.columns || 2)))}">${cards.map((card, index) => cardPreview(card, index, 'card_grid')).join('')}</div></div>`;
     if (section.type === 'collaboration') {
-      const selected = new Set((Array.isArray(section.expert_ids) ? section.expert_ids : []).map((id) => Number(id)));
+      const selected = new Set(normalizeIds(section.expert_ids));
       const experts = expertOptions.filter((expert) => selected.has(Number(expert.id))).slice(0, 8);
       const expertCards = experts.map((expert) => `<article class="beratung-preview-card is-trust"><i>${expert.is_mvp ? '★' : '👤'}</i><h4>${esc(expert.name || 'Expert')}</h4><p>${esc([expert.position, expert.company].filter(Boolean).join(' · '))}</p></article>`).join('');
       return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Zusammenarbeit')}</small><h3>${esc(section.title || 'Zusammenarbeit')}</h3><p>${esc(section.intro || '')}</p><div class="beratung-preview-grid cols-${Math.min(4, Math.max(2, Number(section.columns || 3)))}">${expertCards || '<article class="beratung-preview-card"><h4>Noch keine Experts ausgewählt</h4><p>Wähle unten Experts aus dem CMS-Expertsandcompanie Plugin.</p></article>'}</div>${section.mvp_note_enabled && section.mvp_note_text ? `<em>${esc(section.mvp_note_text)}</em>` : ''}</div>`;

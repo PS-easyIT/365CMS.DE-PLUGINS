@@ -305,26 +305,52 @@ $expertExcerpt = static function (object $expert): string {
     return function_exists('mb_substr') ? (string) mb_substr($text, 0, 150, 'UTF-8') : substr($text, 0, 150);
 };
 
-$loadCollaborationExperts = static function (array $ids): array {
+$normalizeExpertIds = static function (mixed $raw): array {
+    if (is_string($raw)) {
+        $decoded = json_decode($raw, true);
+        $raw = is_array($decoded) ? $decoded : (preg_split('/[\s,;]+/', $raw) ?: []);
+    } elseif (is_int($raw) || is_float($raw)) {
+        $raw = [$raw];
+    }
+    if (!is_array($raw)) {
+        return [];
+    }
+    $ids = [];
+    foreach ($raw as $value) {
+        if (is_array($value)) {
+            $value = $value['id'] ?? $value['value'] ?? 0;
+        } elseif (is_object($value)) {
+            $value = $value->id ?? $value->value ?? 0;
+        }
+        $id = (int) $value;
+        if ($id > 0) {
+            $ids[$id] = $id;
+        }
+    }
+    return array_slice(array_values($ids), 0, 24);
+};
+
+$loadCollaborationExperts = static function (mixed $ids) use ($normalizeExpertIds): array {
     if (!class_exists('CMS_365NET_Experts_And_Companie_Database')) {
         return [];
     }
     $database = CMS_365NET_Experts_And_Companie_Database::instance();
     $experts = [];
-    foreach (array_values(array_unique(array_map('intval', $ids))) as $id) {
-        if ($id <= 0) {
+    foreach ($normalizeExpertIds($ids) as $id) {
+        try {
+            $expert = $database->getExpertPublicById($id);
+            if (is_object($expert)) {
+                $experts[] = $expert;
+            }
+        } catch (Throwable) {
             continue;
-        }
-        $expert = $database->getExpertPublicById($id);
-        if (is_object($expert)) {
-            $experts[] = $expert;
         }
     }
     return $experts;
 };
 
 $renderCollaboration = static function (array $section, int $columns) use ($renderer, $loadCollaborationExperts, $expertName, $expertInitials, $expertExcerpt): void {
-    $experts = $loadCollaborationExperts(is_array($section['expert_ids'] ?? null) ? $section['expert_ids'] : []);
+    $experts = $loadCollaborationExperts($section['expert_ids'] ?? []);
     if ($experts === []) {
         return;
     }
@@ -533,6 +559,16 @@ $renderBookingSection = static function (string $bookingUrl, array $section = []
         </nav>
     <?php endif; ?>
 
+    <?php if ($visibleAnchors !== []): ?>
+        <aside class="cms-beratung__toc-rail" aria-label="Inhaltsverzeichnis" data-toc-state="expanded" data-toc-lock="expanded">
+            <button class="cms-beratung__toc-toggle" type="button" aria-expanded="true" aria-label="Inhaltsverzeichnis schließen"><span aria-hidden="true">☰</span><strong>Inhalte</strong></button>
+            <nav class="cms-beratung__toc" aria-label="Abschnitte der Landingpage">
+                <?php foreach ($visibleAnchors as $navIndex => $section): ?><a class="cms-beratung__toc-link" href="#<?php echo $renderer::esc((string) ($section['anchor_id'] ?? $section['id'] ?? 'bereich')); ?>" data-toc-target="<?php echo $renderer::esc((string) ($section['anchor_id'] ?? $section['id'] ?? 'bereich')); ?>"><span><?php echo $renderer::esc(str_pad((string) ($navIndex + 1), 2, '0', STR_PAD_LEFT)); ?></span><?php echo $renderer::esc((string) $section['title']); ?></a><?php endforeach; ?>
+                <a class="cms-beratung__toc-link" href="#kontakt" data-toc-target="kontakt"><span><?php echo $renderer::esc(str_pad((string) (count($visibleAnchors) + 1), 2, '0', STR_PAD_LEFT)); ?></span>Kontakt</a>
+            </nav>
+        </aside>
+    <?php endif; ?>
+
     <?php $sectionNumber = 0; foreach ($sections as $section): ?>
         <?php if (empty($section['enabled'])) { continue; } ?>
         <?php $columns = max(1, min(4, (int) ($section['columns'] ?? 3))); $sectionId = (string) ($section['anchor_id'] ?? $section['id'] ?? 'bereich'); $sectionType = (string) ($section['type'] ?? 'card_grid'); $cards = is_array($section['cards'] ?? null) ? $section['cards'] : []; ?>
@@ -556,7 +592,7 @@ $renderBookingSection = static function (string $bookingUrl, array $section = []
         <?php endif; ?>
         <?php if ($sectionType === 'proof') { $renderProofSection($proof, $testimonials, $section); continue; } ?>
         <?php if ($sectionType === 'booking') { $renderBookingSection($bookingUrl, $section); continue; } ?>
-        <?php if ($sectionType === 'collaboration' && empty($section['expert_ids'])) { continue; } ?>
+        <?php if ($sectionType === 'collaboration' && $normalizeExpertIds($section['expert_ids'] ?? []) === []) { continue; } ?>
         <?php $sectionNumber++; $rhythmClass = $sectionType === 'cta' ? 'cms-beratung__section--rhythm-accent' : (($sectionNumber % 2 === 0) ? 'cms-beratung__section--rhythm-soft' : 'cms-beratung__section--rhythm-white'); ?>
         <section class="cms-beratung__section cms-beratung__section--<?php echo $renderer::esc($sectionType); ?> cms-beratung__section--display-<?php echo $renderer::esc((string) ($section['display_style'] ?? 'cards')); ?> <?php echo $renderer::esc($rhythmClass); ?> <?php echo !empty($section['equal_height']) ? 'has-equal-cards' : ''; ?>" id="<?php echo $renderer::esc($sectionId); ?>" style="--section-bg: <?php echo $renderer::esc((string) ($section['background_color'] ?? '#ffffff')); ?>; --section-text: <?php echo $renderer::esc((string) ($section['text_color'] ?? '#111827')); ?>; --section-pt: <?php echo (int) ($section['padding_top'] ?? 56); ?>px; --section-pb: <?php echo (int) ($section['padding_bottom'] ?? 56); ?>px; --section-width: <?php echo (int) ($section['max_width'] ?? 1200); ?>px; --section-align: <?php echo $renderer::esc((string) ($section['text_align'] ?? 'left')); ?>; <?php if (!empty($section['background_image_url'])): ?>--section-bg-image:url('<?php echo $renderer::esc((string) $section['background_image_url']); ?>');<?php endif; ?>">
             <div class="cms-beratung__section-inner">

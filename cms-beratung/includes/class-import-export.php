@@ -426,6 +426,11 @@ final class CMS_Beratung_Import_Export
         }
         $ids = [];
         foreach ($raw as $value) {
+            if (is_array($value)) {
+                $value = $value['id'] ?? $value['value'] ?? 0;
+            } elseif (is_object($value)) {
+                $value = $value->id ?? $value->value ?? 0;
+            }
             $id = (int) $value;
             if ($id > 0) {
                 $ids[$id] = $id;
