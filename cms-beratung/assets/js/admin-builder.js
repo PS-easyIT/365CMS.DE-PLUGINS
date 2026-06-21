@@ -961,7 +961,7 @@
       eyebrow: 'Copilot Readiness',
       title: 'Du möchtest wissen, ob dein Microsoft 365 Tenant bereit für Copilot ist?',
       intro: 'Dann lass uns gemeinsam prüfen, wo Berechtigungen, Datenstruktur, Governance und Compliance wirklich stehen.',
-      display_style: 'large',
+      display_style: 'compact',
       button_1_text: 'Beratung anfragen',
       button_1_target: '#kontakt',
       button_1_target_type: 'contact',
