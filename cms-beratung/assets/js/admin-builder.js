@@ -749,9 +749,9 @@
     eyebrow: '',
     title: MODULE_PRESETS[type] || 'Neuer Bereich',
     intro: '',
-    background_color: '#ffffff',
+    background_color: type === 'cta' ? '#112347' : '#ffffff',
     background_image_url: '',
-    text_color: '#111827',
+    text_color: type === 'cta' ? '#ffffff' : '#111827',
     padding_top: 56,
     padding_bottom: 56,
     max_width: 1200,
@@ -962,6 +962,8 @@
       title: 'Du möchtest wissen, ob dein Microsoft 365 Tenant bereit für Copilot ist?',
       intro: 'Dann lass uns gemeinsam prüfen, wo Berechtigungen, Datenstruktur, Governance und Compliance wirklich stehen.',
       display_style: 'compact',
+      background_color: '#112347',
+      text_color: '#ffffff',
       button_1_text: 'Beratung anfragen',
       button_1_target: '#kontakt',
       button_1_target_type: 'contact',
@@ -1327,7 +1329,7 @@
     if (section.type === 'partner_band') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Netzwerk')}</small><h3>${esc(section.title || 'Partnerband')}</h3><p>${esc(section.intro || 'Beschreibungstext unter Partnerband Text und Buttons.')}</p><em>Layout: ${esc(section.partner_layout || 'network-card')}</em><div><button>${esc(section.button_1_text || 'Website')}</button>${section.button_2_text ? `<button class="ghost">${esc(section.button_2_text)}</button>` : ''}</div></div>`;
     if (section.type === 'proof') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Belegbare Grundlagen')}</small><h3>${esc(section.title || 'Was nach Beratung greifbar wird')}</h3><p>${esc(section.intro || '')}</p><div class="beratung-preview-grid cols-${Math.min(4, Math.max(1, Number(section.columns || 3)))}">${cards.slice(0, 8).map((card, index) => cardPreview(card, index, 'proof')).join('')}</div></div>`;
     if (section.type === 'booking') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Termin')}</small><h3>${esc(section.title || 'Direkt einen Termin buchen')}</h3><p>${esc(section.intro || '')}</p><em>${section.booking_url ? `Microsoft Bookings ${section.booking_display === 'link' ? 'als Link/Card' : 'als Embed'}: ${esc(section.booking_url)}` : 'Noch kein Microsoft Bookings Link hinterlegt.'}</em><div><button>${esc(section.booking_button_text || 'Termin buchen')}</button></div></div>`;
-    if (section.type === 'cta') return `<div class="beratung-preview-section is-cta" style="background:${esc(section.background_color || '#1e3a8a')};color:${esc(section.text_color || '#fff')}"><small>${esc(section.eyebrow || 'CTA')}</small><h3>${esc(section.title || 'CTA Titel')}</h3><p>${esc(section.intro || 'Beschreibung für den CTA Bereich.')}</p><div><button>${esc(section.button_1_text || 'Button 1')}</button>${section.button_2_text ? `<button class="ghost">${esc(section.button_2_text)}</button>` : ''}</div></div>`;
+    if (section.type === 'cta') return `<div class="beratung-preview-section is-cta" style="background:linear-gradient(135deg,#112347 0%,#173A78 58%,#2256D6 100%) !important;color:#ffffff !important"><small>${esc(section.eyebrow || 'CTA')}</small><h3>${esc(section.title || 'CTA Titel')}</h3><p>${esc(section.intro || 'Beschreibung für den CTA Bereich.')}</p><div><button>${esc(section.button_1_text || 'Button 1')}</button>${section.button_2_text ? `<button class="ghost">${esc(section.button_2_text)}</button>` : ''}</div></div>`;
     if (section.type === 'divider') return `<div class="beratung-preview-divider"><span>${esc(section.divider_icon || '—')}</span><strong>${esc(section.divider_title || 'Trenner')}</strong><p>${esc(section.divider_subtitle || '')}</p></div>`;
     if (section.type === 'html') return `<div class="beratung-preview-section"><small>Freier HTML Bereich</small><h3>${esc(section.title || 'HTML Bereich')}</h3><p>HTML wird sicher gefiltert. Vorschau zeigt bewusst nur eine neutrale Darstellung.</p></div>`;
     if (section.type === 'comparison') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Vergleich')}</small><h3>${esc(section.title || 'Vergleich')}</h3>${section.title_band_text ? `<div class="beratung-preview-band">${esc(section.title_band_text)}</div>` : ''}<div class="beratung-preview-grid cols-${Math.min(3, Math.max(1, Number(section.columns || 2)))}">${cards.map((card, index) => cardPreview(card, index, 'card_grid')).join('')}</div></div>`;
