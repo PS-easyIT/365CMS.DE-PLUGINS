@@ -389,6 +389,10 @@
 .cms-beratung.cms-beratung .cms-beratung__contact--layout-image-left-flush.cms-beratung__contact--has-image .cms-beratung-form,
 .cms-beratung.cms-beratung .cms-beratung__contact--layout-image-left-flush.cms-beratung__contact--has-image > .cms-beratung-module__actions{
 	grid-area:contact-form!important;
+	width:auto!important;
+	max-width:none!important;
+	justify-self:stretch!important;
+	box-sizing:border-box!important;
 	margin:0 var(--beratung-card-spacing,24px) var(--beratung-card-spacing,24px)!important;
 }
 

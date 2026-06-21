@@ -1,13 +1,14 @@
 {
   "slug": "cms-beratung",
   "name": "CMS Beratung",
-  "version": "2.9.752",
+  "version": "2.9.753",
   "requires": "365CMS",
   "tested": "2026.06",
   "author": "365 Network",
   "description": "Spezialisierter 365CMS Landingpage Builder für Microsoft 365, Copilot, KI, Security, Compliance und IT Consulting Beratungsleistungen.",
   "download_url": "PLUGINS/cms-beratung/cms-beratung.zip",
   "changelog": {
+    "2.9.753": "Kontaktlayout-Fix: Beim neuen Layout mit nahtlosem Bild links respektiert der Formularbereich rechts wieder den konfigurierten Card-Abstand zum rechten Rand. Ein globales Formular-width:100%-Override wird dafür layout-spezifisch überschrieben.",
     "2.9.752": "Kontaktbereich erweitert: Beschreibung, Hinweistext und Datenschutztext erhalten jetzt sinnvolle Vorbelegungen für neue Landingpages. Zusätzlich gibt es ein fünftes Kontaktlayout mit nahtlosem linken Kontaktbild, konfigurierbarer Bildbreite in Prozent und rechts angeordnetem Titel-/Textbereich oberhalb des Kontaktformulars.",
     "2.9.751": "Landingpage-Adminübersicht kompakter gestaltet: Die Übersicht zeigt jetzt eine aufgeräumte Toolbar mit Kennzahlen, einen klaren Button zum Anlegen neuer Landingpages und kompakte Listen-Cards mit Meta-Informationen und gruppierten Aktionen. Die Sidebar-Unterpunkte Landingpages und Neue Landingpage erstellen wurden entfernt; neue Seiten werden ausschließlich über den Anlegen-Button in der Übersicht gestartet.",
     "2.9.750": "Kontaktbereich erweitert: Im Landingpage-Admin kann jetzt zwischen vier Public-Layouts gewählt werden – Split mit Text links/Formular rechts, Formular links/Text rechts, zentrierte Kontakt-Card und kompaktes Kontaktband. Das Layout wird im Kontakt-JSON gespeichert, sanitisiert und public als eigene Layoutklasse mit responsiven Styles ausgegeben.",
