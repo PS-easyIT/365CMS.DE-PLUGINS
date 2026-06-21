@@ -110,6 +110,8 @@ $partnerBandMapLabel = trim((string) ($hero['partner_band_map_label'] ?? ''));
 $partnerBandMapUrl = trim((string) ($hero['partner_band_map_url'] ?? ''));
 $partnerBandHasContent = $partnerBandEnabled && ($partnerBandText !== '' || ($partnerBandWebsiteLabel !== '' && $partnerBandWebsiteUrl !== '') || ($partnerBandMapLabel !== '' && $partnerBandMapUrl !== ''));
 $anchorNavLayout = in_array((string) ($hero['anchor_nav_layout'] ?? 'pills'), ['pills', 'cards', 'goldbar', 'minimal', 'threegrid'], true) ? (string) ($hero['anchor_nav_layout'] ?? 'pills') : 'pills';
+$tocRightDisplay = in_array((string) ($hero['toc_right_display'] ?? 'card'), ['off', 'card'], true) ? (string) ($hero['toc_right_display'] ?? 'card') : 'card';
+$tocRightLayout = in_array((string) ($hero['toc_right_layout'] ?? 'card'), ['card', 'compact', 'outline'], true) ? (string) ($hero['toc_right_layout'] ?? 'card') : 'card';
 
 $buttonClass = static function (string $style): string {
     return 'cms-beratung__btn cms-beratung__btn--' . preg_replace('/[^a-z0-9_-]/i', '', $style ?: 'primary');
@@ -559,8 +561,9 @@ $renderBookingSection = static function (string $bookingUrl, array $section = []
         </nav>
     <?php endif; ?>
 
-    <?php if ($visibleAnchors !== []): ?>
-        <aside class="cms-beratung__toc-rail" aria-label="Inhaltsverzeichnis" data-toc-state="expanded" data-toc-lock="expanded">
+    <?php $rightTocEnabled = !empty($page['show_toc']) && $tocRightDisplay === 'card' && $visibleAnchors !== []; ?>
+    <?php if ($rightTocEnabled): ?>
+        <aside class="cms-beratung__toc-rail cms-beratung__toc-rail--<?php echo $renderer::esc($tocRightLayout); ?>" aria-label="Inhaltsverzeichnis" data-toc-state="expanded" data-toc-lock="expanded" data-toc-layout="<?php echo $renderer::esc($tocRightLayout); ?>">
             <button class="cms-beratung__toc-toggle" type="button" aria-expanded="true" aria-label="Inhaltsverzeichnis schließen"><span aria-hidden="true">☰</span><strong>Inhalte</strong></button>
             <nav class="cms-beratung__toc" aria-label="Abschnitte der Landingpage">
                 <?php foreach ($visibleAnchors as $navIndex => $section): ?><a class="cms-beratung__toc-link" href="#<?php echo $renderer::esc((string) ($section['anchor_id'] ?? $section['id'] ?? 'bereich')); ?>" data-toc-target="<?php echo $renderer::esc((string) ($section['anchor_id'] ?? $section['id'] ?? 'bereich')); ?>"><span><?php echo $renderer::esc(str_pad((string) ($navIndex + 1), 2, '0', STR_PAD_LEFT)); ?></span><?php echo $renderer::esc((string) $section['title']); ?></a><?php endforeach; ?>

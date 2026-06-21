@@ -483,6 +483,8 @@
     hero.partner_band_map_label ??= 'Copilotberater Deutschland Karte';
     hero.partner_band_map_url ??= 'https://copilotberater.de/copilotberater-deutschland-karte/';
     hero.anchor_nav_layout ??= 'pills';
+    hero.toc_right_display ??= 'card';
+    hero.toc_right_layout ??= 'card';
     hero.trust_image_url ??= '';
     hero.trust_image_alt ??= 'Portrait eines Microsoft 365 Beraters';
     if (!Array.isArray(hero.trust_badges)) hero.trust_badges = DEFAULT_HERO_TRUST_BADGES.slice();
@@ -536,15 +538,19 @@
     if (!mount || !target) return;
     const hero = parseJson(target, {});
     hero.anchor_nav_layout ??= 'pills';
+    hero.toc_right_display ??= 'card';
+    hero.toc_right_layout ??= 'card';
     const sync = () => syncJson(target, hero);
     mount.className = 'beratung-builder beratung-anchor-nav-builder';
     mount.innerHTML = `
       <div class="beratung-builder__section is-anchor-nav">
-        <div class="beratung-builder__section-head"><strong>Anker Navigation Layout</strong><span>Public eigener Bereich</span></div>
+        <div class="beratung-builder__section-head"><strong>Anker Navigation / rechtes TOC</strong><span>Public Navigation</span></div>
         <div class="beratung-builder__grid">
-          <label>Layout auswählen <select data-field="anchor_nav_layout"><option value="pills">Pills mit Glas-Effekt</option><option value="cards">Karten Navigation</option><option value="goldbar">Goldene Netzwerk-Leiste</option><option value="minimal">Minimal Tabs</option><option value="threegrid">3er Breitenraster</option></select></label>
+          <label>Layout unter dem Content Header <select data-field="anchor_nav_layout"><option value="pills">Pills mit Glas-Effekt</option><option value="cards">Karten Navigation</option><option value="goldbar">Goldene Netzwerk-Leiste</option><option value="minimal">Minimal Tabs</option><option value="threegrid">3er Breitenraster</option></select></label>
+          <label>TOC rechts vom Content <select data-field="toc_right_display"><option value="card">Als rechte Card anzeigen</option><option value="off">Nicht rechts anzeigen</option></select></label>
+          <label>Rechte TOC Card Layout <select data-field="toc_right_layout"><option value="card">Card mit Schatten</option><option value="compact">Kompakt</option><option value="outline">Outline / Minimal</option></select></label>
         </div>
-        <p class="beratung-admin-hint">Die Linkziele entstehen automatisch aus den Anker IDs der aktivierten Inhaltsbereiche. Die Anzeige selbst steuerst du über den Schalter oberhalb.</p>
+        <p class="beratung-admin-hint">Die Linkziele entstehen automatisch aus den Anker IDs der aktivierten Inhaltsbereiche. Der globale Schalter „Inhaltsverzeichnis anzeigen“ aktiviert die rechte TOC Card; hier steuerst du Darstellung und Layout.</p>
       </div>`;
     bindInputs(mount, hero, sync);
     sync();

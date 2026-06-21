@@ -602,6 +602,7 @@ final class CMS_Beratung_Admin_Pages
             'show_header' => 1,
             'show_footer' => 1,
             'show_breadcrumb' => 1,
+            'show_toc' => 1,
             'show_anchor_nav' => 1,
             'hero' => [
                 'enabled' => true,
@@ -630,6 +631,8 @@ final class CMS_Beratung_Admin_Pages
                 'partner_band_map_label' => 'Copilotberater Deutschland Karte',
                 'partner_band_map_url' => 'https://copilotberater.de/copilotberater-deutschland-karte/',
                 'anchor_nav_layout' => 'pills',
+                'toc_right_display' => 'card',
+                'toc_right_layout' => 'card',
                 'trust_text' => 'Praxisnahe Beratung für Microsoft 365, Copilot, Security und Compliance.',
                 'background_color' => '#f8fafc',
                 'text_color' => '#111827',

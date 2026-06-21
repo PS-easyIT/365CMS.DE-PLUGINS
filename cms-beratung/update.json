@@ -1,13 +1,16 @@
 {
   "slug": "cms-beratung",
   "name": "CMS Beratung",
-  "version": "2.9.759",
+  "version": "2.9.762",
   "requires": "365CMS",
   "tested": "2026.06",
   "author": "365 Network",
   "description": "Spezialisierter 365CMS Landingpage Builder für Microsoft 365, Copilot, KI, Security, Compliance und IT Consulting Beratungsleistungen.",
   "download_url": "PLUGINS/cms-beratung/cms-beratung.zip",
   "changelog": {
+    "2.9.762": "Business-grade B2B Look finalisiert: Das Public-CSS nutzt ein konsistentes blaues Accent-System mit zentralen Farb-Tokens, ersetzt Orange-/Gold- und Mehrfarbakzente durch Blue/Grey-Flächen, vereinheitlicht Service-Icons und stellt im Hero genau eine dominante Primary-CTA mit sekundären Outline-Aktionen sicher. Harte Hex-Farbwerte im finalen Frontend-Override stehen nur noch im :root Tokenblock.",
+    "2.9.761": "Rechte TOC-Card exakt am Contentheader ausgerichtet: Hero/Contentheader und TOC-Card erhalten desktopseitig explizit dieselbe Grid-Zeile, sowohl mit als auch ohne Breadcrumb. Zusätzlich wird der initiale Sticky-Top-Versatz entfernt, damit die rechte Card bündig oben neben der Contentheader-Card startet.",
+    "2.9.760": "Rechte TOC Card konfigurierbar gemacht: Im Bereich Anker Navigation kann das Inhaltsverzeichnis rechts vom Content als Card aktiviert oder deaktiviert werden. Für die rechte Darstellung stehen maximal drei Layouts bereit: Card mit Schatten, Kompakt und Outline/Minimal. Die Menüpunkte werden rechts immer vertikal untereinander angezeigt und die Card wird neben dem Contentheader/Hero ausgerichtet.",
     "2.9.759": "Zusammenarbeit-Bereich stabilisiert: Mehrfach ausgewählte Experts werden im Admin-Builder und im Public Rendering robust normalisiert, unabhängig davon ob sie als Array, JSON-String oder kommagetrennte Werte gespeichert wurden. Das Public Rendering lädt ausgewählte Expert-Profile einzeln fehlertolerant, sodass ein problematischer Datensatz nicht mehr den gesamten Zusammenarbeit-Bereich verschwinden lässt.",
     "2.9.758": "Rechte TOC-Rail optisch verfeinert: Die Einträge erscheinen desktopseitig als kompaktes zweispaltiges Linkraster statt als Button-Liste, Hover und aktive Zustände nutzen nur einen dezenten Unterstrich. Die Rail behält eine stabile Breite rechts neben dem zentrierten Content und startet bei vorhandener Breadcrumb-Zeile bündig mit dem Contentheader/Hero.",
     "2.9.757": "TOC-Rail korrigiert: Wenn das rechte Inhaltsverzeichnis auf Desktop angezeigt wird, wird die obere Anker-Navigation unter dem Contentheader ausgeblendet. Die TOC-Rail ist desktopseitig dauerhaft geöffnet und nicht einklappbar. Der Content bleibt in seiner zentrierten Hauptspalte und verschiebt sich nicht mehr nach links, weil die Rail in einer separaten rechten Seitenfläche liegt.",

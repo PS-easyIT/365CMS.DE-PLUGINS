@@ -1,22 +1,36 @@
-.cms-beratung,
 :root{
-	--color-primary:#1e3a8a;
-	--color-accent:#2563eb;
-	--color-text-muted:#374151;
-	--color-bg-tinted:#f8fafc;
+	--color-primary:#2256D6;
+	--color-primary-dark:#112347;
+	--color-tint-grey:#F5F6F8;
+	--color-tint-blue:#EEF1FC;
+	--color-text:#112347;
+	--color-text-body:#3D4654;
+	--color-text-muted:#6B7480;
+	--color-white:#FFFFFF;
+	--color-border:#D9DEE8;
+	--color-shadow-rgb:17,35,71;
+	--color-accent:var(--color-primary);
+	--color-bg-tinted:var(--color-tint-grey);
 }
 
 .cms-beratung{
-	--color-primary:var(--beratung-primary,#1e3a8a);
-	--color-accent:var(--beratung-accent,var(--beratung-primary,#2563eb));
-	--color-text-muted:#374151;
-	--color-bg-tinted:#f8fafc;
+	--beratung-primary:var(--color-primary)!important;
+	--beratung-secondary:var(--color-primary-dark)!important;
+	--beratung-accent:var(--color-primary)!important;
+	--beratung-text:var(--color-text)!important;
+	--beratung-heading:var(--color-text)!important;
+	--beratung-bg:var(--color-white)!important;
+	--beratung-card-bg:var(--color-white)!important;
+	--beratung-card-border:var(--color-border)!important;
+	--color-accent:var(--color-primary);
+	--color-bg-tinted:var(--color-tint-grey);
 }
 
 .cms-beratung.cms-beratung{
 	font-size:var(--beratung-font-base,16px)!important;
 	padding-top:var(--beratung-header-spacing,48px)!important;
 	padding-bottom:var(--beratung-footer-spacing,48px)!important;
+	color:var(--color-text)!important;
 }
 
 .cms-beratung.cms-beratung p,
@@ -31,6 +45,7 @@
 .cms-beratung.cms-beratung .cms-beratung__section-head p,
 .cms-beratung.cms-beratung .cms-beratung__contact p{
 	font-size:var(--beratung-font-base,16px)!important;
+	color:var(--color-text-body)!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung__breadcrumb,
@@ -47,11 +62,11 @@
 }
 
 .cms-beratung.cms-beratung .cms-beratung__section--rhythm-white{
-	background:#fff!important;
+	background:var(--color-white)!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung__section--rhythm-soft{
-	background:var(--color-bg-tinted)!important;
+	background:var(--color-tint-grey)!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung__section--rhythm-accent{
@@ -73,7 +88,7 @@
 	border-bottom:1px solid color-mix(in srgb,var(--color-text-muted),transparent 78%)!important;
 	border-radius:0!important;
 	background:rgba(255,255,255,.96)!important;
-	box-shadow:0 8px 20px rgba(15,23,42,.06)!important;
+	box-shadow:0 8px 20px rgba(var(--color-shadow-rgb),.06)!important;
 	backdrop-filter:saturate(140%) blur(10px)!important;
 }
 
@@ -110,8 +125,8 @@
 .cms-beratung.cms-beratung .cms-beratung__hero-actions .cms-beratung__btn:first-child{
 	background:var(--color-primary)!important;
 	border:1px solid var(--color-primary)!important;
-	color:#fff!important;
-	box-shadow:0 12px 26px rgba(30,58,138,.18)!important;
+	color:var(--color-white)!important;
+	box-shadow:0 12px 26px rgba(var(--color-shadow-rgb),.18)!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung__hero-actions .cms-beratung__btn:not(:first-child){
@@ -124,7 +139,7 @@
 .cms-beratung.cms-beratung .cms-beratung__hero-actions .cms-beratung__btn:not(:first-child):hover,
 .cms-beratung.cms-beratung .cms-beratung__hero-actions .cms-beratung__btn:not(:first-child):focus-visible{
 	background:color-mix(in srgb,var(--color-primary),transparent 94%)!important;
-	box-shadow:0 8px 18px rgba(30,58,138,.1)!important;
+	box-shadow:none!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung__section--services .cms-beratung-card__icon,
@@ -140,10 +155,10 @@
 	max-height:40px!important;
 	margin:.05rem 0 .85rem!important;
 	padding:0!important;
-	border:1px solid color-mix(in srgb,var(--color-accent),transparent 74%)!important;
+	border:1px solid color-mix(in srgb,var(--color-primary),transparent 74%)!important;
 	border-radius:10px!important;
-	background:color-mix(in srgb,var(--color-accent),transparent 90%)!important;
-	color:var(--color-accent)!important;
+	background:var(--color-tint-blue)!important;
+	color:var(--color-primary)!important;
 	font-size:1.15rem!important;
 	font-weight:700!important;
 	line-height:1!important;
@@ -256,7 +271,7 @@
 	padding:.45rem!important;
 	border-radius:18px!important;
 	background:rgba(255,255,255,.72)!important;
-	border:1px solid color-mix(in srgb,var(--card-border,var(--beratung-card-border,#dbeafe)),transparent 20%)!important;
+	border:1px solid color-mix(in srgb,var(--card-border,var(--beratung-card-border,var(--color-border))),transparent 20%)!important;
 	box-shadow:0 12px 30px rgba(15,23,42,.06)!important;
 	overflow:hidden!important;
 }
@@ -268,20 +283,24 @@
 	object-fit:var(--card-image-fit,contain)!important;
 }
 
-.cms-beratung.cms-beratung .cms-beratung-card--theme-experience{--card-bg:#fffdf7;--card-border:#f3d28f;border-left:4px solid #d69e2e!important;}
-.cms-beratung.cms-beratung .cms-beratung-card--theme-consulting{--card-bg:#f8fbff;--card-border:#bfdbfe;border-left:4px solid #2563eb!important;}
-.cms-beratung.cms-beratung .cms-beratung-card--theme-exchange{--card-bg:#f7fcfb;--card-border:#b7e4dc;border-left:4px solid #0f766e!important;}
-.cms-beratung.cms-beratung .cms-beratung-card--theme-iamcp{--card-bg:#f8f7ff;--card-border:#c7d2fe;border-left:4px solid #4f46e5!important;}
-.cms-beratung.cms-beratung .cms-beratung-card--theme-projects{--card-bg:#f9fafb;--card-border:#cbd5e1;border-left:4px solid #475569!important;}
-.cms-beratung.cms-beratung .cms-beratung-card--theme-security{--card-bg:#fff8f8;--card-border:#fecaca;border-left:4px solid #dc2626!important;}
-.cms-beratung.cms-beratung .cms-beratung-card--theme-governance{--card-bg:#f9fbf5;--card-border:#d9f99d;border-left:4px solid #65a30d!important;}
-.cms-beratung.cms-beratung .cms-beratung-card--theme-microsoft{--card-bg:#f8fbff;--card-border:#bae6fd;border-left:4px solid #0284c7!important;}
-.cms-beratung.cms-beratung .cms-beratung-card--theme-network{--card-bg:#fffaf3;--card-border:#fed7aa;border-left:4px solid #ea580c!important;}
+.cms-beratung.cms-beratung .cms-beratung-card--theme-experience,
+.cms-beratung.cms-beratung .cms-beratung-card--theme-consulting,
+.cms-beratung.cms-beratung .cms-beratung-card--theme-exchange,
+.cms-beratung.cms-beratung .cms-beratung-card--theme-iamcp,
+.cms-beratung.cms-beratung .cms-beratung-card--theme-projects,
+.cms-beratung.cms-beratung .cms-beratung-card--theme-security,
+.cms-beratung.cms-beratung .cms-beratung-card--theme-governance,
+.cms-beratung.cms-beratung .cms-beratung-card--theme-microsoft,
+.cms-beratung.cms-beratung .cms-beratung-card--theme-network{
+	--card-bg:var(--color-white);
+	--card-border:var(--color-border);
+	border-left:4px solid var(--color-primary-dark)!important;
+}
 
 .cms-beratung.cms-beratung .cms-beratung-card[class*="cms-beratung-card--theme-"] .cms-beratung-card__badge,
 .cms-beratung.cms-beratung .cms-beratung-card[class*="cms-beratung-card--theme-"] .cms-beratung-card__category{
-	background:color-mix(in srgb,var(--card-border,var(--beratung-card-border,#dbeafe)),transparent 68%)!important;
-	color:#334155!important;
+	background:var(--color-tint-blue)!important;
+	color:var(--color-text-body)!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung-card--layout-compact{
@@ -303,15 +322,15 @@
 }
 
 .cms-beratung.cms-beratung .cms-beratung-card--layout-spotlight{
-	border-top:4px solid var(--beratung-accent,#f59e0b)!important;
-	background:linear-gradient(135deg,color-mix(in srgb,var(--beratung-accent,#f59e0b),transparent 90%),var(--card-bg,var(--beratung-card-bg)))!important;
-	box-shadow:0 22px 60px rgba(15,23,42,.14)!important;
+	border-top:4px solid var(--color-primary)!important;
+	background:linear-gradient(135deg,var(--color-tint-blue),var(--card-bg,var(--color-white)))!important;
+	box-shadow:0 22px 60px rgba(var(--color-shadow-rgb),.12)!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung-card--layout-spotlight .cms-beratung-card__badge,
 .cms-beratung.cms-beratung .cms-beratung-card--layout-spotlight .cms-beratung-card__category{
-	background:color-mix(in srgb,var(--beratung-accent,#f59e0b),transparent 82%)!important;
-	color:#92400e!important;
+	background:var(--color-tint-blue)!important;
+	color:var(--color-primary-dark)!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung__section--technology .cms-beratung-card__logo{
@@ -324,7 +343,7 @@
 	margin:0 auto 1rem!important;
 	padding:.35rem!important;
 	border-radius:14px!important;
-	background:#fff!important;
+	background:var(--color-white)!important;
 }
 
 .cms-beratung.cms-beratung h1,
@@ -527,7 +546,7 @@
 .cms-beratung.cms-beratung .cms-beratung__contact-image-panel{
 	grid-area:contact-image!important;
 	min-height:100%!important;
-	background:#e5e7eb!important;
+	background:var(--color-border)!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung__contact-image-panel img{
@@ -656,7 +675,7 @@
 
 .cms-beratung.cms-beratung .cms-beratung-hero__portrait-image{
 	object-fit:contain!important;
-	background:#fff!important;
+	background:var(--color-white)!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung-partner-band{
@@ -669,11 +688,11 @@
 	max-width:var(--beratung-width,1160px)!important;
 	margin:4px auto 24px!important;
 	padding:20px!important;
-	border:1px solid color-mix(in srgb,var(--beratung-accent,#f59e0b),transparent 50%)!important;
+	border:1px solid color-mix(in srgb,var(--color-primary),transparent 50%)!important;
 	border-radius:20px!important;
-	background:linear-gradient(135deg,#ffffff,#fffaf0 78%,#ffffff)!important;
-	color:var(--beratung-text,#111827)!important;
-	box-shadow:0 14px 36px rgba(15,23,42,.08)!important;
+	background:linear-gradient(135deg,var(--color-white),var(--color-tint-blue) 78%,var(--color-white))!important;
+	color:var(--color-text)!important;
+	box-shadow:0 14px 36px rgba(var(--color-shadow-rgb),.08)!important;
 	overflow:hidden!important;
 }
 
@@ -685,7 +704,7 @@
 }
 
 .cms-beratung.cms-beratung .cms-beratung-partner-band__eyebrow{
-	color:var(--beratung-accent,#f59e0b)!important;
+	color:var(--color-primary)!important;
 	font-size:.72rem!important;
 	font-weight:900!important;
 	letter-spacing:.08em!important;
@@ -695,7 +714,7 @@
 
 .cms-beratung.cms-beratung .cms-beratung-partner-band strong{
 	display:block!important;
-	color:var(--beratung-heading,#0f172a)!important;
+	color:var(--color-text)!important;
 	font-size:clamp(1rem,1.8vw,1.28rem)!important;
 	font-weight:900!important;
 	line-height:1.18!important;
@@ -719,15 +738,15 @@
 	gap:.38rem!important;
 	min-height:38px!important;
 	padding:.55rem .9rem!important;
-	border:1px solid color-mix(in srgb,var(--beratung-primary,#2563eb),transparent 56%)!important;
+	border:1px solid color-mix(in srgb,var(--color-primary),transparent 56%)!important;
 	border-radius:999px!important;
-	background:#ffffff!important;
-	color:var(--beratung-primary,#2563eb)!important;
+	background:var(--color-white)!important;
+	color:var(--color-primary)!important;
 	font-size:.86rem!important;
 	font-weight:900!important;
 	line-height:1.1!important;
 	text-decoration:none!important;
-	box-shadow:0 8px 18px rgba(15,23,42,.06)!important;
+	box-shadow:0 8px 18px rgba(var(--color-shadow-rgb),.06)!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung-partner-band__links a::after{
@@ -742,7 +761,7 @@
 	width:100%!important;
 	max-width:none!important;
 	margin:0!important;
-	color:color-mix(in srgb,var(--beratung-text,#111827),transparent 22%)!important;
+	color:var(--color-text-body)!important;
 	font-size:var(--beratung-font-base,16px)!important;
 	line-height:1.55!important;
 	padding:0!important;
@@ -754,7 +773,7 @@
 	grid-template-columns:minmax(0,1fr) minmax(210px,auto)!important;
 	align-items:center!important;
 	border-radius:22px!important;
-	background:radial-gradient(circle at 0 0,color-mix(in srgb,var(--beratung-accent,#f59e0b),transparent 74%),transparent 32%),linear-gradient(135deg,#fffaf0 0%,#ffffff 52%,#f8fafc 100%)!important;
+	background:radial-gradient(circle at 0 0,color-mix(in srgb,var(--color-primary),transparent 82%),transparent 32%),linear-gradient(135deg,var(--color-tint-blue) 0%,var(--color-white) 52%,var(--color-tint-grey) 100%)!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung-partner-band--network-card::before{
@@ -762,7 +781,7 @@
 	position:absolute!important;
 	inset:0 auto 0 0!important;
 	width:5px!important;
-	background:linear-gradient(180deg,var(--beratung-accent,#f59e0b),var(--beratung-primary,#2563eb))!important;
+	background:linear-gradient(180deg,var(--color-primary),var(--color-primary-dark))!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung-partner-band--network-card .cms-beratung-partner-band__links{
@@ -778,7 +797,7 @@
 	gap:0!important;
 	padding:0!important;
 	border-radius:24px!important;
-	background:linear-gradient(135deg,#ffffff,#f8fafc)!important;
+	background:linear-gradient(135deg,var(--color-white),var(--color-tint-grey))!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung-partner-band--split-panel .cms-beratung-partner-band__content,
@@ -804,8 +823,8 @@
 	justify-content:stretch!important;
 	gap:.65rem!important;
 	padding:20px!important;
-	border-left:1px solid color-mix(in srgb,var(--beratung-card-border,#e5e7eb),transparent 20%)!important;
-	background:linear-gradient(135deg,color-mix(in srgb,var(--beratung-primary,#2563eb),transparent 90%),#ffffff)!important;
+	border-left:1px solid color-mix(in srgb,var(--color-border),transparent 20%)!important;
+	background:linear-gradient(135deg,var(--color-tint-blue),var(--color-white))!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung-partner-band--split-panel .cms-beratung-partner-band__links a{
@@ -819,7 +838,7 @@
 	text-align:center!important;
 	padding:24px 20px!important;
 	border-radius:28px!important;
-	background:radial-gradient(circle at 50% 0,color-mix(in srgb,var(--beratung-accent,#f59e0b),transparent 76%),transparent 34%),linear-gradient(180deg,#ffffff,#fffaf0)!important;
+	background:radial-gradient(circle at 50% 0,color-mix(in srgb,var(--color-primary),transparent 84%),transparent 34%),linear-gradient(180deg,var(--color-white),var(--color-tint-blue))!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung-partner-band--centered-badge .cms-beratung-partner-band__content{
@@ -849,7 +868,7 @@
 	gap:.85rem!important;
 	padding:14px 20px!important;
 	border-radius:999px!important;
-	background:linear-gradient(90deg,#fffaf0,#ffffff 46%,#f8fafc)!important;
+	background:linear-gradient(90deg,var(--color-tint-blue),var(--color-white) 46%,var(--color-tint-grey))!important;
 }
 
 .cms-beratung.cms-beratung .cms-beratung-partner-band--compact-strip .cms-beratung-partner-band__content{
@@ -938,7 +957,7 @@
 .cms-beratung.cms-beratung .cms-beratung-hero.is-flush{
 	padding:0!important;
 	gap:0!important;
-	background:var(--hero-bg,#f8fafc)!important;
+	background:var(--hero-bg,var(--color-tint-grey))!important;
 	border-radius:calc(var(--beratung-radius,4px) + 14px)!important;
 	overflow:hidden!important;
 	min-height:var(--hero-image-height,520px)!important;
@@ -995,7 +1014,7 @@
 
 @media (max-width:768px){
 	.cms-beratung.cms-beratung{
-		--color-text-muted:#334155;
+		--color-text-muted:var(--color-text-body);
 		font-size:calc(var(--beratung-font-base,16px) + 1px)!important;
 	}
 
@@ -1048,8 +1067,8 @@
 		border:0!important;
 		border-bottom:1px solid color-mix(in srgb,var(--color-text-muted),transparent 72%)!important;
 		border-radius:0!important;
-		background:#fff!important;
-		box-shadow:0 8px 18px rgba(15,23,42,.08)!important;
+		background:var(--color-white)!important;
+		box-shadow:0 8px 18px rgba(var(--color-shadow-rgb),.08)!important;
 		backdrop-filter:none!important;
 		scrollbar-width:none!important;
 		-ms-overflow-style:none!important;
@@ -1101,7 +1120,7 @@
 		padding:.82rem 1rem!important;
 		background:var(--color-primary)!important;
 		border-color:var(--color-primary)!important;
-		color:#fff!important;
+		color:var(--color-white)!important;
 		font-weight:900!important;
 	}
 
@@ -1215,10 +1234,10 @@
 		justify-self:stretch!important;
 		width:var(--beratung-toc-collapsed-width)!important;
 		max-height:calc(100vh - var(--beratung-toc-top,76px) - 20px)!important;
-		border:1px solid color-mix(in srgb,var(--beratung-card-border,#e5e7eb),transparent 12%)!important;
+		border:1px solid color-mix(in srgb,var(--color-border),transparent 12%)!important;
 		border-radius:16px!important;
-		background:#fff!important;
-		box-shadow:0 16px 38px rgba(15,23,42,.1)!important;
+		background:var(--color-white)!important;
+		box-shadow:0 16px 38px rgba(var(--color-shadow-rgb),.1)!important;
 		overflow:hidden!important;
 		transition:width .22s ease,box-shadow .22s ease!important;
 	}
@@ -1237,9 +1256,9 @@
 		min-height:50px!important;
 		padding:.65rem!important;
 		border:0!important;
-		border-bottom:1px solid color-mix(in srgb,var(--beratung-card-border,#e5e7eb),transparent 20%)!important;
-		background:linear-gradient(180deg,#fff,var(--color-bg-tinted,#f8fafc))!important;
-		color:var(--color-primary,var(--beratung-primary,#1e3a8a))!important;
+		border-bottom:1px solid color-mix(in srgb,var(--color-border),transparent 20%)!important;
+		background:linear-gradient(180deg,var(--color-white),var(--color-tint-grey))!important;
+		color:var(--color-primary)!important;
 		font:inherit!important;
 		font-weight:900!important;
 		cursor:pointer!important;
@@ -1251,8 +1270,8 @@
 		width:28px!important;
 		height:28px!important;
 		border-radius:999px!important;
-		background:color-mix(in srgb,var(--color-accent,#2563eb),transparent 88%)!important;
-		color:var(--color-primary,var(--beratung-primary,#1e3a8a))!important;
+		background:var(--color-tint-blue)!important;
+		color:var(--color-primary)!important;
 		line-height:1!important;
 	}
 
@@ -1289,7 +1308,7 @@
 		padding:.55rem .65rem!important;
 		border:1px solid transparent!important;
 		border-radius:10px!important;
-		color:var(--color-text-muted,#334155)!important;
+		color:var(--color-text-muted)!important;
 		font-size:.92rem!important;
 		font-weight:800!important;
 		line-height:1.2!important;
@@ -1303,8 +1322,8 @@
 		width:1.85rem!important;
 		height:1.85rem!important;
 		border-radius:999px!important;
-		background:color-mix(in srgb,var(--color-accent,#2563eb),transparent 88%)!important;
-		color:var(--color-primary,var(--beratung-primary,#1e3a8a))!important;
+		background:var(--color-tint-blue)!important;
+		color:var(--color-primary)!important;
 		font-size:.78rem!important;
 		font-weight:900!important;
 	}
@@ -1312,9 +1331,9 @@
 	.cms-beratung.cms-beratung .cms-beratung__toc-link:hover,
 	.cms-beratung.cms-beratung .cms-beratung__toc-link:focus-visible,
 	.cms-beratung.cms-beratung .cms-beratung__toc-link.is-active{
-		border-color:color-mix(in srgb,var(--color-accent,#2563eb),transparent 68%)!important;
-		background:color-mix(in srgb,var(--color-accent,#2563eb),transparent 92%)!important;
-		color:var(--color-primary,var(--beratung-primary,#1e3a8a))!important;
+		border-color:color-mix(in srgb,var(--color-primary),transparent 68%)!important;
+		background:var(--color-tint-blue)!important;
+		color:var(--color-primary)!important;
 	}
 
 	.cms-beratung.cms-beratung .cms-beratung__cards,
@@ -1375,9 +1394,9 @@
 		top:var(--beratung-toc-top,76px)!important;
 		max-height:calc(100vh - var(--beratung-toc-top,76px) - 20px)!important;
 		overflow:auto!important;
-		border:1px solid color-mix(in srgb,var(--beratung-card-border,#e5e7eb),transparent 12%)!important;
+		border:1px solid color-mix(in srgb,var(--color-border),transparent 12%)!important;
 		border-radius:16px!important;
-		background:#fff!important;
+		background:var(--color-white)!important;
 		box-shadow:0 18px 44px rgba(15,23,42,.12)!important;
 	}
 
@@ -1397,7 +1416,7 @@
 		content:"Inhalte"!important;
 		display:block!important;
 		margin:0 0 .35rem!important;
-		color:var(--beratung-heading,#0f172a)!important;
+		color:var(--color-text)!important;
 		font-size:.78rem!important;
 		font-weight:900!important;
 		letter-spacing:.08em!important;
@@ -1416,7 +1435,7 @@
 		max-width:min(var(--beratung-toc-expanded-width,280px),calc(100vw - 32px))!important;
 		margin-left:clamp(.75rem,1.4vw,1.25rem)!important;
 		padding:.8rem!important;
-		border:1px solid color-mix(in srgb,var(--beratung-card-border,#e5e7eb),transparent 32%)!important;
+		border:1px solid color-mix(in srgb,var(--color-border),transparent 32%)!important;
 		border-radius:14px!important;
 		background:rgba(255,255,255,.94)!important;
 		box-shadow:0 12px 28px rgba(15,23,42,.08)!important;
@@ -1440,7 +1459,7 @@
 		grid-column:1 / -1!important;
 		margin:0 0 .3rem!important;
 		padding-bottom:.35rem!important;
-		border-bottom:1px solid color-mix(in srgb,var(--beratung-card-border,#e5e7eb),transparent 35%)!important;
+		border-bottom:1px solid color-mix(in srgb,var(--color-border),transparent 35%)!important;
 	}
 
 	.cms-beratung.cms-beratung .cms-beratung__toc-link{
@@ -1454,7 +1473,7 @@
 		border-radius:0!important;
 		background:transparent!important;
 		box-shadow:none!important;
-		color:var(--color-text-muted,#334155)!important;
+		color:var(--color-text-muted)!important;
 		font-size:.82rem!important;
 		font-weight:750!important;
 		line-height:1.25!important;
@@ -1482,7 +1501,7 @@
 		height:auto!important;
 		border-radius:0!important;
 		background:transparent!important;
-		color:color-mix(in srgb,var(--color-primary,var(--beratung-primary,#1e3a8a)),transparent 22%)!important;
+		color:color-mix(in srgb,var(--color-primary),transparent 22%)!important;
 		font-size:.72rem!important;
 		font-weight:900!important;
 		line-height:inherit!important;
@@ -1493,7 +1512,7 @@
 	.cms-beratung.cms-beratung .cms-beratung__toc-link.is-active{
 		border-color:transparent!important;
 		background:transparent!important;
-		color:var(--color-primary,var(--beratung-primary,#1e3a8a))!important;
+		color:var(--color-primary)!important;
 	}
 
 	.cms-beratung.cms-beratung .cms-beratung__toc-link:hover::after,
@@ -1501,5 +1520,147 @@
 	.cms-beratung.cms-beratung .cms-beratung__toc-link.is-active::after{
 		opacity:.45!important;
 		transform:scaleX(1)!important;
+	}
+}
+
+@media (min-width:1100px){
+	.cms-beratung.cms-beratung:has(.cms-beratung__toc-rail){
+		display:grid!important;
+		grid-template-columns:minmax(16px,1fr) minmax(0,var(--beratung-width,1160px)) minmax(280px,1fr)!important;
+		align-items:start!important;
+	}
+
+	.cms-beratung.cms-beratung:has(.cms-beratung__toc-rail) > :not(.cms-beratung__toc-rail){
+		grid-column:2!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung__toc-rail,
+	.cms-beratung.cms-beratung.is-toc-expanded .cms-beratung__toc-rail{
+		grid-column:3!important;
+		grid-row:1 / span 999!important;
+		align-self:start!important;
+		justify-self:start!important;
+		width:min(300px,calc(100% - clamp(1rem,2vw,1.5rem)))!important;
+		margin-left:clamp(1rem,2vw,1.5rem)!important;
+		position:sticky!important;
+		top:clamp(.75rem,2vh,1.25rem)!important;
+		max-height:calc(100vh - clamp(1.5rem,4vh,2.5rem))!important;
+		box-sizing:border-box!important;
+	}
+
+	.cms-beratung.cms-beratung:has(> .cms-beratung__breadcrumb) .cms-beratung__toc-rail{
+		grid-row:2 / span 999!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung__toc,
+	.cms-beratung.cms-beratung.is-toc-expanded .cms-beratung__toc{
+		display:flex!important;
+		flex-direction:column!important;
+		align-items:stretch!important;
+		gap:.16rem!important;
+		padding:0!important;
+		overflow:visible!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung__toc::before{
+		display:block!important;
+		width:100%!important;
+		margin:0 0 .45rem!important;
+		padding-bottom:.45rem!important;
+		border-bottom:1px solid color-mix(in srgb,var(--color-border),transparent 35%)!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung__toc-link{
+		display:flex!important;
+		width:100%!important;
+		align-items:baseline!important;
+		justify-content:flex-start!important;
+		gap:.42rem!important;
+		padding:.36rem 0!important;
+		min-height:0!important;
+		border:0!important;
+		border-radius:0!important;
+		background:transparent!important;
+		box-shadow:none!important;
+		font-size:.86rem!important;
+		line-height:1.28!important;
+		text-align:left!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung__toc-link::after{
+		bottom:.16rem!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung__toc-link span{
+		flex:0 0 2.1rem!important;
+		display:block!important;
+		width:2.1rem!important;
+		text-align:left!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung__toc-rail--card{
+		padding:.95rem!important;
+		border:1px solid color-mix(in srgb,var(--color-border),transparent 28%)!important;
+		border-radius:16px!important;
+		background:rgba(255,255,255,.96)!important;
+		box-shadow:0 16px 38px rgba(15,23,42,.1)!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung__toc-rail--compact{
+		width:min(260px,calc(100% - clamp(1rem,2vw,1.5rem)))!important;
+		padding:.7rem .8rem!important;
+		border:1px solid color-mix(in srgb,var(--color-border),transparent 46%)!important;
+		border-radius:12px!important;
+		background:rgba(255,255,255,.9)!important;
+		box-shadow:0 8px 22px rgba(15,23,42,.06)!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung__toc-rail--compact .cms-beratung__toc-link{
+		padding:.26rem 0!important;
+		font-size:.8rem!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung__toc-rail--outline{
+		padding:.85rem 0 .85rem .9rem!important;
+		border:0!important;
+		border-left:2px solid color-mix(in srgb,var(--color-primary),transparent 55%)!important;
+		border-radius:0!important;
+		background:transparent!important;
+		box-shadow:none!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung__toc-rail--outline .cms-beratung__toc::before{
+		border-bottom:0!important;
+		padding-bottom:.15rem!important;
+	}
+}
+
+@media (min-width:1100px){
+	.cms-beratung.cms-beratung:has(.cms-beratung__toc-rail) > .cms-beratung__breadcrumb{
+		grid-column:2!important;
+		grid-row:1!important;
+	}
+
+	.cms-beratung.cms-beratung:has(.cms-beratung__toc-rail) > .cms-beratung-hero{
+		grid-column:2!important;
+		grid-row:1!important;
+		align-self:start!important;
+	}
+
+	.cms-beratung.cms-beratung:has(> .cms-beratung__breadcrumb):has(.cms-beratung__toc-rail) > .cms-beratung-hero{
+		grid-row:2!important;
+	}
+
+	.cms-beratung.cms-beratung .cms-beratung__toc-rail,
+	.cms-beratung.cms-beratung.is-toc-expanded .cms-beratung__toc-rail{
+		grid-column:3!important;
+		grid-row:1 / span 999!important;
+		align-self:start!important;
+		margin-top:0!important;
+		top:0!important;
+	}
+
+	.cms-beratung.cms-beratung:has(> .cms-beratung__breadcrumb) .cms-beratung__toc-rail{
+		grid-row:2 / span 999!important;
 	}
 }
