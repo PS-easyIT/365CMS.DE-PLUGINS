@@ -232,7 +232,9 @@ final class CMS_Beratung_Renderer
             return;
         }
 
-        echo '<header class="cms-beratung-standalone-header" aria-label="Publicsite Header">';
+        $settings = CMS_Beratung_Settings::all();
+        $contentWidth = (string) max(720, min(1160, (int) ($page['max_content_width'] ?? $settings['content_width'] ?? 1160))) . 'px';
+        echo '<header class="cms-beratung-standalone-header" aria-label="Publicsite Header" style="--beratung-width:' . self::esc($contentWidth) . ';">';
         if ($state['has_main_content']) {
             echo '<div class="cms-beratung-standalone-header__inner">';
             if ($state['blog_logo_url'] !== '' || $state['partner_logo_url'] !== '') {

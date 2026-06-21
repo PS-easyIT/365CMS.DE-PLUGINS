@@ -1,13 +1,15 @@
 {
   "slug": "cms-beratung",
   "name": "CMS Beratung",
-  "version": "2.9.769",
+  "version": "2.9.771",
   "requires": "365CMS",
   "tested": "2026.06",
   "author": "365 Network",
   "description": "Spezialisierter 365CMS Landingpage Builder für Microsoft 365, Copilot, KI, Security, Compliance und IT Consulting Beratungsleistungen.",
   "download_url": "PLUGINS/cms-beratung/cms-beratung.zip",
   "changelog": {
+    "2.9.771": "Standalone-Publicsite Routing repariert: Die Standalone-Route wird wieder korrekt aus hero_json gelesen und registriert. Eine versehentlich in die normale POST-Route gerutschte Header-Ausgabe wurde entfernt, sodass /beratung/{standalone-slug} nicht mehr als 404 endet.",
+    "2.9.770": "Standalone-Publicsite Header final nachgeschärft: Der aktivierte und befüllte eigene Header wird nun technisch außerhalb des Landingpage-Main unmittelbar nach dem öffnenden body-Tag und noch vor body_start ausgegeben. Damit steht er wirklich ganz oben über Breadcrumb, Content Header, Hero und allen weiteren Landingpage-Inhalten. Die Header-Styles greifen zusätzlich auf den Top-Level-Header im Standalone-Dokument.",
     "2.9.769": "Standalone-Publicsite Header präzisiert: Wenn der eigene Header aktiviert und mit Inhalt befüllt ist, erscheint er immer ganz oben vor dem Content Header als Full-Width-Band über die komplette Seitenbreite. Leere Header-Konfigurationen erzeugen keinen Platzhalter mehr; Blog-/Partner-Logo, Titel, Untertitel und Menüband werden nur ausgegeben, wenn entsprechende Inhalte gepflegt sind.",
     "2.9.768": "Standalone-Publicsite präzisiert: Der normale Publicsite-Slug bleibt immer die Theme-Version mit Theme Header und Footer. Die zusätzliche Standalone-Publicsite erhält einen eigenen Pflicht-Slug unter /beratung/{standalone-slug}, wird auf Slug-Kollisionen geprüft und rendert ohne Theme Header/Footer-Markup, lädt aber weiterhin die Standard-Assets des aktiven Themes sowie alle Plugin-Styles und Plugin-Skripte über die üblichen Head-/Footer-Hooks.",
     "2.9.767": "Publicsite Anzeige erweitert: Zusätzlich zur normalen Publicsite mit Theme Header und Footer kann pro Landingpage eine zweite Standalone-Publicsite unter /beratung/{slug}/standalone aktiviert werden. Diese Variante rendert ohne Theme Header/Footer und unterstützt einen eigenen Publicsite-Header mit Blog-Logo und Partner-Logo per Upload/Mediathek, eigenem Header-Titel, Untertitel sowie Menüband mit bis zu vier Links.",

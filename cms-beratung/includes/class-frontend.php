@@ -125,6 +125,7 @@ final class CMS_Beratung_Frontend
                     $this->render_page($slug);
                 });
             }
+
             $hero = json_decode((string) ($row['hero_json'] ?? '{}'), true);
             $hero = is_array($hero) ? $hero : [];
             $standaloneSlug = trim((string) ($hero['standalone_header_slug'] ?? ''), '/');
@@ -144,7 +145,7 @@ final class CMS_Beratung_Frontend
 
     private function render_page(string $slug, bool $standaloneVariant = false): void
     {
-            $page = CMS_Beratung_Storage::instance()->get_landingpage_by_slug($slug, true);
+        $page = CMS_Beratung_Storage::instance()->get_landingpage_by_slug($slug, true);
         if ($page === null) {
             http_response_code(404);
             echo 'Landingpage nicht gefunden.';
@@ -206,11 +207,11 @@ final class CMS_Beratung_Frontend
             $this->output_seo_head();
         }
         echo '</head><body class="' . htmlspecialchars($bodyClass, ENT_QUOTES, 'UTF-8') . '">';
+        CMS_Beratung_Renderer::render_standalone_header($page);
+        $page['standalone_header_rendered_above_content'] = 1;
         if (class_exists('CMS\\Hooks')) {
             \CMS\Hooks::doAction('body_start');
         }
-        CMS_Beratung_Renderer::render_standalone_header($page);
-        $page['standalone_header_rendered_above_content'] = 1;
         CMS_Beratung_Renderer::render($page, $formResult);
         if (class_exists('CMS\\Hooks')) {
             \CMS\Hooks::doAction('before_footer');
