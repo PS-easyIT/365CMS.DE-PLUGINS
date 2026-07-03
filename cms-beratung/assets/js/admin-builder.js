@@ -367,7 +367,7 @@
   };
 
   const enhanceMediaFields = (root) => {
-    $$('input[data-field="image_url"], input[data-field="trust_image_url"], input[data-field="background_image_url"], input[data-card-field="image_url"], input[data-card-field="logo_url"], input[data-media-field]', root).forEach((input) => {
+    $$('input[data-field="image_url"], input[data-field="trust_image_url"], input[data-field="background_image_url"], input[data-field="divider_image_url"], input[data-card-field="image_url"], input[data-card-field="logo_url"], input[data-media-field]', root).forEach((input) => {
       if (input.dataset.beratungMediaEnhanced === '1') return;
       input.dataset.beratungMediaEnhanced = '1';
       input.id ||= `beratung-media-field-${++mediaFieldCounter}`;
@@ -795,6 +795,10 @@
     divider_title: '',
     divider_subtitle: '',
     divider_icon: '',
+    divider_image_url: '',
+    divider_image_alt: '',
+    divider_layout: 'centered',
+    divider_image_width: 32,
     divider_line_color: '#dbeafe',
     divider_width: 100,
     divider_padding_left: 20,
@@ -952,7 +956,9 @@
       internal_name: 'Zitat Trenner',
       divider_type: 'quote',
       divider_title: 'Gute Copilot Einführung beginnt nicht beim Prompt, sondern bei Daten, Identitäten und Governance.',
-      divider_icon: '💬'
+      divider_icon: '💬',
+      divider_layout: 'centered',
+      divider_image_width: 32
     });
     ensure('cta', 11, {
       id: 'cta-copilot-readiness',
@@ -1328,9 +1334,12 @@
     const cards = Array.isArray(section.cards) ? section.cards : [];
     if (section.type === 'partner_band') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Netzwerk')}</small><h3>${esc(section.title || 'Partnerband')}</h3><p>${esc(section.intro || 'Beschreibungstext unter Partnerband Text und Buttons.')}</p><em>Layout: ${esc(section.partner_layout || 'network-card')}</em><div><button>${esc(section.button_1_text || 'Website')}</button>${section.button_2_text ? `<button class="ghost">${esc(section.button_2_text)}</button>` : ''}</div></div>`;
     if (section.type === 'proof') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Belegbare Grundlagen')}</small><h3>${esc(section.title || 'Was nach Beratung greifbar wird')}</h3><p>${esc(section.intro || '')}</p><div class="beratung-preview-grid cols-${Math.min(4, Math.max(1, Number(section.columns || 3)))}">${cards.slice(0, 8).map((card, index) => cardPreview(card, index, 'proof')).join('')}</div></div>`;
-    if (section.type === 'booking') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Termin')}</small><h3>${esc(section.title || 'Direkt einen Termin buchen')}</h3><p>${esc(section.intro || '')}</p><em>${section.booking_url ? `Microsoft Bookings ${section.booking_display === 'link' ? 'als Link/Card' : 'als Embed'}: ${esc(section.booking_url)}` : 'Noch kein Microsoft Bookings Link hinterlegt.'}</em><div><button>${esc(section.booking_button_text || 'Termin buchen')}</button></div></div>`;
+    if (section.type === 'booking') {
+      const bookingDisplayLabel = section.booking_display === 'button' ? 'nur als Button ohne Booking-Bereich' : section.booking_display === 'link' ? 'als Link/Card' : 'als Embed';
+      return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Termin')}</small><h3>${esc(section.title || 'Direkt einen Termin buchen')}</h3><p>${esc(section.intro || '')}</p><em>${section.booking_url ? `Microsoft Bookings ${bookingDisplayLabel}: ${esc(section.booking_url)}` : 'Noch kein Microsoft Bookings Link hinterlegt.'}</em><div><button>${esc(section.booking_button_text || 'Termin buchen')}</button></div></div>`;
+    }
     if (section.type === 'cta') return `<div class="beratung-preview-section is-cta" style="background:linear-gradient(135deg,#112347 0%,#173A78 58%,#2256D6 100%) !important;color:#ffffff !important"><small>${esc(section.eyebrow || 'CTA')}</small><h3>${esc(section.title || 'CTA Titel')}</h3><p>${esc(section.intro || 'Beschreibung für den CTA Bereich.')}</p><div><button>${esc(section.button_1_text || 'Button 1')}</button>${section.button_2_text ? `<button class="ghost">${esc(section.button_2_text)}</button>` : ''}</div></div>`;
-    if (section.type === 'divider') return `<div class="beratung-preview-divider"><span>${esc(section.divider_icon || '—')}</span><strong>${esc(section.divider_title || 'Trenner')}</strong><p>${esc(section.divider_subtitle || '')}</p></div>`;
+    if (section.type === 'divider') return `<div class="beratung-preview-divider is-${esc(section.divider_layout || 'centered')}">${section.divider_image_url ? `<img class="beratung-preview-card__logo" src="${esc(normalizeMediaUrl(section.divider_image_url))}" alt="${esc(section.divider_image_alt || section.divider_title || 'Trenner Bild')}" loading="lazy">` : `<span>${esc(section.divider_icon || '—')}</span>`}<strong>${esc(section.divider_title || 'Trenner')}</strong><p>${esc(section.divider_subtitle || '')}</p></div>`;
     if (section.type === 'html') return `<div class="beratung-preview-section"><small>Freier HTML Bereich</small><h3>${esc(section.title || 'HTML Bereich')}</h3><p>HTML wird sicher gefiltert. Vorschau zeigt bewusst nur eine neutrale Darstellung.</p></div>`;
     if (section.type === 'comparison') return `<div class="beratung-preview-section"><small>${esc(section.eyebrow || 'Vergleich')}</small><h3>${esc(section.title || 'Vergleich')}</h3>${section.title_band_text ? `<div class="beratung-preview-band">${esc(section.title_band_text)}</div>` : ''}<div class="beratung-preview-grid cols-${Math.min(3, Math.max(1, Number(section.columns || 2)))}">${cards.map((card, index) => cardPreview(card, index, 'card_grid')).join('')}</div></div>`;
     if (section.type === 'collaboration') {
@@ -1402,13 +1411,17 @@
       <label class="field-divider">Trenner Titel <input data-field="divider_title"></label>
       <label class="field-divider">Trenner Untertitel <textarea data-field="divider_subtitle" rows="2"></textarea></label>
       <label class="field-divider">Trenner Icon <input data-field="divider_icon"></label>
+      <label class="field-divider">Trenner Bild / Mediathek <input data-field="divider_image_url" placeholder="Bild hochladen oder aus der Mediathek wählen"></label>
+      <label class="field-divider">Trenner Bild Alt Text <input data-field="divider_image_alt"></label>
+      <label class="field-divider">Trenner Layout <select data-field="divider_layout"><option value="centered">Zentriert: Bild/Icon über Text</option><option value="image-left">Bild links, Text rechts</option><option value="image-right">Text links, Bild rechts</option></select></label>
+      <label class="field-divider">Bildbreite in % <input data-field="divider_image_width" type="number" min="18" max="45"></label>
       <label class="field-divider">Linienfarbe <input data-field="divider_line_color" type="color"></label>
       <label class="field-divider">Breite in % <input data-field="divider_width" type="number" min="20" max="100"></label>
       <label class="field-divider">Innenabstand links <input data-field="divider_padding_left" type="number" min="0" max="180"></label>
       <label class="field-divider">Innenabstand rechts <input data-field="divider_padding_right" type="number" min="0" max="180"></label>
       <label class="field-divider">Mobile Verhalten <select data-field="divider_mobile_behavior"><option value="stack">Stapeln</option><option value="compact">Kompakt</option><option value="hide_visual">Visuelles Element ausblenden</option></select></label>
       <label class="field-booking">Microsoft Bookings Link / Embed URL <input data-field="booking_url" placeholder="https://outlook.office.com/book/... oder https://.../bookings/..."></label>
-      <label class="field-booking">Booking Darstellung <select data-field="booking_display"><option value="embed">Eingebettet als Kalender</option><option value="link">Als Booking Card mit Button</option></select></label>
+      <label class="field-booking">Booking Darstellung <select data-field="booking_display"><option value="embed">Eingebettet als Kalender</option><option value="link">Als Booking Card mit Button</option><option value="button">Nur Button ohne Booking-Bereich</option></select></label>
       <label class="field-booking">Booking Button Text <input data-field="booking_button_text" placeholder="Termin buchen"></label>
       <label class="field-html is-html">Freier HTML Bereich <textarea data-field="html" rows="6"></textarea><small>Nur Admin-Benutzer. Skripte werden serverseitig gefiltert.</small></label>
     </div>

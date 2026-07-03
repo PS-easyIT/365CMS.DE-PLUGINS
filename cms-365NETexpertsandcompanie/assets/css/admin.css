@@ -197,6 +197,197 @@
     display: flex;
     justify-content: flex-end;
 }
+.cms-excomp-media-label input[data-excomp-media-field] {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+.cms-excomp-media-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+.cms-excomp-media-btn {
+    border: 1px solid rgba(15, 23, 42, .14);
+    border-radius: 10px;
+    background: #fff;
+    color: #1f2937;
+    cursor: pointer;
+    font-weight: 700;
+    padding: 8px 12px;
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.cms-excomp-media-btn:hover,
+.cms-excomp-media-btn:focus-visible {
+    border-color: #2563eb;
+    box-shadow: 0 8px 22px rgba(37, 99, 235, .16);
+    outline: none;
+    transform: translateY(-1px);
+}
+.cms-excomp-media-btn.is-danger {
+    color: #b91c1c;
+}
+.cms-excomp-media-note {
+    color: #64748b;
+    display: block;
+    font-size: 12px;
+    line-height: 1.45;
+}
+.cms-excomp-media-preview {
+    align-items: center;
+    background: linear-gradient(135deg, #f8fafc, #eef2ff);
+    border: 1px solid rgba(148, 163, 184, .25);
+    border-radius: 16px;
+    display: inline-flex;
+    justify-content: center;
+    margin-top: 10px;
+    min-height: 92px;
+    padding: 10px;
+    width: 128px;
+}
+.cms-excomp-media-preview[hidden] {
+    display: none;
+}
+.cms-excomp-media-preview img {
+    border-radius: 12px;
+    display: block;
+    max-height: 108px;
+    max-width: 108px;
+    object-fit: cover;
+}
+.cms-excomp-media-modal {
+    align-items: center;
+    background: rgba(15, 23, 42, .62);
+    bottom: 0;
+    display: none;
+    justify-content: center;
+    left: 0;
+    padding: 24px;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 9999;
+}
+.cms-excomp-media-modal.is-open {
+    display: flex;
+}
+.cms-excomp-media-modal__panel {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 24px 80px rgba(15, 23, 42, .34);
+    max-height: min(760px, calc(100vh - 48px));
+    overflow: hidden;
+    width: min(1080px, 100%);
+}
+.cms-excomp-media-modal__head,
+.cms-excomp-media-modal__toolbar {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    padding: 18px 22px;
+}
+.cms-excomp-media-modal__head {
+    border-bottom: 1px solid rgba(148, 163, 184, .24);
+}
+.cms-excomp-media-modal__head h2 {
+    font-size: 20px;
+    margin: 0 0 4px;
+}
+.cms-excomp-media-modal__head p,
+.cms-excomp-media-modal__status {
+    color: #64748b;
+    margin: 0;
+}
+.cms-excomp-media-modal__close {
+    align-items: center;
+    background: #f1f5f9;
+    border: 0;
+    border-radius: 999px;
+    color: #0f172a;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 28px;
+    height: 42px;
+    justify-content: center;
+    line-height: 1;
+    width: 42px;
+}
+.cms-excomp-media-modal__toolbar input {
+    border: 1px solid rgba(148, 163, 184, .42);
+    border-radius: 12px;
+    flex: 1;
+    padding: 11px 13px;
+}
+.cms-excomp-media-modal__body {
+    max-height: min(560px, calc(100vh - 230px));
+    overflow: auto;
+    padding: 0 22px 22px;
+}
+.cms-excomp-media-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.cms-excomp-media-item {
+    background: #fff;
+    border: 1px solid rgba(148, 163, 184, .28);
+    border-radius: 16px;
+    cursor: pointer;
+    overflow: hidden;
+    padding: 0;
+    text-align: left;
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.cms-excomp-media-item:hover,
+.cms-excomp-media-item:focus-visible {
+    border-color: #2563eb;
+    box-shadow: 0 14px 30px rgba(37, 99, 235, .16);
+    outline: none;
+    transform: translateY(-2px);
+}
+.cms-excomp-media-item__image {
+    align-items: center;
+    aspect-ratio: 1 / 1;
+    background: #f8fafc;
+    display: flex;
+    justify-content: center;
+}
+.cms-excomp-media-item__image img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+.cms-excomp-media-item__meta {
+    display: block;
+    padding: 10px;
+}
+.cms-excomp-media-item__name,
+.cms-excomp-media-item__path {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.cms-excomp-media-item__name {
+    color: #0f172a;
+    font-weight: 700;
+}
+.cms-excomp-media-item__path {
+    color: #64748b;
+    font-size: 12px;
+    margin-top: 3px;
+}
+.cms-excomp-media-empty {
+    background: #f8fafc;
+    border: 1px dashed rgba(148, 163, 184, .5);
+    border-radius: 16px;
+    color: #64748b;
+    grid-column: 1 / -1;
+    padding: 28px;
+    text-align: center;
+}
 
 @media (max-width: 920px) {
     .cms-excomp-admin-header {

@@ -31,6 +31,7 @@ $pagination = is_array($pagination ?? null)
 $base = rtrim((string) SITE_URL, '/');
 $baseUrl = $base . '/companies';
 $e = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$mediaUrl = static fn(mixed $value): string => class_exists('CMS_365NET_Experts_And_Companie') ? CMS_365NET_Experts_And_Companie::normalizeMediaUrl((string) $value) : trim((string) $value);
 $currentPage = max(1, (int) ($pagination['current'] ?? 1));
 $totalPages = max(1, (int) ($pagination['total_pages'] ?? 1));
 
@@ -220,7 +221,7 @@ $partnerLabel = static function (object $company): string {
 
                     $industry = trim((string) ($company->industry ?? ''));
                     $location = trim((string) ($company->location_city ?? $company->city ?? ''));
-                    $logo = trim((string) ($company->logo_url ?? ''));
+                    $logo = $mediaUrl($company->logo_url ?? '');
                     $description = $companyCardExcerpt($company);
                     $partnerStatus = $partnerLabel($company);
                     $hasPartnerCornerBadge = $partnerStatus !== 'Unternehmen';

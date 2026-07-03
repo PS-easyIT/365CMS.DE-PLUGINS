@@ -116,4 +116,64 @@
       // TOC ist reine Verbesserung; die Seite bleibt ohne JS vollständig nutzbar.
     }
   });
+
+  const alignTrustTitleRows = () => {
+    roots.forEach((root) => {
+      try {
+        const grids = root.querySelectorAll('.cms-beratung__cards, .cms-beratung-proof__grid, .cms-beratung-comparison');
+        grids.forEach((grid) => {
+          const cards = Array.from(grid.children).filter((child) => child instanceof Element && child.matches('.cms-beratung-card--module-trust'));
+          if (!cards.length) return;
+
+          cards.forEach((card) => {
+            card.classList.remove('has-row-multiline-title');
+            card.style.removeProperty('--beratung-trust-title-height');
+          });
+
+          if (window.matchMedia('(max-width: 767px)').matches) return;
+
+          const rows = new Map();
+          cards.forEach((card) => {
+            const top = Math.round(card.getBoundingClientRect().top);
+            if (!rows.has(top)) rows.set(top, []);
+            rows.get(top).push(card);
+          });
+
+          rows.forEach((rowCards) => {
+            const titleItems = rowCards.map((card) => {
+              const title = card.querySelector('h3');
+              return title instanceof HTMLElement ? { card, title } : null;
+            }).filter(Boolean);
+            if (!titleItems.length) return;
+
+            const hasMultilineTitle = titleItems.some(({ title }) => {
+              const styles = window.getComputedStyle(title);
+              const fontSize = parseFloat(styles.fontSize) || 16;
+              const lineHeight = parseFloat(styles.lineHeight) || (fontSize * 1.28);
+              return title.getBoundingClientRect().height > (lineHeight * 1.35);
+            });
+
+            if (!hasMultilineTitle) return;
+
+            const maxTitleHeight = Math.ceil(Math.max(...titleItems.map(({ title }) => title.getBoundingClientRect().height)));
+            titleItems.forEach(({ card }) => {
+              card.classList.add('has-row-multiline-title');
+              card.style.setProperty('--beratung-trust-title-height', `${maxTitleHeight}px`);
+            });
+          });
+        });
+      } catch (_) {
+        // Trust-Alignment ist ein Layout-Enhancement und darf die Seite nie blockieren.
+      }
+    });
+  };
+
+  alignTrustTitleRows();
+  window.addEventListener('load', alignTrustTitleRows, { once: true });
+  if (document.fonts?.ready) document.fonts.ready.then(alignTrustTitleRows).catch(() => {});
+  let trustTitleResizeTimer = 0;
+  window.addEventListener('resize', () => {
+    window.clearTimeout(trustTitleResizeTimer);
+    trustTitleResizeTimer = window.setTimeout(alignTrustTitleRows, 120);
+  }, { passive: true });
 })();

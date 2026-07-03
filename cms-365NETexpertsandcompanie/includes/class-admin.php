@@ -604,6 +604,7 @@ final class CMS_365NET_Experts_And_Companie_Admin
                 <?php $this->textField('city', 'Stadt', (string) ($item->location_city ?? $item->city ?? '')); ?>
                 <?php $this->textField('country', 'Land', (string) ($item->country ?? '')); ?>
                 <?php $this->textField('website', 'Website', (string) ($item->website ?? '')); ?>
+                <?php $this->mediaField('photo_url', 'Profilbild', (string) ($item->photo_url ?? ''), 'Profilbild hochladen oder aus der Mediathek auswählen.'); ?>
                 <?php $this->textField('availability', 'Verfügbarkeit', (string) ($item->availability ?? 'available')); ?>
                 <?php $this->textField('experience_years', 'Erfahrung (Jahre)', (string) ($item->experience_years ?? '')); ?>
                 <?php $this->textField('hourly_rate', 'Stundensatz', (string) ($item->hourly_rate ?? '')); ?>
@@ -713,6 +714,7 @@ final class CMS_365NET_Experts_And_Companie_Admin
                 <?php $this->textField('employee_count', 'Mitarbeiter', (string) ($item->employee_count ?? '')); ?>
                 <?php $this->textField('founded_year', 'Gründungsjahr', (string) ($item->founded_year ?? '')); ?>
                 <?php $this->textField('website', 'Website', (string) ($item->website ?? '')); ?>
+                <?php $this->mediaField('logo_url', 'Logo / Profilbild', (string) ($item->logo_url ?? ''), 'Company-Bild oder Logo hochladen oder aus der Mediathek auswählen.'); ?>
                 <?php $this->textField('email', 'E-Mail', (string) ($item->email ?? '')); ?>
                 <?php $this->textField('phone', 'Telefon', (string) ($item->phone ?? '')); ?>
                 <?php $this->textField('city', 'Stadt', (string) ($item->location_city ?? $item->city ?? '')); ?>
@@ -824,6 +826,19 @@ final class CMS_365NET_Experts_And_Companie_Admin
         echo '<label class="cms-excomp-form-field"><span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span><input type="text" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '"></label>';
     }
 
+    private function mediaField(string $name, string $label, string $value, string $hint = ''): void
+    {
+        if (class_exists('CMS_365NET_Experts_And_Companie')) {
+            $value = CMS_365NET_Experts_And_Companie::normalizeMediaUrl($value);
+        }
+
+        echo '<label class="cms-excomp-form-field cms-excomp-media-label"><span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span><input type="text" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '" placeholder="/uploads/experts-companie/... oder https://..." data-excomp-media-field>';
+        if ($hint !== '') {
+            echo '<small class="cms-excomp-media-note">' . htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') . '</small>';
+        }
+        echo '</label>';
+    }
+
     private function textAreaField(string $name, string $label, string $value, int $rows = 4): void
     {
         echo '<label class="cms-excomp-form-field"><span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span><textarea name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" rows="' . max(2, $rows) . '">' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '</textarea></label>';
@@ -877,6 +892,7 @@ final class CMS_365NET_Experts_And_Companie_Admin
             if (class_exists('CMS_365NET_Experts_And_Companie')) {
                 CMS_365NET_Experts_And_Companie::printInlineStyle('admin.css', 'cms-excomp-admin-inline');
             }
+            $this->printMediaAssets();
             return;
         }
 
@@ -886,6 +902,7 @@ final class CMS_365NET_Experts_And_Companie_Admin
             if (class_exists('CMS_365NET_Experts_And_Companie')) {
                 CMS_365NET_Experts_And_Companie::printInlineStyle('admin.css', 'cms-excomp-admin-inline');
             }
+            $this->printMediaAssets();
             return;
         }
 
@@ -893,6 +910,31 @@ final class CMS_365NET_Experts_And_Companie_Admin
         require_once ABSPATH . 'admin/partials/sidebar.php';
         if (class_exists('CMS_365NET_Experts_And_Companie')) {
             CMS_365NET_Experts_And_Companie::printInlineStyle('admin.css', 'cms-excomp-admin-inline');
+        }
+        $this->printMediaAssets();
+    }
+
+    private function printMediaAssets(): void
+    {
+        static $printed = false;
+        if ($printed) {
+            return;
+        }
+        $printed = true;
+
+        $config = [
+            'uploadUrl' => '/api/experts-companie/media-upload',
+            'libraryUrl' => '/api/media',
+            'csrfToken' => class_exists('CMS\\Security') ? (string) CMS\Security::instance()->generateToken('editorjs_media') : '',
+            'uploadFolder' => '/uploads/experts-companie/',
+            'maxSizeMb' => 10,
+        ];
+        $json = (string) json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        echo '<script type="application/json" id="cms-excomp-media-config">' . str_replace('</script', '<\/script', $json) . '</script>';
+
+        $js = CMS_365NET_EXCOMP_PLUGIN_DIR . 'assets/js/admin-media.js';
+        if (is_file($js)) {
+            echo '<script src="' . htmlspecialchars(CMS_365NET_EXCOMP_PLUGIN_URL . 'assets/js/admin-media.js', ENT_QUOTES, 'UTF-8') . '?v=' . filemtime($js) . '" defer></script>' . "\n";
         }
     }
 

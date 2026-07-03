@@ -15,7 +15,7 @@ final class CMS_365NET_Experts_And_Companie_Database
 {
     private static ?self $instance = null;
 
-    private const SCHEMA_VERSION = '1.4.0';
+    private const SCHEMA_VERSION = '1.5.0';
     private const TABLE_EXPERTS = '365net_excomp_experts';
     private const TABLE_COMPANIES = '365net_excomp_companies';
     private const TABLE_SETTINGS = '365net_excomp_settings';
@@ -442,6 +442,7 @@ final class CMS_365NET_Experts_And_Companie_Database
             'position' => $this->cleanText((string) ($data['position'] ?? ''), 255),
             'biography' => $biography,
             'biography_json' => $biographyJson,
+            'photo_url' => $this->cleanMediaUrl((string) ($data['photo_url'] ?? '')),
             'website' => $this->cleanUrl((string) ($data['website'] ?? '')),
             'city' => $this->cleanText((string) ($data['city'] ?? ''), 120),
             'location_city' => $this->cleanText((string) ($data['city'] ?? ''), 120),
@@ -543,6 +544,7 @@ final class CMS_365NET_Experts_And_Companie_Database
             'company_size' => $this->cleanText((string) ($data['company_size'] ?? ''), 120),
             'description' => $description,
             'description_json' => $descriptionJson,
+            'logo_url' => $this->cleanMediaUrl((string) ($data['logo_url'] ?? '')),
             'website' => $this->cleanUrl((string) ($data['website'] ?? '')),
             'city' => $this->cleanText((string) ($data['city'] ?? ''), 120),
             'location_city' => $this->cleanText((string) ($data['city'] ?? ''), 120),
@@ -616,6 +618,7 @@ final class CMS_365NET_Experts_And_Companie_Database
             position VARCHAR(255) DEFAULT NULL,
             biography TEXT DEFAULT NULL,
             biography_json LONGTEXT DEFAULT NULL,
+            photo_url VARCHAR(600) DEFAULT NULL,
             website VARCHAR(600) DEFAULT NULL,
             city VARCHAR(120) DEFAULT NULL,
             location_city VARCHAR(120) DEFAULT NULL,
@@ -651,6 +654,7 @@ final class CMS_365NET_Experts_And_Companie_Database
             company_size VARCHAR(120) DEFAULT NULL,
             description LONGTEXT DEFAULT NULL,
             description_json LONGTEXT DEFAULT NULL,
+            logo_url VARCHAR(600) DEFAULT NULL,
             website VARCHAR(600) DEFAULT NULL,
             city VARCHAR(120) DEFAULT NULL,
             location_city VARCHAR(120) DEFAULT NULL,
@@ -684,10 +688,12 @@ final class CMS_365NET_Experts_And_Companie_Database
         $this->ensureColumn(self::TABLE_EXPERTS, 'linked_company_id', 'linked_company_id INT UNSIGNED DEFAULT NULL');
         $this->ensureColumn(self::TABLE_EXPERTS, 'linked_speaker_id', 'linked_speaker_id INT UNSIGNED DEFAULT NULL');
         $this->ensureColumn(self::TABLE_EXPERTS, 'biography_json', 'biography_json LONGTEXT DEFAULT NULL');
+        $this->ensureColumn(self::TABLE_EXPERTS, 'photo_url', 'photo_url VARCHAR(600) DEFAULT NULL');
         $this->ensureColumn(self::TABLE_COMPANIES, 'linked_expert_id', 'linked_expert_id INT UNSIGNED DEFAULT NULL');
         $this->ensureColumn(self::TABLE_COMPANIES, 'linked_speaker_id', 'linked_speaker_id INT UNSIGNED DEFAULT NULL');
         $this->ensureColumn(self::TABLE_COMPANIES, 'parent_company_id', 'parent_company_id INT UNSIGNED DEFAULT NULL');
         $this->ensureColumn(self::TABLE_COMPANIES, 'description_json', 'description_json LONGTEXT DEFAULT NULL');
+        $this->ensureColumn(self::TABLE_COMPANIES, 'logo_url', 'logo_url VARCHAR(600) DEFAULT NULL');
     }
 
     private function seedDefaults(bool $force): void
@@ -1581,6 +1587,24 @@ final class CMS_365NET_Experts_And_Companie_Database
 
         if (!str_starts_with($value, 'http://') && !str_starts_with($value, 'https://')) {
             $value = 'https://' . ltrim($value, '/');
+        }
+
+        return filter_var($value, FILTER_VALIDATE_URL) ? $value : '';
+    }
+
+    private function cleanMediaUrl(string $value): string
+    {
+        if (class_exists('CMS_365NET_Experts_And_Companie')) {
+            return CMS_365NET_Experts_And_Companie::normalizeMediaUrl($value);
+        }
+
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        if (preg_match('#^(?:/)?(?:uploads|media)(/|$)#i', $value) === 1 || preg_match('#^(?:/)?media-file(\?|$)#i', $value) === 1) {
+            return '/' . ltrim($value, '/');
         }
 
         return filter_var($value, FILTER_VALIDATE_URL) ? $value : '';

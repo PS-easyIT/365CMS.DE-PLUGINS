@@ -56,6 +56,7 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
         $router->addRoute('GET', '/admin/experts-companie/companies/new', [$this, 'adminCompanyNew']);
         $router->addRoute('GET', '/admin/experts-companie/companies/edit/:id', [$this, 'adminCompanyEdit']);
         $router->addRoute('POST', '/admin/experts-companie/companies/save', [$this, 'adminCompanySave']);
+        $router->addRoute('POST', '/api/experts-companie/media-upload', [$this, 'adminMediaUpload']);
     }
 
     public function addMenuItem(): void
@@ -518,6 +519,7 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
             'certifications' => $this->cleanText((string) ($_POST['certifications'] ?? ''), 2000),
             'biography_json' => (string) ($_POST['biography_json'] ?? ''),
             'biography' => $this->cleanText((string) ($_POST['biography'] ?? ($_POST['biography_json'] ?? '')), 18000),
+            'photo_url' => $this->cleanText((string) ($_POST['photo_url'] ?? ''), 600),
             'linked_company_id' => max(0, (int) ($_POST['linked_company_id'] ?? 0)),
             'linked_speaker_id' => max(0, (int) ($_POST['linked_speaker_id'] ?? 0)),
             'status' => $this->allowValue((string) ($_POST['status'] ?? 'active'), ['active', 'inactive']) ?? 'active',
@@ -623,6 +625,7 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
             'linked_speaker_id' => max(0, (int) ($_POST['linked_speaker_id'] ?? 0)),
             'description_json' => (string) ($_POST['description_json'] ?? ''),
             'description' => $this->cleanText((string) ($_POST['description'] ?? ($_POST['description_json'] ?? '')), 20000),
+            'logo_url' => $this->cleanText((string) ($_POST['logo_url'] ?? ''), 600),
             'is_partner' => isset($_POST['is_partner']) ? 1 : 0,
             'is_top_partner' => isset($_POST['is_top_partner']) ? 1 : 0,
             'is_sponsor' => isset($_POST['is_sponsor']) ? 1 : 0,
@@ -637,6 +640,159 @@ final class CMS_365NET_Experts_And_Companie_Post_Type
         }
 
         CMS\Router::instance()->redirect('/admin/experts-companie/companies?saved=1');
+    }
+
+    public function adminMediaUpload(): void
+    {
+        if (!class_exists('CMS\\Auth') || !CMS\Auth::instance()->isAdmin()) {
+            $this->jsonResponse(['success' => 0, 'message' => 'Nicht berechtigt.'], 403);
+        }
+
+        $token = (string) ($_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''));
+        $security = class_exists('CMS\\Security') ? CMS\Security::instance() : null;
+        $validToken = false;
+        if (is_object($security) && method_exists($security, 'verifyPersistentToken')) {
+            $validToken = (bool) $security->verifyPersistentToken($token, 'editorjs_media');
+        }
+        if (!$validToken && is_object($security) && method_exists($security, 'verifyToken')) {
+            $validToken = (bool) $security->verifyToken($token, 'editorjs_media');
+        }
+        if (!$validToken) {
+            $this->jsonResponse(['success' => 0, 'message' => 'Sicherheitsüberprüfung fehlgeschlagen.'], 403);
+        }
+
+        if (!defined('UPLOAD_PATH')) {
+            $this->jsonResponse(['success' => 0, 'message' => 'Upload-Verzeichnis ist nicht konfiguriert.'], 500);
+        }
+
+        $file = $_FILES['file'] ?? ($_FILES['image'] ?? null);
+        if (!is_array($file) || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file((string) ($file['tmp_name'] ?? ''))) {
+            $this->jsonResponse(['success' => 0, 'message' => 'Keine gültige Bilddatei empfangen.'], 400);
+        }
+
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+        $originalName = (string) ($file['name'] ?? 'profilbild');
+        $extension = strtolower((string) pathinfo($originalName, PATHINFO_EXTENSION));
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'ico', 'svg'];
+        if (!in_array($extension, $allowedExtensions, true)) {
+            $this->jsonResponse(['success' => 0, 'message' => 'Nur Bilddateien sind erlaubt.'], 400);
+        }
+
+        if ($extension === 'svg' && !$this->svgUploadIsSafe($tmpName)) {
+            $this->jsonResponse(['success' => 0, 'message' => 'SVG enthält nicht erlaubte aktive Inhalte.'], 400);
+        }
+        if ($extension !== 'svg' && !$this->uploadedFileIsImage($tmpName)) {
+            $this->jsonResponse(['success' => 0, 'message' => 'Nur Bilddateien sind erlaubt.'], 400);
+        }
+
+        $size = (int) ($file['size'] ?? 0);
+        if ($size <= 0 || $size > 10 * 1024 * 1024) {
+            $this->jsonResponse(['success' => 0, 'message' => 'Die Bilddatei ist leer oder größer als 10 MB.'], 400);
+        }
+
+        $uploadRoot = rtrim((string) UPLOAD_PATH, '/\\');
+        $targetDir = $uploadRoot . DIRECTORY_SEPARATOR . 'experts-companie';
+        if (!is_dir($targetDir) && !mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
+            $this->jsonResponse(['success' => 0, 'message' => 'Der Ordner /uploads/experts-companie konnte nicht erstellt werden.'], 500);
+        }
+
+        $baseName = $this->sanitizeUploadBasename((string) pathinfo($originalName, PATHINFO_FILENAME));
+        $filename = $this->uniqueUploadFilename($targetDir, $baseName, $extension);
+        $targetPath = $targetDir . DIRECTORY_SEPARATOR . $filename;
+
+        if (!move_uploaded_file($tmpName, $targetPath)) {
+            $this->jsonResponse(['success' => 0, 'message' => 'Die Datei konnte nicht gespeichert werden.'], 500);
+        }
+
+        @chmod($targetPath, 0644);
+
+        $relativePath = 'experts-companie/' . $filename;
+        $url = '/uploads/' . $relativePath;
+        $this->jsonResponse([
+            'success' => 1,
+            'url' => $url,
+            'path' => $relativePath,
+            'file' => [
+                'url' => $url,
+                'path' => $relativePath,
+                'name' => $filename,
+                'size' => filesize($targetPath) ?: $size,
+            ],
+        ]);
+    }
+
+    /** @param array<string,mixed> $payload */
+    private function jsonResponse(array $payload, int $status = 200): never
+    {
+        if (!headers_sent()) {
+            http_response_code($status);
+            header('Content-Type: application/json; charset=utf-8');
+        }
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{"success":0}';
+        exit;
+    }
+
+    private function uploadedFileIsImage(string $tmpName): bool
+    {
+        if ($tmpName === '' || !is_file($tmpName)) {
+            return false;
+        }
+        if (function_exists('exif_imagetype') && @exif_imagetype($tmpName) !== false) {
+            return true;
+        }
+        if (@getimagesize($tmpName) !== false) {
+            return true;
+        }
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo !== false) {
+                $mime = finfo_file($finfo, $tmpName);
+                finfo_close($finfo);
+                return is_string($mime) && str_starts_with(strtolower($mime), 'image/');
+            }
+        }
+        return false;
+    }
+
+    private function svgUploadIsSafe(string $tmpName): bool
+    {
+        $content = (string) @file_get_contents($tmpName, false, null, 0, 1024 * 1024);
+        if ($content === '' || stripos($content, '<svg') === false) {
+            return false;
+        }
+        if (preg_match('#<(script|foreignObject|iframe|object|embed|form|input|button|textarea|select|link)\\b#i', $content) === 1) {
+            return false;
+        }
+        if (preg_match('/\\s+on[a-z]+\\s*=/i', $content) === 1) {
+            return false;
+        }
+        if (preg_match("/(?:href|xlink:href|src)\\s*=\\s*([\"'])\\s*(?:javascript:|data:text\\/html)/i", $content) === 1) {
+            return false;
+        }
+        return true;
+    }
+
+    private function sanitizeUploadBasename(string $baseName): string
+    {
+        $baseName = strtolower(trim($baseName));
+        $baseName = preg_replace('/[^a-z0-9_-]+/i', '-', $baseName) ?? '';
+        $baseName = trim($baseName, '-_');
+        if ($baseName === '') {
+            $baseName = 'profilbild';
+        }
+        return function_exists('mb_substr') ? (string) mb_substr($baseName, 0, 80, 'UTF-8') : substr($baseName, 0, 80);
+    }
+
+    private function uniqueUploadFilename(string $targetDir, string $baseName, string $extension): string
+    {
+        $extension = strtolower(trim($extension, '.'));
+        $candidate = $baseName . '.' . $extension;
+        $counter = 1;
+        while (is_file($targetDir . DIRECTORY_SEPARATOR . $candidate)) {
+            $candidate = $baseName . '-' . $counter . '.' . $extension;
+            $counter++;
+        }
+        return $candidate;
     }
 
     private function requireAdmin(): bool

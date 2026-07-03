@@ -23,6 +23,7 @@ $settings = is_array($settings ?? null) ? $settings : [];
 
 $base = rtrim((string) SITE_URL, '/');
 $e = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$mediaUrl = static fn(mixed $value): string => class_exists('CMS_365NET_Experts_And_Companie') ? CMS_365NET_Experts_And_Companie::normalizeMediaUrl((string) $value) : trim((string) $value);
 
 $setting = static function (string $key, string $default) use ($settings): string {
     $value = trim((string) ($settings[$key] ?? ''));
@@ -92,7 +93,7 @@ $firstName = trim((string) ($expert->first_name ?? ''));
 $lastName = trim((string) ($expert->last_name ?? ''));
 $fullName = trim($firstName . ' ' . $lastName);
 $fullName = $fullName !== '' ? $fullName : ('Expert #' . (int) ($expert->id ?? 0));
-$profileImageUrl = trim((string) ($expert->photo_url ?? ''));
+$profileImageUrl = $mediaUrl($expert->photo_url ?? '');
 $profileImageAlt = $fullName;
 
 $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));

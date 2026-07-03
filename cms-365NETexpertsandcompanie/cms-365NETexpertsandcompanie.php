@@ -3,7 +3,7 @@
  * Plugin Name: 365NET | Experts & Companie
  * Plugin URI: https://365network.de/cms-365NETexpertsandcompanie
  * Description: Vereint Experten und Firmen vollständig in einem eigenständigen Plugin mit gemeinsamer Übersicht und Admin-Zentrale.
- * Version: 1.0.10
+ * Version: 1.0.12
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
 $pluginDirPath = str_replace('\\', '/', dirname(__FILE__));
 $pluginFolderName = basename($pluginDirPath);
 
-defined('CMS_365NET_EXCOMP_VERSION') || define('CMS_365NET_EXCOMP_VERSION', '1.0.10');
+defined('CMS_365NET_EXCOMP_VERSION') || define('CMS_365NET_EXCOMP_VERSION', '1.0.12');
 defined('CMS_365NET_EXCOMP_PLUGIN_DIR') || define('CMS_365NET_EXCOMP_PLUGIN_DIR', rtrim($pluginDirPath, '/') . '/');
 defined('CMS_365NET_EXCOMP_PLUGIN_URL') || define('CMS_365NET_EXCOMP_PLUGIN_URL', '/plugins/' . $pluginFolderName . '/');
 defined('CMS_365NET_EXCOMP_TEXT_DOMAIN') || define('CMS_365NET_EXCOMP_TEXT_DOMAIN', 'cms-365netexpertsandcompanie');
@@ -45,6 +45,51 @@ if (!class_exists('CMS_365NET_Experts_And_Companie', false)) {
             }
 
             return self::$instance;
+        }
+
+        public static function normalizeMediaUrl(string $value): string
+        {
+            $value = trim(str_replace("\0", '', $value));
+            if ($value === '' || preg_match('/[\x00-\x1F\x7F]/', $value) === 1) {
+                return '';
+            }
+
+            $legacyBrokenInternal = preg_match('#^https?://(uploads|media|media-file)(/|\?|$)#i', $value) === 1;
+            if ($legacyBrokenInternal) {
+                $parts = parse_url($value);
+                $host = strtolower((string) ($parts['host'] ?? ''));
+                $path = (string) ($parts['path'] ?? '');
+                $query = isset($parts['query']) ? ('?' . (string) $parts['query']) : '';
+                $fragment = isset($parts['fragment']) ? ('#' . (string) $parts['fragment']) : '';
+                return '/' . ltrim($host . '/' . ltrim($path, '/'), '/') . $query . $fragment;
+            }
+
+            if (preg_match('#^https?://#i', $value) === 1) {
+                $parts = parse_url($value);
+                $siteParts = defined('SITE_URL') ? parse_url((string) SITE_URL) : [];
+                $host = strtolower((string) ($parts['host'] ?? ''));
+                $siteHost = is_array($siteParts) ? strtolower((string) ($siteParts['host'] ?? '')) : '';
+                if ($host !== '' && $siteHost !== '' && $host === $siteHost) {
+                    $path = (string) ($parts['path'] ?? '');
+                    $query = isset($parts['query']) ? ('?' . (string) $parts['query']) : '';
+                    $fragment = isset($parts['fragment']) ? ('#' . (string) $parts['fragment']) : '';
+                    if (preg_match('#^/(uploads|media)(/|$)#i', $path) === 1 || preg_match('#^/media-file(\?|$)#i', $path . $query) === 1) {
+                        return $path . $query . $fragment;
+                    }
+                }
+
+                return filter_var($value, FILTER_VALIDATE_URL) ? $value : '';
+            }
+
+            if (preg_match('#^(uploads|media)(/|$)#i', $value) === 1 || preg_match('#^media-file(\?|$)#i', $value) === 1) {
+                $value = '/' . ltrim($value, '/');
+            }
+
+            if (preg_match('#^/(uploads|media)(/|$)#i', $value) === 1 || preg_match('#^/media-file(\?|$)#i', $value) === 1) {
+                return $value;
+            }
+
+            return '';
         }
 
         private function __construct()

@@ -416,23 +416,14 @@ $renderCollaboration = static function (array $section, int $columns) use ($rend
     }
 };
 
-$renderComparison = static function (array $section, array $cards, int $columns) use ($renderer, $hasText): void {
+$renderComparison = static function (array $section, array $cards, int $columns) use ($renderer, $renderCard, $hasText): void {
     if (!empty($section['title_band_enabled']) && !empty($section['title_band_text'])) {
         echo '<div class="cms-beratung-comparison__band" style="--band-bg:' . $renderer::esc((string) ($section['title_band_background_color'] ?? '#1e3a8a')) . ';--band-text:' . $renderer::esc((string) ($section['title_band_text_color'] ?? '#ffffff')) . '">' . $renderer::esc((string) $section['title_band_text']) . '</div>';
     }
-    echo '<div class="cms-beratung-comparison cms-beratung-comparison--' . $columns . ' ' . (!empty($section['border_enabled']) ? 'has-border' : '') . ' ' . (!empty($section['shadow_enabled']) ? 'has-shadow' : '') . '">';
-    foreach ($cards as $card) {
-        if (!is_array($card) || empty($card['enabled'])) { continue; }
-        $title = trim((string) ($card['title'] ?? $card['problem_title'] ?? ''));
-        $text = trim((string) ($card['text'] ?? $card['problem_text'] ?? ''));
-        $extra = trim((string) ($card['extra_text'] ?? ''));
-        if (trim((string) ($card['icon'] ?? '')) === '' && $title === '' && $text === '' && $extra === '') { continue; }
-        echo '<article class="cms-beratung-comparison__column">';
-        if (!empty($card['icon'])) { echo '<div aria-hidden="true">' . $renderer::esc((string) $card['icon']) . '</div>'; }
-        if ($title !== '') { echo '<h3>' . $renderer::esc($title) . '</h3>'; }
-        if ($text !== '') { echo '<p>' . $renderer::nl($text) . '</p>'; }
-        if ($extra !== '') { echo '<small>' . $renderer::nl($extra) . '</small>'; }
-        echo '</article>';
+    echo '<div class="cms-beratung-comparison cms-beratung-comparison--' . $columns . ' cms-beratung__cards cms-beratung__cards--' . $columns . ' cms-beratung__cards--design-' . $renderer::esc((string) ($section['card_design'] ?? 'standard')) . ' ' . (!empty($section['equal_height']) ? 'has-equal-cards' : '') . ' ' . (!empty($section['border_enabled']) ? 'has-border' : '') . ' ' . (!empty($section['shadow_enabled']) ? 'has-shadow' : '') . '">';
+    foreach ($cards as $index => $card) {
+        if (!is_array($card)) { continue; }
+        $renderCard($card, $index, 'comparison');
     }
     echo '</div>';
 };
@@ -456,14 +447,23 @@ $renderFaq = static function (array $section, array $cards, string $sectionId) u
 
 $renderDivider = static function (array $section) use ($renderer, $renderSectionActions, $hasText): void {
     $type = (string) ($section['divider_type'] ?? 'line');
-    echo '<div class="cms-beratung-divider cms-beratung-divider--' . $renderer::esc($type) . ' cms-beratung-divider--mobile-' . $renderer::esc((string) ($section['divider_mobile_behavior'] ?? 'stack')) . '" style="--divider-bg:' . $renderer::esc((string) ($section['background_color'] ?? '#ffffff')) . ';--divider-text:' . $renderer::esc((string) ($section['text_color'] ?? '#111827')) . ';--divider-line:' . $renderer::esc((string) ($section['divider_line_color'] ?? '#dbeafe')) . ';--divider-width:' . (int) ($section['divider_width'] ?? 100) . '%;--divider-pl:' . max(0, min(180, (int) ($section['divider_padding_left'] ?? 20))) . 'px;--divider-pr:' . max(0, min(180, (int) ($section['divider_padding_right'] ?? 20))) . 'px;">';
+    $layout = in_array((string) ($section['divider_layout'] ?? 'centered'), ['centered', 'image-left', 'image-right'], true) ? (string) ($section['divider_layout'] ?? 'centered') : 'centered';
+    $imageUrl = trim((string) ($section['divider_image_url'] ?? ''));
+    $imageAlt = trim((string) ($section['divider_image_alt'] ?? '')) ?: trim((string) ($section['divider_title'] ?? ''));
+    echo '<div class="cms-beratung-divider cms-beratung-divider--' . $renderer::esc($type) . ' cms-beratung-divider--layout-' . $renderer::esc($layout) . ' cms-beratung-divider--mobile-' . $renderer::esc((string) ($section['divider_mobile_behavior'] ?? 'stack')) . '" style="--divider-bg:' . $renderer::esc((string) ($section['background_color'] ?? '#ffffff')) . ';--divider-text:' . $renderer::esc((string) ($section['text_color'] ?? '#111827')) . ';--divider-line:' . $renderer::esc((string) ($section['divider_line_color'] ?? '#dbeafe')) . ';--divider-width:' . (int) ($section['divider_width'] ?? 100) . '%;--divider-pl:' . max(0, min(180, (int) ($section['divider_padding_left'] ?? 20))) . 'px;--divider-pr:' . max(0, min(180, (int) ($section['divider_padding_right'] ?? 20))) . 'px;--divider-image-width:' . max(18, min(45, (int) ($section['divider_image_width'] ?? 32))) . '%;">';
     if ($type === 'spacer') { echo '<span aria-hidden="true"></span>'; }
     elseif ($type === 'wave') { echo '<svg viewBox="0 0 1440 90" aria-hidden="true" focusable="false"><path d="M0,48 C180,96 360,0 540,42 C720,84 900,84 1080,36 C1260,-12 1350,24 1440,54 L1440,90 L0,90 Z"></path></svg>'; }
     else {
-        if (!empty($section['divider_icon'])) { echo '<span class="cms-beratung-divider__icon">' . $renderer::esc((string) $section['divider_icon']) . '</span>'; }
+        if ($imageUrl !== '') {
+            echo '<figure class="cms-beratung-divider__media"><img src="' . $renderer::esc($imageUrl) . '" alt="' . $renderer::esc($imageAlt) . '" loading="lazy" decoding="async"></figure>';
+        } elseif (!empty($section['divider_icon'])) {
+            echo '<span class="cms-beratung-divider__icon">' . $renderer::esc((string) $section['divider_icon']) . '</span>';
+        }
+        echo '<div class="cms-beratung-divider__content">';
         if (!empty($section['divider_title'])) { echo '<h2>' . $renderer::esc((string) $section['divider_title']) . '</h2>'; }
         if ($hasText($section['divider_subtitle'] ?? '')) { echo '<p>' . $renderer::nl((string) $section['divider_subtitle']) . '</p>'; }
         if ($type === 'cta') { $renderSectionActions($section); }
+        echo '</div>';
     }
     echo '</div>';
 };
@@ -490,7 +490,7 @@ $renderProofSection = static function (array $proof, array $testimonials, array 
             'border_color' => '#dbeafe',
         ];
     }, $proof);
-    $proof = array_values(array_filter($proof, static fn(array $item): bool => trim((string) ($item['title'] ?? '')) !== '' && trim((string) ($item['text'] ?? '')) !== ''));
+    $proof = array_values(array_filter($proof, static fn(array $item): bool => trim((string) ($item['badge'] ?? $item['category'] ?? $item['label'] ?? $item['image_url'] ?? $item['icon'] ?? $item['title'] ?? $item['text'] ?? $item['button_label'] ?? '')) !== ''));
     $testimonials = array_values(array_filter($testimonials, static fn(array $item): bool => trim((string) ($item['quote'] ?? '')) !== '' && trim((string) ($item['name'] ?? '')) !== ''));
     if ($proof === [] && $testimonials === []) {
         return;
@@ -499,7 +499,13 @@ $renderProofSection = static function (array $proof, array $testimonials, array 
     $title = trim((string) ($section['title'] ?? ''));
     $intro = trim((string) ($section['intro'] ?? ''));
     $sectionId = trim((string) ($section['anchor_id'] ?? $section['id'] ?? 'belegbare-grundlagen')) ?: 'belegbare-grundlagen';
-    echo '<section class="cms-beratung-proof" id="' . $renderer::esc($sectionId) . '" aria-labelledby="beratung-proof-title"><div class="cms-beratung-proof__inner">' . ($eyebrow !== '' || $title !== '' || $intro !== '' ? '<div class="cms-beratung-proof__head">' . ($eyebrow !== '' ? '<span>' . $renderer::esc($eyebrow) . '</span>' : '') . ($title !== '' ? '<h2 id="beratung-proof-title">' . $renderer::esc($title) . '</h2>' : '') . ($intro !== '' ? '<p>' . $renderer::esc($intro) . '</p>' : '') . '</div>' : '');
+    $proofClasses = ['cms-beratung-proof'];
+    if (!empty($section['equal_height'])) { $proofClasses[] = 'has-equal-cards'; }
+    $proofStyle = '--section-bg:' . $renderer::esc((string) ($section['background_color'] ?? '#ffffff')) . ';--section-text:' . $renderer::esc((string) ($section['text_color'] ?? '#111827')) . ';--section-pt:' . (int) ($section['padding_top'] ?? 56) . 'px;--section-pb:' . (int) ($section['padding_bottom'] ?? 56) . 'px;--section-width:' . (int) ($section['max_width'] ?? 1200) . 'px;--section-align:' . $renderer::esc((string) ($section['text_align'] ?? 'left')) . ';';
+    if (!empty($section['background_image_url'])) {
+        $proofStyle .= "--section-bg-image:url('" . $renderer::esc((string) $section['background_image_url']) . "');";
+    }
+    echo '<section class="' . $renderer::esc(implode(' ', $proofClasses)) . '" id="' . $renderer::esc($sectionId) . '" aria-labelledby="beratung-proof-title" style="' . $proofStyle . '"><div class="cms-beratung-proof__inner">' . ($eyebrow !== '' || $title !== '' || $intro !== '' ? '<div class="cms-beratung-proof__head">' . ($eyebrow !== '' ? '<span>' . $renderer::esc($eyebrow) . '</span>' : '') . ($title !== '' ? '<h2 id="beratung-proof-title">' . $renderer::esc($title) . '</h2>' : '') . ($intro !== '' ? '<p>' . $renderer::esc($intro) . '</p>' : '') . '</div>' : '');
     if ($proof !== []) {
         $columns = max(1, min(4, (int) ($section['columns'] ?? 3)));
         $cardDesign = preg_replace('/[^a-z0-9_-]/i', '', (string) ($section['card_design'] ?? 'accent')) ?: 'accent';
@@ -529,7 +535,7 @@ $renderBookingSection = static function (string $bookingUrl, array $section = []
         $bookingUrl = '';
     }
     $bookingDisplay = (string) ($section['booking_display'] ?? 'embed');
-    if (!in_array($bookingDisplay, ['embed', 'link'], true)) {
+    if (!in_array($bookingDisplay, ['embed', 'link', 'button'], true)) {
         $bookingDisplay = 'embed';
     }
     $bookingButtonText = trim((string) ($section['booking_button_text'] ?? 'Termin buchen')) ?: 'Termin buchen';
@@ -537,7 +543,15 @@ $renderBookingSection = static function (string $bookingUrl, array $section = []
     $title = trim((string) ($section['title'] ?? ''));
     $intro = trim((string) ($section['intro'] ?? ''));
     $sectionId = trim((string) ($section['anchor_id'] ?? $section['id'] ?? 'termin-buchen')) ?: 'termin-buchen';
-    echo '<section class="cms-beratung-booking" id="' . $renderer::esc($sectionId) . '" aria-labelledby="beratung-booking-title"><div class="cms-beratung-booking__inner">' . ($eyebrow !== '' || $title !== '' || $intro !== '' ? '<div class="cms-beratung-booking__head">' . ($eyebrow !== '' ? '<span>' . $renderer::esc($eyebrow) . '</span>' : '') . ($title !== '' ? '<h2 id="beratung-booking-title">' . $renderer::esc($title) . '</h2>' : '') . ($intro !== '' ? '<p>' . $renderer::esc($intro) . '</p>' : '') . '<ul class="cms-beratung-booking__trust" aria-label="Termin Vorteile"><li>Kostenloses Erstgespräch</li><li>Antwort in 24h</li><li>Remote oder vor Ort</li></ul></div>' : '') . '<div class="cms-beratung-booking-card">';
+    echo '<section class="cms-beratung-booking cms-beratung-booking--display-' . $renderer::esc($bookingDisplay) . '" id="' . $renderer::esc($sectionId) . '" aria-labelledby="beratung-booking-title"><div class="cms-beratung-booking__inner">' . ($eyebrow !== '' || $title !== '' || $intro !== '' ? '<div class="cms-beratung-booking__head">' . ($eyebrow !== '' ? '<span>' . $renderer::esc($eyebrow) . '</span>' : '') . ($title !== '' ? '<h2 id="beratung-booking-title">' . $renderer::esc($title) . '</h2>' : '') . ($intro !== '' ? '<p>' . $renderer::esc($intro) . '</p>' : '') . '<ul class="cms-beratung-booking__trust" aria-label="Termin Vorteile"><li>Kostenloses Erstgespräch</li><li>Antwort in 24h</li><li>Remote oder vor Ort</li></ul></div>' : '');
+    if ($bookingDisplay === 'button') {
+        if ($bookingUrl !== '') {
+            echo '<div class="cms-beratung-booking-actions cms-beratung-module__actions"><a class="cms-beratung__btn cms-beratung__btn--primary" href="' . $renderer::esc($bookingUrl) . '" target="_blank" rel="noopener noreferrer">' . $renderer::esc($bookingButtonText) . '</a></div>';
+        }
+        echo '</div></section>';
+        return;
+    }
+    echo '<div class="cms-beratung-booking-card">';
     if ($bookingUrl !== '' && $bookingDisplay === 'embed') {
         echo '<div class="cms-beratung-booking-card__embed"><iframe src="' . $renderer::esc($bookingUrl) . '" title="Microsoft Bookings Terminbuchung für Beratung" loading="lazy" allow="clipboard-write; fullscreen" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"></iframe></div>';
     } elseif ($bookingUrl !== '') {

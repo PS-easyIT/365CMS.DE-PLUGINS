@@ -39,6 +39,7 @@ $showCompanies = in_array($type, ['all', 'companies'], true);
 $hubUrl = rtrim((string) SITE_URL, '/') . '/experts-companie';
 
 $e = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$mediaUrl = static fn(mixed $value): string => class_exists('CMS_365NET_Experts_And_Companie') ? CMS_365NET_Experts_And_Companie::normalizeMediaUrl((string) $value) : trim((string) $value);
 
 $setting = static function (string $key, string $default) use ($settings): string {
     $value = trim((string) ($settings[$key] ?? ''));
@@ -215,7 +216,7 @@ $companyPartnerLabel = static function (object $company): string {
                             $position = trim((string) ($expert->position ?? ''));
                             $company = trim((string) ($expert->company ?? ''));
                             $location = trim((string) ($expert->location_city ?? ''));
-                            $photo = trim((string) ($expert->photo_url ?? ''));
+                            $photo = $mediaUrl($expert->photo_url ?? '');
                             $linkedSpeaker = is_object($expert->linked_speaker ?? null) ? $expert->linked_speaker : null;
                             $linkedCompany = is_object($expert->linked_company ?? null) ? $expert->linked_company : null;
                             $speakerSlug = trim((string) ($linkedSpeaker->slug ?? ''));
@@ -287,7 +288,7 @@ $companyPartnerLabel = static function (object $company): string {
                             $industry = trim((string) ($company->industry ?? ''));
                             $location = trim((string) ($company->location_city ?? ''));
                             $website = trim((string) ($company->website ?? ''));
-                            $logo = trim((string) ($company->logo_url ?? ''));
+                            $logo = $mediaUrl($company->logo_url ?? '');
                             $linkedExperts = is_array($company->linked_experts ?? null) ? $company->linked_experts : [];
                             $linkedSpeakers = is_array($company->linked_speakers ?? null) ? $company->linked_speakers : [];
                             ?>

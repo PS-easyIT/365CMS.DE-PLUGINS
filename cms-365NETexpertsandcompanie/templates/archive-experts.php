@@ -31,6 +31,7 @@ $pagination = is_array($pagination ?? null)
 $base = rtrim((string) SITE_URL, '/');
 $baseUrl = $base . '/experts';
 $e = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$mediaUrl = static fn(mixed $value): string => class_exists('CMS_365NET_Experts_And_Companie') ? CMS_365NET_Experts_And_Companie::normalizeMediaUrl((string) $value) : trim((string) $value);
 $currentPage = max(1, (int) ($pagination['current'] ?? 1));
 $totalPages = max(1, (int) ($pagination['total_pages'] ?? 1));
 
@@ -204,7 +205,7 @@ $expertCardExcerpt = static function (object $expert): string {
                     $awards = trim((string) ($expert->awards ?? ''));
                     $isMvp = $awards !== '' && stripos($awards, 'mvp') !== false;
                     $hasAwardBadge = $awards !== '';
-                    $photo = trim((string) ($expert->photo_url ?? ''));
+                    $photo = $mediaUrl($expert->photo_url ?? '');
                     $bio = $expertCardExcerpt($expert);
                     $linkedSpeaker = is_object($expert->linked_speaker ?? null) ? $expert->linked_speaker : null;
                     $linkedCompany = is_object($expert->linked_company ?? null) ? $expert->linked_company : null;

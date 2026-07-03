@@ -23,6 +23,7 @@ $settings = is_array($settings ?? null) ? $settings : [];
 
 $base = rtrim((string) SITE_URL, '/');
 $e = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$mediaUrl = static fn(mixed $value): string => class_exists('CMS_365NET_Experts_And_Companie') ? CMS_365NET_Experts_And_Companie::normalizeMediaUrl((string) $value) : trim((string) $value);
 
 $setting = static function (string $key, string $default) use ($settings): string {
     $value = trim((string) ($settings[$key] ?? ''));
@@ -97,7 +98,7 @@ $website = trim((string) ($company->website ?? ''));
 $email = trim((string) ($company->email ?? ''));
 $phone = trim((string) ($company->phone ?? ''));
 $companySize = trim((string) ($company->company_size ?? ''));
-$logoUrl = trim((string) ($company->logo_url ?? ''));
+$logoUrl = $mediaUrl($company->logo_url ?? '');
 
 $partnerLabel = 'Unternehmen';
 if ((int) ($company->is_sponsor ?? 0) === 1) {
