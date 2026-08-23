@@ -787,6 +787,20 @@ final class CMS_Contact_Frontend
         return "<style>\n" . $css . "\n</style>\n";
     }
 
+    public static function render_description(mixed $description): string
+    {
+        $content = is_scalar($description) ? trim((string) $description) : '';
+        if ($content === '') {
+            return '';
+        }
+
+        if (class_exists('CMS\\Services\\EditorJsRenderer')) {
+            return trim((string) \CMS\Services\EditorJsRenderer::getInstance()->render($content));
+        }
+
+        return '<p>' . nl2br(htmlspecialchars($content, ENT_QUOTES, 'UTF-8')) . '</p>';
+    }
+
     public static function sanitize_custom_css(string $css): string
     {
         $css = mb_substr(trim(strip_tags($css)), 0, 4000);

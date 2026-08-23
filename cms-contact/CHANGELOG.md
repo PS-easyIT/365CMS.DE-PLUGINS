@@ -2,6 +2,30 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [3.0.3] – 2026-08-23
+
+### Hinzugefügt
+
+- Jedes Kontaktformular besitzt eine eigene, formatierbare „Kontaktformular Footer-Beschreibung“.
+- Die Footer-Beschreibung wird in allen sechs Standard- und vier Booking-Templates unter Formularfeldern und Absende-Button ausgegeben.
+- Datenbankmigration `5` ergänzt `contact_forms.footer_description` automatisch bei bestehenden Installationen.
+
+### Verbessert
+
+- Beide Beschreibungseditoren verwenden dieselbe EditorJS-Asset-Instanz und laden ihre umfangreichen Assets dadurch nur einmal pro Adminseite.
+- Das Admin-Design folgt jetzt dem ruhigen Matrix-/Azure-Muster mit 25-px-Abschnittsrhythmus, 10-px-Radien, dezenten Flächen, einfachen Rahmen und ohne schwebende Kartenanimationen.
+
+## [3.0.2] – 2026-08-23
+
+### Hinzugefügt
+
+- Formularbeschreibungen nutzen beim Erstellen und Bearbeiten den zentralen EditorJS-Blockeditor des CMS.
+
+### Geändert
+
+- Beschreibungen werden serverseitig als sichere EditorJS-Blockdaten gespeichert und in allen zehn Public-Templates formatiert ausgegeben; vorhandener Plaintext bleibt kompatibel.
+- Der Admin-Inhaltsbereich ist schlichter gestaltet und besitzt links sowie rechts jeweils `10px` Abstand.
+
 ## [3.0.1] – 2026-05-31
 
 ### Geändert

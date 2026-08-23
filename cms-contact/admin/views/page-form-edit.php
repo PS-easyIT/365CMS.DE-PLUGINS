@@ -58,14 +58,21 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="description">Beschreibung</label>
-                <textarea id="description" name="description" class="form-control" rows="2"><?php echo $e($form['description'] ?? ''); ?></textarea>
+                <span class="form-label">Beschreibung</span>
+                <small class="form-text contact-editor-help">Formatierte Inhalte werden oberhalb des Formulars angezeigt.</small>
+                <?php echo self::render_form_content_editor('description', $form['description'] ?? '', 'Formularbeschreibung'); ?>
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="success_message">Erfolgsmeldung</label>
                 <input type="text" id="success_message" name="success_message" class="form-control"
                        value="<?php echo $e($form['success_message'] ?? ''); ?>">
+            </div>
+
+            <div class="form-group contact-footer-editor">
+                <span class="form-label">Kontaktformular Footer-Beschreibung</span>
+                <small class="form-text contact-editor-help">Formatierte Inhalte werden unter den Formularfeldern und dem Absende-Button angezeigt.</small>
+                <?php echo self::render_form_content_editor('footer_description', $form['footer_description'] ?? '', 'Kontaktformular Footer-Beschreibung', 220); ?>
             </div>
 
             <div class="contact-form-grid-2-wide">

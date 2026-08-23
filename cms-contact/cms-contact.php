@@ -3,7 +3,7 @@
  * Plugin Name: CMS Contact
  * Plugin URI:  https://365network.de/cms-contact
  * Description: Kontaktformular-Plugin mit bis zu 6 Templates, benutzerdefinierten Metafeldern und mehreren Formularen unter verschiedenen Slugs
- * Version:     3.0.1
+ * Version:     3.0.3
  * Author:      365 Network
  * Author URI:  https://365network.de
  *
@@ -17,8 +17,8 @@ if (!defined('ABSPATH')) {
 }
 
 // ── Konstanten ────────────────────────────────────────────────────────────────
-define('CMS_CONTACT_VERSION',    '3.0.1');
-define('CMS_CONTACT_DB_VERSION', '4');
+define('CMS_CONTACT_VERSION',    '3.0.3');
+define('CMS_CONTACT_DB_VERSION', '5');
 define('CMS_CONTACT_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_CONTACT_PLUGIN_URL', '/plugins/cms-contact/');
 

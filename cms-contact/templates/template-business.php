@@ -11,6 +11,8 @@ if (!defined('ABSPATH')) exit;
 $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
 $t = static fn(string $de, string $en): string => CMS_Contact_Frontend::t($de, $en);
 $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
+$descriptionHtml = CMS_Contact_Frontend::render_description($form['description'] ?? '');
+$footerDescriptionHtml = CMS_Contact_Frontend::render_description($form['footer_description'] ?? '');
 
 $db = CMS\Database::instance();
 $prefix = $db->prefix();
@@ -35,8 +37,8 @@ $theme->getHeader();
         <header class="contact-business-hero">
             <div class="contact-business-hero-inner">
                 <h1 id="contact-form-title"><?php echo $e($form['title']); ?></h1>
-                <?php if (!empty($form['description'])): ?>
-                <p><?php echo $e($form['description']); ?></p>
+                <?php if ($descriptionHtml !== ''): ?>
+                <div class="contact-description editorjs-content"><?php echo $descriptionHtml; ?></div>
                 <?php endif; ?>
             </div>
         </header>
@@ -108,6 +110,10 @@ $theme->getHeader();
                         <button type="submit" class="contact-btn contact-btn-primary"><?php echo $e($t('Nachricht senden', 'Send message')); ?></button>
                     </div>
                 </form>
+                <?php endif; ?>
+
+                <?php if ($footerDescriptionHtml !== ''): ?>
+                <footer class="contact-footer-description editorjs-content"><?php echo $footerDescriptionHtml; ?></footer>
                 <?php endif; ?>
             </section>
 

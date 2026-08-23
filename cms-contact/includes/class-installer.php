@@ -102,6 +102,7 @@ final class CMS_Contact_Installer
             slug          VARCHAR(100)  NOT NULL,
             template      VARCHAR(50)   NOT NULL DEFAULT 'classic',
             description   TEXT          DEFAULT NULL,
+            footer_description TEXT     DEFAULT NULL,
             recipient     VARCHAR(255)  DEFAULT NULL,
             cc_recipients TEXT          DEFAULT NULL,
             subject_prefix VARCHAR(100) DEFAULT NULL,
@@ -208,6 +209,7 @@ final class CMS_Contact_Installer
         self::create_tables();
         self::seed_default_settings();
         self::ensure_submission_ip_column();
+        self::ensure_form_footer_description_column();
     }
 
     private static function buildForeignKeyName(string $prefix, string $suffix): string
@@ -251,6 +253,30 @@ final class CMS_Contact_Installer
             }
         } catch (\Throwable $e) {
             error_log('CMS_Contact_Installer::ensure_submission_ip_column() error: ' . $e->getMessage());
+        }
+    }
+
+    private static function ensure_form_footer_description_column(): void
+    {
+        if (!class_exists('CMS\\Database')) {
+            return;
+        }
+
+        try {
+            $db = \CMS\Database::instance();
+            $p = $db->getPrefix();
+            $tableName = $p . 'contact_forms';
+
+            $stmt = $db->prepare(
+                'SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+            );
+            $stmt->execute([$tableName, 'footer_description']);
+
+            if (!$stmt->fetch()) {
+                $db->getPdo()->exec("ALTER TABLE {$tableName} ADD COLUMN footer_description TEXT DEFAULT NULL AFTER description");
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS_Contact_Installer::ensure_form_footer_description_column() error: ' . $e->getMessage());
         }
     }
 

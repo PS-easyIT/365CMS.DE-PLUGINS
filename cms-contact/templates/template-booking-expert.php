@@ -14,6 +14,8 @@ if (!defined('ABSPATH')) exit;
 $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
 $t = static fn(string $de, string $en): string => CMS_Contact_Frontend::t($de, $en);
 $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
+$descriptionHtml = CMS_Contact_Frontend::render_description($form['description'] ?? '');
+$footerDescriptionHtml = CMS_Contact_Frontend::render_description($form['footer_description'] ?? '');
 
 $theme = CMS\ThemeManager::instance();
 $theme->getHeader();
@@ -27,8 +29,8 @@ $theme->getHeader();
             <aside class="booking-expert-sidebar" aria-labelledby="contact-form-title">
                 <span class="booking-expert-badge" aria-hidden="true"><?php echo $e($t('Experten-Beratung', 'Expert consulting')); ?></span>
                 <h1 id="contact-form-title"><?php echo $e($form['title']); ?></h1>
-                <?php if (!empty($form['description'])): ?>
-                <p><?php echo $e($form['description']); ?></p>
+                <?php if ($descriptionHtml !== ''): ?>
+                <div class="contact-description editorjs-content"><?php echo $descriptionHtml; ?></div>
                 <?php endif; ?>
                 <ul class="booking-expert-features">
                     <li><?php echo $e($t('Individuelle Beratung', 'Individual consulting')); ?></li>
@@ -77,6 +79,10 @@ $theme->getHeader();
                         <button type="submit" class="contact-btn contact-btn-primary"><?php echo $e($t('Beratung anfragen', 'Request consultation')); ?></button>
                     </div>
                 </form>
+                <?php endif; ?>
+
+                <?php if ($footerDescriptionHtml !== ''): ?>
+                <footer class="contact-footer-description editorjs-content"><?php echo $footerDescriptionHtml; ?></footer>
                 <?php endif; ?>
             </section>
         </div>

@@ -227,7 +227,9 @@ final class CMS_Contact_Admin_Pages
         }
 
         self::enqueue_admin_assets();
+        echo '<div class="contact-admin-content">';
         $renderer();
+        echo '</div>';
         self::enqueue_admin_scripts();
 
         if (function_exists('cms_plugin_admin_layout_end')) {

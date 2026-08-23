@@ -44,9 +44,9 @@ $e = fn($v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8'
         </div>
 
         <div class="form-group">
-            <label class="form-label" for="description">Beschreibung</label>
-            <textarea id="description" name="description" class="form-control" rows="2"
-                      placeholder="Optionale Beschreibung, die über dem Formular angezeigt wird"><?php echo $e($_POST['description'] ?? ''); ?></textarea>
+            <span class="form-label">Beschreibung</span>
+            <small class="form-text contact-editor-help">Formatierte Inhalte werden oberhalb des Formulars angezeigt.</small>
+            <?php echo self::render_form_content_editor('description', $_POST['description'] ?? '', 'Formularbeschreibung'); ?>
         </div>
 
         <div class="contact-form-intro-grid">
@@ -62,6 +62,12 @@ $e = fn($v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8'
                 <input type="text" id="success_message" name="success_message" class="form-control"
                        value="<?php echo $e($_POST['success_message'] ?? 'Vielen Dank für Ihre Nachricht!'); ?>">
             </div>
+        </div>
+
+        <div class="form-group contact-footer-editor">
+            <span class="form-label">Kontaktformular Footer-Beschreibung</span>
+            <small class="form-text contact-editor-help">Formatierte Inhalte werden unter den Formularfeldern und dem Absende-Button angezeigt.</small>
+            <?php echo self::render_form_content_editor('footer_description', $_POST['footer_description'] ?? '', 'Kontaktformular Footer-Beschreibung', 220); ?>
         </div>
     </div>
 

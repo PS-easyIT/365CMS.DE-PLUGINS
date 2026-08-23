@@ -6,6 +6,8 @@
 
 - **6 Templates**: Classic, Modern, Split, Minimal, Business, Fullwidth
 - **Mehrere Formulare**: Jedes Formular hat eigenen Slug (`/contact/kontakt`, `/contact/support`, …)
+- **Formatierte Beschreibungen**: EditorJS-Blockeditor mit sicherer Ausgabe in allen Public-Templates
+- **Formular-Footer**: Separater EditorJS-Bereich unter Formularfeldern und Absende-Button
 - **Benutzerdefinierte Felder**: Text, E-Mail, Telefon, Textarea, Select, Radio, Checkbox, Zahl, Datum, URL, Hidden
 - **Pflichtfelder**: Jedes Feld einzeln als Pflichtfeld konfigurierbar
 - **Feldbreiten**: Voll (100%), Halb (50%), Drittel (33%), Zwei Drittel (66%)
@@ -113,6 +115,8 @@ cms-contact/
 
 ## Version
 
+- **3.0.3** – Formatierbarer Kontaktformular-Footer in allen zehn Templates inklusive automatischer DB-Migration
+- **3.0.2** – EditorJS für Formularbeschreibungen, formatierte Public-Ausgabe und modernisierter Adminbereich mit 10 px Seitenabstand
 - **3.0.1** – Admin-Menüeintrag wird zur besseren Core-Sidebar-Sortierung mit `365CMS | ` vorangestellt
 - **1.1.8** – Öffentliche Kontaktformulare nutzen jetzt zusätzlich den zentralen 365CMS-AntiSpam-Service, damit Mindestzeit, Linklimit, User-Agent- und Blacklist-Prüfung nicht länger nur im Kommentarpfad greifen
 - **1.1.7** – Kontakt-Benachrichtigungen und Bestätigungsmails hängen jetzt an der zentralen Mail-Queue, damit Cron-Retries, SMTP/OAuth-Konfiguration und Mail-Logging konsistent greifen

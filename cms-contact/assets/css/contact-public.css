@@ -3,7 +3,7 @@
  * Styles für alle Kontaktformular-Templates.
  *
  * @package CMS_Contact
- * @version 3.0.0
+ * @version 3.0.3
  */
 
 /* =====================================================
@@ -107,6 +107,45 @@
     color: var(--contact-text-muted);
     font-size: 1rem;
     margin: 0;
+}
+
+.contact-description > .editorjs-block:first-child,
+.contact-description > .editorjs-block:first-child > :first-child {
+    margin-top: 0;
+}
+
+.contact-description > .editorjs-block:last-child,
+.contact-description > .editorjs-block:last-child > :last-child {
+    margin-bottom: 0;
+}
+
+.contact-description a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
+.contact-footer-description {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--contact-border);
+    color: var(--contact-text-muted);
+    font-size: 0.9rem;
+}
+
+.contact-footer-description > .editorjs-block:first-child,
+.contact-footer-description > .editorjs-block:first-child > :first-child {
+    margin-top: 0;
+}
+
+.contact-footer-description > .editorjs-block:last-child,
+.contact-footer-description > .editorjs-block:last-child > :last-child {
+    margin-bottom: 0;
+}
+
+.contact-footer-description a {
+    color: var(--contact-primary-dark);
+    text-underline-offset: 0.15em;
 }
 
 .contact-icon-badge {

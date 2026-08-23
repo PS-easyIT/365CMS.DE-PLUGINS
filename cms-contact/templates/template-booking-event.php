@@ -14,6 +14,8 @@ if (!defined('ABSPATH')) exit;
 $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
 $t = static fn(string $de, string $en): string => CMS_Contact_Frontend::t($de, $en);
 $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
+$descriptionHtml = CMS_Contact_Frontend::render_description($form['description'] ?? '');
+$footerDescriptionHtml = CMS_Contact_Frontend::render_description($form['footer_description'] ?? '');
 
 $theme = CMS\ThemeManager::instance();
 $theme->getHeader();
@@ -28,8 +30,8 @@ $theme->getHeader();
                     <span class="booking-event-badge"><?php echo $e($t('Terminanfrage', 'Appointment request')); ?></span>
                 </div>
                 <h1 id="contact-form-title"><?php echo $e($form['title']); ?></h1>
-                <?php if (!empty($form['description'])): ?>
-                <p><?php echo $e($form['description']); ?></p>
+                <?php if ($descriptionHtml !== ''): ?>
+                <div class="contact-description editorjs-content"><?php echo $descriptionHtml; ?></div>
                 <?php endif; ?>
             </header>
 
@@ -71,6 +73,10 @@ $theme->getHeader();
                         <button type="submit" class="contact-btn contact-btn-primary"><?php echo $e($t('Anfrage absenden', 'Submit request')); ?></button>
                     </div>
                 </form>
+                <?php endif; ?>
+
+                <?php if ($footerDescriptionHtml !== ''): ?>
+                <footer class="contact-footer-description editorjs-content"><?php echo $footerDescriptionHtml; ?></footer>
                 <?php endif; ?>
             </section>
         </article>

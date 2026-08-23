@@ -106,9 +106,9 @@ final class CMS_Contact_Forms
     {
         $stmt = $this->pdo->prepare(
             "INSERT INTO {$this->prefix}contact_forms
-             (title, slug, template, description, recipient, cc_recipients, subject_prefix,
+             (title, slug, template, description, footer_description, recipient, cc_recipients, subject_prefix,
               success_message, redirect_url, enable_captcha, enable_honeypot, rate_limit, status, custom_css, settings_json)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
 
         $stmt->execute([
@@ -116,6 +116,7 @@ final class CMS_Contact_Forms
             $data['slug']            ?? $this->generate_slug($data['title'] ?? 'kontakt'),
             $data['template']        ?? 'classic',
             $data['description']     ?? null,
+            $data['footer_description'] ?? null,
             $data['recipient']       ?? null,
             $data['cc_recipients']   ?? null,
             $data['subject_prefix']  ?? null,
@@ -141,7 +142,7 @@ final class CMS_Contact_Forms
         $params = [];
 
         $allowed = [
-            'title', 'slug', 'template', 'description', 'recipient', 'cc_recipients',
+            'title', 'slug', 'template', 'description', 'footer_description', 'recipient', 'cc_recipients',
             'subject_prefix', 'success_message', 'redirect_url', 'enable_captcha',
             'enable_honeypot', 'rate_limit', 'status', 'custom_css', 'settings_json',
         ];

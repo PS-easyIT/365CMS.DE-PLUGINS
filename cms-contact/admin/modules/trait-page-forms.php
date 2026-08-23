@@ -258,7 +258,8 @@ trait CMS_Contact_Page_Forms_Trait
             'title'           => $title,
             'slug'            => $slug,
             'template'        => $template,
-            'description'     => sanitize_text_field($_POST['description'] ?? ''),
+            'description'     => self::sanitize_editor_content($_POST['description'] ?? ''),
+            'footer_description' => self::sanitize_editor_content($_POST['footer_description'] ?? ''),
             'recipient'       => filter_var($_POST['recipient'] ?? '', FILTER_VALIDATE_EMAIL) ?: null,
             'success_message' => sanitize_text_field($_POST['success_message'] ?? 'Vielen Dank für Ihre Nachricht!'),
         ]);
@@ -321,7 +322,8 @@ trait CMS_Contact_Page_Forms_Trait
             'title'           => $title,
             'slug'            => $slug,
             'template'        => $template,
-            'description'     => sanitize_text_field($_POST['description'] ?? ''),
+            'description'     => self::sanitize_editor_content($_POST['description'] ?? ''),
+            'footer_description' => self::sanitize_editor_content($_POST['footer_description'] ?? ''),
             'recipient'       => filter_var($_POST['recipient'] ?? '', FILTER_VALIDATE_EMAIL) ?: null,
             'cc_recipients'   => $ccRecipients,
             'subject_prefix'  => sanitize_text_field($_POST['subject_prefix'] ?? ''),
@@ -350,6 +352,54 @@ trait CMS_Contact_Page_Forms_Trait
 
         CMS_Contact_Forms::instance()->delete($formId);
         return true;
+    }
+
+    private static function render_form_content_editor(
+        string $name,
+        mixed $value,
+        string $ariaLabel,
+        int $height = 280
+    ): string
+    {
+        $content = is_scalar($value) ? trim((string) $value) : '';
+
+        if (class_exists('CMS\\Services\\EditorJs\\EditorJsContentNormalizer')) {
+            $normalized = \CMS\Services\EditorJs\EditorJsContentNormalizer::normalize($content);
+            $content = (string) json_encode(
+                $normalized,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            );
+        }
+
+        if (class_exists('CMS\\Services\\EditorJs\\EditorJsAssetService')) {
+            static $service = null;
+            $service ??= new \CMS\Services\EditorJs\EditorJsAssetService();
+
+            return $service->render($name, $content, [
+                'height' => $height,
+                'context' => 'cms-contact',
+                'aria_label' => $ariaLabel,
+                'content_width' => 920,
+                'content_padding_x' => 28,
+            ]);
+        }
+
+        $safeName = preg_replace('/[^a-z0-9_-]/i', '', $name) ?: 'content';
+        return '<textarea id="' . htmlspecialchars($safeName, ENT_QUOTES, 'UTF-8')
+            . '" name="' . htmlspecialchars($safeName, ENT_QUOTES, 'UTF-8') . '" class="form-control" rows="6">'
+            . htmlspecialchars($content, ENT_QUOTES, 'UTF-8')
+            . '</textarea>';
+    }
+
+    private static function sanitize_editor_content(mixed $value): string
+    {
+        $content = is_scalar($value) ? (string) $value : '';
+
+        if (class_exists('CMS\\Services\\EditorJs\\EditorJsSanitizer')) {
+            return (new \CMS\Services\EditorJs\EditorJsSanitizer())->sanitize($content);
+        }
+
+        return sanitize_text_field($content);
     }
 
     // ── Feld-Handler ──────────────────────────────────────────────────────────

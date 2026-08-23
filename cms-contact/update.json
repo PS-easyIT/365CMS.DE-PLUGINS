@@ -1,12 +1,12 @@
 {
     "name": "CMS Contact",
     "slug": "cms-contact",
-    "version": "3.0.1",
+    "version": "3.0.3",
     "requires_cms": "3.0.0",
-    "tested_cms": "3.0.0",
+    "tested_cms": "3.3.78",
     "author": "365 Network",
     "author_uri": "https://365network.de",
-    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-3.0.1.zip",
-    "last_updated": "2026-05-31",
-    "changelog": "365CMS-3.0.1: Der Admin-Menüeintrag wird für die Core-Sidebar-Sortierung mit 365CMS | vorangestellt. 365CMS-3.x-Security-Baseline: Kontaktformulare nutzen zusätzlich DB-basiertes Rate-Limiting pro IP/Formular, zählen auch validierte Fehlversuche, prüfen Custom-Regex sicher, begrenzen Feldwerte/CSS, härten öffentliche URL-/CSS-/Feldtypen-Sanitierung und laden Public-CSS/JS nur noch zentral statt pro Template doppelt. Ergänzt wurden Security-Header für Public/AJAX-Routen, strikt lokale Legacy- und Formular-Redirects, CSRF-Attributescaping in Public- und Admin-Views, http/https-only URL-Felder sowie eine Allowlist für Karten-Embeds."
+    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-3.0.3.zip",
+    "last_updated": "2026-08-23",
+    "changelog": "3.0.3: Formulare besitzen zusätzlich eine formatierbare Kontaktformular Footer-Beschreibung, die unter Feldern und Absende-Button in allen zehn Templates erscheint. Bestehende Installationen erhalten das neue Datenbankfeld automatisch. 3.0.2: Die Hauptbeschreibung nutzt EditorJS; der Adminbereich wurde modernisiert und erhielt 10 px Seitenabstand."
 }
