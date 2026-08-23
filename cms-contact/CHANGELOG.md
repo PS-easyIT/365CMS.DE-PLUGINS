@@ -2,6 +2,15 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [3.0.4] – 2026-08-23
+
+### Behoben
+
+- Ein fehlgeschlagenes Anlegen der Spalte `footer_description` kann beim Erstellen oder Ändern eines Formulars keinen SQL-bedingten Serverfehler mehr auslösen.
+- Die Migration prüft die benötigte Spalte auch bei bereits gespeicherter DB-Version `5` erneut und repariert unvollständige Installationen selbstständig.
+- Falls der Hoster Schemaänderungen verweigert, wird die Footer-Beschreibung transparent in `settings_json` gespeichert und beim Lesen wiederhergestellt.
+- Fehler beim Laden oder Rendern des zentralen EditorJS-Service fallen im Admin auf eine sichere Textarea zurück.
+
 ## [3.0.3] – 2026-08-23
 
 ### Hinzugefügt

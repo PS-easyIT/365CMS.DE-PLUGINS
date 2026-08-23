@@ -115,6 +115,7 @@ cms-contact/
 
 ## Version
 
+- **3.0.4** – Selbstheilende Footer-Migration und DB-/Editor-Fallback gegen Serverfehler beim Erstellen oder Bearbeiten
 - **3.0.3** – Formatierbarer Kontaktformular-Footer in allen zehn Templates inklusive automatischer DB-Migration
 - **3.0.2** – EditorJS für Formularbeschreibungen, formatierte Public-Ausgabe und modernisierter Adminbereich mit 10 px Seitenabstand
 - **3.0.1** – Admin-Menüeintrag wird zur besseren Core-Sidebar-Sortierung mit `365CMS | ` vorangestellt

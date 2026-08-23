@@ -18,6 +18,7 @@ final class CMS_Contact_Forms
     private static ?self $instance = null;
     private \PDO $pdo;
     private string $prefix;
+    private bool $hasFooterDescriptionColumn;
 
     public static function instance(): self
     {
@@ -29,6 +30,7 @@ final class CMS_Contact_Forms
         $db           = \CMS\Database::instance();
         $this->pdo    = $db->getPdo();
         $this->prefix = $db->getPrefix();
+        $this->hasFooterDescriptionColumn = $this->detect_footer_description_column();
     }
 
     // ── Verfügbare Templates ──────────────────────────────────────────────────
@@ -74,7 +76,7 @@ final class CMS_Contact_Forms
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return array_map([$this, 'hydrate_footer_description'], $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**
@@ -85,7 +87,7 @@ final class CMS_Contact_Forms
         $stmt = $this->pdo->prepare("SELECT * FROM {$this->prefix}contact_forms WHERE id = ?");
         $stmt->execute([$id]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $row ?: null;
+        return $row ? $this->hydrate_footer_description($row) : null;
     }
 
     /**
@@ -96,7 +98,7 @@ final class CMS_Contact_Forms
         $stmt = $this->pdo->prepare("SELECT * FROM {$this->prefix}contact_forms WHERE slug = ? AND status = 'active'");
         $stmt->execute([$slug]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $row ?: null;
+        return $row ? $this->hydrate_footer_description($row) : null;
     }
 
     /**
@@ -104,6 +106,38 @@ final class CMS_Contact_Forms
      */
     public function create(array $data): int
     {
+        if (!$this->hasFooterDescriptionColumn) {
+            $settings = $this->normalize_settings_json($data['settings_json'] ?? null);
+            $settings['footer_description'] = (string) ($data['footer_description'] ?? '');
+
+            $stmt = $this->pdo->prepare(
+                "INSERT INTO {$this->prefix}contact_forms
+                 (title, slug, template, description, recipient, cc_recipients, subject_prefix,
+                  success_message, redirect_url, enable_captcha, enable_honeypot, rate_limit, status, custom_css, settings_json)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            );
+
+            $stmt->execute([
+                $data['title'] ?? 'Neues Formular',
+                $data['slug'] ?? $this->generate_slug($data['title'] ?? 'kontakt'),
+                $data['template'] ?? 'classic',
+                $data['description'] ?? null,
+                $data['recipient'] ?? null,
+                $data['cc_recipients'] ?? null,
+                $data['subject_prefix'] ?? null,
+                $data['success_message'] ?? 'Vielen Dank für Ihre Nachricht!',
+                $data['redirect_url'] ?? null,
+                (int) ($data['enable_captcha'] ?? 0),
+                (int) ($data['enable_honeypot'] ?? 1),
+                (int) ($data['rate_limit'] ?? 3),
+                $data['status'] ?? 'active',
+                $data['custom_css'] ?? null,
+                json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            ]);
+
+            return (int) $this->pdo->lastInsertId();
+        }
+
         $stmt = $this->pdo->prepare(
             "INSERT INTO {$this->prefix}contact_forms
              (title, slug, template, description, footer_description, recipient, cc_recipients, subject_prefix,
@@ -138,6 +172,14 @@ final class CMS_Contact_Forms
      */
     public function update(int $id, array $data): bool
     {
+        if (!$this->hasFooterDescriptionColumn && array_key_exists('footer_description', $data)) {
+            $current = $this->get_by_id($id);
+            $settings = $this->normalize_settings_json($current['settings_json'] ?? null);
+            $settings['footer_description'] = (string) $data['footer_description'];
+            $data['settings_json'] = $settings;
+            unset($data['footer_description']);
+        }
+
         $sets   = [];
         $params = [];
 
@@ -172,6 +214,45 @@ final class CMS_Contact_Forms
 
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute($params);
+    }
+
+    private function detect_footer_description_column(): bool
+    {
+        try {
+            $safeTable = str_replace('`', '``', $this->prefix . 'contact_forms');
+            $stmt = $this->pdo->query("SHOW COLUMNS FROM `{$safeTable}` LIKE 'footer_description'");
+            return $stmt !== false && $stmt->fetch(\PDO::FETCH_ASSOC) !== false;
+        } catch (\Throwable $e) {
+            error_log('[cms-contact][forms] footer column detection failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /** @param array<string,mixed> $row @return array<string,mixed> */
+    private function hydrate_footer_description(array $row): array
+    {
+        if (array_key_exists('footer_description', $row) && trim((string) ($row['footer_description'] ?? '')) !== '') {
+            return $row;
+        }
+
+        $settings = $this->normalize_settings_json($row['settings_json'] ?? null);
+        $row['footer_description'] = (string) ($settings['footer_description'] ?? ($row['footer_description'] ?? ''));
+        return $row;
+    }
+
+    /** @return array<string,mixed> */
+    private function normalize_settings_json(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (!is_string($value) || trim($value) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+        return is_array($decoded) ? $decoded : [];
     }
 
     /**

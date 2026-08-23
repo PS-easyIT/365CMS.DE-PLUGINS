@@ -254,15 +254,20 @@ trait CMS_Contact_Page_Forms_Trait
             return 'Dieser Slug ist bereits vergeben.';
         }
 
-        $formId = $forms->create([
-            'title'           => $title,
-            'slug'            => $slug,
-            'template'        => $template,
-            'description'     => self::sanitize_editor_content($_POST['description'] ?? ''),
-            'footer_description' => self::sanitize_editor_content($_POST['footer_description'] ?? ''),
-            'recipient'       => filter_var($_POST['recipient'] ?? '', FILTER_VALIDATE_EMAIL) ?: null,
-            'success_message' => sanitize_text_field($_POST['success_message'] ?? 'Vielen Dank für Ihre Nachricht!'),
-        ]);
+        try {
+            $formId = $forms->create([
+                'title'           => $title,
+                'slug'            => $slug,
+                'template'        => $template,
+                'description'     => self::sanitize_editor_content($_POST['description'] ?? ''),
+                'footer_description' => self::sanitize_editor_content($_POST['footer_description'] ?? ''),
+                'recipient'       => filter_var($_POST['recipient'] ?? '', FILTER_VALIDATE_EMAIL) ?: null,
+                'success_message' => sanitize_text_field($_POST['success_message'] ?? 'Vielen Dank für Ihre Nachricht!'),
+            ]);
+        } catch (\Throwable $e) {
+            self::log_admin_error('create form failed', ['error' => $e->getMessage()]);
+            return 'Das Formular konnte nicht gespeichert werden. Bitte Datenbankmigration und Serverlog prüfen.';
+        }
 
         // Standard-Felder anlegen
         CMS_Contact_Fields::instance()->create_default_fields($formId);
@@ -318,24 +323,29 @@ trait CMS_Contact_Page_Forms_Trait
             }
         }
 
-        CMS_Contact_Forms::instance()->update($formId, [
-            'title'           => $title,
-            'slug'            => $slug,
-            'template'        => $template,
-            'description'     => self::sanitize_editor_content($_POST['description'] ?? ''),
-            'footer_description' => self::sanitize_editor_content($_POST['footer_description'] ?? ''),
-            'recipient'       => filter_var($_POST['recipient'] ?? '', FILTER_VALIDATE_EMAIL) ?: null,
-            'cc_recipients'   => $ccRecipients,
-            'subject_prefix'  => sanitize_text_field($_POST['subject_prefix'] ?? ''),
-            'success_message' => sanitize_text_field($_POST['success_message'] ?? ''),
-            'redirect_url'    => $normalizedRedirectUrl,
-            'enable_captcha'  => (int) ($_POST['enable_captcha'] ?? 0),
-            'enable_honeypot' => (int) ($_POST['enable_honeypot'] ?? 1),
-            'rate_limit'      => max(0, (int) ($_POST['rate_limit'] ?? 3)),
-            'status'          => in_array((string) ($_POST['status'] ?? ''), ['active', 'inactive'], true)
-                ? (string) $_POST['status'] : 'active',
-            'custom_css'      => CMS_Contact_Frontend::sanitize_custom_css((string) ($_POST['custom_css'] ?? '')),
-        ]);
+        try {
+            CMS_Contact_Forms::instance()->update($formId, [
+                'title'           => $title,
+                'slug'            => $slug,
+                'template'        => $template,
+                'description'     => self::sanitize_editor_content($_POST['description'] ?? ''),
+                'footer_description' => self::sanitize_editor_content($_POST['footer_description'] ?? ''),
+                'recipient'       => filter_var($_POST['recipient'] ?? '', FILTER_VALIDATE_EMAIL) ?: null,
+                'cc_recipients'   => $ccRecipients,
+                'subject_prefix'  => sanitize_text_field($_POST['subject_prefix'] ?? ''),
+                'success_message' => sanitize_text_field($_POST['success_message'] ?? ''),
+                'redirect_url'    => $normalizedRedirectUrl,
+                'enable_captcha'  => (int) ($_POST['enable_captcha'] ?? 0),
+                'enable_honeypot' => (int) ($_POST['enable_honeypot'] ?? 1),
+                'rate_limit'      => max(0, (int) ($_POST['rate_limit'] ?? 3)),
+                'status'          => in_array((string) ($_POST['status'] ?? ''), ['active', 'inactive'], true)
+                    ? (string) $_POST['status'] : 'active',
+                'custom_css'      => CMS_Contact_Frontend::sanitize_custom_css((string) ($_POST['custom_css'] ?? '')),
+            ]);
+        } catch (\Throwable $e) {
+            self::log_admin_error('update form failed', ['form_id' => $formId, 'error' => $e->getMessage()]);
+            return 'Das Formular konnte nicht gespeichert werden. Bitte Datenbankmigration und Serverlog prüfen.';
+        }
 
         return true;
     }
@@ -362,32 +372,37 @@ trait CMS_Contact_Page_Forms_Trait
     ): string
     {
         $content = is_scalar($value) ? trim((string) $value) : '';
+        $fallbackContent = $content;
 
-        if (class_exists('CMS\\Services\\EditorJs\\EditorJsContentNormalizer')) {
-            $normalized = \CMS\Services\EditorJs\EditorJsContentNormalizer::normalize($content);
-            $content = (string) json_encode(
-                $normalized,
-                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
-            );
-        }
+        try {
+            if (class_exists('CMS\\Services\\EditorJs\\EditorJsContentNormalizer')) {
+                $normalized = \CMS\Services\EditorJs\EditorJsContentNormalizer::normalize($content);
+                $content = (string) json_encode(
+                    $normalized,
+                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                );
+            }
 
-        if (class_exists('CMS\\Services\\EditorJs\\EditorJsAssetService')) {
-            static $service = null;
-            $service ??= new \CMS\Services\EditorJs\EditorJsAssetService();
+            if (class_exists('CMS\\Services\\EditorJs\\EditorJsAssetService')) {
+                static $service = null;
+                $service ??= new \CMS\Services\EditorJs\EditorJsAssetService();
 
-            return $service->render($name, $content, [
-                'height' => $height,
-                'context' => 'cms-contact',
-                'aria_label' => $ariaLabel,
-                'content_width' => 920,
-                'content_padding_x' => 28,
-            ]);
+                return $service->render($name, $content, [
+                    'height' => $height,
+                    'context' => 'cms-contact',
+                    'aria_label' => $ariaLabel,
+                    'content_width' => 920,
+                    'content_padding_x' => 28,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            self::log_admin_error('editor rendering failed', ['field' => $name, 'error' => $e->getMessage()]);
         }
 
         $safeName = preg_replace('/[^a-z0-9_-]/i', '', $name) ?: 'content';
         return '<textarea id="' . htmlspecialchars($safeName, ENT_QUOTES, 'UTF-8')
             . '" name="' . htmlspecialchars($safeName, ENT_QUOTES, 'UTF-8') . '" class="form-control" rows="6">'
-            . htmlspecialchars($content, ENT_QUOTES, 'UTF-8')
+            . htmlspecialchars($fallbackContent, ENT_QUOTES, 'UTF-8')
             . '</textarea>';
     }
 

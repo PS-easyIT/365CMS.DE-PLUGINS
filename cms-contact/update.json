@@ -1,12 +1,12 @@
 {
     "name": "CMS Contact",
     "slug": "cms-contact",
-    "version": "3.0.3",
+    "version": "3.0.4",
     "requires_cms": "3.0.0",
     "tested_cms": "3.3.78",
     "author": "365 Network",
     "author_uri": "https://365network.de",
-    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-3.0.3.zip",
+    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-3.0.4.zip",
     "last_updated": "2026-08-23",
-    "changelog": "3.0.3: Formulare besitzen zusätzlich eine formatierbare Kontaktformular Footer-Beschreibung, die unter Feldern und Absende-Button in allen zehn Templates erscheint. Bestehende Installationen erhalten das neue Datenbankfeld automatisch. 3.0.2: Die Hauptbeschreibung nutzt EditorJS; der Adminbereich wurde modernisiert und erhielt 10 px Seitenabstand."
+    "changelog": "3.0.4: Die Footer-Migration wird selbstheilend nachgeprüft. Falls der Hoster ALTER TABLE oder die Spaltenerkennung blockiert, speichert das Plugin die Footer-Beschreibung kompatibel in settings_json statt mit einem Serverfehler abzubrechen. Fehler im Editor-Service fallen auf eine sichere Textarea zurück."
 }

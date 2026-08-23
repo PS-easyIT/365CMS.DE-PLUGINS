@@ -34,6 +34,7 @@ final class CMS_Contact_Installer
     {
         $stored = self::get_stored_version();
         if ($stored === CMS_CONTACT_DB_VERSION) {
+            self::ensure_form_footer_description_column();
             return;
         }
 
