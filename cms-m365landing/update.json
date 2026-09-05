@@ -1,15 +1,15 @@
 {
   "slug": "cms-m365landing",
   "name": "CMS M365 Landing",
-  "version": "1.0.30",
+  "version": "1.0.31",
   "requires": "2.9.0",
   "tested": "2.9.7",
   "author": "365 Network",
   "homepage": "https://365network.de/cms-m365landing",
-  "download_url": "https://365network.de/releases/cms-m365landing-1.0.30.zip",
-  "last_updated": "2026-06-05",
+  "download_url": "https://365network.de/releases/cms-m365landing-1.0.31.zip",
+  "last_updated": "2026-09-05",
   "sections": {
     "description": "Zentrale Landingpage für M365 Matrixen, Azure Services, Tutorials und M365 Tools mit steuerbaren Karten, Domain-Mapping, optionalem Beitragsbereich, Texten, Bildern und Design-Tokens.",
-    "changelog": "### 1.0.30\n- Im Public-Hero steht links neben `alle M365 Beiträge` ein zusätzlicher Button `zum M365 Message Center` auf gleicher Höhe.\n\n### 1.0.29\n- M365 Live-Meldungen (Graph), Service-Health und Message-Center-Highlights aus dem Landing-Plugin entfernt.\n- Die Graph-/Message-Center-Funktion liegt jetzt im eigenständigen Plugin `cms-m365messagecenter`, damit Abruf, Cache und Public-Sortierung getrennt und sicher betrieben werden.\n\n### 1.0.28\n- Admin-Menü korrigiert: Die automatisch eingefügte Übersicht wird nicht mehr durch einen zusätzlichen Dashboard-Unterpunkt gedoppelt.\n- Unterpunkte nutzen direkte Callbacks für Karten, Inhalte & Design und System, damit Klicks zuverlässig die passende Ansicht öffnen.\n- Legacy-Links über `m365landing-dashboard` bleiben weiterhin auf das Dashboard abgebildet.\n\n### 1.0.27\n- Publicsite-Dark-Mode vollständig nachgezogen: Landing-Hintergrund, Hero, Cards, Status-Panels, Empty-State, Separatoren und Beitragssektion erhalten eigene dunkle Token auch bei `html.dark-mode`.\n- Mobile-/Tablet-Responsiveness erweitert: Hero mit Bild stapelt ab Tabletbreite sauber, Grids und Latest-Posts wechseln ohne horizontales Scrollen auf eine Spalte, CTAs bleiben touchfreundlich.\n- Card-Media-Layouts sind auf kleinen Displays stapelbar und begrenzen Bildhöhen, damit 375px-Ansichten nicht überlaufen."
+    "changelog": "### 1.0.31\n- Fix: Die Host-Normalisierung verwendet einen sicheren Regex-Delimiter. URLs mit Pfad, Query oder Fragment erzeugen keine `preg_split(): Unknown modifier ']'`-Warnung mehr.\n\n### 1.0.30\n- Im Public-Hero steht links neben `alle M365 Beiträge` ein zusätzlicher Button `zum M365 Message Center` auf gleicher Höhe.\n\n### 1.0.29\n- M365 Live-Meldungen (Graph), Service-Health und Message-Center-Highlights aus dem Landing-Plugin entfernt.\n- Die Graph-/Message-Center-Funktion liegt jetzt im eigenständigen Plugin `cms-m365messagecenter`, damit Abruf, Cache und Public-Sortierung getrennt und sicher betrieben werden.\n\n### 1.0.28\n- Admin-Menü korrigiert: Die automatisch eingefügte Übersicht wird nicht mehr durch einen zusätzlichen Dashboard-Unterpunkt gedoppelt.\n- Unterpunkte nutzen direkte Callbacks für Karten, Inhalte & Design und System, damit Klicks zuverlässig die passende Ansicht öffnen.\n- Legacy-Links über `m365landing-dashboard` bleiben weiterhin auf das Dashboard abgebildet.\n\n### 1.0.27\n- Publicsite-Dark-Mode vollständig nachgezogen: Landing-Hintergrund, Hero, Cards, Status-Panels, Empty-State, Separatoren und Beitragssektion erhalten eigene dunkle Token auch bei `html.dark-mode`.\n- Mobile-/Tablet-Responsiveness erweitert: Hero mit Bild stapelt ab Tabletbreite sauber, Grids und Latest-Posts wechseln ohne horizontales Scrollen auf eine Spalte, CTAs bleiben touchfreundlich.\n- Card-Media-Layouts sind auf kleinen Displays stapelbar und begrenzen Bildhöhen, damit 375px-Ansichten nicht überlaufen."
   }
 }

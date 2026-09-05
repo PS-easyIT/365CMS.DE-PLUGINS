@@ -1,6 +1,6 @@
 # 365NET | Events & Speaker
 
-Version: 3.0.0
+Version: 3.0.12
 
 Modulares 365CMS-Plugin für Events, Messen und verknüpfte Speaker.
 
@@ -11,6 +11,7 @@ Modulares 365CMS-Plugin für Events, Messen und verknüpfte Speaker.
 - Seed-Beschreibungen werden für bestehende Events ebenfalls nachgezogen (inkl. `excerpt` und `seo_description`), auch wenn ältere Datensätze zuvor keine `source_nr` hatten.
 - MySQL-Tabellen mit `unique_id`, `slug`, `status`, `created_at` und `updated_at`.
 - Prepared Statements über `CMS\Database`/PDO.
+- MariaDB-kompatible Tabellenchecks über den zentralen `Database::tableExists()`-Helper statt `SHOW TABLES LIKE ?`.
 - Admin-CRUD für Events und Speaker unter `/admin/365netevents`.
 - Erweiterter Adminbereich mit vertikal gestapelten UX-Sektionen für Basisdaten, EditorJS-Beschreibung/Bio, Medien, Ort/Online, Kontakt, Kategorien, Tags, Preisklassen, Speaker-Zuordnung und SEO.
 - Einstellungsseite unter `/admin/365netevents/settings` für alle Public-Texte, Farben, Rundungen, Containerbreite sowie Header-/Footer-Abstände.

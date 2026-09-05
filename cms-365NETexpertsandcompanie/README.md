@@ -1,5 +1,7 @@
 # 365NET | Experts & Companie
 
+Version: 1.0.13
+
 Kombi-Plugin für eine gemeinsame Public-Übersicht von **Experts** und **Companies**.
 
 ## Features
