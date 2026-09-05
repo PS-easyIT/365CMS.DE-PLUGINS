@@ -1757,9 +1757,7 @@ final class CMS_365NET_Events_Database
 
         try {
             $db = CMS\Database::instance();
-            $stmt = $db->prepare('SHOW TABLES LIKE ?');
-            $stmt->execute([$db->prefix() . $table]);
-            $this->tableExistsCache[$table] = (bool) $stmt->fetchColumn();
+            $this->tableExistsCache[$table] = $db->tableExists($db->prefix() . $table);
         } catch (Throwable $e) {
             $this->logDatabaseWarning('table_exists_' . $table, $e);
             $this->tableExistsCache[$table] = false;

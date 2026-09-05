@@ -2,7 +2,7 @@
 
 `cms-m365landing` stellt eine zentrale, öffentlich erreichbare Landingpage für M365-Inhalte bereit. Die Seite bündelt Matrixen, Azure Services, Tutorials und die M365 Tools in administrierbaren Cards.
 
-Aktuelle Version: `1.0.30`
+Aktuelle Version: `1.0.31`
 
 ## Features
 

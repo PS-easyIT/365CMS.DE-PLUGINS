@@ -626,7 +626,7 @@ final class CMS_M365Landing_Repository
             $host = is_string($parsedHost) ? $parsedHost : '';
         }
 
-        $host = preg_split('#[/?#]#', $host, 2)[0] ?? $host;
+        $host = preg_split('~[/?#]~', $host, 2)[0] ?? $host;
 
         $host = preg_replace('/:\d+$/', '', $host) ?? '';
         $host = trim($host, '.');

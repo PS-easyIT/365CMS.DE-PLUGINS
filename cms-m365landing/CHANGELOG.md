@@ -1,5 +1,9 @@
 # CMS M365 Landing – Changelog
 
+## 1.0.31 – 2026-09-05
+
+- 🔴 Die Host-Normalisierung verwendet einen sicheren Regex-Delimiter. URLs mit Pfad, Query oder Fragment lösen dadurch keine `preg_split(): Unknown modifier ']'`-Warnung mehr aus.
+
 ## 1.0.30 – 2026-06-05
 
 - 🟢 Im Public-Hero steht links neben `alle M365 Beiträge` ein zusätzlicher Button `zum M365 Message Center` auf gleicher Höhe.

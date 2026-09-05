@@ -1202,9 +1202,7 @@ final class CMS_365NET_Experts_And_Companie_Database
 
         try {
             $db = CMS\Database::instance();
-            $stmt = $db->prepare('SHOW TABLES LIKE ?');
-            $stmt->execute([$db->prefix() . $table]);
-            $this->tableExistsCache[$table] = (bool) $stmt->fetchColumn();
+            $this->tableExistsCache[$table] = $db->tableExists($db->prefix() . $table);
         } catch (Throwable) {
             $this->tableExistsCache[$table] = false;
         }
