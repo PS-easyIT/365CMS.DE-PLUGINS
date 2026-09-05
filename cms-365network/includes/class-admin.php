@@ -14,6 +14,10 @@ if (!defined('ABSPATH')) {
 use CMS\Auth;
 use CMS\Security;
 
+if (class_exists('CMS_365NETWORK_Admin', false)) {
+    return;
+}
+
 final class CMS_365NETWORK_Admin
 {
     private static ?self $instance = null;

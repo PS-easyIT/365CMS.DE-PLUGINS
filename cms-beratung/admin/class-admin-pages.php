@@ -11,6 +11,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Beratung_Admin_Pages', false)) {
+    return;
+}
+
 final class CMS_Beratung_Admin_Pages
 {
     public const MENU_SLUG = 'cms-beratung';

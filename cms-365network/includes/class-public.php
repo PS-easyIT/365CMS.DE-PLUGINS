@@ -11,6 +11,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_365NETWORK_Public', false)) {
+    return;
+}
+
 final class CMS_365NETWORK_Public
 {
     private const SHARED_PUBLIC_I18N_CONTRACT = 'shared/public/plugin-public-i18n.php';

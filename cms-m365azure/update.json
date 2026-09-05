@@ -1,7 +1,7 @@
 {
   "slug": "cms-m365azure",
   "name": "CMS M365 Azure",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "Redaktionell steuerbarer Azure-Service-Katalog mit Kategorien, Inhaltsverzeichnis und responsiven Service-Cards.",
   "author": "365 Network",
   "author_uri": "https://365network.de",
@@ -10,9 +10,9 @@
   "requires_php": "8.1",
   "tested_cms": "2.9.7",
   "download_url": "",
-  "last_updated": "2026-05-30",
+  "last_updated": "2026-09-05",
   "sections": {
-    "description": "CMS M365 Azure stellt Azure-Dienste in einem administrierbaren Public-Katalog dar.",
+    "description": "CMS M365 Azure stellt Azure-Dienste in einem administrierbaren Public-Katalog dar. Version 1.2.6 schützt den erweiterten Service-Katalog vor doppeltem Laden über abweichende Deployment- oder Case-Pfade.",
     "changelog": "1.2.5: Azure-Service-Katalog um 3 neue Kategorien und 34 zusätzliche Dienste erweitert; bestehende Admin-Inhalte bleiben geschützt.\n1.2.4: Public-Buttons der Azure-Service-Seite an das M365-Matrix-Design angeglichen; kompakte Dokumentations-/Preislinks nutzen nun dieselben Button-Tokens.\n1.2.3: Management & Governance-Kategorie fachlich aktualisiert; Azure Monitor, Azure Policy und Microsoft Cost Management nach offiziellen Microsoft-Quellen erweitert.\n1.2.2: Hybrid & Multicloud-Kategorie fachlich aktualisiert; Azure Arc und Azure Local nach offiziellen Microsoft-Quellen erweitert.\n1.2.1: Analytics & Big Data-Kategorie fachlich aktualisiert; Azure Synapse Analytics, Azure Data Factory und Azure Databricks nach offiziellen Microsoft-Quellen erweitert.\n1.2.0: IoT & Mixed Reality-Kategorie fachlich aktualisiert; Azure IoT Hub und Azure Digital Twins nach offiziellen Microsoft-Quellen erweitert.\n1.1.9: Integration & Kommunikation-Kategorie fachlich aktualisiert; Azure API Management, Azure Logic Apps und Azure Service Bus nach offiziellen Microsoft-Quellen erweitert.\n1.1.8: Netzwerk & Sicherheit-Kategorie fachlich aktualisiert; Azure Virtual Network, Azure Firewall und Azure Key Vault nach offiziellen Microsoft-Quellen erweitert.\n1.1.7: DevOps & Entwickler-Tools-Kategorie fachlich aktualisiert; Azure DevOps und Microsoft Dev Box nach offiziellen Microsoft-Quellen erweitert.\n1.1.6: KI & Machine Learning-Kategorie fachlich aktualisiert; Microsoft Foundry, Azure OpenAI Service und Azure AI Search nach offiziellen Microsoft-Quellen erweitert.\n1.1.5: Datenbanken-Kategorie fachlich aktualisiert; Azure SQL-Datenbank, Azure Cosmos DB und Azure Database for PostgreSQL nach offiziellen Microsoft-Quellen erweitert.\n1.1.4: Desktop-Tabellenbreiten angepasst; Dienstspalte schmaler, Linkspalte breiter und Dokumentationslinks einzeilig.\n1.1.3: Inneren Status-Balken in Azure-Tabellenzellen entfernt; es bleiben nur die dezenten Tabellenrahmen sichtbar.\n1.1.2: Storage-Kategorie fachlich aktualisiert; Azure Blob Storage, Azure Files und Azure Disk Storage nach offiziellen Microsoft-Quellen erweitert.\n1.1.1: Compute-Kategorie serviceweise erweitert; Tabellenbeschreibung nutzt das ausführliche Inhaltsfeld und Compute-Hinweise wurden ergänzt.\n1.0.0: Neues Plugin mit Azure-Service-Katalog, Adminbereich und Public Route erstellt."
   }
 }

@@ -1,5 +1,7 @@
 # CMS M365 Azure
 
+Version: `1.2.6`
+
 Separates 365CMS-Plugin für einen redaktionell steuerbaren Azure-Service-Katalog.
 
 ## Funktionen

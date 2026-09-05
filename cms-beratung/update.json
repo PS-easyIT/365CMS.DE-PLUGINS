@@ -1,13 +1,14 @@
 {
   "slug": "cms-beratung",
   "name": "CMS Beratung",
-  "version": "2.9.790",
+  "version": "2.9.791",
   "requires": "365CMS",
   "tested": "2026.06",
   "author": "365 Network",
   "description": "Spezialisierter 365CMS Landingpage Builder für Microsoft 365, Copilot, KI, Security, Compliance und IT Consulting Beratungsleistungen.",
   "download_url": "PLUGINS/cms-beratung/cms-beratung.zip",
   "changelog": {
+    "2.9.791": "Fix: Die Admin-Pages-Klasse ist gegen erneute Includes über abweichende Deployment- oder Case-Pfade geschützt; wiederholte Plugin-Ladevorgänge verursachen keinen Cannot-redeclare-Fatal mehr.",
     "2.9.790": "Finaler Visual Polish ohne Layout-Eingriffe: Hero-CTA klar priorisiert mit gefüllter Primary und sekundären Outline-Aktionen, Texttokens für Headings, Body und Muted global konsolidiert und Section-Header-Hierarchie über gemeinsame Header-Regeln deutlicher gestaffelt.",
     "2.9.789": "Terminbuchung Button-only-Layout ausgerichtet: In der neuen Darstellung ohne Booking-Bereich sitzt der Bookings-Button jetzt rechts in der Bereichscard auf Höhe der Trust-Badges. Mobil stapelt die Ansicht sauber und der Button wird full-width angezeigt.",
     "2.9.788": "Terminbuchung erweitert: Der Termin-Bereich erhält die neue Darstellung 'Nur Button ohne Booking-Bereich'. Dabei wird kein Microsoft-Bookings-Embed und keine Booking-Card ausgegeben, sondern nur der hinterlegte Bookings-Link als Button unter dem Termintext angezeigt.",

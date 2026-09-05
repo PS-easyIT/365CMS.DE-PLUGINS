@@ -11,6 +11,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_M365Azure_Catalog_Expansion', false)) {
+    return;
+}
+
 final class CMS_M365Azure_Catalog_Expansion
 {
     private static ?self $instance = null;

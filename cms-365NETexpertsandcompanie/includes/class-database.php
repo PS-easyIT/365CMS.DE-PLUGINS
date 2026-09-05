@@ -11,6 +11,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_365NET_Experts_And_Companie_Database', false)) {
+    return;
+}
+
 final class CMS_365NET_Experts_And_Companie_Database
 {
     private static ?self $instance = null;
