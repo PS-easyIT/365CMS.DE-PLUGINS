@@ -533,7 +533,7 @@ final class CMS_M365Landing_Repository
             return '';
         }
 
-        if (str_starts_with($value, '/') && preg_match('#^/[A-Za-z0-9/_?&=.%#+:;,@~-]*$#', $value) === 1) {
+        if (str_starts_with($value, '/') && preg_match('#^/[A-Za-z0-9/_?&=.%\#+:;,@~-]*$#', $value) === 1) {
             return $value;
         }
 

@@ -104,7 +104,7 @@ class CMS_JPG_Frontend
         }
 
         // Firmen-Slug aus URL extrahieren: /companies/:slug
-        if (!preg_match('#/companies/([^/?#]+)#', $requestUri, $m)) {
+        if (!preg_match('#/companies/([^/?\#]+)#', $requestUri, $m)) {
             return $content;
         }
         $companySlug = preg_replace('/[^a-z0-9\-_]/', '', strtolower($m[1]));

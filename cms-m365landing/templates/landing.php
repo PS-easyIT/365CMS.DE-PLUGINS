@@ -41,7 +41,7 @@ $resolveCardUrl = static function (array $card): string {
         return $url;
     }
 
-    if ($rawUrl !== '' && !str_contains($rawUrl, '://') && preg_match('#^[A-Za-z0-9/_?&=.%#+:;,@~-]+$#', $rawUrl) === 1) {
+    if ($rawUrl !== '' && !str_contains($rawUrl, '://') && preg_match('#^[A-Za-z0-9/_?&=.%\#+:;,@~-]+$#', $rawUrl) === 1) {
         return '/' . ltrim($rawUrl, '/');
     }
 

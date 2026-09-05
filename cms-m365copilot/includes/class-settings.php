@@ -215,7 +215,7 @@ final class CMS_M365Copilot_Settings
         if ($value === '') {
             return '';
         }
-        if ((str_starts_with($value, '/') || str_starts_with($value, '#')) && !str_starts_with($value, '//') && preg_match('#^[A-Za-z0-9/_?&=.%#+:;,@~\-]*$#', $value) === 1) {
+        if ((str_starts_with($value, '/') || str_starts_with($value, '#')) && !str_starts_with($value, '//') && preg_match('#^[A-Za-z0-9/_?&=.%\#+:;,@~\-]*$#', $value) === 1) {
             return $value;
         }
         if (filter_var($value, FILTER_VALIDATE_URL) !== false) {

@@ -303,7 +303,7 @@ final class CMS_Downloads_Public_Controller
     private function safe_download_filename(string $filename): string
     {
         $filename = basename(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $filename));
-        $filename = preg_replace('/[\x00-\x1F\x7F"\\\/]+/', '-', $filename) ?? '';
+            $filename = preg_replace('~[\x00-\x1F\x7F"\\\/]+~', '-', $filename) ?? '';
         $filename = trim($filename, " .\t\n\r\0\x0B-");
 
         if ($filename === '') {
