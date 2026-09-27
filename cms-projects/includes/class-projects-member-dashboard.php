@@ -39,8 +39,13 @@ final class CMS_Projects_Member_Dashboard
         ]);
     }
 
-    public function enqueueSectionStyles(string $slug): void
+    /**
+     * Hook member_plugin_section_head liefert ($section, $user, $params);
+     * $section ist das Registry-Array des aktiven Member-Bereichs.
+     */
+    public function enqueueSectionStyles(mixed $section = null): void
     {
+        $slug = is_array($section) ? (string) ($section['slug'] ?? '') : (is_string($section) ? $section : '');
         if ($slug !== 'projects') {
             return;
         }

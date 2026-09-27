@@ -3,7 +3,7 @@
  * Plugin Name: CMS Feed
  * Plugin URI: https://365network.de/cms-feed
  * Description: RSS-Feed-Aggregator mit Kategorie-Bereichen, Public Pages, Design-Einstellungen, Member-Feed-Abos und E-Mail-Digest
- * Version: 3.0.4
+ * Version: 3.0.5
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 if (!defined('CMS_FEED_VERSION')) {
-    define('CMS_FEED_VERSION', '3.0.4');
+    define('CMS_FEED_VERSION', '3.0.5');
 }
 if (!defined('CMS_FEED_PLUGIN_DIR')) {
     define('CMS_FEED_PLUGIN_DIR', dirname(__FILE__) . '/');
@@ -297,7 +297,7 @@ final class CMS_Feed
         if (!class_exists('CMS_Feed_Database')) return;
         $s = CMS_Feed_Database::instance()->get_settings();
 
-        echo '<style>:root{'
+        echo '<style' . (class_exists('CMS\\Security') ? ' ' . \CMS\Security::instance()->nonceAttr() : '') . '>:root{'
             . '--fd-primary:'       . htmlspecialchars($this->normalize_css_color((string) ($s['color_primary'] ?? ''), '#0891b2'), ENT_QUOTES, 'UTF-8') . ';'
             . '--fd-accent:'        . htmlspecialchars($this->normalize_css_color((string) ($s['color_accent'] ?? ''), '#e0f2fe'), ENT_QUOTES, 'UTF-8') . ';'
             . '--fd-hdr-from:'      . htmlspecialchars($this->normalize_css_color((string) ($s['color_hdr_from'] ?? ''), '#0c4a6e'), ENT_QUOTES, 'UTF-8') . ';'

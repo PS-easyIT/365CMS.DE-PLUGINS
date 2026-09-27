@@ -23,17 +23,26 @@ final class CMS_Beratung_Admin_Menu
 
         add_menu_page(
             'CMS Beratung',
-            '365 | Beratung',
+            'Beratung',
             'manage_options',
             CMS_Beratung_Admin_Pages::MENU_SLUG,
             CMS_Beratung_Admin_Pages::dispatch_callback_for_slug(CMS_Beratung_Admin_Pages::DEFAULT_PAGE_SLUG),
-            '💼',
+            '',
             57
         );
 
         if (!function_exists('add_submenu_page')) {
             return;
         }
+
+        add_submenu_page(
+            CMS_Beratung_Admin_Pages::MENU_SLUG,
+            'Landingpages',
+            'Landingpages',
+            'manage_options',
+            CMS_Beratung_Admin_Pages::MENU_SLUG,
+            [CMS_Beratung_Admin_Pages::class, 'dispatch_overview']
+        );
 
         foreach (CMS_Beratung_Admin_Pages::get_menu_pages() as $page) {
             add_submenu_page(
@@ -45,59 +54,6 @@ final class CMS_Beratung_Admin_Menu
                 CMS_Beratung_Admin_Pages::dispatch_callback_for_slug((string) $page['slug'])
             );
         }
-    }
-
-    /**
-     * @param array<int,array<string,mixed>> $menuItems
-     * @return array<int,array<string,mixed>>
-     */
-    public static function add_menu_items(array $menuItems): array
-    {
-        $parentSlug = CMS_Beratung_Admin_Pages::MENU_SLUG;
-        $adminBase = '/admin/plugins/' . $parentSlug;
-        $currentPath = function_exists('cms_plugin_admin_request_path')
-            ? cms_plugin_admin_request_path()
-            : '/' . trim((string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? ''), '/');
-        $isPluginPath = str_starts_with($currentPath, $adminBase);
-        $activeSlug = function_exists('cms_plugin_admin_active_slug')
-            ? cms_plugin_admin_active_slug(CMS_Beratung_Admin_Pages::DEFAULT_PAGE_SLUG)
-            : CMS_Beratung_Admin_Pages::DEFAULT_PAGE_SLUG;
-
-        $menuItems[] = [
-            'type' => 'item',
-            'slug' => $parentSlug,
-            'label' => '365 | Beratung',
-            'icon' => '💼',
-            'url' => self::admin_url(CMS_Beratung_Admin_Pages::DEFAULT_PAGE_SLUG),
-            'active' => $isPluginPath && $activeSlug === CMS_Beratung_Admin_Pages::DEFAULT_PAGE_SLUG,
-        ];
-
-        foreach (CMS_Beratung_Admin_Pages::get_menu_pages() as $page) {
-            $slug = (string) ($page['slug'] ?? '');
-            if ($slug === '' || $slug === CMS_Beratung_Admin_Pages::DEFAULT_PAGE_SLUG) {
-                continue;
-            }
-            $menuItems[] = [
-                'type' => 'item',
-                'slug' => $slug,
-                'parent' => $parentSlug,
-                'label' => '↳ ' . (string) ($page['title'] ?? $slug),
-                'icon' => '',
-                'url' => self::admin_url($slug),
-                'active' => $isPluginPath && $activeSlug === $slug,
-            ];
-        }
-
-        return $menuItems;
-    }
-
-    private static function admin_url(string $pageSlug): string
-    {
-        if (function_exists('cms_plugin_admin_page_path')) {
-            return cms_plugin_admin_page_path(CMS_Beratung_Admin_Pages::MENU_SLUG, $pageSlug);
-        }
-
-        return '/admin/plugins/' . CMS_Beratung_Admin_Pages::MENU_SLUG . '/' . rawurlencode($pageSlug);
     }
 
     private static function load_admin_menu_helpers(): void

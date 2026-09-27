@@ -26,18 +26,18 @@ final class CMS_Forum_Admin_Menu
 
         add_menu_page(
             'Forum',
-            '365CMS | Forum',
+            'Forum',
             'manage_options',
             'forum-dashboard',
             [CMS_Forum_Admin_Pages::class, 'dispatch'],
-            '💬',
+            '',
             40
         );
 
         add_submenu_page(
             'forum-dashboard',
             'Dashboard',
-            '📊 Dashboard',
+            'Dashboard',
             'manage_options',
             'forum-dashboard',
             [CMS_Forum_Admin_Pages::class, 'dispatch']
@@ -46,7 +46,7 @@ final class CMS_Forum_Admin_Menu
         add_submenu_page(
             'forum-dashboard',
             'Kategorien',
-            '🗂️ Kategorien',
+            'Kategorien',
             'manage_options',
             'forum-categories',
             [CMS_Forum_Admin_Pages::class, 'dispatch']
@@ -55,7 +55,7 @@ final class CMS_Forum_Admin_Menu
         add_submenu_page(
             'forum-dashboard',
             'Foren',
-            '📁 Foren',
+            'Foren',
             'manage_options',
             'forum-forums',
             [CMS_Forum_Admin_Pages::class, 'dispatch']
@@ -64,7 +64,7 @@ final class CMS_Forum_Admin_Menu
         add_submenu_page(
             'forum-dashboard',
             'Threads',
-            '📝 Threads',
+            'Threads',
             'manage_options',
             'forum-threads',
             [CMS_Forum_Admin_Pages::class, 'dispatch']
@@ -73,7 +73,7 @@ final class CMS_Forum_Admin_Menu
         add_submenu_page(
             'forum-dashboard',
             'Benutzer',
-            '👥 Benutzer',
+            'Benutzer',
             'manage_options',
             'forum-users',
             [CMS_Forum_Admin_Pages::class, 'dispatch']
@@ -82,7 +82,7 @@ final class CMS_Forum_Admin_Menu
         add_submenu_page(
             'forum-dashboard',
             'Ränge',
-            '🏅 Ränge',
+            'Ränge',
             'manage_options',
             'forum-ranks',
             [CMS_Forum_Admin_Pages::class, 'dispatch']
@@ -91,7 +91,7 @@ final class CMS_Forum_Admin_Menu
         add_submenu_page(
             'forum-dashboard',
             'Berechtigungen',
-            '🔒 Berechtigungen',
+            'Berechtigungen',
             'manage_options',
             'forum-permissions',
             [CMS_Forum_Admin_Pages::class, 'dispatch']
@@ -100,7 +100,7 @@ final class CMS_Forum_Admin_Menu
         add_submenu_page(
             'forum-dashboard',
             'Meldungen',
-            '🚩 Meldungen',
+            'Meldungen',
             'manage_options',
             'forum-reports',
             [CMS_Forum_Admin_Pages::class, 'dispatch']
@@ -109,7 +109,7 @@ final class CMS_Forum_Admin_Menu
         add_submenu_page(
             'forum-dashboard',
             'Einstellungen',
-            '⚙️ Einstellungen',
+            'Einstellungen',
             'manage_options',
             'forum-settings',
             [CMS_Forum_Admin_Pages::class, 'dispatch']

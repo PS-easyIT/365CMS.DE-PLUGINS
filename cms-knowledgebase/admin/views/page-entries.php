@@ -3,12 +3,12 @@
 <div class="kb-admin-shell">
     <div class="admin-page-header">
         <div>
-            <h2>🧠 Knowledgebase-Einträge</h2>
+            <h2>Knowledgebase-Einträge</h2>
             <p>Alle Knowledgebase-Einträge in einer Listenansicht mit schnellem Zugriff auf Bearbeitung, Vorschau und Löschung.</p>
         </div>
         <div class="header-actions">
-            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entry-editor" class="btn btn-primary btn-sm">➕ Neuer Eintrag</a>
-            <a href="/kb" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">🌍 Öffentliche KB</a>
+            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entry-editor" class="btn btn-primary btn-sm">Neuer Eintrag</a>
+            <a href="/kb" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Öffentliche KB</a>
         </div>
     </div>
 
@@ -19,22 +19,22 @@
     <?php endif; ?>
 
     <div class="dashboard-grid kb-admin-dashboard-grid kb-admin-dashboard-grid--compact">
-        <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-number"><?php echo number_format(count($entries)); ?></div><div class="stat-label">Einträge geladen</div></div>
-        <div class="stat-card"><div class="stat-icon">🌍</div><div class="stat-number"><?php echo number_format(count(array_filter($entries, static fn(array $item): bool => ((int) ($item['is_active'] ?? 0)) === 1))); ?></div><div class="stat-label">Aktiv im Frontend</div></div>
-        <div class="stat-card"><div class="stat-icon">🏷️</div><div class="stat-number"><?php echo number_format(count(array_filter(array_map(static fn(array $item): string => trim((string) ($item['category'] ?? '')), $entries)))); ?></div><div class="stat-label">Kategorien belegt</div></div>
+        <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format(count($entries)); ?></div><div class="stat-label">Einträge geladen</div></div>
+        <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format(count(array_filter($entries, static fn(array $item): bool => ((int) ($item['is_active'] ?? 0)) === 1))); ?></div><div class="stat-label">Aktiv im Frontend</div></div>
+        <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format(count(array_filter(array_map(static fn(array $item): string => trim((string) ($item['category'] ?? '')), $entries)))); ?></div><div class="stat-label">Kategorien belegt</div></div>
     </div>
 
     <div class="admin-card">
         <div class="kb-panel-header">
             <div>
-                <h3>📚 Vorhandene Einträge</h3>
+                <h3>Vorhandene Einträge</h3>
                 <p>Listenansicht aller Begriffe mit Status, Kategorie und direktem Zugriff auf Editor oder öffentliche Seite.</p>
             </div>
         </div>
 
         <?php if (empty($entries)): ?>
             <div class="empty-state">
-                <p class="kb-empty-icon">🧩</p>
+                <p class="kb-empty-icon"></p>
                 <p><strong>Noch keine Einträge vorhanden</strong></p>
                 <p class="kb-empty-text">Lege den ersten Eintrag an oder importiere vorher CSV-Pakete über den Einstellungen-Tab „Import“.</p>
             </div>

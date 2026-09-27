@@ -234,7 +234,7 @@
 
         var title = document.createElement('h3');
         title.id = 'bulkConfirmTitle';
-        title.textContent = '⚠️ Aktion bestätigen';
+        title.textContent = 'Aktion bestätigen';
 
         var closeButton = document.createElement('button');
         closeButton.className = 'modal-close';
@@ -253,7 +253,7 @@
         warning.id = 'bulkConfirmWarning';
         warning.className = 'feed-warning-text';
         warning.hidden = true;
-        warning.textContent = '⚠️ Diese Aktion kann nicht rückgängig gemacht werden.';
+        warning.textContent = 'Diese Aktion kann nicht rückgängig gemacht werden.';
 
         var footer = document.createElement('div');
         footer.className = 'modal-footer';
@@ -268,7 +268,7 @@
         confirmButton.type = 'button';
         confirmButton.id = 'bulkConfirmBtn';
         confirmButton.className = 'btn btn-primary';
-        confirmButton.textContent = '✅ Bestätigen';
+        confirmButton.textContent = 'Bestätigen';
 
         header.appendChild(title);
         header.appendChild(closeButton);
@@ -307,7 +307,7 @@
 
         var btn = document.getElementById('bulkConfirmBtn');
         btn.className = isDanger ? 'btn btn-danger' : 'btn btn-primary';
-        btn.textContent = isDanger ? '🗑️ Endgültig löschen' : '✅ Bestätigen';
+        btn.textContent = isDanger ? 'Endgültig löschen' : 'Bestätigen';
 
         pendingBulkCallback = onConfirm;
         openModal(modal.id);
@@ -330,7 +330,7 @@
         var form = document.getElementById('channelForm');
         if (!form) return;
         form.reset();
-        document.getElementById('channelModalTitle').textContent = '📡 Neuer Kanal';
+        document.getElementById('channelModalTitle').textContent = 'Neuer Kanal';
         document.getElementById('channel_id').value = '';
         document.getElementById('channel_is_active').checked = true;
     }
@@ -339,7 +339,7 @@
         var form = document.getElementById('categoryForm');
         if (!form) return;
         form.reset();
-        document.getElementById('categoryModalTitle').textContent = '📁 Neuer Bereich';
+        document.getElementById('categoryModalTitle').textContent = 'Neuer Bereich';
         document.getElementById('cat_id').value = '';
         document.getElementById('cat_is_public').checked = true;
         document.getElementById('cat_icon').value = '📰';
@@ -350,7 +350,7 @@
         var form = document.getElementById('digestForm');
         if (!form) return;
         form.reset();
-        document.getElementById('digestModalTitle').textContent = '📧 Neuer Digest';
+        document.getElementById('digestModalTitle').textContent = 'Neuer Digest';
         document.getElementById('digest_id').value = '';
         document.getElementById('digest_is_active').checked = true;
     }
@@ -542,7 +542,7 @@
 
         if (!channel) return;
 
-        document.getElementById('channelModalTitle').textContent = '📡 Kanal bearbeiten';
+        document.getElementById('channelModalTitle').textContent = 'Kanal bearbeiten';
         document.getElementById('channel_id').value = channel.id;
         document.getElementById('channel_name').value = channel.name;
         document.getElementById('channel_feed_url').value = channel.feed_url;
@@ -562,7 +562,7 @@
 
         if (!category) return;
 
-        document.getElementById('categoryModalTitle').textContent = '📁 Bereich bearbeiten';
+        document.getElementById('categoryModalTitle').textContent = 'Bereich bearbeiten';
         document.getElementById('cat_id').value = category.id;
         document.getElementById('cat_name').value = category.name;
         document.getElementById('cat_slug').value = category.slug;
@@ -583,7 +583,7 @@
 
         if (!digest) return;
 
-        document.getElementById('digestModalTitle').textContent = '📧 Digest bearbeiten';
+        document.getElementById('digestModalTitle').textContent = 'Digest bearbeiten';
         document.getElementById('digest_id').value = digest.id;
         document.getElementById('digest_name').value = digest.name;
         document.getElementById('digest_email').value = digest.email;

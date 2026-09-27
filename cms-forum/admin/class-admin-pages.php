@@ -46,15 +46,15 @@ final class CMS_Forum_Admin_Pages
      * @var array<string, string>
      */
     private const ADMIN_SUBMENU_ITEMS = [
-        'forum-dashboard'   => '📊 Dashboard',
-        'forum-categories'  => '🗂️ Kategorien',
-        'forum-forums'      => '📁 Foren',
-        'forum-threads'     => '📝 Threads',
-        'forum-users'       => '👥 Benutzer',
-        'forum-ranks'       => '🏅 Ränge',
-        'forum-permissions' => '🔒 Berechtigungen',
-        'forum-reports'     => '🚩 Meldungen',
-        'forum-settings'    => '⚙️ Einstellungen',
+        'forum-dashboard'   => 'Dashboard',
+        'forum-categories'  => 'Kategorien',
+        'forum-forums'      => 'Foren',
+        'forum-threads'     => 'Threads',
+        'forum-users'       => 'Benutzer',
+        'forum-ranks'       => 'Ränge',
+        'forum-permissions' => 'Berechtigungen',
+        'forum-reports'     => 'Meldungen',
+        'forum-settings'    => 'Einstellungen',
     ];
 
     use CMS_Forum_Page_Dashboard_Trait;
@@ -137,6 +137,13 @@ final class CMS_Forum_Admin_Pages
                 . htmlspecialchars(CMS_FORUM_URL . 'assets/css/cms-forum-admin.css?v=' . filemtime($css), ENT_QUOTES, 'UTF-8')
                 . '">' . "\n";
         }
+
+        $js = CMS_FORUM_DIR . 'assets/js/admin-modals.js';
+        if (file_exists($js)) {
+            echo '<script src="'
+                . htmlspecialchars(CMS_FORUM_URL . 'assets/js/admin-modals.js?v=' . filemtime($js), ENT_QUOTES, 'UTF-8')
+                . '" defer></script>' . "\n";
+        }
     }
 
     /**
@@ -157,14 +164,15 @@ final class CMS_Forum_Admin_Pages
     {
         $activeSlug = function_exists('cms_plugin_admin_active_slug')
             ? cms_plugin_admin_active_slug('forum-dashboard')
-            : 'forum-dashboard';
+            : self::normalize_admin_slug((string) ($_GET['page'] ?? 'forum-dashboard'));
+        $activeSlug = $activeSlug !== '' ? $activeSlug : 'forum-dashboard';
 
         if (function_exists('cms_plugin_admin_layout_start')) {
-            cms_plugin_admin_layout_start($title, 'forum-dashboard');
+            cms_plugin_admin_layout_start($title, $activeSlug);
         } else {
             self::load_admin_menu();
             if (function_exists('renderAdminLayoutStart')) {
-                renderAdminLayoutStart($title, 'forum-dashboard');
+                renderAdminLayoutStart($title, $activeSlug);
             }
         }
 

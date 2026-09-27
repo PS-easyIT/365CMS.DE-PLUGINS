@@ -11,7 +11,7 @@ $loginProtected = count(array_filter($downloads, static fn(array $item): bool =>
 
 <div class="admin-page-header">
     <div>
-        <h2>📦 Downloads</h2>
+        <h2>Downloads</h2>
         <p>Dateien, öffentliche Download-Links und Vorlagen zentral verwalten.</p>
     </div>
 </div>
@@ -49,7 +49,7 @@ $loginProtected = count(array_filter($downloads, static fn(array $item): bool =>
     <div class="admin-card">
         <div class="dl-panel-header">
             <div>
-                <h3><?php echo $editing ? '✏️ Download bearbeiten' : '➕ Neuer Download'; ?></h3>
+                <h3><?php echo $editing ? 'Download bearbeiten' : 'Neuer Download'; ?></h3>
                 <p>Datei, externe Quelle, Sichtbarkeit und Kategorisierung in einer kompakten Karte pflegen.</p>
             </div>
         </div>
@@ -149,7 +149,7 @@ $loginProtected = count(array_filter($downloads, static fn(array $item): bool =>
                 <span class="dl-note-card__text">PowerShell- und Webprojekt-Downloads sind als ZIP-Pakete am saubersten, sichersten und für Besucher am verständlichsten.</span>
             </div>
 
-            <button type="submit" class="btn btn-primary">💾 Download speichern</button>
+            <button type="submit" class="btn btn-primary">Download speichern</button>
         </form>
     </div>
 
@@ -157,13 +157,13 @@ $loginProtected = count(array_filter($downloads, static fn(array $item): bool =>
         <div class="admin-card">
             <div class="dl-panel-header">
                 <div>
-                    <h3>📋 Bestehende Downloads</h3>
+                    <h3>Bestehende Downloads</h3>
                     <p>Schneller Überblick über alle Einträge inklusive Typ und Kategorie.</p>
                 </div>
             </div>
             <?php if (empty($downloads)): ?>
                 <div class="empty-state">
-                    <p class="dl-empty-icon">📭</p>
+                    <p class="dl-empty-icon"></p>
                     <p><strong>Noch keine Downloads angelegt</strong></p>
                     <p class="dl-empty-text">Erstelle rechts den ersten Download-Eintrag mit Datei oder externer URL.</p>
                 </div>
@@ -184,12 +184,12 @@ $loginProtected = count(array_filter($downloads, static fn(array $item): bool =>
                                 <td><span class="status-badge <?php echo ($item['status'] ?? 'active') === 'active' ? 'active' : 'inactive'; ?>"><?php echo htmlspecialchars((string) ($item['status'] ?? 'active')); ?></span></td>
                                 <td>
                                     <div class="dl-admin-row-actions">
-                                        <a href="?edit=<?php echo (int) $item['id']; ?>" class="btn btn-secondary btn-sm">✏️</a>
+                                        <a href="?edit=<?php echo (int) $item['id']; ?>" class="btn btn-secondary btn-sm"><i class="ti ti-pencil" aria-hidden="true"></i></a>
                                         <form method="post" class="dl-inline-form">
                                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                             <input type="hidden" name="action" value="delete_download">
                                             <input type="hidden" name="download_id" value="<?php echo (int) $item['id']; ?>">
-                                            <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
+                                            <button type="submit" class="btn btn-danger btn-sm"><i class="ti ti-trash" aria-hidden="true"></i></button>
                                         </form>
                                     </div>
                                 </td>
@@ -204,7 +204,7 @@ $loginProtected = count(array_filter($downloads, static fn(array $item): bool =>
         <div class="admin-card">
             <div class="dl-panel-header">
                 <div>
-                    <h3>🧩 Download-Typen</h3>
+                    <h3>Download-Typen</h3>
                     <p>Vordefinierte Einstiegs-Typen für typische Inhalte.</p>
                 </div>
             </div>

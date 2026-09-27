@@ -1,5 +1,12 @@
 (() => {
-  const $ = (selector, scope = document) => scope.querySelector(selector);
+  // Leere/ungültige Selektoren (z. B. '#' ohne Ziel-ID) liefern null statt das gesamte Skript abzubrechen.
+  const $ = (selector, scope = document) => {
+    try {
+      return scope.querySelector(selector);
+    } catch (_) {
+      return null;
+    }
+  };
   const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
   const text = (value) => String(value ?? '');
   const builderOpenSectionIndexes = new Set();

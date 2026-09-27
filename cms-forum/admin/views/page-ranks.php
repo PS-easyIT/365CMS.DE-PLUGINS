@@ -9,16 +9,16 @@ $specialRanks = count(array_filter($ranks, static fn($rank) => !empty($rank->is_
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>🏅 Ränge verwalten</h2>
+        <h2>Ränge verwalten</h2>
         <p>Automatische Ränge basierend auf Beitragsanzahl</p>
     </div>
     <div class="header-actions">
         <form method="POST" style="display:inline;">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" name="forum_action" value="recalculate_ranks">
-            <button type="submit" class="btn btn-secondary btn-sm">🔄 Alle Ränge neu berechnen</button>
+            <button type="submit" class="btn btn-secondary btn-sm">Alle Ränge neu berechnen</button>
         </form>
-        <button class="btn btn-primary" onclick="openModal('createRankModal')">➕ Neuer Rang</button>
+        <button class="btn btn-primary" data-forum-modal-open="createRankModal">Neuer Rang</button>
     </div>
 </div>
 
@@ -46,13 +46,13 @@ $specialRanks = count(array_filter($ranks, static fn($rank) => !empty($rank->is_
 <div class="admin-card">
     <div class="forum-panel-header">
         <div>
-            <h3>🏅 Alle Ränge</h3>
+            <h3>Alle Ränge</h3>
             <p>Titel, Mindestbeiträge und Sonderrollen sauber verwalten.</p>
         </div>
     </div>
     <?php if (empty($ranks)): ?>
         <div class="empty-state">
-            <p style="font-size:2.5rem;margin:0;">📭</p>
+            <p style="font-size:2.5rem;margin:0;"></p>
             <p><strong>Noch keine Ränge vorhanden</strong></p>
         </div>
     <?php else: ?>
@@ -84,12 +84,12 @@ $specialRanks = count(array_filter($ranks, static fn($rank) => !empty($rank->is_
                         </td>
                         <td>
                             <div class="forum-inline-actions">
-                                <button class="btn btn-sm btn-secondary" onclick="editRank(<?php echo (int)$r->id; ?>, '<?php echo htmlspecialchars($r->name, ENT_QUOTES); ?>', <?php echo (int)$r->min_posts; ?>, '<?php echo htmlspecialchars($r->color ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($r->icon ?? '', ENT_QUOTES); ?>', <?php echo $r->is_special ? 'true' : 'false'; ?>)">✏️</button>
+                                <button class="btn btn-sm btn-secondary" type="button" data-forum-modal-open="editRankModal" data-forum-fill="<?php echo htmlspecialchars((string) json_encode(['edit-rank-id' => (int) $r->id, 'edit-rank-title' => (string) $r->name, 'edit-rank-posts' => (int) $r->min_posts, 'edit-rank-css' => (string) ($r->color ?? ''), 'edit-rank-icon' => (string) ($r->icon ?? ''), 'edit-rank-special' => (bool) $r->is_special], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>"><i class="ti ti-pencil" aria-hidden="true"></i></button>
                                 <form method="POST" style="margin:0;">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="forum_action" value="delete_rank">
                                     <input type="hidden" name="rank_id" value="<?php echo (int)$r->id; ?>">
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteConfirm(this.closest('form'), 'Rang wirklich löschen?')">🗑️</button>
+                                    <button type="button" class="btn btn-sm btn-danger" data-forum-delete-confirm="Rang wirklich löschen?"><i class="ti ti-trash" aria-hidden="true"></i></button>
                                 </form>
                             </div>
                         </td>
@@ -108,7 +108,7 @@ $specialRanks = count(array_filter($ranks, static fn($rank) => !empty($rank->is_
     <div class="modal-content">
         <div class="modal-header">
             <h3>Neuer Rang</h3>
-            <button class="modal-close" onclick="closeModal('createRankModal')">&times;</button>
+            <button class="modal-close" type="button" data-forum-modal-close="createRankModal">&times;</button>
         </div>
         <form method="POST">
             <div class="modal-body">
@@ -135,8 +135,8 @@ $specialRanks = count(array_filter($ranks, static fn($rank) => !empty($rank->is_
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('createRankModal')">Abbrechen</button>
-                <button type="submit" class="btn btn-primary">💾 Erstellen</button>
+                <button type="button" class="btn btn-secondary" data-forum-modal-close="createRankModal">Abbrechen</button>
+                <button type="submit" class="btn btn-primary">Erstellen</button>
             </div>
         </form>
     </div>
@@ -147,7 +147,7 @@ $specialRanks = count(array_filter($ranks, static fn($rank) => !empty($rank->is_
     <div class="modal-content">
         <div class="modal-header">
             <h3>Rang bearbeiten</h3>
-            <button class="modal-close" onclick="closeModal('editRankModal')">&times;</button>
+            <button class="modal-close" type="button" data-forum-modal-close="editRankModal">&times;</button>
         </div>
         <form method="POST">
             <div class="modal-body">
@@ -175,53 +175,27 @@ $specialRanks = count(array_filter($ranks, static fn($rank) => !empty($rank->is_
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('editRankModal')">Abbrechen</button>
-                <button type="submit" class="btn btn-primary">💾 Speichern</button>
+                <button type="button" class="btn btn-secondary" data-forum-modal-close="editRankModal">Abbrechen</button>
+                <button type="submit" class="btn btn-primary">Speichern</button>
             </div>
         </form>
     </div>
 </div>
 
-<script>
-function editRank(id, title, posts, css, icon, special) {
-    document.getElementById('edit-rank-id').value = id;
-    document.getElementById('edit-rank-title').value = title;
-    document.getElementById('edit-rank-posts').value = posts;
-    document.getElementById('edit-rank-css').value = css;
-    document.getElementById('edit-rank-icon').value = icon;
-    document.getElementById('edit-rank-special').checked = special;
-    openModal('editRankModal');
-}
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-let _deleteConfirmForm = null;
-function openDeleteConfirm(form, msg) {
-    _deleteConfirmForm = form;
-    document.getElementById('deleteConfirmMsg').textContent = msg;
-    openModal('deleteConfirmModal');
-}
-function confirmDelete() {
-    if (_deleteConfirmForm) _deleteConfirmForm.submit();
-    closeModal('deleteConfirmModal');
-}
-window.addEventListener('click', function(e) {
-    document.querySelectorAll('.modal').forEach(function(m) { if (e.target === m) closeModal(m.id); });
-});
-</script>
 
 <!-- Delete Confirm Modal -->
 <div id="deleteConfirmModal" class="modal" style="display:none;">
     <div class="modal-content" style="max-width:420px;">
         <div class="modal-header">
-            <h3>⚠️ Löschen bestätigen</h3>
-            <button class="modal-close" onclick="closeModal('deleteConfirmModal')">&times;</button>
+            <h3>Löschen bestätigen</h3>
+            <button class="modal-close" type="button" data-forum-modal-close="deleteConfirmModal">&times;</button>
         </div>
         <div class="modal-body">
             <p id="deleteConfirmMsg">Wirklich löschen?</p>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('deleteConfirmModal')">Abbrechen</button>
-            <button type="button" class="btn btn-danger" onclick="confirmDelete()">🗑️ Löschen</button>
+            <button type="button" class="btn btn-secondary" data-forum-modal-close="deleteConfirmModal">Abbrechen</button>
+            <button type="button" class="btn btn-danger" data-forum-confirm-delete>Löschen</button>
         </div>
     </div>
 </div>

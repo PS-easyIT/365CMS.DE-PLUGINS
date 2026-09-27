@@ -3,7 +3,7 @@
 <div class="kb-admin-shell">
     <div class="admin-page-header">
         <div>
-            <h2>⚙️ Knowledgebase-Einstellungen</h2>
+            <h2>Knowledgebase-Einstellungen</h2>
             <p>Steuere Logik, Design und öffentliche Darstellung der Knowledgebase zentral an einer Stelle.</p>
         </div>
     </div>
@@ -40,8 +40,8 @@
             <input type="hidden" name="redirect_section" value="<?php echo htmlspecialchars((string) ($settingsSection ?? 'general'), ENT_QUOTES, 'UTF-8'); ?>">
 
             <?php if (($settingsSection ?? 'general') === 'general'): ?>
-                <h3>⚙️ Allgemeine Einstellungen</h3>
-                <div class="alert alert-success">ℹ️ Diese Optionen steuern Logik, Navigation und Sichtbarkeit im öffentlichen Bereich.</div>
+                <h3>Allgemeine Einstellungen</h3>
+                <div class="alert alert-info">Diese Optionen steuern Logik, Navigation und Sichtbarkeit im öffentlichen Bereich.</div>
 
                 <div class="kb-settings-grid kb-settings-grid--cards kb-settings-grid--general">
                     <section class="kb-settings-group kb-settings-group--card">
@@ -105,8 +105,8 @@
                     </section>
                 </div>
             <?php elseif (($settingsSection ?? 'general') === 'design'): ?>
-                <h3>🎨 Design-Einstellungen</h3>
-                <div class="alert alert-success">ℹ️ Diese Werte werden als CSS-Variablen im Frontend ausgegeben und von Tooltip sowie `cms-phinit` direkt verwendet.</div>
+                <h3>Design-Einstellungen</h3>
+                <div class="alert alert-info">Diese Werte werden als CSS-Variablen im Frontend ausgegeben und von Tooltip sowie `cms-phinit` direkt verwendet.</div>
 
                 <div class="kb-settings-grid kb-settings-grid--cards kb-settings-grid--design">
                     <section class="kb-settings-group kb-settings-group--card">
@@ -206,8 +206,8 @@
                 $packageCount = count($standardPackages ?? []);
                 $starterEntryCount = array_sum(array_map(static fn(array $package): int => (int) ($package['entry_count'] ?? 0), $standardPackages ?? []));
                 ?>
-                <h3>📦 CSV-Import & Standardpakete</h3>
-                <div class="alert alert-success">ℹ️ Hier liegen alle automatisch erkannten <code>*_Glossar.csv</code>-Quellen des Plugins. Imports synchronisieren bestehende Einträge anhand des Slugs und ergänzen neue Begriffe direkt.</div>
+                <h3>CSV-Import & Standardpakete</h3>
+                <div class="alert alert-info">Hier liegen alle automatisch erkannten <code>*_Glossar.csv</code>-Quellen des Plugins. Imports synchronisieren bestehende Einträge anhand des Slugs und ergänzen neue Begriffe direkt.</div>
 
                 <?php if (!empty($csvFilenameWarnings) && is_array($csvFilenameWarnings)): ?>
                     <div class="alert alert-error">
@@ -221,9 +221,9 @@
                 <?php endif; ?>
 
                 <div class="dashboard-grid kb-admin-dashboard-grid kb-admin-dashboard-grid--compact">
-                    <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-number"><?php echo number_format($packageCount); ?></div><div class="stat-label">Erkannte CSV-Pakete</div></div>
-                    <div class="stat-card"><div class="stat-icon">🧩</div><div class="stat-number"><?php echo number_format($starterEntryCount); ?></div><div class="stat-label">Einträge aus CSVs</div></div>
-                    <div class="stat-card"><div class="stat-icon">🕒</div><div class="stat-number"><?php echo number_format((int) ($systemInfo['csv_last_import_count'] ?? 0)); ?></div><div class="stat-label">Zuletzt importiert</div></div>
+                    <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format($packageCount); ?></div><div class="stat-label">Erkannte CSV-Pakete</div></div>
+                    <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format($starterEntryCount); ?></div><div class="stat-label">Einträge aus CSVs</div></div>
+                    <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format((int) ($systemInfo['csv_last_import_count'] ?? 0)); ?></div><div class="stat-label">Zuletzt importiert</div></div>
                 </div>
 
                 <section class="kb-settings-group kb-settings-group--card kb-settings-group--full">
@@ -237,7 +237,7 @@
                             <input type="hidden" name="action" value="create_all_standard_packages">
                             <input type="hidden" name="redirect_page" value="knowledgebase-settings-import">
                             <input type="hidden" name="redirect_section" value="import">
-                            <button type="submit" class="btn btn-primary btn-sm">⚡ Alle CSV-Pakete importieren / synchronisieren</button>
+                            <button type="submit" class="btn btn-primary btn-sm">Alle CSV-Pakete importieren / synchronisieren</button>
                         </form>
                     </div>
 
@@ -271,15 +271,15 @@
                                     <input type="hidden" name="package_key" value="<?php echo htmlspecialchars((string) ($package['key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="redirect_page" value="knowledgebase-settings-import">
                                     <input type="hidden" name="redirect_section" value="import">
-                                    <button type="submit" class="btn btn-secondary btn-sm">➕ CSV-Paket importieren / synchronisieren</button>
+                                    <button type="submit" class="btn btn-secondary btn-sm">CSV-Paket importieren / synchronisieren</button>
                                 </form>
                             </article>
                         <?php endforeach; ?>
                     </div>
                 </section>
             <?php else: ?>
-                <h3>🖥️ System-Informationen</h3>
-                <div class="alert alert-success">ℹ️ Dieser Bereich bündelt technische Eckdaten, aktive Frontend-Werte und Hinweise zur aktuellen Knowledgebase-Konfiguration.</div>
+                <h3>System-Informationen</h3>
+                <div class="alert alert-info">Dieser Bereich bündelt technische Eckdaten, aktive Frontend-Werte und Hinweise zur aktuellen Knowledgebase-Konfiguration.</div>
                 <div class="kb-settings-grid kb-settings-grid--cards kb-settings-grid--system">
                     <section class="kb-settings-group kb-settings-group--card kb-system-card">
                         <h4>Plugin</h4>
@@ -331,20 +331,20 @@
                             <li>Danach empfiehlt sich direkt der CSV-Import über den Einstellungen-Tab „Import“.</li>
                         </ul>
                         <div class="kb-form-actions kb-form-actions--stack">
-                            <form method="post" onsubmit="return confirm('Wirklich alle Knowledgebase-Einträge löschen? Dieser Hardreset kann nicht rückgängig gemacht werden.');">
+                            <form method="post" data-cms-confirm="Wirklich alle Knowledgebase-Einträge löschen? Dieser Hardreset kann nicht rückgängig gemacht werden.">
                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                 <input type="hidden" name="action" value="hard_reset_entries">
                                 <input type="hidden" name="redirect_page" value="knowledgebase-settings-system">
                                 <input type="hidden" name="redirect_section" value="system">
-                                <button type="submit" class="btn btn-danger">🗑️ Alle Einträge löschen (Hardreset)</button>
+                                <button type="submit" class="btn btn-danger">Alle Einträge löschen (Hardreset)</button>
                             </form>
 
-                            <form method="post" onsubmit="return confirm('Wirklich alle Knowledgebase-Einträge löschen und direkt alle CSV-Pakete neu importieren? Dieser Vorgang kann nicht rückgängig gemacht werden.');">
+                            <form method="post" data-cms-confirm="Wirklich alle Knowledgebase-Einträge löschen und direkt alle CSV-Pakete neu importieren? Dieser Vorgang kann nicht rückgängig gemacht werden.">
                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                 <input type="hidden" name="action" value="hard_reset_and_import_all">
                                 <input type="hidden" name="redirect_page" value="knowledgebase-settings-system">
                                 <input type="hidden" name="redirect_section" value="system">
-                                <button type="submit" class="btn btn-primary">♻️ Hardreset + alle CSVs neu importieren</button>
+                                <button type="submit" class="btn btn-primary">Hardreset + alle CSVs neu importieren</button>
                             </form>
                         </div>
                     </section>
@@ -353,7 +353,7 @@
 
             <?php if (($settingsSection ?? 'general') !== 'system'): ?>
                 <div class="kb-form-actions kb-settings-group--full">
-                    <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
+                    <button type="submit" class="btn btn-primary">Einstellungen speichern</button>
                 </div>
             <?php endif; ?>
         </form>

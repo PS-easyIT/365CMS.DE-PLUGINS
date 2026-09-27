@@ -28,7 +28,7 @@ final class CMS_Projects_Admin
 
         add_menu_page(
             'CMS Projects',
-            '365CMS | Projects',
+            'Projekte',
             'admin',
             self::PAGE_SLUG_OVERVIEW,
             [$this, 'dispatchPage'],
@@ -279,6 +279,11 @@ final class CMS_Projects_Admin
 
     private function isProjectsAdminRequest(): bool
     {
+        $path = '/' . trim((string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? ''), '/');
+        if (str_starts_with($path . '/', '/admin/plugins/' . self::PAGE_SLUG_OVERVIEW . '/')) {
+            return true;
+        }
+
         $page = $this->normalizeAdminSlug((string) ($_GET['page'] ?? ''));
         if ($page === '') {
             return false;

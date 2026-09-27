@@ -3,7 +3,7 @@
  * Plugin Name: CMS Newsletter
  * Plugin URI: https://365network.de/cms-newsletter
  * Description: Newsletter-Management mit Subscriber-Verwaltung, Templates, Kampagnen, Opt-In-Prozess und öffentlicher Anmeldeseite.
- * Version: 3.0.2
+ * Version: 3.0.3
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_NEWSLETTER_VERSION', '3.0.2');
+define('CMS_NEWSLETTER_VERSION', '3.0.3');
 define('CMS_NEWSLETTER_DB_VERSION', '1.0.0');
 define('CMS_NEWSLETTER_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_NEWSLETTER_PLUGIN_URL', '/plugins/cms-newsletter/');
@@ -40,8 +40,6 @@ final class CMS_Newsletter
     {
         $pluginRoot = realpath(CMS_NEWSLETTER_PLUGIN_DIR) ?: CMS_NEWSLETTER_PLUGIN_DIR;
         $files = [
-            dirname(__DIR__) . '/shared/admin/plugin-admin-contract.php',
-            dirname(__DIR__) . '/shared/public/plugin-public-i18n.php',
             CMS_NEWSLETTER_PLUGIN_DIR . 'includes/class-installer.php',
             CMS_NEWSLETTER_PLUGIN_DIR . 'includes/class-repository.php',
             CMS_NEWSLETTER_PLUGIN_DIR . 'includes/class-public-controller.php',
@@ -132,12 +130,7 @@ final class CMS_Newsletter
             return;
         }
 
-        $sharedContractPath = realpath(dirname(__DIR__) . '/shared/admin/plugin-admin-contract.php');
-        $sharedPublicI18nPath = realpath(dirname(__DIR__) . '/shared/public/plugin-public-i18n.php');
-        $isInPlugin = str_starts_with($resolved, rtrim($pluginRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
-        $isAllowedSharedContract = $sharedContractPath !== false && $resolved === $sharedContractPath;
-        $isAllowedSharedPublicI18n = $sharedPublicI18nPath !== false && $resolved === $sharedPublicI18nPath;
-        if (!$isInPlugin && !$isAllowedSharedContract && !$isAllowedSharedPublicI18n) {
+        if (!str_starts_with($resolved, rtrim($pluginRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR)) {
             return;
         }
 

@@ -1,5 +1,16 @@
 # Changelog – CMS Downloads
 
+## [3.0.4] – 2026-09-27
+
+### Behoben
+
+- Unterseiten (Downloads, Kategorien, Einstellungen) zeigen nicht mehr das Dashboard; Abhängigkeit vom entfernten shared/-Ordner entfernt; CSV-Export ohne PHP-8.4-Deprecation.
+
+### Geändert
+
+- Admin-Oberfläche an das einheitliche, schlichte 365CMS-Plugin-Admin-Design angeglichen: keine Emoji-/Kürzel-Icons mehr, Icon-Buttons mit Tabler-Icons, Menüname ohne `365CMS | `/`365NET | `-Präfix (der Core sortiert Plugins im Abschnitt „Plugin-Erweiterungen“).
+- Kompatibilität mit 365CMS 3.4.00 geprüft (Produktiv-CSP mit Nonces und Trusted Types, PHP 8.4); `requires_cms` auf `3.4.00` angehoben.
+
 ## [3.0.3] – 2026-05-31
 
 ### Geändert

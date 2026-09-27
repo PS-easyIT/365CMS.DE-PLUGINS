@@ -95,22 +95,22 @@ final class Menu
 
         add_menu_page(
             'Knowledgebase',
-            '365CMS | KB',
+            'Knowledgebase',
             'manage_options',
             self::ROOT_SLUG,
             [self::class, 'dispatchDashboard'],
-            '📚'
+            ''
         );
 
-        add_submenu_page(self::ROOT_SLUG, 'Dashboard', '📊 Dashboard', 'manage_options', 'knowledgebase-dashboard', [self::class, 'dispatchDashboard']);
-        add_submenu_page(self::ROOT_SLUG, 'Einträge', '🧠 Einträge', 'manage_options', 'knowledgebase-entries', [self::class, 'dispatchEntries']);
-        add_submenu_page(self::ROOT_SLUG, 'Kategorien', '🗂️ Kategorien', 'manage_options', 'knowledgebase-categories', [self::class, 'dispatchCategories']);
-        add_submenu_page(self::ROOT_SLUG, 'Eintrag bearbeiten', '➕ Neuer Eintrag', 'manage_options', 'knowledgebase-entry-editor', [self::class, 'dispatchEntryEditor']);
-        add_submenu_page(self::ROOT_SLUG, 'Einstellungen - Allgemein', '⚙️ Einstellungen: Allgemein', 'manage_options', 'knowledgebase-settings-general', [self::class, 'dispatchSettingsGeneral']);
-        add_submenu_page(self::ROOT_SLUG, 'Einstellungen - Design', '🎨 Einstellungen: Design', 'manage_options', 'knowledgebase-settings-design', [self::class, 'dispatchSettingsDesign']);
-        add_submenu_page(self::ROOT_SLUG, 'Einstellungen - Import', '📦 Einstellungen: Import', 'manage_options', 'knowledgebase-settings-import', [self::class, 'dispatchSettingsImport']);
-        add_submenu_page(self::ROOT_SLUG, 'Einstellungen - System', '🖥️ Einstellungen: System', 'manage_options', 'knowledgebase-settings-system', [self::class, 'dispatchSettingsSystem']);
-        add_submenu_page(self::ROOT_SLUG, 'Einstellungen', '⚙️ Einstellungen', 'manage_options', 'knowledgebase-settings', [self::class, 'dispatchSettings']);
+        add_submenu_page(self::ROOT_SLUG, 'Dashboard', 'Dashboard', 'manage_options', 'knowledgebase-dashboard', [self::class, 'dispatchDashboard']);
+        add_submenu_page(self::ROOT_SLUG, 'Einträge', 'Einträge', 'manage_options', 'knowledgebase-entries', [self::class, 'dispatchEntries']);
+        add_submenu_page(self::ROOT_SLUG, 'Kategorien', 'Kategorien', 'manage_options', 'knowledgebase-categories', [self::class, 'dispatchCategories']);
+        add_submenu_page(self::ROOT_SLUG, 'Eintrag bearbeiten', 'Neuer Eintrag', 'manage_options', 'knowledgebase-entry-editor', [self::class, 'dispatchEntryEditor']);
+        add_submenu_page(self::ROOT_SLUG, 'Einstellungen - Allgemein', 'Einstellungen: Allgemein', 'manage_options', 'knowledgebase-settings-general', [self::class, 'dispatchSettingsGeneral']);
+        add_submenu_page(self::ROOT_SLUG, 'Einstellungen - Design', 'Einstellungen: Design', 'manage_options', 'knowledgebase-settings-design', [self::class, 'dispatchSettingsDesign']);
+        add_submenu_page(self::ROOT_SLUG, 'Einstellungen - Import', 'Einstellungen: Import', 'manage_options', 'knowledgebase-settings-import', [self::class, 'dispatchSettingsImport']);
+        add_submenu_page(self::ROOT_SLUG, 'Einstellungen - System', 'Einstellungen: System', 'manage_options', 'knowledgebase-settings-system', [self::class, 'dispatchSettingsSystem']);
+        add_submenu_page(self::ROOT_SLUG, 'Einstellungen', 'Einstellungen', 'manage_options', 'knowledgebase-settings', [self::class, 'dispatchSettings']);
     }
 
     /**
@@ -143,7 +143,7 @@ final class Menu
         $menuItems[] = [
             'type' => 'item',
             'slug' => self::ROOT_SLUG,
-            'label' => '365CMS | KB',
+            'label' => 'Knowledgebase',
             'icon' => '📚',
             'url' => function_exists('cms_plugin_admin_page_path')
                 ? cms_plugin_admin_page_path(self::ROOT_SLUG, self::DEFAULT_PAGE_SLUG)

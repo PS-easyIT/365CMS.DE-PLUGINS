@@ -34,7 +34,7 @@ foreach ($submissions as $submissionItem) {
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>📩 Nachrichten</h2>
+        <h2>Nachrichten</h2>
         <p><?php echo (int)$total; ?> Nachricht<?php echo $total !== 1 ? 'en' : ''; ?> insgesamt</p>
     </div>
 </div>
@@ -91,7 +91,7 @@ foreach ($submissions as $submissionItem) {
             <input type="text" name="search" class="form-control contact-filter-input contact-filter-input--search"
                    value="<?php echo $e($filterSearch); ?>" placeholder="Name / E-Mail / IP ...">
         </div>
-        <button type="submit" class="btn btn-secondary btn-sm">🔍 Filtern</button>
+        <button type="submit" class="btn btn-secondary btn-sm">Filtern</button>
         <?php if ($filterFormId || $filterStatus || $filterSearch): ?>
         <a href="?section=submissions" class="btn btn-secondary btn-sm">✖ Zurücksetzen</a>
         <?php endif; ?>
@@ -102,7 +102,7 @@ foreach ($submissions as $submissionItem) {
 <?php if (empty($submissions)): ?>
 <div class="admin-card">
     <div class="empty-state">
-        <p class="contact-empty-state__icon">📭</p>
+        <p class="contact-empty-state__icon"></p>
         <p><strong>Keine Nachrichten gefunden</strong></p>
         <p class="text-muted">Es wurden keine Nachrichten mit den gewählten Filtern gefunden.</p>
     </div>
@@ -120,9 +120,9 @@ foreach ($submissions as $submissionItem) {
         <div class="contact-bulk-row">
             <select name="bulk" class="form-control contact-bulk-select">
                 <option value="">Aktion wählen …</option>
-                <option value="mark_read">✅ Als gelesen markieren</option>
-                <option value="mark_spam">🚫 Als Spam markieren</option>
-                <option value="delete">🗑️ Löschen</option>
+                <option value="mark_read">Als gelesen markieren</option>
+                <option value="mark_spam">Als Spam markieren</option>
+                <option value="delete">Löschen</option>
             </select>
             <button type="submit" class="btn btn-secondary btn-sm">Ausführen</button>
         </div>
@@ -214,7 +214,7 @@ foreach ($submissions as $submissionItem) {
                         <td>
                             <div class="contact-inline-actions">
                                 <a href="?section=submissions&action=view&id=<?php echo (int)$sub['id']; ?>&mark_read=1&mark_token=<?php echo rawurlencode($markReadToken); ?>"
-                                   class="btn btn-sm btn-secondary" title="Anzeigen">👁️</a>
+                                   class="btn btn-sm btn-secondary" title="Anzeigen"><i class="ti ti-eye" aria-hidden="true"></i></a>
                             </div>
                         </td>
                     </tr>

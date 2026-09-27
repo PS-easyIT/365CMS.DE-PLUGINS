@@ -8,11 +8,11 @@ if (!defined('ABSPATH')) {
 <div class="kb-admin-shell">
     <div class="admin-page-header">
         <div>
-            <h2>🗂️ Knowledgebase-Kategorien</h2>
+            <h2>Knowledgebase-Kategorien</h2>
             <p>Verwalte Kategorienamen, Sortierung und die sichtbaren Bereiche für Glossar und Knowledgebase.</p>
         </div>
         <div class="header-actions">
-            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entry-editor" class="btn btn-primary btn-sm">➕ Neuer Eintrag</a>
+            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entry-editor" class="btn btn-primary btn-sm">Neuer Eintrag</a>
         </div>
     </div>
 
@@ -23,9 +23,9 @@ if (!defined('ABSPATH')) {
     <?php endif; ?>
 
     <div class="dashboard-grid kb-admin-dashboard-grid kb-admin-dashboard-grid--compact">
-        <div class="stat-card"><div class="stat-icon">🗂️</div><div class="stat-number"><?php echo number_format(count($categories)); ?></div><div class="stat-label">Kategorien</div></div>
-        <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-number"><?php echo number_format(array_sum(array_map(static fn(array $item): int => (int) ($item['entry_count'] ?? 0), $categories))); ?></div><div class="stat-label">Zugeordnete Einträge</div></div>
-        <div class="stat-card"><div class="stat-icon">↕️</div><div class="stat-number"><?php echo number_format(count(array_filter($categories, static fn(array $item): bool => ((int) ($item['sort_order'] ?? 0)) > 0))); ?></div><div class="stat-label">Mit Sortierung</div></div>
+        <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format(count($categories)); ?></div><div class="stat-label">Kategorien</div></div>
+        <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format(array_sum(array_map(static fn(array $item): int => (int) ($item['entry_count'] ?? 0), $categories))); ?></div><div class="stat-label">Zugeordnete Einträge</div></div>
+        <div class="stat-card"><div class="stat-icon">↕</div><div class="stat-number"><?php echo number_format(count(array_filter($categories, static fn(array $item): bool => ((int) ($item['sort_order'] ?? 0)) > 0))); ?></div><div class="stat-label">Mit Sortierung</div></div>
     </div>
 
     <div class="kb-admin-grid kb-admin-grid--wide">
@@ -60,7 +60,7 @@ if (!defined('ABSPATH')) {
                 </div>
 
                 <div class="kb-form-actions kb-form-grid__full">
-                    <button type="submit" class="btn btn-primary">💾 Kategorie speichern</button>
+                    <button type="submit" class="btn btn-primary">Kategorie speichern</button>
                     <?php if ($categoryItem !== null): ?>
                         <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-categories" class="btn btn-secondary">Neu beginnen</a>
                     <?php endif; ?>
@@ -71,14 +71,14 @@ if (!defined('ABSPATH')) {
         <div class="admin-card">
             <div class="kb-panel-header">
                 <div>
-                    <h3>📋 Vorhandene Kategorien</h3>
+                    <h3>Vorhandene Kategorien</h3>
                     <p>Direkt bearbeiten, sortieren oder löschen. Beim Umbenennen werden vorhandene KB-Einträge automatisch mitgezogen.</p>
                 </div>
             </div>
 
             <?php if (empty($categories)): ?>
                 <div class="empty-state">
-                    <p class="kb-empty-icon">🗃️</p>
+                    <p class="kb-empty-icon"></p>
                     <p><strong>Noch keine Kategorien vorhanden</strong></p>
                     <p class="kb-empty-text">Lege die ersten Kategorien an oder speichere Einträge mit Kategoriebezug.</p>
                 </div>

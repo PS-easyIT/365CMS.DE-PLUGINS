@@ -9,7 +9,7 @@ $resolvedCount = count(array_filter($reports, static fn($report) => ($report->st
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>🚩 Meldungen</h2>
+        <h2>Meldungen</h2>
         <p>Gemeldete Beiträge prüfen und bearbeiten</p>
     </div>
     <div class="header-actions">
@@ -46,13 +46,13 @@ $resolvedCount = count(array_filter($reports, static fn($report) => ($report->st
 <div class="admin-card">
     <div class="forum-panel-header">
         <div>
-            <h3>🚩 <?php echo $status === 'open' ? 'Offene' : 'Erledigte'; ?> Meldungen</h3>
+            <h3><?php echo $status === 'open' ? 'Offene' : 'Erledigte'; ?> Meldungen</h3>
             <p>Reports, gemeldete Inhalte und direkte Moderationsaktionen im Überblick.</p>
         </div>
     </div>
     <?php if (empty($reports)): ?>
         <div class="empty-state">
-            <p style="font-size:2.5rem;margin:0;">✅</p>
+            <p style="font-size:2.5rem;margin:0;"></p>
             <p><strong>Keine <?php echo $status === 'open' ? 'offenen' : ''; ?> Meldungen</strong></p>
         </div>
     <?php else: ?>
@@ -67,7 +67,7 @@ $resolvedCount = count(array_filter($reports, static fn($report) => ($report->st
                     </span>
                 </div>
                 <?php if (!empty($r->thread_title)): ?>
-                    <a href="<?php echo SITE_URL; ?>/forum/thread/<?php echo (int)$r->thread_id; ?>" class="btn btn-sm btn-secondary" target="_blank">📝 Zum Thread</a>
+                    <a href="<?php echo SITE_URL; ?>/forum/thread/<?php echo (int)$r->thread_id; ?>" class="btn btn-sm btn-secondary" target="_blank">Zum Thread</a>
                 <?php endif; ?>
             </div>
 
@@ -89,14 +89,14 @@ $resolvedCount = count(array_filter($reports, static fn($report) => ($report->st
                     <input type="hidden" name="forum_action" value="resolve_report">
                     <input type="hidden" name="report_id" value="<?php echo (int)$r->id; ?>">
                     <input type="hidden" name="resolution" value="dismissed">
-                    <button type="submit" class="btn btn-sm btn-secondary">✅ Abweisen</button>
+                    <button type="submit" class="btn btn-sm btn-secondary">Abweisen</button>
                 </form>
                 <form method="POST" style="margin:0;">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="forum_action" value="delete_reported_post">
                     <input type="hidden" name="report_id" value="<?php echo (int)$r->id; ?>">
                     <input type="hidden" name="post_id" value="<?php echo (int)$r->post_id; ?>">
-                    <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteConfirm(this.closest('form'), 'Beitrag wirklich löschen?')">🗑️ Beitrag löschen</button>
+                    <button type="button" class="btn btn-sm btn-danger" data-forum-delete-confirm="Beitrag wirklich löschen?">Beitrag löschen</button>
                 </form>
             </div>
             <?php else: ?>
@@ -114,35 +114,18 @@ $resolvedCount = count(array_filter($reports, static fn($report) => ($report->st
 <div id="deleteConfirmModal" class="modal" style="display:none;">
     <div class="modal-content" style="max-width:420px;">
         <div class="modal-header">
-            <h3>⚠️ Löschen bestätigen</h3>
-            <button class="modal-close" onclick="closeModal('deleteConfirmModal')">&times;</button>
+            <h3>Löschen bestätigen</h3>
+            <button class="modal-close" type="button" data-forum-modal-close="deleteConfirmModal">&times;</button>
         </div>
         <div class="modal-body">
             <p id="deleteConfirmMsg">Wirklich löschen?</p>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('deleteConfirmModal')">Abbrechen</button>
-            <button type="button" class="btn btn-danger" onclick="confirmDelete()">🗑️ Löschen</button>
+            <button type="button" class="btn btn-secondary" data-forum-modal-close="deleteConfirmModal">Abbrechen</button>
+            <button type="button" class="btn btn-danger" data-forum-confirm-delete>Löschen</button>
         </div>
     </div>
 </div>
 
-<script>
-let _deleteConfirmForm = null;
-function openDeleteConfirm(form, msg) {
-    _deleteConfirmForm = form;
-    document.getElementById('deleteConfirmMsg').textContent = msg;
-    openModal('deleteConfirmModal');
-}
-function confirmDelete() {
-    if (_deleteConfirmForm) _deleteConfirmForm.submit();
-    closeModal('deleteConfirmModal');
-}
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-window.addEventListener('click', function(e) {
-    document.querySelectorAll('.modal').forEach(function(m) { if (e.target === m) closeModal(m.id); });
-});
-</script>
 
 </div>

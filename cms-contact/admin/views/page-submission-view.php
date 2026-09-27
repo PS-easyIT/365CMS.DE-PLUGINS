@@ -61,16 +61,16 @@ foreach ($meta as $key => $value) {
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>📨 Nachricht #<?php echo (int)$submission['id']; ?></h2>
+        <h2>Nachricht #<?php echo (int)$submission['id']; ?></h2>
         <p>Formular-ID: <?php echo (int)($submission['form_id'] ?? 0); ?> | <?php echo date('d.m.Y H:i', strtotime($submission['created_at'])); ?></p>
     </div>
     <div class="header-actions">
-        <a href="?section=submissions" class="btn btn-secondary">↩️ Zurück</a>
+        <a href="?section=submissions" class="btn btn-secondary">↩Zurück</a>
     </div>
 </div>
 
 <?php if (!empty($notice)): ?>
-<div class="alert alert-success">✅ <?php echo $e($notice); ?></div>
+<div class="alert alert-success"><?php echo $e($notice); ?></div>
 <?php endif; ?>
 
 <div class="contact-detail-grid contact-detail-grid--wide">
@@ -79,7 +79,7 @@ foreach ($meta as $key => $value) {
         <div class="admin-card">
             <div class="contact-panel-header">
                 <div>
-                    <h3>💬 Nachricht</h3>
+                    <h3>Nachricht</h3>
                     <p>Der eigentliche Inhalt der gesendeten Anfrage.</p>
                 </div>
             </div>
@@ -109,7 +109,7 @@ foreach ($meta as $key => $value) {
         <div class="admin-card">
             <div class="contact-panel-header">
                 <div>
-                    <h3>📝 Formularfelder</h3>
+                    <h3>Formularfelder</h3>
                     <p>Kernfelder und zusätzliche Eingaben der Anfrage im Überblick.</p>
                 </div>
             </div>
@@ -148,7 +148,7 @@ foreach ($meta as $key => $value) {
     <div class="contact-side-stack">
         <!-- Status -->
         <div class="admin-card">
-            <h3>📊 Status</h3>
+            <h3>Status</h3>
             <div class="contact-inline-actions contact-status-row">
                 <span class="status-badge <?php echo $st['class']; ?>"><?php echo $st['icon'] . ' ' . $st['label']; ?></span>
             </div>
@@ -169,7 +169,7 @@ foreach ($meta as $key => $value) {
 
         <!-- Metadaten -->
         <div class="admin-card">
-            <h3>ℹ️ Informationen</h3>
+            <h3>Informationen</h3>
             <ul class="contact-info-list">
                 <li>
                     <strong>ID</strong> <span><?php echo (int)$submission['id']; ?></span>
@@ -178,7 +178,7 @@ foreach ($meta as $key => $value) {
                     <strong>Formular</strong> <span><?php echo $e($submission['form_title'] ?? '—'); ?></span>
                 </li>
                 <li>
-                    <strong>Datenschutz</strong> <span><?php echo $privacyConsentAccepted ? '✅ Bestätigt' : '⚠️ Offen'; ?></span>
+                    <strong>Datenschutz</strong> <span><?php echo $privacyConsentAccepted ? 'Bestätigt' : 'Offen'; ?></span>
                 </li>
                 <?php if ($ipAddress !== ''): ?>
                 <li>
@@ -214,16 +214,16 @@ foreach ($meta as $key => $value) {
 
         <!-- Aktionen -->
         <div class="admin-card">
-            <h3>⚡ Aktionen</h3>
+            <h3>Aktionen</h3>
             <div class="contact-button-stack">
                 <?php
                 if ($senderEmail):
                 ?>
                 <a href="mailto:<?php echo $e($senderEmail); ?>" class="btn btn-secondary btn-sm">
-                    ✉️ Absender anschreiben
+                    Absender anschreiben
                 </a>
                 <?php endif; ?>
-                <button type="button" class="btn btn-danger btn-sm contact-modal-trigger" data-contact-open-delete-modal="deleteModal">🗑️ Nachricht löschen</button>
+                <button type="button" class="btn btn-danger btn-sm contact-modal-trigger" data-contact-open-delete-modal="deleteModal">Nachricht löschen</button>
             </div>
         </div>
     </div>
@@ -235,7 +235,7 @@ foreach ($meta as $key => $value) {
 <div id="deleteModal" class="modal contact-modal">
     <div class="modal-content contact-modal-content--compact">
         <div class="modal-header">
-            <h3>🗑️ Nachricht löschen?</h3>
+            <h3>Nachricht löschen?</h3>
             <button class="modal-close" data-close-modal="deleteModal">&times;</button>
         </div>
         <div class="modal-body">
@@ -247,7 +247,7 @@ foreach ($meta as $key => $value) {
                 <input type="hidden" name="sub_action" value="delete">
                 <input type="hidden" name="id" value="<?php echo (int)$submission['id']; ?>">
                 <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
-                <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
+                <button type="submit" class="btn btn-danger">Endgültig löschen</button>
             </form>
         </div>
     </div>

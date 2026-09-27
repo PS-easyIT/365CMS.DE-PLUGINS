@@ -2,6 +2,18 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [3.0.5] – 2026-09-27
+
+### Behoben
+
+- DSGVO-Export/-Löschung verarbeitet Anfragen ohne Benutzerkonto (user_id NULL) ohne TypeError.
+- Formularanlage mit Editor.js-Feldern funktioniert wieder (Core-Fix in 365CMS 3.4.00).
+
+### Geändert
+
+- Admin-Oberfläche an das einheitliche, schlichte 365CMS-Plugin-Admin-Design angeglichen: keine Emoji-/Kürzel-Icons mehr, Icon-Buttons mit Tabler-Icons, Menüname ohne `365CMS | `/`365NET | `-Präfix (der Core sortiert Plugins im Abschnitt „Plugin-Erweiterungen“).
+- Kompatibilität mit 365CMS 3.4.00 geprüft (Produktiv-CSP mit Nonces und Trusted Types, PHP 8.4); `requires_cms` auf `3.4.00` angehoben.
+
 ## [3.0.4] – 2026-08-23
 
 ### Behoben

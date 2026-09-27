@@ -114,7 +114,7 @@ $forumShowUrl = $siteUrl . PublicI18n::forumPath((string) $forum->slug);
                             <input type="text" name="poll_options[]" class="cmsforum-input" maxlength="200" placeholder="<?php echo htmlspecialchars(PublicI18n::t('poll.option_number', 'Option %d', 1), ENT_QUOTES, 'UTF-8'); ?>">
                             <input type="text" name="poll_options[]" class="cmsforum-input" maxlength="200" placeholder="<?php echo htmlspecialchars(PublicI18n::t('poll.option_number', 'Option %d', 2), ENT_QUOTES, 'UTF-8'); ?>">
                         </div>
-                        <button type="button" class="cmsforum-btn cmsforum-btn--secondary cmsforum-btn--sm" id="add-poll-option">➕ <?php echo htmlspecialchars(PublicI18n::t('poll.add_option', 'Option hinzufügen'), ENT_QUOTES, 'UTF-8'); ?></button>
+                        <button type="button" class="cmsforum-btn cmsforum-btn--secondary cmsforum-btn--sm" id="add-poll-option" data-option-prefix="<?php echo htmlspecialchars(PublicI18n::t('poll.option_prefix', 'Option'), ENT_QUOTES, 'UTF-8'); ?>">➕ <?php echo htmlspecialchars(PublicI18n::t('poll.add_option', 'Option hinzufügen'), ENT_QUOTES, 'UTF-8'); ?></button>
                     </div>
                     <div class="cmsforum-form-group">
                         <label class="cmsforum-checkbox">
@@ -135,70 +135,4 @@ $forumShowUrl = $siteUrl . PublicI18n::forumPath((string) $forum->slug);
     </div><!-- /.cmsforum-container -->
 </div><!-- /.cmsforum -->
 
-<script>
-document.getElementById('add-poll-option')?.addEventListener('click', function() {
-    const container = document.querySelector('.cmsforum-poll-options');
-    const count = container.querySelectorAll('input').length;
-    if (count >= 10) return;
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.name = 'poll_options[]';
-    input.className = 'cmsforum-input';
-    input.maxLength = 200;
-    input.placeholder = '<?php echo addslashes(PublicI18n::t('poll.option_prefix', 'Option')); ?> ' + (count + 1);
-    container.appendChild(input);
-});
-
-(() => {
-    const titleInput = document.getElementById('thread-title');
-    const panel = document.getElementById('cmsforum-similar-threads');
-    if (!titleInput || !panel) return;
-
-    const list = panel.querySelector('.cmsforum-similar-threads__list');
-    const apiUrl = panel.getAttribute('data-api-url');
-    const forumId = panel.getAttribute('data-forum-id');
-    if (!list || !apiUrl || !forumId) return;
-
-    let timer = null;
-    titleInput.addEventListener('input', () => {
-        const q = titleInput.value.trim();
-        window.clearTimeout(timer);
-
-        if (q.length < 4) {
-            panel.hidden = true;
-            list.innerHTML = '';
-            return;
-        }
-
-        timer = window.setTimeout(async () => {
-            const url = new URL(apiUrl, window.location.origin);
-            url.searchParams.set('forum_id', forumId);
-            url.searchParams.set('q', q);
-
-            try {
-                const res = await fetch(url.toString(), { credentials: 'same-origin' });
-                const data = await res.json();
-                const threads = Array.isArray(data?.threads) ? data.threads : [];
-
-                list.innerHTML = '';
-                if (!threads.length) {
-                    panel.hidden = true;
-                    return;
-                }
-
-                for (const thread of threads) {
-                    const li = document.createElement('li');
-                    const a = document.createElement('a');
-                    a.href = thread.url || '#';
-                    a.textContent = thread.title || '';
-                    li.appendChild(a);
-                    list.appendChild(li);
-                }
-                panel.hidden = false;
-            } catch (e) {
-                panel.hidden = true;
-            }
-        }, 350);
-    });
-})();
-</script>
+<script src="<?php echo htmlspecialchars(CMS_FORUM_URL . 'assets/js/thread-create.js?v=' . CMS_FORUM_VERSION, ENT_QUOTES, 'UTF-8'); ?>" defer></script>

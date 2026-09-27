@@ -9,29 +9,29 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>📝 Felder: <?php echo $e($form['title']); ?></h2>
+        <h2>Felder: <?php echo $e($form['title']); ?></h2>
         <p>Felder per Drag & Drop sortieren, bearbeiten oder neue hinzufügen</p>
     </div>
     <div class="header-actions">
-        <button class="btn btn-primary" type="button" id="openFieldModalBtn">➕ Feld hinzufügen</button>
-        <a href="?section=forms&action=edit&id=<?php echo (int)$form['id']; ?>" class="btn btn-secondary">↩️ Zurück</a>
+        <button class="btn btn-primary" type="button" id="openFieldModalBtn">Feld hinzufügen</button>
+        <a href="?section=forms&action=edit&id=<?php echo (int)$form['id']; ?>" class="btn btn-secondary">↩Zurück</a>
     </div>
 </div>
 
 <?php if (!empty($notice)): ?>
-<div class="alert alert-success">✅ <?php echo $e($notice); ?></div>
+<div class="alert alert-success"><?php echo $e($notice); ?></div>
 <?php endif; ?>
 <?php if (!empty($error)): ?>
-<div class="alert alert-error">❌ <?php echo $e($error); ?></div>
+<div class="alert alert-error"><?php echo $e($error); ?></div>
 <?php endif; ?>
 
 <!-- Feld-Liste -->
 <div class="admin-card">
-    <h3>🗂️ Formularfelder (<?php echo count($fields); ?>)</h3>
+    <h3>Formularfelder (<?php echo count($fields); ?>)</h3>
 
     <?php if (empty($fields)): ?>
     <div class="empty-state">
-        <p class="dl-empty-icon">📭</p>
+        <p class="dl-empty-icon"></p>
         <p><strong>Noch keine Felder definiert</strong></p>
         <p class="text-muted">Füge das erste Feld über den Button oben rechts hinzu.</p>
     </div>
@@ -50,19 +50,19 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
                 <span class="contact-field-chip contact-field-chip--required">● Pflichtfeld</span>
                 <?php endif; ?>
                 <?php if (!empty($field['is_system'])): ?>
-                <span class="contact-field-chip contact-field-chip--system">🔒 System</span>
+                <span class="contact-field-chip contact-field-chip--system">System</span>
                 <?php endif; ?>
             </div>
             <span class="contact-field-width"><?php echo $e($fieldWidths[$field['field_width'] ?? 'full'] ?? $field['field_width'] ?? 'full'); ?></span>
             <div class="contact-actions-tight">
                 <button class="btn btn-sm btn-secondary js-contact-edit-field" type="button"
-                        data-field="<?php echo htmlspecialchars((string) json_encode($field, JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>">✏️</button>
+                        data-field="<?php echo htmlspecialchars((string) json_encode($field, JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>"><i class="ti ti-pencil" aria-hidden="true"></i></button>
                 <?php if (empty($field['is_system'])): ?>
                 <form method="POST" class="js-contact-delete-field-form">
                     <input type="hidden" name="form_action" value="delete_field">
                     <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                     <input type="hidden" name="field_id" value="<?php echo (int)$field['id']; ?>">
-                    <button class="btn btn-sm btn-danger" type="submit">🗑️</button>
+                    <button class="btn btn-sm btn-danger" type="submit"><i class="ti ti-trash" aria-hidden="true"></i></button>
                 </form>
                 <?php endif; ?>
             </div>
@@ -76,7 +76,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
         <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
         <input type="hidden" name="field_order" id="fieldOrderInput" value="">
         <button type="submit" class="btn btn-secondary btn-sm" id="saveOrderBtn" hidden>
-            💾 Reihenfolge speichern
+            Reihenfolge speichern
         </button>
     </form>
     <?php endif; ?>
@@ -86,7 +86,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
 <div id="fieldModal" class="modal contact-modal">
     <div class="modal-content contact-modal-content--wide">
         <div class="modal-header">
-            <h3 id="fieldModalTitle">➕ Neues Feld</h3>
+            <h3 id="fieldModalTitle">Neues Feld</h3>
             <button class="modal-close" type="button" data-close-modal="fieldModal">&times;</button>
         </div>
         <div class="modal-body">
@@ -160,7 +160,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-close-modal="fieldModal">Abbrechen</button>
-            <button type="submit" form="fieldForm" class="btn btn-primary">💾 Speichern</button>
+            <button type="submit" form="fieldForm" class="btn btn-primary">Speichern</button>
         </div>
     </div>
 </div>
@@ -169,7 +169,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
 <div id="deleteConfirmModal" class="modal contact-modal">
     <div class="modal-content contact-modal-content--compact">
         <div class="modal-header">
-            <h3>🗑️ Feld löschen?</h3>
+            <h3>Feld löschen?</h3>
             <button class="modal-close" type="button" data-close-modal="deleteConfirmModal">&times;</button>
         </div>
         <div class="modal-body">
@@ -177,7 +177,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" type="button" data-close-modal="deleteConfirmModal">Abbrechen</button>
-            <button class="btn btn-danger" type="button" id="confirmDeleteBtn">🗑️ Endgültig löschen</button>
+            <button class="btn btn-danger" type="button" id="confirmDeleteBtn">Endgültig löschen</button>
         </div>
     </div>
 </div>

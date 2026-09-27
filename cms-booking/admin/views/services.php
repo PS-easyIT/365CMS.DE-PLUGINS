@@ -3,20 +3,20 @@
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>🛠️ Leistungen verwalten</h2>
+        <h2>Leistungen verwalten</h2>
         <p>Buchbare Leistungen je Anbieter konfigurieren</p>
     </div>
     <div class="header-actions">
-        <button class="btn btn-primary" onclick="openModal('serviceModal')">➕ Neue Leistung</button>
+        <button type="button" class="btn btn-primary" data-booking-modal-open="serviceModal">Neue Leistung</button>
     </div>
 </div>
 
 <!-- Alerts -->
 <?php if (!empty($success)): ?>
-<div class="alert alert-success">✅ <?php echo htmlspecialchars($success); ?></div>
+<div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
 <?php endif; ?>
 <?php if (!empty($error)): ?>
-<div class="alert alert-error">❌ <?php echo htmlspecialchars($error); ?></div>
+<div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
 <?php
@@ -33,7 +33,7 @@ if ($editService && !empty($editService['settings_json'])) {
 <div class="admin-card">
     <?php if (empty($items)): ?>
         <div class="empty-state">
-            <p style="font-size:2.5rem;margin:0;">🛠️</p>
+            <p style="font-size:2.5rem;margin:0;"></p>
             <p><strong>Keine Leistungen vorhanden</strong></p>
             <p class="text-muted">Erstellen Sie Ihre erste buchbare Leistung über den Button oben.</p>
         </div>
@@ -68,9 +68,9 @@ if ($editService && !empty($editService['settings_json'])) {
                         <td>
                             <?php
                             $typeLabels = [
-                                'online' => '💻 Online',
-                                'onsite' => '📍 Vor Ort',
-                                'hybrid' => '🔀 Hybrid',
+                                'online' => 'Online',
+                                'onsite' => 'Vor Ort',
+                                'hybrid' => 'Hybrid',
                             ];
                             echo htmlspecialchars((string) ($typeLabels[$item['location_type']] ?? $item['location_type']), ENT_QUOTES, 'UTF-8');
                             ?>
@@ -82,12 +82,12 @@ if ($editService && !empty($editService['settings_json'])) {
                         </td>
                         <td>
                             <div style="display:flex;gap:.4rem;">
-                                <a href="<?php echo htmlspecialchars(CMS_Booking_Admin_Pages::admin_url('services', ['edit' => (int) $item['id']]), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
+                                <a href="<?php echo htmlspecialchars(CMS_Booking_Admin_Pages::admin_url('services', ['edit' => (int) $item['id']]), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-secondary" title="Bearbeiten"><i class="ti ti-pencil" aria-hidden="true"></i></a>
                                 <form method="POST" style="margin:0;">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="service_id" value="<?php echo (int) $item['id']; ?>">
                                     <input type="hidden" name="service_action" value="delete">
-                                    <button type="submit" class="btn btn-sm btn-danger" title="Löschen">🗑️</button>
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Löschen"><i class="ti ti-trash" aria-hidden="true"></i></button>
                                 </form>
                             </div>
                         </td>
@@ -114,7 +114,7 @@ if ($editService && !empty($editService['settings_json'])) {
 <!-- Bearbeiten-Card -->
 <?php if ($editService): ?>
 <div class="admin-card">
-    <h3>✏️ Leistung bearbeiten: <?php echo htmlspecialchars($editService['title']); ?></h3>
+    <h3>Leistung bearbeiten: <?php echo htmlspecialchars($editService['title']); ?></h3>
     <form method="POST" class="admin-form">
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
         <input type="hidden" name="service_action" value="update">
@@ -193,8 +193,8 @@ if ($editService && !empty($editService['settings_json'])) {
 
         <div class="admin-card form-actions-card">
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">💾 Speichern</button>
-                <a href="<?php echo htmlspecialchars(CMS_Booking_Admin_Pages::admin_url('services'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary">↩️ Abbrechen</a>
+                <button type="submit" class="btn btn-primary">Speichern</button>
+                <a href="<?php echo htmlspecialchars(CMS_Booking_Admin_Pages::admin_url('services'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary">↩Abbrechen</a>
             </div>
         </div>
     </form>
@@ -202,11 +202,11 @@ if ($editService && !empty($editService['settings_json'])) {
 <?php endif; ?>
 
 <!-- Erstellen-Modal -->
-<div id="serviceModal" class="modal" style="display:none;">
+<div id="serviceModal" class="modal" data-booking-modal style="display:none;">
     <div class="modal-content" style="max-width:700px;">
         <div class="modal-header">
-            <h3>➕ Neue Leistung</h3>
-            <button class="modal-close" onclick="closeModal('serviceModal')">&times;</button>
+            <h3>Neue Leistung</h3>
+            <button type="button" class="modal-close" data-booking-modal-close="serviceModal">&times;</button>
         </div>
         <div class="modal-body">
             <form method="POST" id="createServiceForm" class="admin-form">
@@ -280,18 +280,9 @@ if ($editService && !empty($editService['settings_json'])) {
             </form>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('serviceModal')">Abbrechen</button>
-            <button type="submit" form="createServiceForm" class="btn btn-primary">💾 Erstellen</button>
+            <button type="button" class="btn btn-secondary" data-booking-modal-close="serviceModal">Abbrechen</button>
+            <button type="submit" form="createServiceForm" class="btn btn-primary">Erstellen</button>
         </div>
     </div>
 </div>
 
-<script>
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-window.addEventListener('click', function(e) {
-    document.querySelectorAll('.modal').forEach(function(m) {
-        if (e.target === m) closeModal(m.id);
-    });
-});
-</script>

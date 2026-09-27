@@ -8,12 +8,12 @@ $featuredCount = count(array_filter($downloads, static fn(array $item): bool => 
 
 <div class="admin-page-header">
     <div>
-        <h2>⬇️ Download-Dashboard</h2>
+        <h2>Download-Dashboard</h2>
         <p>Übersicht über Downloads, Kategorien und Nutzung im öffentlichen Bereich.</p>
     </div>
     <div class="header-actions">
-        <a href="?" class="btn btn-secondary btn-sm">🔄 Aktualisieren</a>
-        <a href="/downloads" class="btn btn-primary" target="_blank" rel="noopener noreferrer">🌍 Archiv öffnen</a>
+        <a href="?" class="btn btn-secondary btn-sm">Aktualisieren</a>
+        <a href="/downloads" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Archiv öffnen</a>
     </div>
 </div>
 
@@ -24,10 +24,10 @@ $featuredCount = count(array_filter($downloads, static fn(array $item): bool => 
 <?php endif; ?>
 
 <div class="dashboard-grid dl-admin-dashboard-grid">
-    <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-number"><?php echo number_format((int) ($stats['downloads'] ?? 0)); ?></div><div class="stat-label">Downloads gesamt</div></div>
-    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-number"><?php echo number_format((int) ($stats['active_downloads'] ?? 0)); ?></div><div class="stat-label">Aktiv</div></div>
-    <div class="stat-card"><div class="stat-icon">🗂️</div><div class="stat-number"><?php echo number_format((int) ($stats['categories'] ?? 0)); ?></div><div class="stat-label">Kategorien</div></div>
-    <div class="stat-card"><div class="stat-icon">📥</div><div class="stat-number"><?php echo number_format((int) ($stats['downloads_total'] ?? 0)); ?></div><div class="stat-label">Downloads geladen</div></div>
+    <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format((int) ($stats['downloads'] ?? 0)); ?></div><div class="stat-label">Downloads gesamt</div></div>
+    <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format((int) ($stats['active_downloads'] ?? 0)); ?></div><div class="stat-label">Aktiv</div></div>
+    <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format((int) ($stats['categories'] ?? 0)); ?></div><div class="stat-label">Kategorien</div></div>
+    <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format((int) ($stats['downloads_total'] ?? 0)); ?></div><div class="stat-label">Downloads geladen</div></div>
 </div>
 
 <div class="dl-card-grid">
@@ -45,7 +45,7 @@ $featuredCount = count(array_filter($downloads, static fn(array $item): bool => 
 
 <div class="dl-feature-grid">
     <a href="/admin/plugins/downloads-dashboard/downloads-items" class="dl-feature-card">
-        <span class="dl-feature-card__icon">➕</span>
+        <span class="dl-feature-card__icon"></span>
         <span>
             <span class="dl-feature-card__eyebrow">Verwaltung</span>
             <span class="dl-feature-card__title">Download anlegen</span>
@@ -53,7 +53,7 @@ $featuredCount = count(array_filter($downloads, static fn(array $item): bool => 
         </span>
     </a>
     <a href="/admin/plugins/downloads-dashboard/downloads-categories" class="dl-feature-card">
-        <span class="dl-feature-card__icon">🗂️</span>
+        <span class="dl-feature-card__icon"></span>
         <span>
             <span class="dl-feature-card__eyebrow">Struktur</span>
             <span class="dl-feature-card__title">Kategorien pflegen</span>
@@ -61,7 +61,7 @@ $featuredCount = count(array_filter($downloads, static fn(array $item): bool => 
         </span>
     </a>
     <a href="/admin/plugins/downloads-dashboard/downloads-settings" class="dl-feature-card">
-        <span class="dl-feature-card__icon">⚙️</span>
+        <span class="dl-feature-card__icon"></span>
         <span>
             <span class="dl-feature-card__eyebrow">Frontend</span>
             <span class="dl-feature-card__title">Archiv konfigurieren</span>
@@ -74,14 +74,14 @@ $featuredCount = count(array_filter($downloads, static fn(array $item): bool => 
     <div class="admin-card">
         <div class="dl-panel-header">
             <div>
-                <h3>📊 Download-Analytics</h3>
+                <h3>Download-Analytics</h3>
                 <p>Top-Dateien, Typen und Kategorien nach Download-Zählern.</p>
             </div>
             <a href="?export=analytics_csv&amp;csrf_token=<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary btn-sm">CSV exportieren</a>
         </div>
         <?php if (empty($analytics['top_downloads'])): ?>
             <div class="empty-state">
-                <p class="dl-empty-icon">📈</p>
+                <p class="dl-empty-icon"></p>
                 <p><strong>Noch keine Analytics-Daten</strong></p>
                 <p class="dl-empty-text">Sobald Downloads gezählt werden, erscheinen hier Auswertungen und der CSV-Export.</p>
             </div>
@@ -107,14 +107,14 @@ $featuredCount = count(array_filter($downloads, static fn(array $item): bool => 
     <div class="admin-card">
         <div class="dl-panel-header">
             <div>
-                <h3>🆕 Letzte Downloads</h3>
+                <h3>Letzte Downloads</h3>
                 <p>Die jüngsten Einträge mit Typ, Kategorie und Nutzungsstand.</p>
             </div>
             <a href="/admin/plugins/downloads-dashboard/downloads-items" class="btn btn-secondary btn-sm">Verwalten</a>
         </div>
         <?php if (empty($downloads)): ?>
             <div class="empty-state">
-                <p class="dl-empty-icon">📭</p>
+                <p class="dl-empty-icon"></p>
                 <p><strong>Noch keine Downloads vorhanden</strong></p>
                 <p class="dl-empty-text">Lege den ersten öffentlichen Download über die Download-Verwaltung an.</p>
             </div>
@@ -141,13 +141,13 @@ $featuredCount = count(array_filter($downloads, static fn(array $item): bool => 
         <div class="admin-card">
             <div class="dl-panel-header">
                 <div>
-                    <h3>🗃️ Kategorien</h3>
+                    <h3>Kategorien</h3>
                     <p>Die wichtigsten Archivgruppen mit Datei-Anzahl auf einen Blick.</p>
                 </div>
             </div>
             <?php if (empty($categories)): ?>
                 <div class="empty-state">
-                    <p class="dl-empty-icon">🗂️</p>
+                    <p class="dl-empty-icon"></p>
                     <p><strong>Keine Kategorien vorhanden</strong></p>
                     <p class="dl-empty-text">Das Plugin kann Downloads auch ohne Kategorie verwalten, aber mit Kategorien lebt es schöner.</p>
                 </div>
@@ -169,11 +169,11 @@ $featuredCount = count(array_filter($downloads, static fn(array $item): bool => 
             <span class="dl-note-card__eyebrow">Vordefinierte Typen</span>
             <span class="dl-note-card__title">Templates für typische Download-Inhalte</span>
             <div class="dl-badge-stack dl-badge-stack--spaced">
-                <span class="dl-soft-badge">⚡ PowerShell</span>
-                <span class="dl-soft-badge">🌐 Webprojekte</span>
-                <span class="dl-soft-badge">📄 Dokumente</span>
-                <span class="dl-soft-badge">📚 eBooks</span>
-                <span class="dl-soft-badge">🗜️ Archive</span>
+                <span class="dl-soft-badge">PowerShell</span>
+                <span class="dl-soft-badge">Webprojekte</span>
+                <span class="dl-soft-badge">Dokumente</span>
+                <span class="dl-soft-badge">eBooks</span>
+                <span class="dl-soft-badge">Archive</span>
             </div>
             <p class="dl-note-card__text dl-note-card__text--spaced">Die Typen helfen dir bei konsistenter Kategorisierung und verständlicher Darstellung im öffentlichen Bereich.</p>
         </div>

@@ -3,12 +3,12 @@
 <div class="kb-admin-shell">
     <div class="admin-page-header">
         <div>
-            <h2>📚 Knowledgebase-Dashboard</h2>
+            <h2>Knowledgebase-Dashboard</h2>
             <p>Verwalte Fachbegriffe, Synonyme, Tooltip-Texte und die automatische interne Verlinkung.</p>
         </div>
         <div class="header-actions">
-            <a href="/kb" class="btn btn-primary" target="_blank" rel="noopener noreferrer">🌍 KB öffnen</a>
-            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entries" class="btn btn-secondary btn-sm">🧠 Einträge verwalten</a>
+            <a href="/kb" class="btn btn-primary" target="_blank" rel="noopener noreferrer">KB öffnen</a>
+            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entries" class="btn btn-secondary btn-sm">Einträge verwalten</a>
         </div>
     </div>
 
@@ -19,25 +19,25 @@
     <?php endif; ?>
 
     <div class="dashboard-grid kb-admin-dashboard-grid">
-        <div class="stat-card"><div class="stat-icon">🧠</div><div class="stat-number"><?php echo number_format((int) ($stats['entries'] ?? 0)); ?></div><div class="stat-label">Einträge gesamt</div></div>
-        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-number"><?php echo number_format((int) ($stats['active_entries'] ?? 0)); ?></div><div class="stat-label">Aktive Begriffe</div></div>
-        <div class="stat-card"><div class="stat-icon">💬</div><div class="stat-number"><?php echo number_format((int) ($stats['tooltip_entries'] ?? 0)); ?></div><div class="stat-label">Mit Tooltip</div></div>
-        <div class="stat-card"><div class="stat-icon">🗂️</div><div class="stat-number"><?php echo number_format((int) ($stats['categories'] ?? 0)); ?></div><div class="stat-label">Kategorien</div></div>
+        <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format((int) ($stats['entries'] ?? 0)); ?></div><div class="stat-label">Einträge gesamt</div></div>
+        <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format((int) ($stats['active_entries'] ?? 0)); ?></div><div class="stat-label">Aktive Begriffe</div></div>
+        <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format((int) ($stats['tooltip_entries'] ?? 0)); ?></div><div class="stat-label">Mit Tooltip</div></div>
+        <div class="stat-card"><div class="stat-icon"></div><div class="stat-number"><?php echo number_format((int) ($stats['categories'] ?? 0)); ?></div><div class="stat-label">Kategorien</div></div>
     </div>
 
     <div class="admin-card kb-quick-actions-card">
         <div class="kb-panel-header kb-panel-header--compact">
             <div>
-                <h3>⚡ Schnellzugriff</h3>
+                <h3>Schnellzugriff</h3>
                 <p>Direkte Wege zu Pflege, Einstellungen und Frontend.</p>
             </div>
         </div>
         <div class="kb-quick-actions">
-            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entry-editor" class="btn btn-primary">➕ Neuer Eintrag</a>
-            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-categories" class="btn btn-secondary btn-sm">🗂️ Kategorien</a>
-            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-settings-general" class="btn btn-secondary btn-sm">⚙️ Einstellungen</a>
-            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-settings-design" class="btn btn-secondary btn-sm">🎨 Design</a>
-            <a href="/kb" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">🌍 Knowledgebase öffnen</a>
+            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entry-editor" class="btn btn-primary">Neuer Eintrag</a>
+            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-categories" class="btn btn-secondary btn-sm">Kategorien</a>
+            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-settings-general" class="btn btn-secondary btn-sm">Einstellungen</a>
+            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-settings-design" class="btn btn-secondary btn-sm">Design</a>
+            <a href="/kb" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Knowledgebase öffnen</a>
         </div>
     </div>
 
@@ -45,7 +45,7 @@
         <div class="admin-card">
             <div class="kb-panel-header">
                 <div>
-                    <h3>🆕 Neueste Einträge</h3>
+                    <h3>Neueste Einträge</h3>
                     <p>Die zuletzt gepflegten Begriffe für Auto-Linking und Wissensseiten.</p>
                 </div>
                 <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entries" class="btn btn-secondary btn-sm">Alle ansehen</a>
@@ -53,7 +53,7 @@
 
             <?php if (empty($entries)): ?>
                 <div class="empty-state">
-                    <p class="kb-empty-icon">📭</p>
+                    <p class="kb-empty-icon"></p>
                     <p><strong>Noch keine Einträge vorhanden</strong></p>
                     <p class="kb-empty-text">Lege den ersten Begriff an und verknüpfe ihn automatisch im Content.</p>
                 </div>

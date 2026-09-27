@@ -3,7 +3,7 @@
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>📅 Booking Dashboard</h2>
+        <h2>Booking Dashboard</h2>
         <p>Gesamtübersicht aller Buchungen und Anbieter</p>
     </div>
 </div>
@@ -45,7 +45,7 @@
 <!-- Registrierte Provider-Typen -->
 <?php if (!empty($types)): ?>
 <div class="admin-card">
-    <h3>🔌 Registrierte Integrationen</h3>
+    <h3>Registrierte Integrationen</h3>
     <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:1rem;">
         <?php foreach ($types as $slug => $type): ?>
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:1rem 1.25rem;min-width:200px;">
@@ -60,10 +60,10 @@
 
 <!-- Letzte Buchungen -->
 <div class="admin-card">
-    <h3>📋 Letzte Buchungen</h3>
+    <h3>Letzte Buchungen</h3>
     <?php if (empty($recent)): ?>
         <div class="empty-state">
-            <p style="font-size:2.5rem;margin:0;">📭</p>
+            <p style="font-size:2.5rem;margin:0;"></p>
             <p><strong>Noch keine Buchungen vorhanden</strong></p>
             <p class="text-muted">Sobald Besucher Termine buchen, erscheinen diese hier.</p>
         </div>
@@ -107,7 +107,7 @@
             </table>
         </div>
         <div style="margin-top:1rem;">
-            <a href="<?php echo htmlspecialchars(CMS_Booking_Admin_Pages::admin_url('bookings'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary btn-sm">📋 Alle Buchungen ansehen</a>
+            <a href="<?php echo htmlspecialchars(CMS_Booking_Admin_Pages::admin_url('bookings'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary btn-sm">Alle Buchungen ansehen</a>
         </div>
     <?php endif; ?>
 </div>

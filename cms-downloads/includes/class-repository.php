@@ -604,7 +604,7 @@ final class CMS_Downloads_Repository
             return;
         }
 
-        fputcsv($output, ['Section', 'Label', 'Items', 'Total Downloads']);
+        fputcsv($output, ['Section', 'Label', 'Items', 'Total Downloads'], ',', '"', '\\');
 
         foreach ($report['top_downloads'] as $row) {
             fputcsv($output, [
@@ -612,7 +612,7 @@ final class CMS_Downloads_Repository
                 (string) ($row['title'] ?? ''),
                 1,
                 (int) ($row['download_count'] ?? 0),
-            ]);
+            ], ',', '"', '\\');
         }
 
         foreach ($report['by_type'] as $row) {
@@ -621,7 +621,7 @@ final class CMS_Downloads_Repository
                 (string) ($row['download_type'] ?? ''),
                 (int) ($row['item_count'] ?? 0),
                 (int) ($row['total_downloads'] ?? 0),
-            ]);
+            ], ',', '"', '\\');
         }
 
         foreach ($report['by_category'] as $row) {
@@ -630,7 +630,7 @@ final class CMS_Downloads_Repository
                 (string) ($row['category_name'] ?? ''),
                 (int) ($row['item_count'] ?? 0),
                 (int) ($row['total_downloads'] ?? 0),
-            ]);
+            ], ',', '"', '\\');
         }
 
         fclose($output);

@@ -462,8 +462,14 @@ final class CMS_Booking_Bookings
     /*  DSGVO                                                              */
     /* ================================================================== */
 
-    public function export_user_data(int $userId): void
+    public function export_user_data(mixed $userId = null): void
     {
+        // Datenschutzanfragen ohne Konto liefern user_id = NULL (Hook: user_id, email).
+        $userId = is_numeric($userId) ? (int) $userId : 0;
+        if ($userId <= 0) {
+            return;
+        }
+
         $bookings = $this->get_by_user($userId, 0, 999);
         if (empty($bookings)) {
             return;
@@ -489,8 +495,14 @@ final class CMS_Booking_Bookings
         }
     }
 
-    public function delete_user_data(int $userId): void
+    public function delete_user_data(mixed $userId = null): void
     {
+        // Datenschutzanfragen ohne Konto liefern user_id = NULL (Hook: user_id, email).
+        $userId = is_numeric($userId) ? (int) $userId : 0;
+        if ($userId <= 0) {
+            return;
+        }
+
         $db = \CMS\Database::instance();
         $p  = $db->getPrefix();
 

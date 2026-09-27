@@ -262,7 +262,7 @@ final class CMS_Downloads_Admin_Pages
 
     private static function current_page_slug(): string
     {
-        $requested = (string) ($_REQUEST['page'] ?? self::PAGE_DASHBOARD);
+        $requested = (string) ($_GET['page'] ?? $_REQUEST['page'] ?? self::PAGE_DASHBOARD);
 
         return self::sanitize_page_slug($requested);
     }

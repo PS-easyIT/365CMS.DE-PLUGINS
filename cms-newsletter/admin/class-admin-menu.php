@@ -30,7 +30,7 @@ final class CMS_Newsletter_Admin_Menu
             return;
         }
 
-        add_menu_page('Newsletter', '365CMS | Newsletter', 'manage_options', self::MAIN_SLUG, [self::class, 'render_current_page'], 'NL');
+        add_menu_page('Newsletter', 'Newsletter', 'manage_options', self::MAIN_SLUG, [self::class, 'render_current_page'], 'NL');
 
         foreach (self::MENU_DEFINITIONS as $slug => $definition) {
             add_submenu_page(

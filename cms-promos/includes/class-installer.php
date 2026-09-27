@@ -101,8 +101,9 @@ final class CMS_Promos_Installer
 
     private static function ensure_column(\CMS\Database $db, string $table, string $column, string $ddl): void
     {
-        $stmt = $db->prepare("SHOW COLUMNS FROM {$table} LIKE ?");
-        $stmt->execute([$column]);
+        // SHOW COLUMNS akzeptiert bei nativen Prepared Statements keine Platzhalter.
+        $stmt = $db->prepare('SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1');
+        $stmt->execute([$table, $column]);
         if ($stmt->fetch(\PDO::FETCH_ASSOC) === false) {
             $db->query($ddl);
         }

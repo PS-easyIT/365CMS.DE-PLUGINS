@@ -112,10 +112,11 @@ final class CMS_Promos_Admin_Pages
         self::handle_post();
         self::require_shared_contract();
 
+        $layoutActiveSlug = $activeSlug !== '' ? $activeSlug : self::ROOT_SLUG;
         if (function_exists('cms_plugin_admin_layout_start')) {
-            cms_plugin_admin_layout_start($title, self::ROOT_SLUG);
+            cms_plugin_admin_layout_start($title, $layoutActiveSlug);
         } elseif (function_exists('renderAdminLayoutStart')) {
-            renderAdminLayoutStart($title, self::ROOT_SLUG);
+            renderAdminLayoutStart($title, $layoutActiveSlug);
         }
 
         self::enqueue_admin_assets();

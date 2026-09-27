@@ -23,11 +23,11 @@ final class CMS_Contact_Admin_Menu
 
         add_menu_page(
             'Kontakt',
-            '365CMS | Kontakt',
+            'Kontakt',
             'manage_options',
             CMS_Contact_Admin_Pages::MENU_SLUG,
             CMS_Contact_Admin_Pages::dispatch_callback_for_slug(CMS_Contact_Admin_Pages::DEFAULT_PAGE_SLUG),
-            '📬',
+            '',
             35
         );
 
@@ -66,7 +66,7 @@ final class CMS_Contact_Admin_Menu
         $menuItems[] = [
             'type' => 'item',
             'slug' => $parentSlug,
-            'label' => '365CMS | Kontakt',
+            'label' => 'Kontakt',
             'icon' => '📬',
             'url' => function_exists('cms_plugin_admin_page_path')
                 ? cms_plugin_admin_page_path($parentSlug, CMS_Contact_Admin_Pages::DEFAULT_PAGE_SLUG)

@@ -3,7 +3,7 @@
  * Plugin Name: CMS Forum
  * Plugin URI: https://365network.de/cms-forum
  * Description: Vollwertiges Community-Forum mit Kategorien, Subforen, Threads, BBCode-Editor, Berechtigungssystem, Moderationstools und Rang-System.
- * Version: 3.0.2
+ * Version: 3.0.3
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_FORUM_VERSION',    '3.0.2');
+define('CMS_FORUM_VERSION',    '3.0.3');
 define('CMS_FORUM_DB_VERSION', '1.0.2');
 define('CMS_FORUM_DIR',        dirname(__FILE__) . '/');
 define('CMS_FORUM_URL',        '/plugins/cms-forum/');
@@ -261,8 +261,14 @@ final class CMS_Forum
     /**
      * DSGVO: Benutzerdaten exportieren (Art. 20).
      */
-    public function dsgvo_export(int $userId): array
+    public function dsgvo_export(mixed $userId = null): array
     {
+        // Datenschutzanfragen ohne Konto liefern user_id = NULL (Hook: user_id, email).
+        $userId = is_numeric($userId) ? (int) $userId : 0;
+        if ($userId <= 0) {
+            return [];
+        }
+
         $db = \CMS\Database::instance();
         $p  = $db->prefix();
 
@@ -280,8 +286,14 @@ final class CMS_Forum
     /**
      * DSGVO: Benutzerdaten löschen (Art. 17).
      */
-    public function dsgvo_delete(int $userId): void
+    public function dsgvo_delete(mixed $userId = null): void
     {
+        // Datenschutzanfragen ohne Konto liefern user_id = NULL (Hook: user_id, email).
+        $userId = is_numeric($userId) ? (int) $userId : 0;
+        if ($userId <= 0) {
+            return;
+        }
+
         $db = \CMS\Database::instance();
         $p  = $db->prefix();
 

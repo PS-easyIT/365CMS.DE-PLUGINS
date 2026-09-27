@@ -1,13 +1,14 @@
 {
   "slug": "cms-beratung",
   "name": "CMS Beratung",
-  "version": "2.9.791",
+  "version": "2.9.792",
   "requires": "365CMS",
-  "tested": "2026.06",
+  "tested": "3.4.00",
   "author": "365 Network",
   "description": "Spezialisierter 365CMS Landingpage Builder für Microsoft 365, Copilot, KI, Security, Compliance und IT Consulting Beratungsleistungen.",
   "download_url": "PLUGINS/cms-beratung/cms-beratung.zip",
   "changelog": {
+    "2.9.792": "Fix: Frischinstallation scheiterte, weil die Spaltenmigration vor dem Anlegen von form_submissions lief. Landingpage-Übersicht, „Neue Landingpage“ und Vorschau sind wieder erreichbar (Menüeintrag „Landingpages“, Unteransichten per ?view=). Toter admin_menu_items-Filter entfernt, Admin-Builder bricht bei fehlendem Ziel-Selektor nicht mehr ab. Admin-Oberfläche an das einheitliche, schlichte 365CMS-Plugin-Admin-Design angeglichen (Emoji-/Kürzel-Icons entfernt, Icon-Buttons mit Tabler-Icons, Menüname ohne Präfix); geprüft gegen 365CMS 3.4.00 inkl. Produktiv-CSP.",
     "2.9.791": "Fix: Die Admin-Pages-Klasse ist gegen erneute Includes über abweichende Deployment- oder Case-Pfade geschützt; wiederholte Plugin-Ladevorgänge verursachen keinen Cannot-redeclare-Fatal mehr.",
     "2.9.790": "Finaler Visual Polish ohne Layout-Eingriffe: Hero-CTA klar priorisiert mit gefüllter Primary und sekundären Outline-Aktionen, Texttokens für Headings, Body und Muted global konsolidiert und Section-Header-Hierarchie über gemeinsame Header-Regeln deutlicher gestaffelt.",
     "2.9.789": "Terminbuchung Button-only-Layout ausgerichtet: In der neuen Darstellung ohne Booking-Bereich sitzt der Bookings-Button jetzt rechts in der Bereichscard auf Höhe der Trust-Badges. Mobil stapelt die Ansicht sauber und der Button wird full-width angezeigt.",
@@ -100,5 +101,6 @@
     "2.9.702": "Spezialisierte Beratungs-Landingpage-Module für Leistungen, Ablauf, Vergleich, FAQ Accordion mit Schema, Trust, Technologie, CTA Band, Trenner und sicheren HTML Bereich ergänzt.",
     "2.9.701": "Erweiterter Landingpage Editor mit Hero Bereich, flexiblen Inhaltsbereichen, Drag-and-Drop Sections/Cards, Card-Typen und responsivem Layoutsystem.",
     "2.9.700": "Initiale Grundstruktur mit Backend-Verwaltung, Landingpage-Datenmodell, Frontend-Rendering, SEO, Formularen sowie JSON Import und Export."
-  }
+  },
+  "requires_cms": "3.4.00"
 }

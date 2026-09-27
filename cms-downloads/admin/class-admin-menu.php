@@ -19,11 +19,11 @@ final class CMS_Downloads_Admin_Menu
 
         add_menu_page(
             'Downloads',
-            '365CMS | Downloads',
+            'Downloads',
             'manage_options',
             CMS_Downloads_Admin_Pages::PAGE_DASHBOARD,
             [CMS_Downloads_Admin_Pages::class, 'dispatch'],
-            '⬇️',
+            '',
             56
         );
 

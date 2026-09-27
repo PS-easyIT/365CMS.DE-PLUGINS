@@ -9,11 +9,11 @@ $activeCategories = count(array_filter($categories, static fn($cat) => !empty($c
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>🗂️ Kategorien verwalten</h2>
+        <h2>Kategorien verwalten</h2>
         <p>Forum-Kategorien erstellen und sortieren</p>
     </div>
     <div class="header-actions">
-        <button class="btn btn-primary" onclick="openModal('createCategoryModal')">➕ Neue Kategorie</button>
+        <button class="btn btn-primary" data-forum-modal-open="createCategoryModal">Neue Kategorie</button>
     </div>
 </div>
 
@@ -42,13 +42,13 @@ $activeCategories = count(array_filter($categories, static fn($cat) => !empty($c
 <div class="admin-card">
     <div class="forum-panel-header">
         <div>
-            <h3>🗂️ Alle Kategorien</h3>
+            <h3>Alle Kategorien</h3>
             <p>Kategorien anlegen, aktivieren und nach Priorität sortieren.</p>
         </div>
     </div>
     <?php if (empty($categories)): ?>
         <div class="empty-state">
-            <p style="font-size:2.5rem;margin:0;">📭</p>
+            <p style="font-size:2.5rem;margin:0;"></p>
             <p><strong>Noch keine Kategorien vorhanden</strong></p>
             <p class="text-muted">Erstelle die erste Kategorie über den Button oben.</p>
         </div>
@@ -77,12 +77,12 @@ $activeCategories = count(array_filter($categories, static fn($cat) => !empty($c
                         </td>
                         <td>
                             <div class="forum-inline-actions">
-                                <button class="btn btn-sm btn-secondary" onclick="editCategory(<?php echo (int)$cat->id; ?>, '<?php echo htmlspecialchars($cat->name, ENT_QUOTES); ?>', <?php echo (int)$cat->sort_order; ?>, <?php echo $cat->is_active ? 'true' : 'false'; ?>)">✏️</button>
+                                <button class="btn btn-sm btn-secondary" type="button" data-forum-modal-open="editCategoryModal" data-forum-fill="<?php echo htmlspecialchars((string) json_encode(['edit-cat-id' => (int) $cat->id, 'edit-cat-name' => (string) $cat->name, 'edit-cat-sort' => (int) $cat->sort_order, 'edit-cat-active' => (bool) $cat->is_active], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>"><i class="ti ti-pencil" aria-hidden="true"></i></button>
                                 <form method="POST" style="margin:0;">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="forum_action" value="delete_category">
                                     <input type="hidden" name="category_id" value="<?php echo (int)$cat->id; ?>">
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteConfirm(this.closest('form'), 'Kategorie wirklich löschen?')">🗑️</button>
+                                    <button type="button" class="btn btn-sm btn-danger" data-forum-delete-confirm="Kategorie wirklich löschen?"><i class="ti ti-trash" aria-hidden="true"></i></button>
                                 </form>
                             </div>
                         </td>
@@ -101,7 +101,7 @@ $activeCategories = count(array_filter($categories, static fn($cat) => !empty($c
     <div class="modal-content">
         <div class="modal-header">
             <h3>Neue Kategorie</h3>
-            <button class="modal-close" onclick="closeModal('createCategoryModal')">&times;</button>
+            <button class="modal-close" type="button" data-forum-modal-close="createCategoryModal">&times;</button>
         </div>
         <form method="POST">
             <div class="modal-body">
@@ -117,8 +117,8 @@ $activeCategories = count(array_filter($categories, static fn($cat) => !empty($c
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('createCategoryModal')">Abbrechen</button>
-                <button type="submit" class="btn btn-primary">💾 Erstellen</button>
+                <button type="button" class="btn btn-secondary" data-forum-modal-close="createCategoryModal">Abbrechen</button>
+                <button type="submit" class="btn btn-primary">Erstellen</button>
             </div>
         </form>
     </div>
@@ -129,7 +129,7 @@ $activeCategories = count(array_filter($categories, static fn($cat) => !empty($c
     <div class="modal-content">
         <div class="modal-header">
             <h3>Kategorie bearbeiten</h3>
-            <button class="modal-close" onclick="closeModal('editCategoryModal')">&times;</button>
+            <button class="modal-close" type="button" data-forum-modal-close="editCategoryModal">&times;</button>
         </div>
         <form method="POST">
             <div class="modal-body">
@@ -151,51 +151,27 @@ $activeCategories = count(array_filter($categories, static fn($cat) => !empty($c
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('editCategoryModal')">Abbrechen</button>
-                <button type="submit" class="btn btn-primary">💾 Speichern</button>
+                <button type="button" class="btn btn-secondary" data-forum-modal-close="editCategoryModal">Abbrechen</button>
+                <button type="submit" class="btn btn-primary">Speichern</button>
             </div>
         </form>
     </div>
 </div>
 
-<script>
-function editCategory(id, name, sort, active) {
-    document.getElementById('edit-cat-id').value = id;
-    document.getElementById('edit-cat-name').value = name;
-    document.getElementById('edit-cat-sort').value = sort;
-    document.getElementById('edit-cat-active').checked = active;
-    openModal('editCategoryModal');
-}
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-let _deleteConfirmForm = null;
-function openDeleteConfirm(form, msg) {
-    _deleteConfirmForm = form;
-    document.getElementById('deleteConfirmMsg').textContent = msg;
-    openModal('deleteConfirmModal');
-}
-function confirmDelete() {
-    if (_deleteConfirmForm) _deleteConfirmForm.submit();
-    closeModal('deleteConfirmModal');
-}
-window.addEventListener('click', function(e) {
-    document.querySelectorAll('.modal').forEach(function(m) { if (e.target === m) closeModal(m.id); });
-});
-</script>
 
 <!-- Delete Confirm Modal -->
 <div id="deleteConfirmModal" class="modal" style="display:none;">
     <div class="modal-content" style="max-width:420px;">
         <div class="modal-header">
-            <h3>⚠️ Löschen bestätigen</h3>
-            <button class="modal-close" onclick="closeModal('deleteConfirmModal')">&times;</button>
+            <h3>Löschen bestätigen</h3>
+            <button class="modal-close" type="button" data-forum-modal-close="deleteConfirmModal">&times;</button>
         </div>
         <div class="modal-body">
             <p id="deleteConfirmMsg">Wirklich löschen?</p>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('deleteConfirmModal')">Abbrechen</button>
-            <button type="button" class="btn btn-danger" onclick="confirmDelete()">🗑️ Löschen</button>
+            <button type="button" class="btn btn-secondary" data-forum-modal-close="deleteConfirmModal">Abbrechen</button>
+            <button type="button" class="btn btn-danger" data-forum-confirm-delete>Löschen</button>
         </div>
     </div>
 </div>

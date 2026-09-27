@@ -146,10 +146,14 @@ final class Pages
         self::handlePost();
         self::loadAdminMenu();
 
+        // Aktive Unterseite für Sidebar-Markierung und Breadcrumb.
+        $activeSlug = strtolower(trim((string) preg_replace('/[^a-z0-9_-]+/i', '-', (string) ($_GET['page'] ?? '')), '-'));
+        $activeSlug = $activeSlug !== '' ? $activeSlug : Menu::ROOT_SLUG;
+
         if (function_exists('cms_plugin_admin_layout_start')) {
-            cms_plugin_admin_layout_start($title, Menu::ROOT_SLUG);
+            cms_plugin_admin_layout_start($title, $activeSlug);
         } elseif (function_exists('renderAdminLayoutStart')) {
-            renderAdminLayoutStart($title, Menu::ROOT_SLUG);
+            renderAdminLayoutStart($title, $activeSlug);
         }
 
         self::enqueueAdminAssets();

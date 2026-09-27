@@ -180,8 +180,9 @@ final class Poll
 
         $p = $this->db()->prefix();
         $table = $p . self::OPTIONS_TABLE;
-        $check = $this->db()->prepare("SHOW COLUMNS FROM `{$table}` LIKE ?");
-        $check->execute(['option_text']);
+        // SHOW COLUMNS akzeptiert bei nativen Prepared Statements keine Platzhalter.
+        $check = $this->db()->prepare('SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1');
+        $check->execute([$table, 'option_text']);
         $this->optionTextColumn = $check->fetch(\PDO::FETCH_ASSOC) ? 'option_text' : 'text';
 
         return $this->optionTextColumn;
