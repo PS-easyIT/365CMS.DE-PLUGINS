@@ -4,7 +4,7 @@
 
 <div class="admin-page-header">
     <div>
-        <h2>⚙️ Download-Einstellungen</h2>
+        <h2>Download-Einstellungen</h2>
         <p>Steuere Titel, Archivdarstellung und Suchverhalten des öffentlichen Download-Bereichs.</p>
     </div>
 </div>
@@ -37,7 +37,7 @@
     <div class="admin-card">
         <div class="dl-panel-header">
             <div>
-                <h3>⚙️ Allgemein</h3>
+                <h3>Allgemein</h3>
                 <p>Lege fest, wie dein öffentliches Download-Archiv im Standard aussieht.</p>
             </div>
         </div>
@@ -84,7 +84,7 @@
             </div>
 
             <div class="admin-card">
-                <h3>🛡️ Rate Limiting</h3>
+                <h3>Rate Limiting</h3>
                 <p style="color:#64748b;font-size:.875rem;margin-bottom:1rem;">Schützt Download-Endpunkte vor automatisiertem Massenabruf.</p>
                 <label class="checkbox-label dl-checkbox-stack"><input type="checkbox" name="rate_limit_enabled" value="1" <?php echo ($settings['rate_limit_enabled'] ?? '1') === '1' ? 'checked' : ''; ?>> Rate Limiting aktivieren</label>
                 <div class="dl-admin-form-grid" style="margin-top:.75rem;">
@@ -100,7 +100,7 @@
             </div>
 
             <div class="admin-card">
-                <h3>🧭 Navigation</h3>
+                <h3>Navigation</h3>
                 <p style="color:#64748b;font-size:.875rem;margin-bottom:1rem;">Standardmäßig wird kein Link in der öffentlichen Hauptnavigation ausgegeben.</p>
                 <div class="form-group" style="margin-top:.75rem;">
                     <label class="checkbox-label dl-checkbox-stack"><input type="checkbox" name="show_nav_link" value="1" <?php echo ($settings['show_nav_link'] ?? '0') === '1' ? 'checked' : ''; ?>> Link in Hauptnavigation anzeigen</label>
@@ -117,10 +117,10 @@
             </div>
 
             <div class="alert alert-success">
-                💡 Die PowerShell-, Webprojekt-, Dokument- und eBook-Typen kommen als vordefinierte Download-Templates direkt aus dem Plugin und stehen bei jedem Download-Eintrag zur Auswahl bereit. Externe Ziele kannst du hier zusätzlich auf definierte Domains eingrenzen.
+                Die PowerShell-, Webprojekt-, Dokument- und eBook-Typen kommen als vordefinierte Download-Templates direkt aus dem Plugin und stehen bei jedem Download-Eintrag zur Auswahl bereit. Externe Ziele kannst du hier zusätzlich auf definierte Domains eingrenzen.
             </div>
 
-            <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
+            <button type="submit" class="btn btn-primary">Einstellungen speichern</button>
         </form>
     </div>
 
@@ -134,7 +134,7 @@
         <div class="admin-card">
             <div class="dl-panel-header">
                 <div>
-                    <h3>🧭 Empfehlung</h3>
+                    <h3>Empfehlung</h3>
                     <p>Praxisnahe Standardeinstellungen für ein aufgeräumtes Archiv.</p>
                 </div>
             </div>

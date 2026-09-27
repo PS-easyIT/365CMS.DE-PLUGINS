@@ -7,21 +7,21 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>✏️ Formular bearbeiten: <?php echo $e($form['title']); ?></h2>
+        <h2>Formular bearbeiten: <?php echo $e($form['title']); ?></h2>
         <p>Einstellungen, Template und Optionen für dieses Kontaktformular</p>
     </div>
     <div class="header-actions">
-        <a href="?section=forms&action=fields&id=<?php echo (int)$form['id']; ?>" class="btn btn-secondary btn-sm">📝 Felder bearbeiten</a>
-        <a href="/contact/<?php echo $e($form['slug']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">👁️ Vorschau</a>
-        <a href="?section=forms" class="btn btn-secondary">↩️ Zurück</a>
+        <a href="?section=forms&action=fields&id=<?php echo (int)$form['id']; ?>" class="btn btn-secondary btn-sm">Felder bearbeiten</a>
+        <a href="/contact/<?php echo $e($form['slug']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Vorschau</a>
+        <a href="?section=forms" class="btn btn-secondary">↩Zurück</a>
     </div>
 </div>
 
 <?php if (!empty($notice)): ?>
-<div class="alert alert-success">✅ <?php echo $e($notice); ?></div>
+<div class="alert alert-success"><?php echo $e($notice); ?></div>
 <?php endif; ?>
 <?php if (!empty($error)): ?>
-<div class="alert alert-error">❌ <?php echo $e($error); ?></div>
+<div class="alert alert-error"><?php echo $e($error); ?></div>
 <?php endif; ?>
 
 <form method="POST" class="admin-form">
@@ -30,17 +30,17 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
     <!-- Tabs -->
     <div class="contact-inline-tabs" data-tab-scope data-tab-content-selector=".tab-content" data-tab-button-selector="[data-contact-tab-target]">
-        <button class="contact-inline-tab-btn active" data-contact-tab-target="tab-general" type="button">⚙️ Allgemein</button>
-        <button class="contact-inline-tab-btn" data-contact-tab-target="tab-template" type="button">🎨 Template</button>
-        <button class="contact-inline-tab-btn" data-contact-tab-target="tab-email" type="button">📧 E-Mail</button>
-        <button class="contact-inline-tab-btn" data-contact-tab-target="tab-security" type="button">🔒 Sicherheit</button>
-        <button class="contact-inline-tab-btn" data-contact-tab-target="tab-advanced" type="button">🔧 Erweitert</button>
+        <button class="contact-inline-tab-btn active" data-contact-tab-target="tab-general" type="button">Allgemein</button>
+        <button class="contact-inline-tab-btn" data-contact-tab-target="tab-template" type="button">Template</button>
+        <button class="contact-inline-tab-btn" data-contact-tab-target="tab-email" type="button">E-Mail</button>
+        <button class="contact-inline-tab-btn" data-contact-tab-target="tab-security" type="button">Sicherheit</button>
+        <button class="contact-inline-tab-btn" data-contact-tab-target="tab-advanced" type="button">Erweitert</button>
     </div>
 
     <!-- Tab: Allgemein -->
     <div id="tab-general" class="tab-content active">
         <div class="admin-card contact-tab-panel">
-            <h3>⚙️ Allgemeine Einstellungen</h3>
+            <h3>Allgemeine Einstellungen</h3>
 
             <div class="contact-form-grid-2-wide">
                 <div class="form-group">
@@ -85,8 +85,8 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
                 <div class="form-group">
                     <label class="form-label" for="status">Status</label>
                     <select id="status" name="status" class="form-control">
-                        <option value="active" <?php echo $form['status'] === 'active' ? 'selected' : ''; ?>>✅ Aktiv</option>
-                        <option value="inactive" <?php echo $form['status'] === 'inactive' ? 'selected' : ''; ?>>⏸️ Inaktiv</option>
+                        <option value="active" <?php echo $form['status'] === 'active' ? 'selected' : ''; ?>>Aktiv</option>
+                        <option value="inactive" <?php echo $form['status'] === 'inactive' ? 'selected' : ''; ?>>Inaktiv</option>
                     </select>
                 </div>
             </div>
@@ -96,7 +96,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
     <!-- Tab: Template -->
     <div id="tab-template" class="tab-content">
         <div class="admin-card contact-tab-panel">
-            <h3>🎨 Template wählen</h3>
+            <h3>Template wählen</h3>
             <div class="contact-template-grid">
                 <?php foreach ($templates as $key => $tpl): ?>
                 <label class="contact-template-card<?php echo $form['template'] === $key ? ' is-selected' : ''; ?>">
@@ -117,7 +117,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
     <!-- Tab: E-Mail -->
     <div id="tab-email" class="tab-content">
         <div class="admin-card contact-tab-panel">
-            <h3>📧 E-Mail-Einstellungen</h3>
+            <h3>E-Mail-Einstellungen</h3>
 
             <div class="contact-form-grid-2-wide">
                 <div class="form-group">
@@ -147,13 +147,13 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
     <!-- Tab: Sicherheit -->
     <div id="tab-security" class="tab-content">
         <div class="admin-card contact-tab-panel">
-            <h3>🔒 Sicherheitseinstellungen</h3>
+            <h3>Sicherheitseinstellungen</h3>
 
             <div class="form-group">
                 <label class="checkbox-label contact-checkbox-inline">
                     <input type="checkbox" name="enable_honeypot" value="1"
                            <?php echo !empty($form['enable_honeypot']) ? 'checked' : ''; ?>>
-                    🍯 Honeypot-Spamschutz aktivieren
+                    Honeypot-Spamschutz aktivieren
                 </label>
                 <small class="form-text">Unsichtbares Feld, das Bots ausfüllen. Empfohlen!</small>
             </div>
@@ -162,7 +162,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
                 <label class="checkbox-label contact-checkbox-inline">
                     <input type="checkbox" name="enable_captcha" value="1"
                            <?php echo !empty($form['enable_captcha']) ? 'checked' : ''; ?>>
-                    🤖 CAPTCHA aktivieren
+                    CAPTCHA aktivieren
                 </label>
                 <small class="form-text">Zusätzlicher Spamschutz (einfache Matheaufgabe).</small>
             </div>
@@ -180,7 +180,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
     <!-- Tab: Erweitert -->
     <div id="tab-advanced" class="tab-content">
         <div class="admin-card contact-tab-panel">
-            <h3>🔧 Erweiterte Einstellungen</h3>
+            <h3>Erweiterte Einstellungen</h3>
 
             <div class="form-group">
                 <label class="form-label" for="custom_css">Benutzerdefiniertes CSS</label>
@@ -196,7 +196,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
         <div class="contact-form-actions">
             <span class="contact-form-actions__meta">Änderungen werden sofort übernommen</span>
             <a href="?section=forms" class="btn btn-secondary">Abbrechen</a>
-            <button type="submit" class="btn btn-primary">💾 Speichern</button>
+            <button type="submit" class="btn btn-primary">Speichern</button>
         </div>
     </div>
 </form>

@@ -49,7 +49,7 @@ final class CMS_Feed_Admin
             'manage_options',
             self::MENU_SLUG,
             [self::class, 'dispatch_admin_page'],
-            '📡',
+            '',
             38
         );
     }
@@ -220,13 +220,13 @@ final class CMS_Feed_Admin
 
         // ── Tabs definieren ───────────────────────────────────────────
         $tabs = [
-            'dashboard'  => '📊 Dashboard',
-            'channels'   => '📡 Kanäle',
-            'categories' => '📁 Bereiche',
-            'catalog'    => '📚 Katalog',
-            'items'      => '📰 Beiträge',
-            'digests'    => '📧 E-Mail-Digests',
-            'settings'   => '⚙️ Einstellungen',
+            'dashboard'  => 'Dashboard',
+            'channels'   => 'Kanäle',
+            'categories' => 'Bereiche',
+            'catalog'    => 'Katalog',
+            'items'      => 'Beiträge',
+            'digests'    => 'E-Mail-Digests',
+            'settings'   => 'Einstellungen',
         ];
 
         $bufferLevel = ob_get_level();
@@ -440,6 +440,10 @@ final class CMS_Feed_Admin
         $slug = $this->sanitize_slug($slug);
         if ($slug === '' || $slug === 'feed') {
             return ['error' => 'Bitte verwende einen gültigen, konfliktfreien Slug.'];
+        }
+
+        if (CMS_Feed_Database::instance()->category_slug_exists($slug, $this->post_int('cat_id'))) {
+            return ['error' => 'Ein Bereich mit diesem Slug existiert bereits.'];
         }
 
         CMS_Feed_Database::instance()->save_category([

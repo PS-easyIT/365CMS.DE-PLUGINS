@@ -29,18 +29,18 @@ final class CMS_Booking_Admin_Menu
 
         add_menu_page(
             'Buchungen',
-            '365NET | Buchungen',
+            'Buchungen',
             'manage_options',
             self::MENU_SLUG,
             [CMS_Booking_Admin_Pages::class, 'dispatch_dashboard'],
-            '📅',
+            '',
             55
         );
 
         add_submenu_page(
             self::MENU_SLUG,
             'Dashboard',
-            '📊 Dashboard',
+            'Dashboard',
             'manage_options',
             self::MENU_SLUG,
             [CMS_Booking_Admin_Pages::class, 'dispatch_dashboard']
@@ -49,7 +49,7 @@ final class CMS_Booking_Admin_Menu
         add_submenu_page(
             self::MENU_SLUG,
             'Buchungen',
-            '📋 Buchungen',
+            'Buchungen',
             'manage_options',
             'bookings',
             [CMS_Booking_Admin_Pages::class, 'dispatch_bookings']
@@ -58,7 +58,7 @@ final class CMS_Booking_Admin_Menu
         add_submenu_page(
             self::MENU_SLUG,
             'Anbieter',
-            '👥 Anbieter',
+            'Anbieter',
             'manage_options',
             'providers',
             [CMS_Booking_Admin_Pages::class, 'dispatch_providers']
@@ -67,7 +67,7 @@ final class CMS_Booking_Admin_Menu
         add_submenu_page(
             self::MENU_SLUG,
             'Leistungen',
-            '🛠️ Leistungen',
+            'Leistungen',
             'manage_options',
             'services',
             [CMS_Booking_Admin_Pages::class, 'dispatch_services']
@@ -76,7 +76,7 @@ final class CMS_Booking_Admin_Menu
         add_submenu_page(
             self::MENU_SLUG,
             'Einstellungen',
-            '⚙️ Einstellungen',
+            'Einstellungen',
             'manage_options',
             'settings',
             [CMS_Booking_Admin_Pages::class, 'dispatch_settings']

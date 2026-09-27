@@ -16,7 +16,7 @@ $queryBase = [
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>📝 Thread-Verwaltung</h2>
+        <h2>Thread-Verwaltung</h2>
         <p>Threads moderieren, verschieben und löschen</p>
     </div>
 </div>
@@ -72,7 +72,7 @@ $queryBase = [
             <label class="form-label" style="font-size:.8rem;">Suche</label>
             <input type="text" name="q" class="form-control" value="<?php echo htmlspecialchars($search); ?>" placeholder="Thread-Titel...">
         </div>
-        <button type="submit" class="btn btn-secondary btn-sm">🔍 Filtern</button>
+        <button type="submit" class="btn btn-secondary btn-sm">Filtern</button>
     </form>
 </div>
 
@@ -80,13 +80,13 @@ $queryBase = [
 <div class="admin-card">
     <div class="forum-panel-header">
         <div>
-            <h3>📝 Threads (<?php echo $total; ?>)</h3>
+            <h3>Threads (<?php echo $total; ?>)</h3>
             <p>Moderation, Status und Relevanz aller Diskussionen in einer Ansicht.</p>
         </div>
     </div>
     <?php if (empty($threads)): ?>
         <div class="empty-state">
-            <p style="font-size:2.5rem;margin:0;">📭</p>
+            <p style="font-size:2.5rem;margin:0;"></p>
             <p><strong>Keine Threads gefunden</strong></p>
         </div>
     <?php else: ?>
@@ -107,7 +107,7 @@ $queryBase = [
                     <?php foreach ($threads as $t): ?>
                     <tr <?php echo $t->status === 'deleted' ? 'style="opacity:.5;"' : ''; ?>>
                         <td>
-                            <?php if ($t->type === 'sticky'): ?>📌 <?php elseif ($t->type === 'announcement'): ?>📢 <?php endif; ?>
+                            <?php if ($t->type === 'sticky'): ?><?php elseif ($t->type === 'announcement'): ?><?php endif; ?>
                             <?php echo htmlspecialchars($t->title); ?>
                         </td>
                         <td><span class="forum-muted-text"><?php echo htmlspecialchars($t->forum_name ?? '–'); ?></span></td>
@@ -126,20 +126,20 @@ $queryBase = [
                                     <input type="hidden" name="forum_action" value="lock_thread">
                                     <input type="hidden" name="thread_id" value="<?php echo (int)$t->id; ?>">
                                     <button type="submit" class="btn btn-sm btn-secondary" title="<?php echo $t->status === 'closed' ? 'Öffnen' : 'Schließen'; ?>">
-                                        <?php echo $t->status === 'closed' ? '🔓' : '🔒'; ?>
+                                        <?php echo $t->status === 'closed' ? '' : ''; ?>
                                     </button>
                                 </form>
                                 <form method="POST" style="margin:0;">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="forum_action" value="pin_thread">
                                     <input type="hidden" name="thread_id" value="<?php echo (int)$t->id; ?>">
-                                    <button type="submit" class="btn btn-sm btn-secondary" title="<?php echo $t->type === 'sticky' ? 'Entpinnen' : 'Pinnen'; ?>">📌</button>
+                                    <button type="submit" class="btn btn-sm btn-secondary" title="<?php echo $t->type === 'sticky' ? 'Entpinnen' : 'Pinnen'; ?>"><i class="ti ti-pin" aria-hidden="true"></i></button>
                                 </form>
                                 <form method="POST" style="margin:0;">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="forum_action" value="delete_thread">
                                     <input type="hidden" name="thread_id" value="<?php echo (int)$t->id; ?>">
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteConfirm(this.closest('form'), 'Thread wirklich löschen?')">🗑️</button>
+                                    <button type="button" class="btn btn-sm btn-danger" data-forum-delete-confirm="Thread wirklich löschen?"><i class="ti ti-trash" aria-hidden="true"></i></button>
                                 </form>
                             </div>
                         </td>
@@ -168,35 +168,18 @@ $queryBase = [
 <div id="deleteConfirmModal" class="modal" style="display:none;">
     <div class="modal-content" style="max-width:420px;">
         <div class="modal-header">
-            <h3>⚠️ Löschen bestätigen</h3>
-            <button class="modal-close" onclick="closeModal('deleteConfirmModal')">&times;</button>
+            <h3>Löschen bestätigen</h3>
+            <button class="modal-close" type="button" data-forum-modal-close="deleteConfirmModal">&times;</button>
         </div>
         <div class="modal-body">
             <p id="deleteConfirmMsg">Wirklich löschen?</p>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('deleteConfirmModal')">Abbrechen</button>
-            <button type="button" class="btn btn-danger" onclick="confirmDelete()">🗑️ Löschen</button>
+            <button type="button" class="btn btn-secondary" data-forum-modal-close="deleteConfirmModal">Abbrechen</button>
+            <button type="button" class="btn btn-danger" data-forum-confirm-delete>Löschen</button>
         </div>
     </div>
 </div>
 
-<script>
-let _deleteConfirmForm = null;
-function openDeleteConfirm(form, msg) {
-    _deleteConfirmForm = form;
-    document.getElementById('deleteConfirmMsg').textContent = msg;
-    openModal('deleteConfirmModal');
-}
-function confirmDelete() {
-    if (_deleteConfirmForm) _deleteConfirmForm.submit();
-    closeModal('deleteConfirmModal');
-}
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-window.addEventListener('click', function(e) {
-    document.querySelectorAll('.modal').forEach(function(m) { if (e.target === m) closeModal(m.id); });
-});
-</script>
 
 </div>

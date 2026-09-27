@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 $collectBoardGroups = static function (array $payload): array {
     foreach (['columns', 'lanes', 'clusters', 'stages', 'milestones'] as $key) {
         if (isset($payload[$key]) && is_array($payload[$key])) {
@@ -157,36 +161,35 @@ $taskFormValues = is_array($taskFormValues ?? null) ? $taskFormValues : [];
 $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
 ?>
 <div class="cp-admin-shell">
-    <div class="cp-header-card">
+    <div class="admin-page-header">
         <div>
-            <span class="cp-kicker">CMS Projects</span>
-            <h1><?php echo htmlspecialchars((string) ($sectionConfig['title'] ?? 'Projects'), ENT_QUOTES, 'UTF-8'); ?></h1>
+            <h2><?php echo htmlspecialchars((string) ($sectionConfig['title'] ?? 'Projekte'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <p><?php echo htmlspecialchars((string) ($sectionConfig['description'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
         </div>
     </div>
 
     <?php if (!empty($message)): ?>
-        <div class="cp-alert cp-alert-<?php echo htmlspecialchars((string) $messageType, ENT_QUOTES, 'UTF-8'); ?>">
+        <div class="alert alert-<?php echo $messageType === 'error' ? 'danger' : 'success'; ?>" role="alert">
             <?php echo htmlspecialchars((string) $message, ENT_QUOTES, 'UTF-8'); ?>
         </div>
     <?php endif; ?>
 
-    <div class="cp-summary-grid">
-        <article class="cp-summary-card cp-summary-card--accent"><strong><?php echo (int) ($summary['projects'] ?? 0); ?></strong><span>Projekte</span></article>
-        <article class="cp-summary-card"><strong><?php echo (int) ($summary['boards'] ?? 0); ?></strong><span>Boards</span></article>
-        <article class="cp-summary-card"><strong><?php echo (int) ($summary['widgets'] ?? 0); ?></strong><span>Widgets</span></article>
-        <article class="cp-summary-card"><strong><?php echo (int) ($summary['tasks'] ?? 0); ?></strong><span>Tickets</span></article>
-        <article class="cp-summary-card"><strong><?php echo (int) ($summary['public_projects'] ?? 0); ?></strong><span>Public-Projekte</span></article>
+    <div class="dashboard-grid">
+        <div class="stat-card"><div class="stat-number"><?php echo (int) ($summary['projects'] ?? 0); ?></div><div class="stat-label">Projekte</div></div>
+        <div class="stat-card"><div class="stat-number"><?php echo (int) ($summary['boards'] ?? 0); ?></div><div class="stat-label">Boards</div></div>
+        <div class="stat-card"><div class="stat-number"><?php echo (int) ($summary['widgets'] ?? 0); ?></div><div class="stat-label">Widgets</div></div>
+        <div class="stat-card"><div class="stat-number"><?php echo (int) ($summary['tasks'] ?? 0); ?></div><div class="stat-label">Tickets</div></div>
+        <div class="stat-card"><div class="stat-number"><?php echo (int) ($summary['public_projects'] ?? 0); ?></div><div class="stat-label">Öffentliche Projekte</div></div>
     </div>
 
     <div class="cp-admin-grid">
-        <section class="cp-panel cp-panel-wide">
-            <div class="cp-panel-head">
+        <section class="admin-card cp-panel cp-panel-wide">
+            <div class="cp-panel-head cp-panel-header">
                 <h2>Projekte</h2>
                 <span class="cp-muted">Projekt-Dashboards mit Boards und Widgets</span>
             </div>
             <div class="cp-table-wrap">
-                <table class="widefat striped cp-table">
+                <table class="table table-vcenter cp-table">
                     <thead>
                         <tr>
                             <th>Name</th>
@@ -225,8 +228,8 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
             </div>
         </section>
 
-        <section class="cp-panel">
-            <div class="cp-panel-head">
+        <section class="admin-card cp-panel">
+            <div class="cp-panel-head cp-panel-header">
                 <div>
                     <h2><?php echo !empty($projectFormValues['id']) ? 'Projekt bearbeiten' : 'Neues Projekt'; ?></h2>
                     <span class="cp-muted">Stammdaten, Sichtbarkeit und Headlines für Member/Public definieren.</span>
@@ -275,12 +278,12 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
                     <div class="cp-form-section cp-form-section--muted">
                         <div class="cp-form-section__title">Vorschau</div>
                         <div class="cp-preview-links">
-                            <a class="cp-button cp-button-secondary" href="<?php echo htmlspecialchars((string) (($selectedProject['preview_links']['member'] ?? '#')), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">Member öffnen</a>
-                            <a class="cp-button cp-button-secondary" href="<?php echo htmlspecialchars((string) (($selectedProject['preview_links']['public'] ?? '#')), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">Public öffnen</a>
+                            <a class="btn btn-secondary btn-sm" href="<?php echo htmlspecialchars((string) (($selectedProject['preview_links']['member'] ?? '#')), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">Member öffnen</a>
+                            <a class="btn btn-secondary btn-sm" href="<?php echo htmlspecialchars((string) (($selectedProject['preview_links']['public'] ?? '#')), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">Public öffnen</a>
                         </div>
                     </div>
                 <?php endif; ?>
-                <div class="cp-form-actions"><button type="submit" class="button button-primary">Projekt speichern</button></div>
+                <div class="cp-form-actions"><button type="submit" class="btn btn-primary">Projekt speichern</button></div>
             </form>
         </section>
     </div>
@@ -297,8 +300,8 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
         </form>
 
         <div class="cp-admin-grid cp-admin-grid-bottom">
-            <section class="cp-panel">
-                <div class="cp-panel-head">
+            <section class="admin-card cp-panel">
+                <div class="cp-panel-head cp-panel-header">
                     <div>
                         <h2>Board anlegen</h2>
                         <span class="cp-muted"><?php echo htmlspecialchars((string) ($selectedProject['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
@@ -335,12 +338,12 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
 }</textarea><small class="cp-field-hint">Nur gültiges JSON. Nicht erlaubte Inhalte werden serverseitig gefiltert.</small></label>
                     <label class="cp-checkbox-row"><input type="checkbox" name="is_public" value="1" checked><span>Auch im Public-Dashboard zeigen</span></label>
                     <label class="cp-checkbox-row"><input type="checkbox" name="is_active" value="1" checked><span>Board aktiv</span></label>
-                    <div class="cp-form-actions"><button type="submit" class="button button-primary">Board speichern</button></div>
+                    <div class="cp-form-actions"><button type="submit" class="btn btn-primary">Board speichern</button></div>
                 </form>
             </section>
 
-            <section class="cp-panel">
-                <div class="cp-panel-head">
+            <section class="admin-card cp-panel">
+                <div class="cp-panel-head cp-panel-header">
                     <div>
                         <h2>Widget anlegen</h2>
                         <span class="cp-muted">Member/Public-Widgets</span>
@@ -380,12 +383,12 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
   ]
 }</textarea><small class="cp-field-hint">Für `links` sind ausschließlich `http`/`https`-URLs erlaubt.</small></label>
                     <label class="cp-checkbox-row"><input type="checkbox" name="is_active" value="1" checked><span>Widget aktiv</span></label>
-                    <div class="cp-form-actions"><button type="submit" class="button button-primary">Widget speichern</button></div>
+                    <div class="cp-form-actions"><button type="submit" class="btn btn-primary">Widget speichern</button></div>
                 </form>
             </section>
 
-            <section class="cp-panel">
-                <div class="cp-panel-head">
+            <section class="admin-card cp-panel">
+                <div class="cp-panel-head cp-panel-header">
                     <div>
                         <h2><?php echo $activeTaskId > 0 ? 'Ticket bearbeiten' : 'Ticket anlegen'; ?></h2>
                         <span class="cp-muted">Echte Tasks pro Board-Spalte</span>
@@ -440,9 +443,9 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
                     <label class="cp-checkbox-row"><input type="checkbox" name="is_public" value="1" <?php echo !empty($taskFormValues['is_public']) ? 'checked' : ''; ?>><span>Auch im Public-Board zeigen</span></label>
                     <label class="cp-checkbox-row"><input type="checkbox" name="is_active" value="1" <?php echo !array_key_exists('is_active', $taskFormValues) || !empty($taskFormValues['is_active']) ? 'checked' : ''; ?>><span>Ticket aktiv</span></label>
                     <div class="cp-form-actions">
-                        <button type="submit" class="button button-primary"><?php echo $activeTaskId > 0 ? 'Ticket aktualisieren' : 'Ticket speichern'; ?></button>
+                        <button type="submit" class="btn btn-primary"><?php echo $activeTaskId > 0 ? 'Ticket aktualisieren' : 'Ticket speichern'; ?></button>
                         <?php if ($activeTaskId > 0): ?>
-                            <a class="button" href="<?php echo htmlspecialchars((string) (($pageLinks['projects'] ?? '?page=cms-projects-projects') . '&project_id=' . (int) ($selectedProject['id'] ?? 0)), ENT_QUOTES, 'UTF-8'); ?>">Neu anlegen</a>
+                            <a class="btn btn-secondary" href="<?php echo htmlspecialchars((string) (($pageLinks['projects'] ?? '?page=cms-projects-projects') . '&project_id=' . (int) ($selectedProject['id'] ?? 0)), ENT_QUOTES, 'UTF-8'); ?>">Neu anlegen</a>
                         <?php endif; ?>
                     </div>
                 </form>
@@ -450,13 +453,13 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
         </div>
 
         <div class="cp-admin-grid cp-admin-grid-bottom">
-            <section class="cp-panel cp-panel-wide">
-                <div class="cp-panel-head"><h2>Audit Trail</h2></div>
+            <section class="admin-card cp-panel cp-panel-wide">
+                <div class="cp-panel-head cp-panel-header"><h2>Audit Trail</h2></div>
                 <?php if (($auditLogs ?? []) === []): ?>
                     <div class="cp-empty-state">Noch keine Audit-Einträge vorhanden.</div>
                 <?php else: ?>
                     <div class="cp-table-wrap">
-                        <table class="widefat striped cp-table">
+                        <table class="table table-vcenter cp-table">
                             <thead>
                                 <tr>
                                     <th>Zeitpunkt</th>
@@ -491,8 +494,8 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
                 <?php endif; ?>
             </section>
 
-            <section class="cp-panel cp-panel-wide">
-                <div class="cp-panel-head"><h2>Projektboards</h2></div>
+            <section class="admin-card cp-panel cp-panel-wide">
+                <div class="cp-panel-head cp-panel-header"><h2>Projektboards</h2></div>
                 <?php if ($projectBoards === []): ?>
                     <div class="cp-empty-state">Noch keine Boards für dieses Projekt.</div>
                 <?php else: ?>
@@ -515,8 +518,8 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
                 <?php endif; ?>
             </section>
 
-            <section class="cp-panel cp-panel-wide">
-                <div class="cp-panel-head"><h2>Projektwidgets</h2></div>
+            <section class="admin-card cp-panel cp-panel-wide">
+                <div class="cp-panel-head cp-panel-header"><h2>Projektwidgets</h2></div>
                 <?php if ($projectWidgets === []): ?>
                     <div class="cp-empty-state">Noch keine Widgets für dieses Projekt.</div>
                 <?php else: ?>
@@ -535,8 +538,8 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
                 <?php endif; ?>
             </section>
 
-            <section class="cp-panel cp-panel-wide">
-                <div class="cp-panel-head"><h2>Projekt-Tickets</h2></div>
+            <section class="admin-card cp-panel cp-panel-wide">
+                <div class="cp-panel-head cp-panel-header"><h2>Projekt-Tickets</h2></div>
                 <?php if (($projectTasks ?? []) === []): ?>
                     <div class="cp-empty-state">Noch keine Tickets für dieses Projekt.</div>
                 <?php else: ?>
@@ -559,13 +562,13 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
                                     <p><?php echo nl2br(htmlspecialchars((string) ($task['description'] ?? ''), ENT_QUOTES, 'UTF-8')); ?></p>
                                 <?php endif; ?>
                                 <div class="cp-inline-actions">
-                                    <a class="cp-button cp-button-secondary" href="<?php echo htmlspecialchars((string) (($pageLinks['projects'] ?? '?page=cms-projects-projects') . '&project_id=' . (int) ($selectedProject['id'] ?? 0) . '&task_id=' . (int) ($task['id'] ?? 0)), ENT_QUOTES, 'UTF-8'); ?>">Bearbeiten</a>
-                                    <form method="post" class="cp-inline-form" onsubmit="return confirm('Ticket wirklich löschen?');">
+                                    <a class="btn btn-secondary btn-sm" href="<?php echo htmlspecialchars((string) (($pageLinks['projects'] ?? '?page=cms-projects-projects') . '&project_id=' . (int) ($selectedProject['id'] ?? 0) . '&task_id=' . (int) ($task['id'] ?? 0)), ENT_QUOTES, 'UTF-8'); ?>">Bearbeiten</a>
+                                    <form method="post" class="cp-inline-form" data-cms-confirm="Ticket wirklich löschen?">
                                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                         <input type="hidden" name="cms_projects_action" value="delete_task">
                                         <input type="hidden" name="project_id" value="<?php echo (int) ($selectedProject['id'] ?? 0); ?>">
                                         <input type="hidden" name="task_id" value="<?php echo (int) ($task['id'] ?? 0); ?>">
-                                        <button type="submit" class="button">Löschen</button>
+                                        <button type="submit" class="btn btn-danger btn-sm">Löschen</button>
                                     </form>
                                 </div>
                             </article>
@@ -575,174 +578,6 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
             </section>
         </div>
 
-        <script>
-            (function () {
-                var moveForm = document.querySelector('[data-cp-task-move-form]');
-                if (!moveForm) {
-                    return;
-                }
-
-                var taskInput = moveForm.querySelector('input[name="task_id"]');
-                var boardInput = moveForm.querySelector('input[name="target_board_id"]');
-                var columnInput = moveForm.querySelector('input[name="target_column_key"]');
-                var orderedInput = moveForm.querySelector('input[name="ordered_task_ids"]');
-                var draggedTaskId = '';
-                var draggedBoardId = '';
-                var draggedColumnKey = '';
-                var draggedCard = null;
-                var sourceStack = null;
-                var sourceOrder = '';
-
-                var getStackOrder = function (stack) {
-                    return Array.prototype.map.call(stack.querySelectorAll('.cp-ticket-card--draggable[data-task-id]'), function (card) {
-                        return card.getAttribute('data-task-id') || '';
-                    }).filter(function (taskId) {
-                        return taskId !== '';
-                    });
-                };
-
-                var syncDropHints = function () {
-                    document.querySelectorAll('.cp-board-preview-column').forEach(function (column) {
-                        var stack = column.querySelector('[data-ticket-stack]');
-                        var hint = column.querySelector('.cp-ticket-dropzone-hint');
-                        if (!stack || !hint) {
-                            return;
-                        }
-
-                        hint.classList.toggle('cp-ticket-dropzone-hint--hidden', stack.querySelector('.cp-ticket-card--draggable[data-task-id]') !== null);
-                    });
-                };
-
-                var getDragAfterElement = function (stack, clientY) {
-                    var cards = Array.prototype.slice.call(stack.querySelectorAll('.cp-ticket-card--draggable[data-task-id]:not(.cp-ticket-card--dragging)'));
-
-                    return cards.reduce(function (closest, card) {
-                        var box = card.getBoundingClientRect();
-                        var offset = clientY - box.top - (box.height / 2);
-
-                        if (offset < 0 && offset > closest.offset) {
-                            return { offset: offset, element: card };
-                        }
-
-                        return closest;
-                    }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
-                };
-
-                var clearTargets = function () {
-                    document.querySelectorAll('.cp-board-preview-column--drop-target').forEach(function (element) {
-                        element.classList.remove('cp-board-preview-column--drop-target');
-                    });
-                };
-
-                document.querySelectorAll('.cp-ticket-card--draggable[data-task-id]').forEach(function (ticketCard) {
-                    ticketCard.addEventListener('dragstart', function (event) {
-                        var currentColumn = ticketCard.closest('.cp-board-preview-column[data-drop-board-id][data-drop-column-key]');
-                        var currentStack = ticketCard.closest('[data-ticket-stack]');
-                        draggedTaskId = ticketCard.getAttribute('data-task-id') || '';
-                        draggedBoardId = currentColumn ? (currentColumn.getAttribute('data-drop-board-id') || '') : '';
-                        draggedColumnKey = currentColumn ? (currentColumn.getAttribute('data-drop-column-key') || '') : '';
-                        draggedCard = ticketCard;
-                        sourceStack = currentStack;
-                        sourceOrder = currentStack ? getStackOrder(currentStack).join(',') : '';
-                        ticketCard.classList.add('cp-ticket-card--dragging');
-
-                        if (event.dataTransfer) {
-                            event.dataTransfer.effectAllowed = 'move';
-                            event.dataTransfer.setData('text/plain', draggedTaskId);
-                        }
-                    });
-
-                    ticketCard.addEventListener('dragend', function () {
-                        draggedTaskId = '';
-                        draggedBoardId = '';
-                        draggedColumnKey = '';
-                        draggedCard = null;
-                        sourceStack = null;
-                        sourceOrder = '';
-                        ticketCard.classList.remove('cp-ticket-card--dragging');
-                        clearTargets();
-                        syncDropHints();
-                    });
-                });
-
-                document.querySelectorAll('.cp-board-preview-column[data-drop-board-id][data-drop-column-key]').forEach(function (column) {
-                    var stack = column.querySelector('[data-ticket-stack]');
-
-                    if (!stack) {
-                        return;
-                    }
-
-                    stack.addEventListener('dragover', function (event) {
-                        if (!draggedTaskId) {
-                            return;
-                        }
-
-                        event.preventDefault();
-                        if (draggedCard) {
-                            var afterElement = getDragAfterElement(stack, event.clientY);
-                            if (afterElement === null) {
-                                stack.appendChild(draggedCard);
-                            } else if (afterElement !== draggedCard) {
-                                stack.insertBefore(draggedCard, afterElement);
-                            }
-                        }
-
-                        clearTargets();
-                        column.classList.add('cp-board-preview-column--drop-target');
-                        syncDropHints();
-                    });
-
-                    stack.addEventListener('drop', function (event) {
-                        var targetBoardId;
-                        var targetColumnKey;
-                        var taskId;
-                        var orderedTaskIds;
-
-                        if (!draggedTaskId) {
-                            return;
-                        }
-
-                        event.preventDefault();
-                        targetBoardId = column.getAttribute('data-drop-board-id') || '';
-                        targetColumnKey = column.getAttribute('data-drop-column-key') || '';
-                        taskId = draggedTaskId;
-                        orderedTaskIds = getStackOrder(stack);
-
-                        clearTargets();
-                        syncDropHints();
-
-                        if (!taskId || !targetBoardId || !targetColumnKey) {
-                            return;
-                        }
-
-                        if (orderedTaskIds.length === 0) {
-                            return;
-                        }
-
-                        if (draggedBoardId === targetBoardId && draggedColumnKey === targetColumnKey && orderedTaskIds.join(',') === sourceOrder) {
-                            return;
-                        }
-
-                        taskInput.value = taskId;
-                        boardInput.value = targetBoardId;
-                        columnInput.value = targetColumnKey;
-                        orderedInput.value = orderedTaskIds.join(',');
-                        moveForm.submit();
-                    });
-
-                    column.addEventListener('dragover', function (event) {
-                        if (!draggedTaskId) {
-                            return;
-                        }
-
-                        event.preventDefault();
-                        clearTargets();
-                        column.classList.add('cp-board-preview-column--drop-target');
-                    });
-                });
-
-                syncDropHints();
-            }());
-        </script>
+        <script src="<?php echo htmlspecialchars(CMS_PROJECTS_PLUGIN_URL . 'assets/js/admin-board.js?v=' . CMS_PROJECTS_VERSION, ENT_QUOTES, 'UTF-8'); ?>" defer></script>
     <?php endif; ?>
 </div>

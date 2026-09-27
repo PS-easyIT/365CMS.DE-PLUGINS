@@ -7,16 +7,16 @@ $e = fn($v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8'
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>➕ Neues Kontaktformular</h2>
+        <h2>Neues Kontaktformular</h2>
         <p>Erstelle ein neues Kontaktformular mit individuellem Template</p>
     </div>
     <div class="header-actions">
-        <a href="?section=forms" class="btn btn-secondary">↩️ Zurück</a>
+        <a href="?section=forms" class="btn btn-secondary">↩Zurück</a>
     </div>
 </div>
 
 <?php if (!empty($error)): ?>
-<div class="alert alert-error">❌ <?php echo $e($error); ?></div>
+<div class="alert alert-error"><?php echo $e($error); ?></div>
 <?php endif; ?>
 
 <form method="POST" class="admin-form">
@@ -24,7 +24,7 @@ $e = fn($v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8'
     <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
 
     <div class="admin-card">
-        <h3>📋 Grundeinstellungen</h3>
+        <h3>Grundeinstellungen</h3>
 
         <div class="contact-form-intro-grid">
             <div class="form-group">
@@ -73,7 +73,7 @@ $e = fn($v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8'
 
     <!-- Template-Auswahl -->
     <div class="admin-card">
-        <h3>🎨 Template wählen</h3>
+        <h3>Template wählen</h3>
         <div class="contact-template-grid">
             <?php foreach ($templates as $key => $tpl): ?>
             <label class="contact-template-card">
@@ -93,7 +93,7 @@ $e = fn($v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8'
     <div class="admin-card">
         <div class="contact-form-actions">
             <a href="?section=forms" class="btn btn-secondary">Abbrechen</a>
-            <button type="submit" class="btn btn-primary">💾 Formular erstellen</button>
+            <button type="submit" class="btn btn-primary">Formular erstellen</button>
         </div>
     </div>
 </form>

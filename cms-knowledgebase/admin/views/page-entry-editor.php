@@ -8,14 +8,14 @@ if (!defined('ABSPATH')) {
 <div class="kb-admin-shell">
     <div class="admin-page-header">
         <div>
-            <h2><?php echo $entry !== null ? '✏️ Knowledgebase-Eintrag bearbeiten' : '➕ Knowledgebase-Eintrag anlegen'; ?></h2>
+            <h2><?php echo $entry !== null ? 'Knowledgebase-Eintrag bearbeiten' : 'Knowledgebase-Eintrag anlegen'; ?></h2>
             <p>Pflege Fokusbegriff, Synonyme, Inhalte und Verlinkungslogik auf einer separaten Editor-Seite.</p>
         </div>
         <div class="header-actions">
             <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entries" class="btn btn-secondary btn-sm">← Zur Liste</a>
-            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-categories" class="btn btn-secondary btn-sm">🗂️ Kategorien</a>
+            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-categories" class="btn btn-secondary btn-sm">Kategorien</a>
             <?php if ($entry !== null && !empty($entry['slug'])): ?>
-                <a href="/kb/<?php echo rawurlencode((string) $entry['slug']); ?>" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">🌍 Öffnen</a>
+                <a href="/kb/<?php echo rawurlencode((string) $entry['slug']); ?>" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Öffnen</a>
             <?php endif; ?>
         </div>
     </div>
@@ -162,7 +162,7 @@ if (!defined('ABSPATH')) {
             </section>
 
             <div class="kb-form-actions kb-form-grid__full">
-                <button type="submit" class="btn btn-primary">💾 Speichern</button>
+                <button type="submit" class="btn btn-primary">Speichern</button>
                 <?php if ($entry !== null): ?>
                     <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entry-editor" class="btn btn-secondary">Neuen Eintrag anlegen</a>
                 <?php endif; ?>

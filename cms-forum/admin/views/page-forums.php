@@ -10,11 +10,11 @@ $subForums = count(array_filter($forums, static fn($forum) => (int) $forum->pare
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>📁 Foren verwalten</h2>
+        <h2>Foren verwalten</h2>
         <p>Foren und Subforen erstellen und bearbeiten</p>
     </div>
     <div class="header-actions">
-        <button class="btn btn-primary" onclick="openModal('createForumModal')">➕ Neues Forum</button>
+        <button class="btn btn-primary" data-forum-modal-open="createForumModal">Neues Forum</button>
     </div>
 </div>
 
@@ -57,7 +57,7 @@ foreach ($categories as $c) { $catMap[(int)$c->id] = $c; }
 <?php if (empty($forums)): ?>
 <div class="admin-card">
     <div class="empty-state">
-        <p style="font-size:2.5rem;margin:0;">📭</p>
+        <p style="font-size:2.5rem;margin:0;"></p>
         <p><strong>Noch keine Foren vorhanden</strong></p>
         <p class="text-muted">Erstelle zuerst Kategorien und dann Foren.</p>
     </div>
@@ -67,7 +67,7 @@ foreach ($categories as $c) { $catMap[(int)$c->id] = $c; }
     <div class="admin-card">
         <div class="forum-panel-header">
             <div>
-                <h3>🗂️ <?php echo htmlspecialchars($catMap[$catId]->name ?? "Kategorie #{$catId}"); ?></h3>
+                <h3><?php echo htmlspecialchars($catMap[$catId]->name ?? "Kategorie #{$catId}"); ?></h3>
                 <p><?php echo count($catForums); ?> Forum/Foren in diesem Bereich.</p>
             </div>
         </div>
@@ -100,12 +100,12 @@ foreach ($categories as $c) { $catMap[(int)$c->id] = $c; }
                         </td>
                         <td>
                             <div class="forum-inline-actions">
-                                <button class="btn btn-sm btn-secondary" onclick="editForum(<?php echo (int)$f->id; ?>)">✏️</button>
+                                <a class="btn btn-sm btn-secondary" href="?page=forum-forums&amp;edit=<?php echo (int)$f->id; ?>" title="Bearbeiten"><i class="ti ti-pencil" aria-hidden="true"></i></a>
                                 <form method="POST" style="margin:0;">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="forum_action" value="delete_forum">
                                     <input type="hidden" name="forum_id" value="<?php echo (int)$f->id; ?>">
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteConfirm(this.closest('form'), 'Forum wirklich löschen?')">🗑️</button>
+                                    <button type="button" class="btn btn-sm btn-danger" data-forum-delete-confirm="Forum wirklich löschen?"><i class="ti ti-trash" aria-hidden="true"></i></button>
                                 </form>
                             </div>
                         </td>
@@ -125,7 +125,7 @@ foreach ($categories as $c) { $catMap[(int)$c->id] = $c; }
     <div class="modal-content">
         <div class="modal-header">
             <h3>Neues Forum</h3>
-            <button class="modal-close" onclick="closeModal('createForumModal')">&times;</button>
+            <button class="modal-close" type="button" data-forum-modal-close="createForumModal">&times;</button>
         </div>
         <form method="POST">
             <div class="modal-body">
@@ -162,48 +162,27 @@ foreach ($categories as $c) { $catMap[(int)$c->id] = $c; }
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('createForumModal')">Abbrechen</button>
-                <button type="submit" class="btn btn-primary">💾 Erstellen</button>
+                <button type="button" class="btn btn-secondary" data-forum-modal-close="createForumModal">Abbrechen</button>
+                <button type="submit" class="btn btn-primary">Erstellen</button>
             </div>
         </form>
     </div>
 </div>
 
-<script>
-function editForum(id) {
-    // Vereinfacht: Redirect zur Edit-Seite mit GET-Parameter
-    window.location.href = '?page=forum-forums&edit=' + id;
-}
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-let _deleteConfirmForm = null;
-function openDeleteConfirm(form, msg) {
-    _deleteConfirmForm = form;
-    document.getElementById('deleteConfirmMsg').textContent = msg;
-    openModal('deleteConfirmModal');
-}
-function confirmDelete() {
-    if (_deleteConfirmForm) _deleteConfirmForm.submit();
-    closeModal('deleteConfirmModal');
-}
-window.addEventListener('click', function(e) {
-    document.querySelectorAll('.modal').forEach(function(m) { if (e.target === m) closeModal(m.id); });
-});
-</script>
 
 <!-- Delete Confirm Modal -->
 <div id="deleteConfirmModal" class="modal" style="display:none;">
     <div class="modal-content" style="max-width:420px;">
         <div class="modal-header">
-            <h3>⚠️ Löschen bestätigen</h3>
-            <button class="modal-close" onclick="closeModal('deleteConfirmModal')">&times;</button>
+            <h3>Löschen bestätigen</h3>
+            <button class="modal-close" type="button" data-forum-modal-close="deleteConfirmModal">&times;</button>
         </div>
         <div class="modal-body">
             <p id="deleteConfirmMsg">Wirklich löschen?</p>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('deleteConfirmModal')">Abbrechen</button>
-            <button type="button" class="btn btn-danger" onclick="confirmDelete()">🗑️ Löschen</button>
+            <button type="button" class="btn btn-secondary" data-forum-modal-close="deleteConfirmModal">Abbrechen</button>
+            <button type="button" class="btn btn-danger" data-forum-confirm-delete>Löschen</button>
         </div>
     </div>
 </div>

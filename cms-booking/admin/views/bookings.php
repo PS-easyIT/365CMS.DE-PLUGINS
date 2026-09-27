@@ -3,17 +3,17 @@
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>📋 Buchungen verwalten</h2>
+        <h2>Buchungen verwalten</h2>
         <p>Alle Buchungsanfragen und Termine in der Übersicht</p>
     </div>
 </div>
 
 <!-- Alerts -->
 <?php if (!empty($success)): ?>
-<div class="alert alert-success">✅ <?php echo htmlspecialchars($success); ?></div>
+<div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
 <?php endif; ?>
 <?php if (!empty($error)): ?>
-<div class="alert alert-error">❌ <?php echo htmlspecialchars($error); ?></div>
+<div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
 <!-- Filter-Bar -->
@@ -21,7 +21,7 @@
     <form method="GET" class="booking-admin-filter-form">
         <div class="form-group booking-admin-filter-group booking-admin-filter-group--status">
             <label class="form-label">Status</label>
-            <select name="status" class="form-control" onchange="this.form.submit()">
+            <select name="status" class="form-control" data-booking-autosubmit>
                 <option value="">Alle</option>
                 <?php foreach ($statusLabels as $key => $label): ?>
                 <option value="<?php echo htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $status === $key ? 'selected' : ''; ?>>
@@ -33,7 +33,7 @@
 
         <div class="form-group booking-admin-filter-group booking-admin-filter-group--provider">
             <label class="form-label">Anbieter</label>
-            <select name="provider_id" class="form-control" onchange="this.form.submit()">
+            <select name="provider_id" class="form-control" data-booking-autosubmit>
                 <option value="">Alle Anbieter</option>
                 <?php foreach ($providers as $prov): ?>
                 <option value="<?php echo (int) $prov['id']; ?>" <?php echo $providerId === (int) $prov['id'] ? 'selected' : ''; ?>>
@@ -49,7 +49,7 @@
                    value="<?php echo htmlspecialchars($search); ?>">
         </div>
 
-        <button type="submit" class="btn btn-secondary btn-sm">🔍 Filtern</button>
+        <button type="submit" class="btn btn-secondary btn-sm">Filtern</button>
     </form>
 </div>
 
@@ -105,7 +105,7 @@
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="booking_id" value="<?php echo (int) $item['id']; ?>">
                                     <input type="hidden" name="booking_action" value="confirm">
-                                    <button type="submit" class="btn btn-sm btn-primary" title="Bestätigen">✅</button>
+                                    <button type="submit" class="btn btn-sm btn-primary" title="Bestätigen"><i class="ti ti-check" aria-hidden="true"></i></button>
                                 </form>
                                 <?php endif; ?>
 
@@ -114,7 +114,7 @@
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="booking_id" value="<?php echo (int) $item['id']; ?>">
                                     <input type="hidden" name="booking_action" value="cancel">
-                                    <button type="submit" class="btn btn-sm btn-danger" title="Stornieren">❌</button>
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Stornieren"><i class="ti ti-x" aria-hidden="true"></i></button>
                                 </form>
                                 <?php endif; ?>
 
@@ -123,7 +123,7 @@
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="booking_id" value="<?php echo (int) $item['id']; ?>">
                                     <input type="hidden" name="booking_action" value="complete">
-                                    <button type="submit" class="btn btn-sm btn-secondary" title="Abschließen">✔️</button>
+                                    <button type="submit" class="btn btn-sm btn-secondary" title="Abschließen">✔</button>
                                 </form>
                                 <?php endif; ?>
                             </div>

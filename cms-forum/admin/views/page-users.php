@@ -13,7 +13,7 @@ $queryBase = [
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>👥 Forum-Benutzer</h2>
+        <h2>Forum-Benutzer</h2>
         <p>Benutzer verwalten und sperren</p>
     </div>
 </div>
@@ -45,7 +45,7 @@ $queryBase = [
         <div class="form-group" style="margin:0;flex:1;">
             <input type="text" name="q" class="form-control" value="<?php echo htmlspecialchars($search); ?>" placeholder="Benutzername suchen...">
         </div>
-        <button type="submit" class="btn btn-secondary btn-sm">🔍 Suchen</button>
+        <button type="submit" class="btn btn-secondary btn-sm">Suchen</button>
     </form>
 </div>
 
@@ -53,13 +53,13 @@ $queryBase = [
 <div class="admin-card">
     <div class="forum-panel-header">
         <div>
-            <h3>👥 Benutzer (<?php echo $total; ?>)</h3>
+            <h3>Benutzer (<?php echo $total; ?>)</h3>
             <p>Benutzerstatus, Rang und Aktivität zentral im Blick behalten.</p>
         </div>
     </div>
     <?php if (empty($users)): ?>
         <div class="empty-state">
-            <p style="font-size:2.5rem;margin:0;">📭</p>
+            <p style="font-size:2.5rem;margin:0;"></p>
             <p><strong>Keine Forum-Benutzer gefunden</strong></p>
         </div>
     <?php else: ?>
@@ -103,10 +103,10 @@ $queryBase = [
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="forum_action" value="unban_user">
                                     <input type="hidden" name="user_id" value="<?php echo (int)$u->user_id; ?>">
-                                    <button type="submit" class="btn btn-sm btn-secondary">🔓 Entsperren</button>
+                                    <button type="submit" class="btn btn-sm btn-secondary">Entsperren</button>
                                 </form>
                             <?php else: ?>
-                                <button class="btn btn-sm btn-danger" onclick="openBanModal(<?php echo (int)$u->user_id; ?>, '<?php echo htmlspecialchars($u->username, ENT_QUOTES); ?>')">🔒 Sperren</button>
+                                <button type="button" class="btn btn-sm btn-danger" data-forum-modal-open="banModal" data-forum-fill="<?php echo htmlspecialchars((string) json_encode(['ban-user-id' => (int) $u->user_id, 'ban-username' => (string) $u->username], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>">Sperren</button>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -134,7 +134,7 @@ $queryBase = [
     <div class="modal-content">
         <div class="modal-header">
             <h3>Benutzer sperren</h3>
-            <button class="modal-close" onclick="closeModal('banModal')">&times;</button>
+            <button class="modal-close" type="button" data-forum-modal-close="banModal">&times;</button>
         </div>
         <form method="POST">
             <div class="modal-body">
@@ -152,24 +152,12 @@ $queryBase = [
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('banModal')">Abbrechen</button>
-                <button type="submit" class="btn btn-danger">🔒 Sperren</button>
+                <button type="button" class="btn btn-secondary" data-forum-modal-close="banModal">Abbrechen</button>
+                <button type="submit" class="btn btn-danger">Sperren</button>
             </div>
         </form>
     </div>
 </div>
 
-<script>
-function openBanModal(userId, username) {
-    document.getElementById('ban-user-id').value = userId;
-    document.getElementById('ban-username').textContent = username;
-    openModal('banModal');
-}
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-window.addEventListener('click', function(e) {
-    document.querySelectorAll('.modal').forEach(function(m) { if (e.target === m) closeModal(m.id); });
-});
-</script>
 
 </div>

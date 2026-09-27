@@ -3,7 +3,7 @@
  * Plugin Name: CMS Beratung
  * Plugin URI:  https://365network.de/cms-beratung
  * Description: Spezialisierter 365CMS Landingpage Builder für Microsoft 365, Copilot, KI, Security, Compliance und IT Consulting Beratungsleistungen.
- * Version:     2.9.791
+ * Version:     2.9.792
  * Author:      365 Network
  * Author URI:  https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-defined('CMS_BERATUNG_VERSION') || define('CMS_BERATUNG_VERSION', '2.9.791');
+defined('CMS_BERATUNG_VERSION') || define('CMS_BERATUNG_VERSION', '2.9.792');
 defined('CMS_BERATUNG_DB_VERSION') || define('CMS_BERATUNG_DB_VERSION', '3');
 defined('CMS_BERATUNG_PLUGIN_DIR') || define('CMS_BERATUNG_PLUGIN_DIR', dirname(__FILE__) . '/');
 defined('CMS_BERATUNG_PLUGIN_URL') || define('CMS_BERATUNG_PLUGIN_URL', '/plugins/cms-beratung/');
@@ -71,7 +71,6 @@ final class CMS_Beratung
         \CMS\Hooks::addAction('cms_init', [$this, 'init_plugin'], 10);
         \CMS\Hooks::addAction('plugin_activated', [$this, 'on_activation'], 10);
         \CMS\Hooks::addAction('cms_admin_menu', [CMS_Beratung_Admin_Menu::class, 'register'], 10);
-        \CMS\Hooks::addFilter('admin_menu_items', [CMS_Beratung_Admin_Menu::class, 'add_menu_items'], 10);
         \CMS\Hooks::addAction('register_routes', [CMS_Beratung_Admin_Pages::class, 'register_admin_routes'], 9);
         \CMS\Hooks::addAction('register_routes', [CMS_Beratung_Frontend::class, 'instance'], 10);
         \CMS\Hooks::addAction('head', [CMS_Beratung_Admin_Pages::class, 'enqueue_admin_assets_for_request'], 20);

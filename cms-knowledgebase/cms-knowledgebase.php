@@ -3,7 +3,7 @@
  * Plugin Name: CMS Knowledgebase
  * Plugin URI: https://365network.de/cms-knowledgebase
  * Description: Wissensdatenbank mit Auto-Linking, Tooltips und öffentlichen KB-Seiten.
- * Version: 3.0.4
+ * Version: 3.0.5
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_KNOWLEDGEBASE_VERSION', '3.0.4');
+define('CMS_KNOWLEDGEBASE_VERSION', '3.0.5');
 define('CMS_KNOWLEDGEBASE_PLUGIN_DIR', __DIR__ . DIRECTORY_SEPARATOR);
 define('CMS_KNOWLEDGEBASE_PLUGIN_URL', '/plugins/cms-knowledgebase/');
 
@@ -148,7 +148,7 @@ final class CMS_Knowledgebase
             return;
         }
 
-        echo "<style id=\"cms-knowledgebase-style-tokens\">\n:root {\n";
+        echo '<style id="cms-knowledgebase-style-tokens"' . (class_exists('CMS\\Security') ? ' ' . \CMS\Security::instance()->nonceAttr() : '') . ">\n:root {\n";
         foreach ($tokens as $name => $value) {
             echo '    ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ': ' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . ";\n";
         }

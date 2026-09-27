@@ -175,10 +175,10 @@ final class CMS_Contact_Admin_Pages
     public static function get_menu_pages(): array
     {
         return [
-            ['slug' => 'contact', 'title' => 'Dashboard', 'menu_title' => '📊 Dashboard'],
-            ['slug' => 'contact-forms', 'title' => 'Formulare', 'menu_title' => '📋 Formulare'],
-            ['slug' => 'contact-submissions', 'title' => 'Nachrichten', 'menu_title' => '📩 Nachrichten'],
-            ['slug' => 'contact-settings', 'title' => 'Einstellungen', 'menu_title' => '⚙️ Einstellungen'],
+            ['slug' => 'contact', 'title' => 'Dashboard', 'menu_title' => 'Dashboard'],
+            ['slug' => 'contact-forms', 'title' => 'Formulare', 'menu_title' => 'Formulare'],
+            ['slug' => 'contact-submissions', 'title' => 'Nachrichten', 'menu_title' => 'Nachrichten'],
+            ['slug' => 'contact-settings', 'title' => 'Einstellungen', 'menu_title' => 'Einstellungen'],
         ];
     }
 

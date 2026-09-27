@@ -12,36 +12,36 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>📬 Kontakt – Dashboard</h2>
+        <h2>Kontakt – Dashboard</h2>
         <p>Übersicht aller Kontaktformulare und eingehenden Nachrichten</p>
     </div>
     <div class="header-actions">
-        <a href="?section=submissions&status=unread" class="btn btn-secondary btn-sm">📩 Ungelesen</a>
-        <a href="?section=forms&action=new" class="btn btn-primary">➕ Neues Formular</a>
+        <a href="?section=submissions&status=unread" class="btn btn-secondary btn-sm">Ungelesen</a>
+        <a href="?section=forms&action=new" class="btn btn-primary">Neues Formular</a>
     </div>
 </div>
 
 <!-- Stat-Cards -->
 <div class="dashboard-grid">
     <div class="stat-card">
-        <div class="stat-icon">📋</div>
+        <div class="stat-icon"></div>
         <div class="stat-number"><?php echo count($allForms); ?></div>
         <div class="stat-label">Formulare</div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon">📩</div>
+        <div class="stat-icon"></div>
         <div class="stat-number"><?php echo number_format($globalStats['total']); ?></div>
         <div class="stat-label">Nachrichten gesamt</div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon">🔔</div>
+        <div class="stat-icon"></div>
         <div class="stat-number <?php echo $globalStats['unread'] > 0 ? 'contact-stat-number--alert' : 'contact-stat-number--info'; ?>">
             <?php echo number_format($globalStats['unread']); ?>
         </div>
         <div class="stat-label">Ungelesen</div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon">📈</div>
+        <div class="stat-icon"></div>
         <div class="stat-number"><?php echo number_format($globalStats['last_7_days']); ?></div>
         <div class="stat-label">Letzte 7 Tage</div>
     </div>
@@ -67,7 +67,7 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
 
 <div class="contact-action-grid">
     <a href="?section=forms&action=new" class="contact-action-card">
-        <span class="contact-action-card__icon">➕</span>
+        <span class="contact-action-card__icon"></span>
         <span>
             <span class="contact-action-card__eyebrow">Schnellzugriff</span>
             <span class="contact-action-card__title">Neues Formular anlegen</span>
@@ -75,7 +75,7 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
         </span>
     </a>
     <a href="?section=submissions" class="contact-action-card">
-        <span class="contact-action-card__icon">📩</span>
+        <span class="contact-action-card__icon"></span>
         <span>
             <span class="contact-action-card__eyebrow">Postfach</span>
             <span class="contact-action-card__title">Nachrichten prüfen</span>
@@ -83,7 +83,7 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
         </span>
     </a>
     <a href="?section=settings" class="contact-action-card">
-        <span class="contact-action-card__icon">⚙️</span>
+        <span class="contact-action-card__icon"></span>
         <span>
             <span class="contact-action-card__eyebrow">Plugin-Setup</span>
             <span class="contact-action-card__title">Globale Einstellungen</span>
@@ -92,7 +92,7 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
     </a>
     <?php if ($globalStats['unread'] > 0): ?>
     <a href="?section=submissions&status=unread" class="contact-action-card">
-        <span class="contact-action-card__icon">🔔</span>
+        <span class="contact-action-card__icon"></span>
         <span>
             <span class="contact-action-card__eyebrow">Priorität</span>
             <span class="contact-action-card__title">Ungelesene öffnen</span>
@@ -106,7 +106,7 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
 <div class="admin-card">
     <div class="contact-panel-header">
         <div>
-            <h3>📋 Aktive Formulare</h3>
+            <h3>Aktive Formulare</h3>
             <p>Deine wichtigsten Formulare mit Status, Template und Nachrichtenlage.</p>
         </div>
         <a href="?section=forms" class="btn btn-secondary btn-sm">Alle Formulare</a>
@@ -114,10 +114,10 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
 
     <?php if (empty($allForms)): ?>
     <div class="empty-state">
-        <p class="dl-empty-icon">📭</p>
+        <p class="dl-empty-icon"></p>
         <p><strong>Noch keine Formulare vorhanden</strong></p>
         <p class="contact-empty-state__text">Erstelle dein erstes Kontaktformular über den Button oben.</p>
-        <a href="?section=forms&action=new" class="btn btn-primary contact-empty-state__cta">➕ Jetzt erstellen</a>
+        <a href="?section=forms&action=new" class="btn btn-primary contact-empty-state__cta">Jetzt erstellen</a>
     </div>
     <?php else: ?>
     <div class="users-table-container">
@@ -160,14 +160,14 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
                 </td>
                 <td>
                     <span class="status-badge <?php echo $f['status'] === 'active' ? 'active' : 'inactive'; ?>">
-                        <?php echo $f['status'] === 'active' ? '✅ Aktiv' : '⏸️ Inaktiv'; ?>
+                        <?php echo $f['status'] === 'active' ? 'Aktiv' : 'Inaktiv'; ?>
                     </span>
                 </td>
                 <td>
                     <div class="contact-inline-actions">
-                        <a href="?section=forms&action=fields&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Felder bearbeiten">📝</a>
-                        <a href="?section=forms&action=edit&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
-                        <a href="/contact/<?php echo htmlspecialchars($f['slug']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Vorschau">👁️</a>
+                        <a href="?section=forms&action=fields&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Felder bearbeiten"><i class="ti ti-pencil" aria-hidden="true"></i></a>
+                        <a href="?section=forms&action=edit&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Bearbeiten"><i class="ti ti-pencil" aria-hidden="true"></i></a>
+                        <a href="/contact/<?php echo htmlspecialchars($f['slug']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Vorschau"><i class="ti ti-eye" aria-hidden="true"></i></a>
                     </div>
                 </td>
             </tr>
@@ -182,7 +182,7 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
 <div class="admin-card">
     <div class="contact-panel-header">
         <div>
-            <h3>📩 Letzte Nachrichten</h3>
+            <h3>Letzte Nachrichten</h3>
             <p>Die jüngsten Einsendungen direkt aus dem Dashboard heraus im Blick behalten.</p>
         </div>
         <a href="?section=submissions" class="btn btn-secondary btn-sm">Nachrichten öffnen</a>
@@ -220,10 +220,10 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
                         default    => '',
                     };
                     $statusLabel = match ($sub['status']) {
-                        'unread'   => '🔴 Ungelesen',
-                        'read'     => '🔵 Gelesen',
-                        'replied'  => '✅ Beantwortet',
-                        'archived' => '📦 Archiviert',
+                        'unread'   => 'Ungelesen',
+                        'read'     => 'Gelesen',
+                        'replied'  => 'Beantwortet',
+                        'archived' => 'Archiviert',
                         default    => $sub['status'],
                     };
                     ?>
@@ -238,7 +238,7 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
     </div>
     <?php else: ?>
     <div class="contact-empty-card">
-        <p class="dl-empty-icon">📭</p>
+        <p class="dl-empty-icon"></p>
         <p><strong>Noch keine Nachrichten eingegangen</strong></p>
         <p class="contact-muted-text">Sobald Einsendungen eingehen, erscheint hier deine Live-Übersicht.</p>
     </div>
@@ -249,34 +249,34 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
 <div class="admin-card">
     <div class="contact-panel-header">
         <div>
-            <h3>🛡️ Security-Events (24h)</h3>
+            <h3>Security-Events (24h)</h3>
             <p>Rate-Limits, CSRF-, Captcha- und Antispam-Blockierungen im Überblick.</p>
         </div>
     </div>
 
     <div class="dashboard-grid">
         <div class="stat-card">
-            <div class="stat-icon">⚠️</div>
+            <div class="stat-icon"></div>
             <div class="stat-number"><?php echo number_format($securityStats['total'] ?? 0); ?></div>
             <div class="stat-label">Events gesamt</div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">🧾</div>
+            <div class="stat-icon"></div>
             <div class="stat-number"><?php echo number_format($securityStats['csrf_failed'] ?? 0); ?></div>
             <div class="stat-label">CSRF fehlgeschlagen</div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">🧠</div>
+            <div class="stat-icon"></div>
             <div class="stat-number"><?php echo number_format($securityStats['captcha_failed'] ?? 0); ?></div>
             <div class="stat-label">Captcha fehlgeschlagen</div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">🚦</div>
+            <div class="stat-icon"></div>
             <div class="stat-number"><?php echo number_format($securityStats['rate_limited'] ?? 0); ?></div>
             <div class="stat-label">Rate-Limit ausgelöst</div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">🛑</div>
+            <div class="stat-icon"></div>
             <div class="stat-number"><?php echo number_format($securityStats['invalid_status_attempt'] ?? 0); ?></div>
             <div class="stat-label">Ungültige Statusversuche</div>
         </div>
@@ -320,7 +320,7 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
     </div>
     <?php else: ?>
     <div class="contact-empty-card">
-        <p class="dl-empty-icon">✅</p>
+        <p class="dl-empty-icon"></p>
         <p><strong>Keine Security-Events in den letzten 24 Stunden</strong></p>
         <p class="contact-muted-text">Sobald Blockierungen auftreten, erscheinen sie hier automatisch.</p>
     </div>

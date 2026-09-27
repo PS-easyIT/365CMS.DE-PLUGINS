@@ -91,8 +91,6 @@ final class CMS_Beratung_Installer
             KEY idx_updated_at (updated_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
-        self::ensure_landingpage_columns($pdo, $prefix);
-
         $pdo->exec("CREATE TABLE IF NOT EXISTS {$settings} (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             tenant_id BIGINT UNSIGNED DEFAULT NULL,
@@ -142,6 +140,10 @@ final class CMS_Beratung_Installer
             KEY idx_status (status),
             KEY idx_created_at (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // Spalten-Migrationen erst nach dem Anlegen aller Tabellen ausführen,
+        // sonst scheitert die Frischinstallation am ALTER auf form_submissions.
+        self::ensure_landingpage_columns($pdo, $prefix);
     }
 
     private static function seed_defaults(): void

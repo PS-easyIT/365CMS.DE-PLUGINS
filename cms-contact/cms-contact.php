@@ -3,7 +3,7 @@
  * Plugin Name: CMS Contact
  * Plugin URI:  https://365network.de/cms-contact
  * Description: Kontaktformular-Plugin mit bis zu 6 Templates, benutzerdefinierten Metafeldern und mehreren Formularen unter verschiedenen Slugs
- * Version:     3.0.4
+ * Version:     3.0.5
  * Author:      365 Network
  * Author URI:  https://365network.de
  *
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // ── Konstanten ────────────────────────────────────────────────────────────────
-define('CMS_CONTACT_VERSION',    '3.0.4');
+define('CMS_CONTACT_VERSION',    '3.0.5');
 define('CMS_CONTACT_DB_VERSION', '5');
 define('CMS_CONTACT_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_CONTACT_PLUGIN_URL', '/plugins/cms-contact/');
@@ -498,8 +498,14 @@ final class CMS_Contact
     /**
      * DSGVO Art. 20 – Daten-Export
      */
-    public function export_user_data(int $userId): array
+    public function export_user_data(mixed $userId = null): array
     {
+        // Datenschutzanfragen ohne Konto liefern user_id = NULL (Hook: user_id, email).
+        $userId = is_numeric($userId) ? (int) $userId : 0;
+        if ($userId <= 0) {
+            return [];
+        }
+
         if (!class_exists('CMS_Contact_Submissions')) {
             return [];
         }
@@ -509,8 +515,14 @@ final class CMS_Contact
     /**
      * DSGVO Art. 17 – Datenlöschung
      */
-    public function delete_user_data(int $userId): void
+    public function delete_user_data(mixed $userId = null): void
     {
+        // Datenschutzanfragen ohne Konto liefern user_id = NULL (Hook: user_id, email).
+        $userId = is_numeric($userId) ? (int) $userId : 0;
+        if ($userId <= 0) {
+            return;
+        }
+
         if (!class_exists('CMS_Contact_Submissions')) {
             return;
         }

@@ -215,7 +215,7 @@
         var form = document.getElementById('fieldForm');
         if (!form) return;
 
-        document.getElementById('fieldModalTitle').textContent = '➕ Neues Feld';
+        document.getElementById('fieldModalTitle').textContent = 'Neues Feld';
         document.getElementById('fieldFormAction').value = 'save_field';
         document.getElementById('fieldFormId').value = '';
         form.reset();
@@ -243,7 +243,7 @@
             }
         }
 
-        document.getElementById('fieldModalTitle').textContent = '✏️ Feld bearbeiten';
+        document.getElementById('fieldModalTitle').textContent = 'Feld bearbeiten';
         document.getElementById('fieldFormAction').value = 'save_field';
         document.getElementById('fieldFormId').value = field.id || '';
         document.getElementById('field_label').value = field.field_label || '';

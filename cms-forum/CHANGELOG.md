@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.0.3 - 2026-09-27
+
+### Behoben
+
+- Umfrage-Spaltenprüfung ohne SHOW-COLUMNS-Platzhalter (SQL-Fehler unter nativen Prepared Statements).
+- Admin-Modals über admin-modals.js und thread-create.js statt Inline-Skripten (CSP-konform, sichere Datenübergabe).
+- Aktive Unterseite in Subnavigation und Breadcrumb korrekt; DSGVO-Hooks null-sicher.
+
+### Geändert
+
+- Admin-Oberfläche an das einheitliche, schlichte 365CMS-Plugin-Admin-Design angeglichen: keine Emoji-/Kürzel-Icons mehr, Icon-Buttons mit Tabler-Icons, Menüname ohne `365CMS | `/`365NET | `-Präfix (der Core sortiert Plugins im Abschnitt „Plugin-Erweiterungen“).
+- Kompatibilität mit 365CMS 3.4.00 geprüft (Produktiv-CSP mit Nonces und Trusted Types, PHP 8.4); `requires_cms` auf `3.4.00` angehoben.
+
 ## 3.0.2 - 2026-05-31
 
 - Admin-Menüeintrag wird in der Core-Sidebar mit `365CMS | ` vorangestellt, damit 365CMS-Plugins gemeinsam sortiert werden.

@@ -5,7 +5,7 @@
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>🔒 Berechtigungen</h2>
+        <h2>Berechtigungen</h2>
         <p>Zugriffsrechte pro Forum und Benutzergruppe verwalten</p>
     </div>
 </div>
@@ -33,7 +33,7 @@
 <?php if (empty($forums)): ?>
 <div class="admin-card">
     <div class="empty-state">
-        <p style="font-size:2.5rem;margin:0;">📭</p>
+        <p style="font-size:2.5rem;margin:0;"></p>
         <p><strong>Erstelle zuerst Foren</strong></p>
     </div>
 </div>
@@ -44,21 +44,21 @@
 
     <?php
     $flagLabels = [
-        'can_read'       => '👁️ Lesen',
-        'can_post'       => '✏️ Antworten',
-        'can_create'     => '➕ Thread erstellen',
-        'can_edit_own'   => '📝 Eigene bearbeiten',
-        'can_delete_own' => '🗑️ Eigene löschen',
-        'can_upload'     => '📎 Dateien anhängen',
-        'can_vote'       => '🗳️ Abstimmen',
-        'can_moderate'   => '🛡️ Moderieren',
+        'can_read'       => 'Lesen',
+        'can_post'       => 'Antworten',
+        'can_create'     => 'Thread erstellen',
+        'can_edit_own'   => 'Eigene bearbeiten',
+        'can_delete_own' => 'Eigene löschen',
+        'can_upload'     => 'Dateien anhängen',
+        'can_vote'       => 'Abstimmen',
+        'can_moderate'   => 'Moderieren',
     ];
-    $groupLabels = ['guest' => '🌐 Gast', 'member' => '👤 Mitglied', 'moderator' => '🛡️ Moderator'];
+    $groupLabels = ['guest' => 'Gast', 'member' => 'Mitglied', 'moderator' => 'Moderator'];
     ?>
 
     <?php foreach ($forums as $forum): ?>
     <div class="admin-card">
-        <h3>📁 <?php echo htmlspecialchars($forum->name); ?></h3>
+        <h3><?php echo htmlspecialchars($forum->name); ?></h3>
         <div class="users-table-container">
             <table class="users-table forum-permissions-matrix">
                 <thead>
@@ -98,7 +98,7 @@
 
     <div class="admin-card form-actions-card">
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">💾 Berechtigungen speichern</button>
+            <button type="submit" class="btn btn-primary">Berechtigungen speichern</button>
             <span class="form-actions__hint">Änderungen gelten sofort für alle Benutzer</span>
         </div>
     </div>

@@ -20,9 +20,12 @@ final class CMS_Beratung_Admin_Pages
     public const MENU_SLUG = 'cms-beratung';
     public const DEFAULT_PAGE_SLUG = 'cms-beratung-landingpages';
 
+    /** Ansichten ohne eigenen Menüeintrag; sie laufen über die Hauptroute mit ?view=. */
+    private const UNLISTED_PAGE_SLUGS = ['cms-beratung-landingpages', 'cms-beratung-new', 'cms-beratung-preview'];
+
     private const PAGE_TITLES = [
-        'cms-beratung' => 'CMS Beratung',
-        'cms-beratung-landingpages' => 'CMS Beratung Landingpages',
+        'cms-beratung' => 'Landingpages',
+        'cms-beratung-landingpages' => 'Landingpages',
         'cms-beratung-new' => 'Neue Landingpage erstellen',
         'cms-beratung-settings' => 'Globale Einstellungen',
         'cms-beratung-presets' => 'Design Presets',
@@ -74,6 +77,15 @@ final class CMS_Beratung_Admin_Pages
             $_GET['page'] = str_replace('_', '-', substr($name, 9));
             self::render_dispatch();
         }
+    }
+
+    public static function dispatch_overview(): void
+    {
+        $requested = self::normalize_slug((string) ($_GET['view'] ?? ''));
+        $_GET['page'] = in_array($requested, self::UNLISTED_PAGE_SLUGS, true) ? $requested : self::DEFAULT_PAGE_SLUG;
+        self::render_dispatch();
+        // Breadcrumb und Sidebar-Markierung beziehen sich auf den registrierten Menüeintrag.
+        $_GET['page'] = self::MENU_SLUG;
     }
 
     public static function dispatch_cms_beratung_landingpages(): void { $_GET['page'] = 'cms-beratung-landingpages'; self::render_dispatch(); }
@@ -207,7 +219,8 @@ final class CMS_Beratung_Admin_Pages
                 if ($status === 'published') { $published++; }
                 if ($status === 'draft') { $drafts++; }
             }
-            echo '<div class="beratung-admin-hero beratung-overview-hero"><div><span class="beratung-overview-kicker">Landingpage Übersicht</span><h1>CMS Beratung</h1><p>Kompakte Verwaltung aller Beratungs-Landingpages. Neue Seiten legst du direkt hier über den Anlegen-Button an.</p><div class="beratung-overview-stats"><span><strong>' . $total . '</strong> gesamt</span><span><strong>' . $published . '</strong> veröffentlicht</span><span><strong>' . $drafts . '</strong> Entwürfe</span></div></div><a class="beratung-btn beratung-overview-create" href="' . self::esc(self::admin_url('cms-beratung-new')) . '">Landingpage anlegen</a></div>';
+            echo '<div class="admin-page-header"><div><h2>Landingpages</h2><p>Kompakte Verwaltung aller Beratungs-Landingpages. Neue Seiten legst du direkt hier über den Anlegen-Button an.</p></div><div class="header-actions"><a class="btn btn-primary" href="' . self::esc(self::admin_url('cms-beratung-new')) . '">Landingpage anlegen</a></div></div>';
+            echo '<div class="dashboard-grid"><div class="stat-card"><div class="stat-number">' . $total . '</div><div class="stat-label">Gesamt</div></div><div class="stat-card"><div class="stat-number">' . $published . '</div><div class="stat-label">Veröffentlicht</div></div><div class="stat-card"><div class="stat-number">' . $drafts . '</div><div class="stat-label">Entwürfe</div></div></div>';
             self::notice_from_query();
             if ($pages === []) {
                 echo '<section class="beratung-empty beratung-empty--landingpages"><h2>Noch keine Landingpages vorhanden.</h2><p>Starte mit einer Vorlage und speichere die Seite anschließend als Entwurf.</p><a class="beratung-btn" href="' . self::esc(self::admin_url('cms-beratung-new')) . '">Erste Landingpage anlegen</a></section>';
@@ -1208,10 +1221,12 @@ final class CMS_Beratung_Admin_Pages
     {
         self::check_access();
         self::ensure_shared_contract_loaded();
+        // Nicht im Menü geführte Ansichten markieren den Menüeintrag „Landingpages“.
+        $layoutActivePage = in_array($activePage, self::UNLISTED_PAGE_SLUGS, true) ? self::MENU_SLUG : $activePage;
         if (function_exists('cms_plugin_admin_layout_start')) {
-            cms_plugin_admin_layout_start(self::PAGE_TITLES[$activePage] ?? 'CMS Beratung', $activePage);
+            cms_plugin_admin_layout_start(self::PAGE_TITLES[$activePage] ?? 'Beratung', $layoutActivePage);
         } elseif (function_exists('renderAdminLayoutStart')) {
-            renderAdminLayoutStart(self::PAGE_TITLES[$activePage] ?? 'CMS Beratung', $activePage);
+            renderAdminLayoutStart(self::PAGE_TITLES[$activePage] ?? 'Beratung', $layoutActivePage);
         }
         self::enqueue_admin_assets();
         echo '<div class="beratung-admin beratung-admin--' . self::esc(self::normalize_slug($activePage)) . '">';
@@ -1497,7 +1512,15 @@ final class CMS_Beratung_Admin_Pages
     private static function admin_url(string $pageSlug, array $params = []): string
     {
         self::ensure_shared_contract_loaded();
-        $url = function_exists('cms_plugin_admin_page_path') ? cms_plugin_admin_page_path(self::MENU_SLUG, $pageSlug) : '/admin/plugins/' . self::MENU_SLUG . '/' . rawurlencode($pageSlug);
+        $pageSlug = self::normalize_slug($pageSlug);
+        if ($pageSlug === self::MENU_SLUG || in_array($pageSlug, self::UNLISTED_PAGE_SLUGS, true)) {
+            if ($pageSlug !== self::MENU_SLUG && $pageSlug !== self::DEFAULT_PAGE_SLUG) {
+                $params = ['view' => $pageSlug] + $params;
+            }
+            $pageSlug = self::MENU_SLUG;
+        }
+
+        $url = '/admin/plugins/' . self::MENU_SLUG . '/' . rawurlencode($pageSlug);
         return $params !== [] ? $url . '?' . http_build_query($params, '', '&', PHP_QUERY_RFC3986) : $url;
     }
 

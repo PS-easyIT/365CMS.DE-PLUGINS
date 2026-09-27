@@ -302,7 +302,7 @@ final class StandardPackages
             return [];
         }
 
-        $header = fgetcsv($handle, 0, $delimiter);
+        $header = fgetcsv($handle, 0, $delimiter, '"', '\\');
         if (!is_array($header)) {
             fclose($handle);
             return [];
@@ -311,7 +311,7 @@ final class StandardPackages
         $headerMap = array_map([$this, 'normalizeCsvColumnName'], $header);
         $entries = [];
 
-        while (($rowData = fgetcsv($handle, 0, $delimiter)) !== false) {
+        while (($rowData = fgetcsv($handle, 0, $delimiter, '"', '\\')) !== false) {
             if (!is_array($rowData) || $this->isEmptyCsvRow($rowData)) {
                 continue;
             }

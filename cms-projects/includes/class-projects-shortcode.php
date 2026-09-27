@@ -11,13 +11,19 @@ final class CMS_Projects_Shortcode
     public function __construct(private readonly CMS_Projects_Service $service)
     {
         if (class_exists('CMS\\Hooks')) {
+            // Aktueller Core rendert Seiten/Beiträge über content_render; cms_content bleibt für ältere Themes.
+            \CMS\Hooks::addFilter('content_render', [$this, 'processContent'], 20);
             \CMS\Hooks::addFilter('cms_content', [$this, 'processContent'], 20);
         }
     }
 
-    public function processContent(string $content): string
+    public function processContent(mixed $content): mixed
     {
-        $content = preg_replace_callback('/\[cms_projects([^\]]*)\]/', function (array $matches): string {
+        if (!is_string($content) || !str_contains($content, '[cms_projects')) {
+            return $content;
+        }
+
+        $content = preg_replace_callback('/\[cms_projects(?=[\s\]])([^\]]*)\]/', function (array $matches): string {
             $atts = $this->parseAttributes((string) ($matches[1] ?? ''));
             return $this->renderDashboard($atts);
         }, $content) ?? $content;

@@ -146,7 +146,7 @@ final class CMS_Newsletter_Admin_Pages
         } else {
             self::load_admin_menu();
             if (function_exists('renderAdminLayoutStart')) {
-                renderAdminLayoutStart($title, self::MAIN_SLUG);
+                renderAdminLayoutStart($title, $activeSlug);
             }
         }
 

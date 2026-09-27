@@ -525,6 +525,16 @@ final class CMS_Feed_Database
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    public function category_slug_exists(string $slug, int $excludeId = 0): bool
+    {
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $stmt   = $db->prepare("SELECT id FROM {$prefix}feed_categories WHERE slug = ? AND id <> ? LIMIT 1");
+        $stmt->execute([$slug, $excludeId]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
     public function save_category(array $data): int
     {
         $db     = \CMS\Database::instance();

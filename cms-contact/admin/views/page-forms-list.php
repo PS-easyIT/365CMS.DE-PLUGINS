@@ -22,20 +22,20 @@ foreach ($allForms as $formItem) {
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>📋 Kontaktformulare</h2>
+        <h2>Kontaktformulare</h2>
         <p>Alle Kontaktformulare verwalten und neue erstellen</p>
     </div>
     <div class="header-actions">
-        <a href="?section=forms&action=new" class="btn btn-primary">➕ Neues Formular</a>
+        <a href="?section=forms&action=new" class="btn btn-primary">Neues Formular</a>
     </div>
 </div>
 
 <!-- Alerts -->
 <?php if (!empty($notice)): ?>
-<div class="alert alert-success">✅ <?php echo htmlspecialchars($notice); ?></div>
+<div class="alert alert-success"><?php echo htmlspecialchars($notice); ?></div>
 <?php endif; ?>
 <?php if (!empty($error)): ?>
-<div class="alert alert-error">❌ <?php echo htmlspecialchars($error); ?></div>
+<div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
 <div class="contact-card-grid">
@@ -58,7 +58,7 @@ foreach ($allForms as $formItem) {
 
 <div class="contact-action-grid">
     <a href="?section=forms&action=new" class="contact-action-card">
-        <span class="contact-action-card__icon">🧩</span>
+        <span class="contact-action-card__icon"></span>
         <span>
             <span class="contact-action-card__eyebrow">Builder</span>
             <span class="contact-action-card__title">Neues Formular starten</span>
@@ -66,7 +66,7 @@ foreach ($allForms as $formItem) {
         </span>
     </a>
     <a href="?section=settings" class="contact-action-card">
-        <span class="contact-action-card__icon">🎨</span>
+        <span class="contact-action-card__icon"></span>
         <span>
             <span class="contact-action-card__eyebrow">Design</span>
             <span class="contact-action-card__title">Standards definieren</span>
@@ -79,17 +79,17 @@ foreach ($allForms as $formItem) {
 <div class="admin-card">
     <div class="contact-panel-header">
         <div>
-            <h3>📋 Alle Formulare</h3>
+            <h3>Alle Formulare</h3>
             <p>Bearbeiten, Felder öffnen oder die öffentliche Vorschau direkt testen.</p>
         </div>
     </div>
 
     <?php if (empty($allForms)): ?>
     <div class="empty-state">
-        <p class="contact-empty-state__icon">📭</p>
+        <p class="contact-empty-state__icon"></p>
         <p><strong>Noch keine Formulare vorhanden</strong></p>
         <p class="contact-empty-state__text">Erstelle dein erstes Kontaktformular.</p>
-        <a href="?section=forms&action=new" class="btn btn-primary contact-empty-state__cta">➕ Jetzt erstellen</a>
+        <a href="?section=forms&action=new" class="btn btn-primary contact-empty-state__cta">Jetzt erstellen</a>
     </div>
     <?php else: ?>
     <div class="users-table-container">
@@ -127,21 +127,21 @@ foreach ($allForms as $formItem) {
                 </td>
                 <td>
                     <span class="status-badge <?php echo $f['status'] === 'active' ? 'active' : 'inactive'; ?>">
-                        <?php echo $f['status'] === 'active' ? '✅ Aktiv' : '⏸️ Inaktiv'; ?>
+                        <?php echo $f['status'] === 'active' ? 'Aktiv' : 'Inaktiv'; ?>
                     </span>
                 </td>
                 <td><?php echo date('d.m.Y', strtotime($f['created_at'])); ?></td>
                 <td>
                     <div class="contact-inline-actions">
-                        <a href="?section=forms&action=fields&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Felder bearbeiten">📝</a>
-                        <a href="?section=forms&action=edit&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Einstellungen">✏️</a>
-                        <a href="/contact/<?php echo htmlspecialchars($f['slug']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Frontend-Vorschau">👁️</a>
+                        <a href="?section=forms&action=fields&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Felder bearbeiten"><i class="ti ti-pencil" aria-hidden="true"></i></a>
+                        <a href="?section=forms&action=edit&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Einstellungen"><i class="ti ti-pencil" aria-hidden="true"></i></a>
+                        <a href="/contact/<?php echo htmlspecialchars($f['slug']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Frontend-Vorschau"><i class="ti ti-eye" aria-hidden="true"></i></a>
                         <button type="button"
                                 class="btn btn-sm btn-danger"
                                 data-contact-open-delete-modal="deleteModal"
                                 data-delete-id="<?php echo (int)$f['id']; ?>"
                                 data-delete-name="<?php echo htmlspecialchars($f['title'], ENT_QUOTES); ?>"
-                                title="Löschen">🗑️</button>
+                                title="Löschen"><i class="ti ti-trash" aria-hidden="true"></i></button>
                     </div>
                 </td>
             </tr>
@@ -158,12 +158,12 @@ foreach ($allForms as $formItem) {
 <div id="deleteModal" class="modal contact-modal">
     <div class="modal-content contact-modal-content--compact">
         <div class="modal-header">
-            <h3>🗑️ Formular löschen</h3>
+            <h3>Formular löschen</h3>
             <button class="modal-close" data-close-modal="deleteModal">&times;</button>
         </div>
         <div class="modal-body">
             <p>Soll das Formular <strong data-delete-modal-name id="deleteModalName"></strong> wirklich gelöscht werden?</p>
-            <p class="contact-modal-warning">⚠️ Alle zugehörigen Felder und Nachrichten werden ebenfalls gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+            <p class="contact-modal-warning">Alle zugehörigen Felder und Nachrichten werden ebenfalls gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</p>
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-close-modal="deleteModal">Abbrechen</button>
@@ -171,7 +171,7 @@ foreach ($allForms as $formItem) {
                 <input type="hidden" name="form_action" value="delete_form">
                 <input type="hidden" name="id" id="deleteModalId" data-delete-modal-id>
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
-                <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
+                <button type="submit" class="btn btn-danger">Endgültig löschen</button>
             </form>
         </div>
     </div>

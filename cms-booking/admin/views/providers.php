@@ -3,17 +3,17 @@
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>👥 Anbieter verwalten</h2>
+        <h2>Anbieter verwalten</h2>
         <p>Buchbare Anbieter aus allen integrierten Plugins</p>
     </div>
 </div>
 
 <!-- Alerts -->
 <?php if (!empty($success)): ?>
-<div class="alert alert-success">✅ <?php echo htmlspecialchars($success); ?></div>
+<div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
 <?php endif; ?>
 <?php if (!empty($error)): ?>
-<div class="alert alert-error">❌ <?php echo htmlspecialchars($error); ?></div>
+<div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
 <!-- Filter -->
@@ -21,7 +21,7 @@
     <form method="GET" style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;">
         <div class="form-group" style="margin:0;min-width:150px;">
             <label class="form-label">Status</label>
-            <select name="status" class="form-control" onchange="this.form.submit()">
+            <select name="status" class="form-control" data-booking-autosubmit>
                 <option value="">Alle</option>
                 <option value="active"   <?php echo $status === 'active'   ? 'selected' : ''; ?>>Aktiv</option>
                 <option value="inactive" <?php echo $status === 'inactive' ? 'selected' : ''; ?>>Inaktiv</option>
@@ -34,7 +34,7 @@
                    value="<?php echo htmlspecialchars($search); ?>">
         </div>
 
-        <button type="submit" class="btn btn-secondary btn-sm">🔍 Filtern</button>
+        <button type="submit" class="btn btn-secondary btn-sm">Filtern</button>
     </form>
 </div>
 
@@ -42,7 +42,7 @@
 <div class="admin-card">
     <?php if (empty($items)): ?>
         <div class="empty-state">
-            <p style="font-size:2.5rem;margin:0;">👤</p>
+            <p style="font-size:2.5rem;margin:0;"></p>
             <p><strong>Keine Anbieter gefunden</strong></p>
             <p class="text-muted">Anbieter werden automatisch aus integrierten Plugins synchronisiert.</p>
         </div>
@@ -94,7 +94,7 @@
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                                     <input type="hidden" name="provider_id" value="<?php echo (int) $item['id']; ?>">
                                     <input type="hidden" name="provider_action" value="sync">
-                                    <button type="submit" class="btn btn-sm btn-secondary" title="Synchronisieren">🔄</button>
+                                    <button type="submit" class="btn btn-sm btn-secondary" title="Synchronisieren"><i class="ti ti-refresh" aria-hidden="true"></i></button>
                                 </form>
 
                                 <!-- Status -->
@@ -103,20 +103,20 @@
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                                     <input type="hidden" name="provider_id" value="<?php echo (int) $item['id']; ?>">
                                     <input type="hidden" name="provider_action" value="deactivate">
-                                    <button type="submit" class="btn btn-sm btn-secondary" title="Deaktivieren">⏸️</button>
+                                    <button type="submit" class="btn btn-sm btn-secondary" title="Deaktivieren"><i class="ti ti-player-pause" aria-hidden="true"></i></button>
                                 </form>
                                 <?php else: ?>
                                 <form method="POST" style="margin:0;">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                                     <input type="hidden" name="provider_id" value="<?php echo (int) $item['id']; ?>">
                                     <input type="hidden" name="provider_action" value="activate">
-                                    <button type="submit" class="btn btn-sm btn-primary" title="Aktivieren">▶️</button>
+                                    <button type="submit" class="btn btn-sm btn-primary" title="Aktivieren">▶</button>
                                 </form>
                                 <?php endif; ?>
 
                                 <!-- Booking-Seite öffnen -->
                                 <a href="/booking/<?php echo htmlspecialchars($item['slug']); ?>"
-                                              target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Buchungsseite">🔗</a>
+                                              target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Buchungsseite"><i class="ti ti-external-link" aria-hidden="true"></i></a>
                             </div>
                         </td>
                     </tr>

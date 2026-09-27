@@ -174,7 +174,7 @@
             .replace(/\{\{cms_prefix\}\}|\{cms_prefix\}|\[cms_prefix\]|%cms_prefix%|\{\{table_prefix\}\}|\{table_prefix\}/gi, '<span class="kb-code-editor__token">cms_prefix</span>')
             .replace(/\[(site-table|table)\s+id\s*=\s*["']?(\d+)["']?\s*\/?\]/gi, function (_match, type, id) {
                 var label = String(type || '').toLowerCase() === 'table' ? 'TablePress-Import' : '365CMS Site-Table';
-                return '<div class="kb-code-editor__shortcode-card"><strong>📊 ' + label + '</strong><span>Shortcode #' + id + ' wird public als Tabelle gerendert.</span></div>';
+                return '<div class="kb-code-editor__shortcode-card"><strong>' + label + '</strong><span>Shortcode #' + id + ' wird public als Tabelle gerendert.</span></div>';
             })
             .replace(/<div class="cms-kb-table-module cms-kb-table-module--info">/gi, '<div class="kb-code-editor__info-module kb-code-editor__info-module--info">');
 

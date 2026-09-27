@@ -585,3 +585,42 @@
         padding: 1.2rem;
     }
 }
+
+/* Adminbereich: schlichte Formularoptik passend zum 365CMS-Plugin-Admin-Design */
+.cp-admin-shell {
+    background: transparent;
+    padding: 0;
+}
+
+.cp-admin-shell .cp-panel-head h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.cp-admin-shell .cp-form-section {
+    border-radius: 2px;
+    background: var(--cms-admin-card-bg-soft, #f6f9fc);
+}
+
+.cp-admin-shell .cp-form input,
+.cp-admin-shell .cp-form select,
+.cp-admin-shell .cp-form textarea {
+    border-color: var(--cms-admin-input-border, #d5dfeb);
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    font-weight: 400;
+}
+
+.cp-admin-shell .cp-form input:focus,
+.cp-admin-shell .cp-form select:focus,
+.cp-admin-shell .cp-form textarea:focus {
+    border-color: var(--cms-admin-input-focus, #7aa2f7);
+    box-shadow: 0 0 0 3px var(--cms-admin-input-ring, rgba(59, 130, 246, 0.14));
+}
+
+.cp-admin-shell .cp-badge {
+    border-radius: 2px;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+}

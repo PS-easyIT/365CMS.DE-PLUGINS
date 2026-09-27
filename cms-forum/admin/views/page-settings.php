@@ -5,7 +5,7 @@
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>⚙️ Forum-Einstellungen</h2>
+        <h2>Forum-Einstellungen</h2>
         <p>Globale Einstellungen für das Community-Forum</p>
     </div>
 </div>
@@ -43,7 +43,7 @@
     <div class="admin-card">
         <div class="forum-panel-header">
             <div>
-                <h3>📋 Allgemein</h3>
+                <h3>Allgemein</h3>
                 <p>Grundaufbau, Seitengrößen und globale Darstellung des Forums.</p>
             </div>
         </div>
@@ -67,7 +67,7 @@
     <div class="admin-card">
         <div class="forum-panel-header">
             <div>
-                <h3>🛡️ Spam-Schutz</h3>
+                <h3>Spam-Schutz</h3>
                 <p>Flood-Control und Moderationsfreigaben gegen Missbrauch.</p>
             </div>
         </div>
@@ -94,7 +94,7 @@
     <div class="admin-card">
         <div class="forum-panel-header">
             <div>
-                <h3>✏️ Beiträge</h3>
+                <h3>Beiträge</h3>
                 <p>Grenzen, Bearbeitungsfenster und Content-Regeln definieren.</p>
             </div>
         </div>
@@ -122,7 +122,7 @@
     <div class="admin-card">
         <div class="forum-panel-header">
             <div>
-                <h3>🧩 Features</h3>
+                <h3>Features</h3>
                 <p>Schalte Foren-Funktionen passend zur Community-Größe und Moderation frei.</p>
             </div>
         </div>
@@ -142,7 +142,7 @@
     <div class="admin-card">
         <div class="forum-panel-header">
             <div>
-                <h3>📎 Datei-Upload</h3>
+                <h3>Datei-Upload</h3>
                 <p>Anhangsgrößen und erlaubte Dateitypen für Beiträge steuern.</p>
             </div>
         </div>
@@ -164,7 +164,7 @@
     <div class="admin-card">
         <div class="forum-panel-header">
             <div>
-                <h3>🎨 Design</h3>
+                <h3>Design</h3>
                 <p>Grundfarbe des Forums passend zum restlichen 365CMS-Design abstimmen.</p>
             </div>
         </div>
@@ -180,7 +180,7 @@
     <!-- Save -->
     <div class="admin-card form-actions-card">
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
+            <button type="submit" class="btn btn-primary">Einstellungen speichern</button>
             <span class="form-actions__hint">Änderungen werden sofort übernommen</span>
         </div>
     </div>
@@ -190,7 +190,7 @@
 <div class="admin-card">
     <div class="forum-panel-header">
         <div>
-            <h3>🔧 Wartung</h3>
+            <h3>Wartung</h3>
             <p>Zählerstände und interne Kennzahlen bei Bedarf neu aufbauen.</p>
         </div>
     </div>
@@ -198,7 +198,7 @@
         <form method="POST">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" name="forum_action" value="recalculate_counters">
-            <button type="submit" class="btn btn-secondary btn-sm">🔄 Zähler neu berechnen</button>
+            <button type="submit" class="btn btn-secondary btn-sm">Zähler neu berechnen</button>
         </form>
     </div>
 </div>

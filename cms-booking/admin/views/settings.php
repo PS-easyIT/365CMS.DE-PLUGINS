@@ -3,17 +3,17 @@
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>⚙️ Buchungssystem – Einstellungen</h2>
+        <h2>Buchungssystem – Einstellungen</h2>
         <p>Globale Konfiguration für das Buchungssystem</p>
     </div>
 </div>
 
 <!-- Alerts -->
 <?php if (!empty($success)): ?>
-<div class="alert alert-success">✅ <?php echo htmlspecialchars($success); ?></div>
+<div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
 <?php endif; ?>
 <?php if (!empty($error)): ?>
-<div class="alert alert-error">❌ <?php echo htmlspecialchars($error); ?></div>
+<div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
 <?php
@@ -28,7 +28,7 @@ $s = function (string $key, string $default = '') use ($settings): string {
 
     <!-- E-Mail -->
     <div class="admin-card">
-        <h3>📧 E-Mail-Einstellungen</h3>
+        <h3>E-Mail-Einstellungen</h3>
 
         <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;">
             <div class="form-group">
@@ -54,7 +54,7 @@ $s = function (string $key, string $default = '') use ($settings): string {
 
     <!-- Standards -->
     <div class="admin-card">
-        <h3>📐 Standard-Werte</h3>
+        <h3>Standard-Werte</h3>
 
         <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1.25rem;">
             <div class="form-group">
@@ -104,7 +104,7 @@ $s = function (string $key, string $default = '') use ($settings): string {
 
     <!-- Buchungsregeln -->
     <div class="admin-card">
-        <h3>📏 Buchungsregeln</h3>
+        <h3>Buchungsregeln</h3>
 
         <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:1.25rem;">
             <div class="form-group">
@@ -151,7 +151,7 @@ $s = function (string $key, string $default = '') use ($settings): string {
 
     <!-- Benachrichtigungen -->
     <div class="admin-card">
-        <h3>🔔 Benachrichtigungen</h3>
+        <h3>Benachrichtigungen</h3>
 
         <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
             <div class="form-group">
@@ -172,13 +172,13 @@ $s = function (string $key, string $default = '') use ($settings): string {
 
     <!-- Darstellung -->
     <div class="admin-card">
-        <h3>🎨 Darstellung</h3>
+        <h3>Darstellung</h3>
 
         <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
             <div class="form-group">
                 <label class="form-label">Primärfarbe</label>
                 <div style="display:flex;align-items:center;gap:.75rem;">
-                    <input type="color" name="primary_color"
+                    <input type="color" name="primary_color" data-booking-color-preview="colorPreview"
                            value="<?php echo $s('primary_color', '#3b82f6'); ?>"
                            style="width:48px;height:36px;border:none;cursor:pointer;">
                     <input type="text" class="form-control" style="max-width:140px;" readonly
@@ -193,22 +193,9 @@ $s = function (string $key, string $default = '') use ($settings): string {
     <!-- Save -->
     <div class="admin-card form-actions-card">
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
+            <button type="submit" class="btn btn-primary">Einstellungen speichern</button>
             <span class="form-actions__hint">Änderungen werden sofort wirksam</span>
         </div>
     </div>
 </form>
 
-<script>
-(function () {
-    var colorInput = document.querySelector('input[name="primary_color"]');
-    var preview = document.getElementById('colorPreview');
-    if (!colorInput || !preview) {
-        return;
-    }
-
-    colorInput.addEventListener('input', function () {
-        preview.value = this.value;
-    });
-})();
-</script>

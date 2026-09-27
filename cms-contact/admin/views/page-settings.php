@@ -9,16 +9,16 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
-        <h2>⚙️ Kontakt-Einstellungen</h2>
+        <h2>Kontakt-Einstellungen</h2>
         <p>Globale Konfiguration für das Kontaktformular-Plugin</p>
     </div>
 </div>
 
 <?php if (!empty($notice)): ?>
-<div class="alert alert-success">✅ <?php echo $e($notice); ?></div>
+<div class="alert alert-success"><?php echo $e($notice); ?></div>
 <?php endif; ?>
 <?php if (!empty($error)): ?>
-<div class="alert alert-error">❌ <?php echo $e($error); ?></div>
+<div class="alert alert-error"><?php echo $e($error); ?></div>
 <?php endif; ?>
 
 <div class="contact-card-grid">
@@ -46,9 +46,9 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
 <!-- Tabs -->
 <div class="contact-tab-bar" data-tab-scope data-tab-content-selector=".tab-content" data-tab-button-selector="[data-contact-tab-target]">
-    <button class="contact-tab-btn<?php echo $tab === 'general' ? ' active' : ''; ?>" data-contact-tab-target="tab-general" type="button">📧 Allgemein</button>
-    <button class="contact-tab-btn<?php echo $tab === 'design' ? ' active' : ''; ?>" data-contact-tab-target="tab-design" type="button">🎨 Design</button>
-    <button class="contact-tab-btn<?php echo $tab === 'cleanup' ? ' active' : ''; ?>" data-contact-tab-target="tab-cleanup" type="button">🧹 Wartung</button>
+    <button class="contact-tab-btn<?php echo $tab === 'general' ? ' active' : ''; ?>" data-contact-tab-target="tab-general" type="button">Allgemein</button>
+    <button class="contact-tab-btn<?php echo $tab === 'design' ? ' active' : ''; ?>" data-contact-tab-target="tab-design" type="button">Design</button>
+    <button class="contact-tab-btn<?php echo $tab === 'cleanup' ? ' active' : ''; ?>" data-contact-tab-target="tab-cleanup" type="button">Wartung</button>
 </div>
 
 <form method="POST" class="admin-form">
@@ -60,7 +60,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
         <div class="admin-card contact-tab-panel">
             <div class="contact-panel-header">
                 <div>
-                    <h3>📧 E-Mail-Einstellungen</h3>
+                    <h3>E-Mail-Einstellungen</h3>
                     <p>Globale Versanddaten als Fallback für alle Formulare definieren.</p>
                 </div>
             </div>
@@ -107,7 +107,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
             <div class="contact-panel-header">
                 <div>
-                    <h3>🛡️ Datenschutz</h3>
+                    <h3>Datenschutz</h3>
                     <p>Einwilligung und Verlinkung zur Datenschutzerklärung für alle Kontaktformulare.</p>
                 </div>
             </div>
@@ -141,7 +141,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
     <!-- Tab: Design -->
     <div id="tab-design" class="tab-content<?php echo $tab === 'design' ? ' active' : ''; ?>">
         <div class="admin-card contact-tab-panel">
-            <h3>🎨 Standard-Design</h3>
+            <h3>Standard-Design</h3>
             <p class="contact-muted-text contact-note-spacing">Diese Werte gelten als Fallback, wenn ein Formular keine eigenen Einstellungen hat.</p>
 
             <div class="contact-form-grid-3">
@@ -190,12 +190,12 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
     <div class="admin-card">
         <div class="contact-panel-header">
             <div>
-                <h3>💾 Änderungen übernehmen</h3>
+                <h3>Änderungen übernehmen</h3>
                 <p>Globale Konfiguration wird direkt für neue Formulare und als Fallback für bestehende Formulare verwendet.</p>
             </div>
             <div class="contact-inline-actions">
             <span class="contact-muted-text">Änderungen werden sofort übernommen</span>
-            <button type="submit" class="btn btn-primary">💾 Speichern</button>
+            <button type="submit" class="btn btn-primary">Speichern</button>
             </div>
         </div>
     </div>
@@ -204,11 +204,11 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 <!-- Tab: Wartung (separate Aktionen, nicht im Hauptformular) -->
 <div id="tab-cleanup" class="tab-content<?php echo $tab === 'cleanup' ? ' active' : ''; ?>">
     <div class="admin-card contact-tab-panel">
-        <h3>🧹 Wartung & Bereinigung</h3>
+        <h3>Wartung & Bereinigung</h3>
 
         <div class="contact-settings-grid">
             <div class="contact-info-card">
-                <h4 class="contact-info-title">📭 Alte Nachrichten löschen</h4>
+                <h4 class="contact-info-title">Alte Nachrichten löschen</h4>
                 <p class="contact-info-copy">Entfernt alle Nachrichten, die älter als der gewählte Zeitraum sind.</p>
                 <form method="POST" class="contact-maintenance-form">
                     <input type="hidden" name="settings_action" value="cleanup_submissions">
@@ -219,17 +219,17 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
                         <option value="180">Älter als 180 Tage</option>
                         <option value="365">Älter als 1 Jahr</option>
                     </select>
-                    <button type="submit" class="btn btn-danger btn-sm">🗑️ Bereinigen</button>
+                    <button type="submit" class="btn btn-danger btn-sm">Bereinigen</button>
                 </form>
             </div>
 
             <div class="contact-info-card">
-                <h4 class="contact-info-title">🚫 Spam löschen</h4>
+                <h4 class="contact-info-title">Spam löschen</h4>
                 <p class="contact-info-copy">Entfernt alle als Spam markierten Nachrichten.</p>
                 <form method="POST" class="contact-note-spacing">
                     <input type="hidden" name="settings_action" value="cleanup_spam">
                     <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
-                    <button type="submit" class="btn btn-danger btn-sm">🚫 Spam leeren</button>
+                    <button type="submit" class="btn btn-danger btn-sm">Spam leeren</button>
                 </form>
             </div>
         </div>

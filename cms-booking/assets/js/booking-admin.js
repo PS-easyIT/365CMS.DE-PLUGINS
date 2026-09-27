@@ -12,6 +12,65 @@
     function init() {
         initDeleteConfirmation();
         initStatusActions();
+        initDeclarativeUi();
+    }
+
+    /* =================================================================== */
+    /*  CSP-konforme UI-Helfer (ersetzen Inline-Skripte/-Handler)          */
+    /*    data-booking-modal-open / -close="id", data-booking-autosubmit,  */
+    /*    data-booking-color-preview="previewId"                            */
+    /* =================================================================== */
+
+    function initDeclarativeUi() {
+        document.addEventListener('click', function (event) {
+            var target = event.target instanceof Element ? event.target : null;
+            if (!target) {
+                return;
+            }
+
+            var opener = target.closest('[data-booking-modal-open]');
+            if (opener) {
+                event.preventDefault();
+                toggleModal(opener.getAttribute('data-booking-modal-open'), true);
+                return;
+            }
+
+            var closer = target.closest('[data-booking-modal-close]');
+            if (closer) {
+                event.preventDefault();
+                toggleModal(closer.getAttribute('data-booking-modal-close'), false);
+                return;
+            }
+
+            if (target.classList.contains('modal') && target.id && target.hasAttribute('data-booking-modal')) {
+                toggleModal(target.id, false);
+            }
+        });
+
+        document.querySelectorAll('[data-booking-autosubmit]').forEach(function (field) {
+            field.addEventListener('change', function () {
+                if (field.form) {
+                    field.form.submit();
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-booking-color-preview]').forEach(function (input) {
+            var preview = document.getElementById(input.getAttribute('data-booking-color-preview') || '');
+            if (!preview) {
+                return;
+            }
+            input.addEventListener('input', function () {
+                preview.value = input.value;
+            });
+        });
+    }
+
+    function toggleModal(id, show) {
+        var modal = id ? document.getElementById(id) : null;
+        if (modal) {
+            modal.style.display = show ? 'flex' : 'none';
+        }
     }
 
     /* =================================================================== */
