@@ -95,7 +95,7 @@ final class Menu
 
         add_menu_page(
             'Knowledgebase',
-            'Knowledgebase',
+            '365CMS | Knowledgebase',
             'manage_options',
             self::ROOT_SLUG,
             [self::class, 'dispatchDashboard'],

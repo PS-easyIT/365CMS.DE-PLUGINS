@@ -23,7 +23,7 @@ final class CMS_Contact_Admin_Menu
 
         add_menu_page(
             'Kontakt',
-            'Kontakt',
+            '365CMS | Kontakt',
             'manage_options',
             CMS_Contact_Admin_Pages::MENU_SLUG,
             CMS_Contact_Admin_Pages::dispatch_callback_for_slug(CMS_Contact_Admin_Pages::DEFAULT_PAGE_SLUG),

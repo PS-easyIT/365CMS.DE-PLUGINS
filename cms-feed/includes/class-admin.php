@@ -45,7 +45,7 @@ final class CMS_Feed_Admin
 
         add_menu_page(
             'Feeds',
-            'Feeds',
+            '365CMS | Feeds',
             'manage_options',
             self::MENU_SLUG,
             [self::class, 'dispatch_admin_page'],

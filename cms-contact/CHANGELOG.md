@@ -2,6 +2,12 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [3.0.6] – 2026-09-30
+
+### Geändert
+
+- Admin-Seitenleiste: Der Menüeintrag heißt jetzt „365CMS | Kontakt“ (bisher „Kontakt“), damit die öffentlichen 365CMS-Plugins im Abschnitt „Plugin-Erweiterungen“ zusammen stehen.
+
 ## [3.0.5] – 2026-09-27
 
 ### Behoben

@@ -29,7 +29,7 @@ final class CMS_Booking_Admin_Menu
 
         add_menu_page(
             'Buchungen',
-            'Buchungen',
+            '365CMS | Buchungen',
             'manage_options',
             self::MENU_SLUG,
             [CMS_Booking_Admin_Pages::class, 'dispatch_dashboard'],
