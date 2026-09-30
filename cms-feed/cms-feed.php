@@ -3,7 +3,7 @@
  * Plugin Name: CMS Feed
  * Plugin URI: https://365network.de/cms-feed
  * Description: RSS-Feed-Aggregator mit Kategorie-Bereichen, Public Pages, Design-Einstellungen, Member-Feed-Abos und E-Mail-Digest
- * Version: 3.0.5
+ * Version: 3.0.6
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 if (!defined('CMS_FEED_VERSION')) {
-    define('CMS_FEED_VERSION', '3.0.5');
+    define('CMS_FEED_VERSION', '3.0.6');
 }
 if (!defined('CMS_FEED_PLUGIN_DIR')) {
     define('CMS_FEED_PLUGIN_DIR', dirname(__FILE__) . '/');

@@ -1,5 +1,11 @@
 # Changelog – CMS Downloads
 
+## [3.0.5] – 2026-09-30
+
+### Geändert
+
+- Admin-Seitenleiste: Der Menüeintrag heißt jetzt „365CMS | Downloads“ (bisher „Downloads“), damit die öffentlichen 365CMS-Plugins im Abschnitt „Plugin-Erweiterungen“ zusammen stehen.
+
 ## [3.0.4] – 2026-09-27
 
 ### Behoben

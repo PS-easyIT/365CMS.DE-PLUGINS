@@ -1,7 +1,7 @@
 {
   "name": "CMS Promos",
   "slug": "cms-promos",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "author": "365 Network",
   "homepage": "https://365network.de/cms-promos",
   "download_url": "https://365network.de/downloads/cms-promos.zip",
@@ -9,7 +9,7 @@
   "tested": "3.4.00",
   "min_php": "8.4",
   "requires_php": "8.4",
-  "last_updated": "2026-09-27",
-  "changelog": "3.0.3: Installer-Fix: Aktivierung scheiterte an SHOW COLUMNS … LIKE ? (MariaDB/MySQL-Syntaxfehler). UTM-Builder in promos-admin.js ausgelagert (CSP-konform); aktive Unterseite in Sidebar/Breadcrumb. Admin-Oberfläche an das einheitliche, schlichte 365CMS-Plugin-Admin-Design angeglichen (Emoji-/Kürzel-Icons entfernt, Icon-Buttons mit Tabler-Icons, Menüname ohne Präfix); geprüft gegen 365CMS 3.4.00 inkl. Produktiv-CSP. 365CMS 3.0.2: Der Promos-Admin-Menüeintrag wird für die Core-Sidebar-Sortierung mit 365CMS | vorangestellt. 365CMS 3.0.1 Security-/UX-Pass: CSRF-Casts und 303-Redirects ergänzt, URL-/HTML-Sanitizing gehärtet, Public-Template semantisch modernisiert und Admin-Oberfläche entemojifiziert.",
+  "last_updated": "2026-09-30",
+  "changelog": "3.0.4: Admin-Seitenleiste: Der Menüeintrag heißt jetzt „365CMS | Promos“ (bisher „Promos“), damit die öffentlichen 365CMS-Plugins im Abschnitt „Plugin-Erweiterungen“ zusammen stehen. 3.0.3: Installer-Fix: Aktivierung scheiterte an SHOW COLUMNS … LIKE ? (MariaDB/MySQL-Syntaxfehler). UTM-Builder in promos-admin.js ausgelagert (CSP-konform); aktive Unterseite in Sidebar/Breadcrumb. Admin-Oberfläche an das einheitliche, schlichte 365CMS-Plugin-Admin-Design angeglichen (Emoji-/Kürzel-Icons entfernt, Icon-Buttons mit Tabler-Icons, Menüname ohne Präfix); geprüft gegen 365CMS 3.4.00 inkl. Produktiv-CSP. 365CMS 3.0.2: Der Promos-Admin-Menüeintrag wird für die Core-Sidebar-Sortierung mit 365CMS | vorangestellt. 365CMS 3.0.1 Security-/UX-Pass: CSRF-Casts und 303-Redirects ergänzt, URL-/HTML-Sanitizing gehärtet, Public-Template semantisch modernisiert und Admin-Oberfläche entemojifiziert.",
   "requires_cms": "3.4.00"
 }

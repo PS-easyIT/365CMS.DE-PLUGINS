@@ -1,5 +1,11 @@
 # Changelog – CMS Projects
 
+## 3.0.4 – 2026-09-30
+
+### Geändert
+
+- Admin-Seitenleiste: Der Menüeintrag heißt jetzt „365CMS | Projekte“ (bisher „Projekte“), damit die öffentlichen 365CMS-Plugins im Abschnitt „Plugin-Erweiterungen“ zusammen stehen.
+
 ## 3.0.3 – 2026-09-27
 
 ### Behoben

@@ -28,7 +28,7 @@ final class CMS_Projects_Admin
 
         add_menu_page(
             'CMS Projects',
-            'Projekte',
+            '365CMS | Projekte',
             'admin',
             self::PAGE_SLUG_OVERVIEW,
             [$this, 'dispatchPage'],
